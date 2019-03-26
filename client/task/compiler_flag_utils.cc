@@ -16,14 +16,14 @@ void InitClangTidyFlags(ClangTidyFlags* flags) {
     flags->Fail("Input file is not unique.");
     return;
   }
-  const string& input_file = flags->input_filenames()[0];
-  const string input_file_abs =
+  const std::string& input_file = flags->input_filenames()[0];
+  const std::string input_file_abs =
       file::JoinPathRespectAbsolute(flags->cwd(), input_file);
-  string compdb_path = CompilationDatabaseReader::FindCompilationDatabase(
+  std::string compdb_path = CompilationDatabaseReader::FindCompilationDatabase(
       flags->build_path(), file::Dirname(input_file_abs));
 
-  std::vector<string> clang_args;
-  string build_dir;
+  std::vector<std::string> clang_args;
+  std::string build_dir;
   if (!CompilationDatabaseReader::MakeClangArgs(*flags, compdb_path,
                                                 &clang_args, &build_dir)) {
     // Failed to make clang args. Then Mark CompilerFlags unsuccessful.

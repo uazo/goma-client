@@ -13,8 +13,6 @@
 #include "absl/time/time.h"
 #include "basictypes.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class LogCleaner {
@@ -23,18 +21,19 @@ class LogCleaner {
   ~LogCleaner();
 
   // Adds log's basename to be cleaned.
-  void AddLogBasename(const string& basename);
+  void AddLogBasename(const std::string& basename);
 
   // Cleans log files older than |time|.
   void CleanOldLogs(absl::Time time);
 
  private:
   friend class LogCleanerTest;
-  void FindOldLogsInDir(const string& log_dir, absl::Time time,
-                        std::set<string>* old_logs);
-  bool IsMyLogFile(const string& name) const;
+  void FindOldLogsInDir(const std::string& log_dir,
+                        absl::Time time,
+                        std::set<std::string>* old_logs);
+  bool IsMyLogFile(const std::string& name) const;
 
-  std::vector<string> basenames_;
+  std::vector<std::string> basenames_;
 
   DISALLOW_COPY_AND_ASSIGN(LogCleaner);
 };

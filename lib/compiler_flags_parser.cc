@@ -12,8 +12,8 @@ namespace devtools_goma {
 
 // static
 std::unique_ptr<CompilerFlags> CompilerFlagsParser::New(
-    const std::vector<string>& args,
-    const string& cwd) {
+    const std::vector<std::string>& args,
+    const std::string& cwd) {
   if (args.empty()) {
     LOG(ERROR) << "Empty args";
     return nullptr;
@@ -23,8 +23,8 @@ std::unique_ptr<CompilerFlags> CompilerFlagsParser::New(
 }
 
 std::unique_ptr<CompilerFlags> CompilerFlagsParser::MustNew(
-    const std::vector<string>& args,
-    const string& cwd) {
+    const std::vector<std::string>& args,
+    const std::string& cwd) {
   std::unique_ptr<CompilerFlags> flags = New(args, cwd);
   LOG_IF(FATAL, !flags) << "unsupported command line:" << args;
   return flags;

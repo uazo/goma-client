@@ -10,8 +10,6 @@
 
 #include "cxx/cxx_compiler_info_builder.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class ClangTidyCompilerInfoBuilder : public CxxCompilerInfoBuilder {
@@ -20,21 +18,21 @@ class ClangTidyCompilerInfoBuilder : public CxxCompilerInfoBuilder {
 
   void SetTypeSpecificCompilerInfo(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const string& abs_local_compiler_path,
-      const std::vector<string>& compiler_info_envs,
+      const std::string& local_compiler_path,
+      const std::string& abs_local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs,
       CompilerInfoData* data) const override;
 
   // Executes clang-tidy and gets the string output for clang-tidy version.
   static bool GetClangTidyVersionTarget(
-      const string& clang_tidy_path,
-      const std::vector<string>& compiler_info_envs,
-      const string& cwd,
-      string* version,
-      string* target);
-  static bool ParseClangTidyVersionTarget(const string& output,
-                                          string* version,
-                                          string* target);
+      const std::string& clang_tidy_path,
+      const std::vector<std::string>& compiler_info_envs,
+      const std::string& cwd,
+      std::string* version,
+      std::string* target);
+  static bool ParseClangTidyVersionTarget(const std::string& output,
+                                          std::string* version,
+                                          std::string* target);
 };
 
 }  // namespace devtools_goma

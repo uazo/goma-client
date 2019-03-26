@@ -15,8 +15,6 @@
 #include "content.h"
 #include "glog/logging.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // static

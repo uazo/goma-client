@@ -15,8 +15,6 @@
 #include "scoped_fd.h"
 #include "spawner.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // A subclass of Spawner for Windows.
@@ -26,10 +24,10 @@ class SpawnerWin : public Spawner {
   SpawnerWin();
   ~SpawnerWin() override;
 
-  int Run(const string& prog,
-                  const std::vector<string>& argv,
-                  const std::vector<string>& env,
-                  const string& cwd) override;
+  int Run(const std::string& prog,
+          const std::vector<std::string>& argv,
+          const std::vector<std::string>& env,
+          const std::string& cwd) override;
   ProcessStatus Kill() override;
   ProcessStatus Wait(WaitPolicy wait_policy) override;
   bool IsChildRunning() const override {
@@ -54,11 +52,11 @@ class SpawnerWin : public Spawner {
   static void TearDown();
 
  private:
-  int RunRedirected(const string& command_line,
+  int RunRedirected(const std::string& command_line,
                     std::vector<char>* env,
-                    const string& cwd,
-                    const string& out_file,
-                    const string& in_file);
+                    const std::string& cwd,
+                    const std::string& out_file,
+                    const std::string& in_file);
   void UpdateProcessStatus(DWORD timeout);
 
   ProcessStatus KillAndWait(DWORD timeout);
@@ -85,7 +83,7 @@ class SpawnerWin : public Spawner {
   // returned.
   static ScopedFd AssignProcessToNewJobObject(
       ScopedFd::FileDescriptor child_process,
-      const string& job_name);
+      const std::string& job_name);
 
   static unsigned __stdcall OutputThread(void* thread_params);
   static unsigned __stdcall InputThread(void* thread_params);
@@ -101,16 +99,16 @@ class SpawnerWin : public Spawner {
   DWORD process_status_;
   SIZE_T process_mem_bytes_;
 
-  string job_name_;
+  std::string job_name_;
   ScopedFd child_job_;
   ScopedFd child_process_;
   ScopedFd child_stdin_, child_stdout_, child_stderr_;
   ScopedFd stdout_file_, stderr_file_;
-  string input_file_;
+  std::string input_file_;
 
   bool is_signaled_;
 
-  static string* temp_dir_;
+  static std::string* temp_dir_;
 
   DISALLOW_COPY_AND_ASSIGN(SpawnerWin);
 };

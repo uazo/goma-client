@@ -19,7 +19,7 @@ TEST(CompilerTypeSpecificTest, SupportsDepsCache) {
 
   // gcc (compile)
   {
-    const std::vector<string> args{
+    const std::vector<std::string> args{
         "gcc",
         "-c",
         "main.c",
@@ -31,7 +31,7 @@ TEST(CompilerTypeSpecificTest, SupportsDepsCache) {
 
   // clang (compile)
   {
-    const std::vector<string> args{
+    const std::vector<std::string> args{
         "clang",
         "-c",
         "main.c",
@@ -43,7 +43,7 @@ TEST(CompilerTypeSpecificTest, SupportsDepsCache) {
 
   // gcc (link)
   {
-    const std::vector<string> args{
+    const std::vector<std::string> args{
         "gcc",
         "main.c",
     };
@@ -54,7 +54,7 @@ TEST(CompilerTypeSpecificTest, SupportsDepsCache) {
 
   // clang (link)
   {
-    const std::vector<string> args{
+    const std::vector<std::string> args{
         "clang",
         "main.c",
     };
@@ -65,7 +65,7 @@ TEST(CompilerTypeSpecificTest, SupportsDepsCache) {
 
   // vc (compile only; link is not supported)
   {
-    const std::vector<string> args{
+    const std::vector<std::string> args{
         "cl.exe",
         "/c",
         "main.c",

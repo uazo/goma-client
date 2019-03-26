@@ -13,7 +13,6 @@
 
 #include "base/basictypes.h"
 #include "absl/container/flat_hash_map.h"
-using std::string;
 
 class FlagParser {
  public:
@@ -46,7 +45,9 @@ class FlagParser {
     Callback() {}
     virtual ~Callback() {}
     // Returns parsed flag value of value for flag.
-    virtual string ParseFlagValue(const Flag& flag, const string& value) = 0;
+    virtual std::string ParseFlagValue(const Flag& flag,
+                                       const std::string& value) = 0;
+
    private:
     DISALLOW_COPY_AND_ASSIGN(Callback);
   };
@@ -63,7 +64,7 @@ class FlagParser {
     // *output will be updated in FlagParser::Parse().
     // output may be shared with other flags.
     // Doesn't take ownership of output.
-    void SetOutput(std::vector<string>* output);
+    void SetOutput(std::vector<std::string>* output);
 
     // Uses values to store values for the flags.
     // If callback is not NULL, it is used to parse flag value before stroing
@@ -72,7 +73,7 @@ class FlagParser {
     // *values will be updated in FlagParser::Parse().
     // Doesn't take ownership of callback and values.
     void SetValueOutputWithCallback(Callback* callback,
-                                    std::vector<string>* values);
+                                    std::vector<std::string>* values);
 
     // Uses callback to get parsed args.
     // If callback is NULL or SetCallbackForParsedArgs() is not used, original
@@ -82,7 +83,7 @@ class FlagParser {
     void SetCallbackForParsedArgs(Callback* callback);
 
     // Name of the flag.  E.g "c" for "-c". "" for non flag args.
-    const string& name() const { return name_; }
+    const std::string& name() const { return name_; }
 
     // True if the flag requires a value.
     bool require_value() const { return require_value_; }
@@ -91,11 +92,11 @@ class FlagParser {
     bool seen() const { return seen_; }
 
     // Returns flag values.  Used after FlagParser::Parse() called.
-    const std::vector<string>& values() const { return values_; }
+    const std::vector<std::string>& values() const { return values_; }
     // Gets i'th flag value.  Used after FlagParser::Parse() called.
-    const string& value(int i) const;
+    const std::string& value(int i) const;
     // Gets last flag value.  Used after FlagParser::Parse() called.
-    string GetLastValue() const;
+    std::string GetLastValue() const;
 
    private:
     friend class FlagParser;
@@ -108,14 +109,14 @@ class FlagParser {
     // Tries to parse args at i.
     // Returns true if it is the flag and sets last i in *last_i.
     // Returns false if it is not the flag.
-    bool Parse(const std::vector<string>& args, size_t i, size_t* last_i);
+    bool Parse(const std::vector<std::string>& args, size_t i, size_t* last_i);
 
     // Gets parsed arguments at i, where Parse() had returned true for the i.
-    const string& GetParsedArgs(int i) const;
+    const std::string& GetParsedArgs(int i) const;
 
-    void Output(int i, const string& arg, const string* value);
+    void Output(int i, const std::string& arg, const std::string* value);
 
-    string name_;
+    std::string name_;
     bool require_value_;
 
     char flag_prefix_;
@@ -126,12 +127,12 @@ class FlagParser {
 
     bool seen_;
     bool* seen_output_;
-    std::vector<string>* output_;
+    std::vector<std::string>* output_;
     Callback* value_callback_;
-    std::vector<string> values_;
-    std::vector<string>* values_output_;
+    std::vector<std::string> values_;
+    std::vector<std::string>* values_output_;
     Callback* parse_callback_;
-    absl::flat_hash_map<int, string> parsed_args_;
+    absl::flat_hash_map<int, std::string> parsed_args_;
     DISALLOW_COPY_AND_ASSIGN(Flag);
   };
 
@@ -161,24 +162,24 @@ class FlagParser {
   // Argument that isn't prefixed with flag_prefix.
   Flag* AddNonFlag();
 
-  void Parse(const std::vector<string>& args);
+  void Parse(const std::vector<std::string>& args);
 
   // Returns parsed args.  Called once Parse() is called.
-  std::vector<string> GetParsedArgs();
+  std::vector<std::string> GetParsedArgs();
   // Returns unknown flags. Valid after Parse() is called.
-  const std::vector<string>& unknown_flag_args() const {
+  const std::vector<std::string>& unknown_flag_args() const {
     return unknown_flag_args_;
   }
 
  private:
   Options opts_;
-  std::map<string, std::unique_ptr<Flag>> flags_;
+  std::map<std::string, std::unique_ptr<Flag>> flags_;
 
   // original args given by Parse().
-  std::vector<string> args_;
+  std::vector<std::string> args_;
 
   // Valid after Parse. This contains unknown flags.
-  std::vector<string> unknown_flag_args_;
+  std::vector<std::string> unknown_flag_args_;
 
   std::vector<Flag*> parsed_flags_;
 

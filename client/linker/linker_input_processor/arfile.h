@@ -71,7 +71,7 @@ class ArFile {
                               EntryHeader* entry_header);
   bool SkipEntryData(const EntryHeader& entry_header);
   bool ReadEntryData(const EntryHeader& entry_header, std::string* data);
-  bool FixEntryName(string* name);
+  bool FixEntryName(std::string* name);
   void Init();
 
 #ifdef __MACH__

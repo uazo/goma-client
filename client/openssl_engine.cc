@@ -84,34 +84,34 @@ class ScopedX509StoreFree {
   inline void operator()(X509_STORE *x) const { if (x) X509_STORE_free(x); }
 };
 
-template<typename T>
-string GetHumanReadableInfo(T* data, int (*func)(BIO*, T*)) {
+template <typename T>
+std::string GetHumanReadableInfo(T* data, int (*func)(BIO*, T*)) {
   std::unique_ptr<BIO, ScopedBIOFree> bio(BIO_new(BIO_s_mem()));
   func(bio.get(), data);
   char* x509_for_print;
   const int x509_for_print_len = BIO_get_mem_data(bio.get(), &x509_for_print);
-  string ret(x509_for_print, x509_for_print_len);
+  std::string ret(x509_for_print, x509_for_print_len);
 
   return ret;
 }
 
-string GetHumanReadableCert(X509* x509) {
+std::string GetHumanReadableCert(X509* x509) {
   return GetHumanReadableInfo<X509>(x509, X509_print);
 }
 
-string GetHumanReadableCRL(X509_CRL* x509_crl) {
+std::string GetHumanReadableCRL(X509_CRL* x509_crl) {
   return GetHumanReadableInfo<X509_CRL>(x509_crl, X509_CRL_print);
 }
 
-string GetHumanReadableCerts(STACK_OF(X509)* x509s) {
-  string ret;
+std::string GetHumanReadableCerts(STACK_OF(X509) * x509s) {
+  std::string ret;
   for (size_t i = 0; i < sk_X509_num(x509s); i++) {
     ret.append(GetHumanReadableCert(sk_X509_value(x509s, i)));
   }
   return ret;
 }
 
-string GetHumanReadableSessionInfo(const SSL_SESSION* s) {
+std::string GetHumanReadableSessionInfo(const SSL_SESSION* s) {
   std::ostringstream ss;
   ss << "SSL Session info:";
   ss << " protocol=" << SSL_SESSION_get_version(s);
@@ -128,7 +128,7 @@ string GetHumanReadableSessionInfo(const SSL_SESSION* s) {
   return ss.str();
 }
 
-string GetHumanReadableSSLInfo(const SSL* ssl) {
+std::string GetHumanReadableSSLInfo(const SSL* ssl) {
   const SSL_CIPHER* cipher = SSL_get_current_cipher(ssl);
   std::ostringstream ss;
   ss << "SSL info:";
@@ -278,7 +278,7 @@ class OpenSSLSocketPoolCache {
     }
   }
 
-  static SocketPool* GetSocketPool(const string& host, int port) {
+  static SocketPool* GetSocketPool(const std::string& host, int port) {
     DCHECK(cache_);
     return cache_->GetSocketPoolInternal(host, port);
   }
@@ -290,10 +290,10 @@ class OpenSSLSocketPoolCache {
 
   static void FinalizeOpenSSLSocketPoolCache() { cache_.reset(); }
 
-  SocketPool* GetSocketPoolInternal(const string& host, int port) {
+  SocketPool* GetSocketPoolInternal(const std::string& host, int port) {
     std::ostringstream ss;
     ss << host << ":" << port;
-    const string key = ss.str();
+    const std::string key = ss.str();
 
     AUTOLOCK(lock, &socket_pool_mu_);
     auto p = socket_pools_.emplace(key, nullptr);
@@ -304,7 +304,7 @@ class OpenSSLSocketPoolCache {
   }
 
   Lock socket_pool_mu_;
-  absl::flat_hash_map<string, std::unique_ptr<SocketPool>> socket_pools_;
+  absl::flat_hash_map<std::string, std::unique_ptr<SocketPool>> socket_pools_;
 
   static std::unique_ptr<OpenSSLSocketPoolCache> cache_;
   DISALLOW_COPY_AND_ASSIGN(OpenSSLSocketPoolCache);
@@ -324,14 +324,14 @@ class OpenSSLCertificateStore {
     }
   }
 
-  static bool AddCertificateFromFile(const string& filename) {
+  static bool AddCertificateFromFile(const std::string& filename) {
     DCHECK(store_);
     if (store_->IsKnownCertfileInternal(filename)) {
       LOG(INFO) << "Known cerficiate:" << filename;
       return false;
     }
 
-    string user_cert;
+    std::string user_cert;
     if (!ReadFileToString(filename.c_str(), &user_cert)) {
       LOG(ERROR) << "Failed to read:" << filename;
       return false;
@@ -339,8 +339,8 @@ class OpenSSLCertificateStore {
     return store_->AddCertificateFromStringInternal(filename, user_cert);
   }
 
-  static bool AddCertificateFromString(
-      const string& source, const string& cert) {
+  static bool AddCertificateFromString(const std::string& source,
+                                       const std::string& cert) {
     DCHECK(store_);
     return store_->AddCertificateFromStringInternal(source, cert);
   }
@@ -355,7 +355,7 @@ class OpenSSLCertificateStore {
     return store_->IsReadyInternal();
   }
 
-  static string GetTrustedCertificates() {
+  static std::string GetTrustedCertificates() {
     DCHECK(store_);
     return store_->GetTrustedCertificatesInternal();
   }
@@ -370,7 +370,7 @@ class OpenSSLCertificateStore {
   }
 
   void InitInternal() {
-    string root_certs;
+    std::string root_certs;
     CHECK(GetTrustedRootCerts(&root_certs))
         << "Failed to read trusted root certificates from the system.";
     AddCertificateFromStringInternal("system", root_certs);
@@ -386,7 +386,7 @@ class OpenSSLCertificateStore {
   // trusted_certificates_ is a member of the class, which is protected
   // by the mutex (mu_).  It could be updated after return of the function
   // by another thread.
-  string GetTrustedCertificatesInternal() const {
+  std::string GetTrustedCertificatesInternal() const {
     AUTO_SHARED_LOCK(lock, &mu_);
     return trusted_certificates_;
   }
@@ -402,13 +402,13 @@ class OpenSSLCertificateStore {
     }
   }
 
-  bool IsKnownCertfileInternal(const string& filename) const {
+  bool IsKnownCertfileInternal(const std::string& filename) const {
     AUTO_SHARED_LOCK(lock, &mu_);
     return certs_.find(filename) != certs_.end();
   }
 
-  bool AddCertificateFromStringInternal(const string& source,
-                                        const string& cert) {
+  bool AddCertificateFromStringInternal(const std::string& source,
+                                        const std::string& cert) {
     // Create BIO instance to be used by PEM_read_bio_X509_AUX.
     std::unique_ptr<BIO, ScopedBIOFree> bio(
         BIO_new_mem_buf(cert.data(), cert.size()));
@@ -428,7 +428,7 @@ class OpenSSLCertificateStore {
       if (x509.get() == nullptr)
         break;
 
-      const string readable_cert = GetHumanReadableCert(x509.get());
+      const std::string readable_cert = GetHumanReadableCert(x509.get());
       if (source == "system") {  // system certificate should be trivial.
         VLOG(2) << "Certificate loaded from " << source << ": "
                 << readable_cert;
@@ -451,11 +451,11 @@ class OpenSSLCertificateStore {
   }
 
   mutable ReadWriteLock mu_;
-  std::map<string,
-           std::unique_ptr<
-               std::vector<std::unique_ptr<X509, ScopedX509Free>>>> certs_;
+  std::map<std::string,
+           std::unique_ptr<std::vector<std::unique_ptr<X509, ScopedX509Free>>>>
+      certs_;
 
-  string trusted_certificates_;
+  std::string trusted_certificates_;
 
   static OpenSSLCertificateStore* store_;
   DISALLOW_COPY_AND_ASSIGN(OpenSSLCertificateStore);
@@ -475,20 +475,20 @@ class OpenSSLCRLCache {
 
   // Caller owns returned X509_CRL*.
   // It is caller's responsibility to free it with X509_CRL_free.
-  static ScopedX509CRL LookupCRL(const string& url) {
+  static ScopedX509CRL LookupCRL(const std::string& url) {
     DCHECK(cache_);
     return cache_->LookupCRLInternal(url);
   }
 
   // Returns true if url exists in internal database and successfully removed.
   // Otherwise, e.g. not registered, returns false.
-  static bool DeleteCRL(const string& url) {
+  static bool DeleteCRL(const std::string& url) {
     DCHECK(cache_);
     return cache_->DeleteCRLInternal(url);
   }
 
   // Won't take ownership of |crl|.  This function duplicates it internally.
-  static void SetCRL(const string& url, X509_CRL* crl) {
+  static void SetCRL(const std::string& url, X509_CRL* crl) {
     DCHECK(cache_);
     return cache_->SetCRLInternal(url, crl);
   }
@@ -504,7 +504,7 @@ class OpenSSLCRLCache {
   }
 
   // Note: caller should free X509_CRL.
-  ScopedX509CRL LookupCRLInternal(const string& url) {
+  ScopedX509CRL LookupCRLInternal(const std::string& url) {
     AUTO_SHARED_LOCK(lock, &mu_);
     const auto& it = crls_.find(url);
     if (it == crls_.end())
@@ -512,7 +512,7 @@ class OpenSSLCRLCache {
     return ScopedX509CRL(X509_CRL_dup(it->second.get()));
   }
 
-  bool DeleteCRLInternal(const string& url) {
+  bool DeleteCRLInternal(const std::string& url) {
     AUTO_EXCLUSIVE_LOCK(lock, &mu_);
     const auto& it = crls_.find(url);
     if (it == crls_.end())
@@ -521,7 +521,7 @@ class OpenSSLCRLCache {
     return true;
   }
 
-  void SetCRLInternal(const string& url, X509_CRL* crl) {
+  void SetCRLInternal(const std::string& url, X509_CRL* crl) {
     AUTO_EXCLUSIVE_LOCK(lock, &mu_);
     if (crls_.count(url) > 0) {
       DeleteCRLInternal(url);
@@ -533,7 +533,7 @@ class OpenSSLCRLCache {
   }
 
   mutable ReadWriteLock mu_;
-  std::map<string, ScopedX509CRL> crls_;
+  std::map<std::string, ScopedX509CRL> crls_;
 
   static OpenSSLCRLCache* cache_;
   DISALLOW_COPY_AND_ASSIGN(OpenSSLCRLCache);
@@ -566,15 +566,15 @@ int NormalizeChar(int input) {
 }
 
 // Converts non-alphanum in a filename to '_'.
-string NormalizeToUseFilename(const string& input) {
-  string out(input);
+std::string NormalizeToUseFilename(const std::string& input) {
+  std::string out(input);
   std::transform(out.begin(), out.end(), out.begin(), NormalizeChar);
   return out;
 }
 
-ScopedX509CRL ParseCrl(const string& crl_str) {
+ScopedX509CRL ParseCrl(const std::string& crl_str) {
   // See: http://www.openssl.org/docs/apps/crl.html
-  if (crl_str.find("-----BEGIN X509 CRL-----") != string::npos) {  // PEM
+  if (crl_str.find("-----BEGIN X509 CRL-----") != std::string::npos) {  // PEM
     std::unique_ptr<BIO, ScopedBIOFree> bio(
         BIO_new_mem_buf(crl_str.data(), crl_str.size()));
     return ScopedX509CRL(
@@ -586,7 +586,7 @@ ScopedX509CRL ParseCrl(const string& crl_str) {
   return ScopedX509CRL(d2i_X509_CRL(nullptr, &p, crl_str.size()));
 }
 
-string GetSubjectCommonName(X509* x509) {
+std::string GetSubjectCommonName(X509* x509) {
   static const size_t kMaxHostname = 1024;
 
   X509_NAME* subject = X509_get_subject_name(x509);
@@ -598,27 +598,27 @@ string GetSubjectCommonName(X509* x509) {
   return "";
 }
 
-std::vector<string> GetAltDNSNames(X509* x509) {
+std::vector<std::string> GetAltDNSNames(X509* x509) {
   int index = X509_get_ext_by_NID(x509, NID_subject_alt_name, -1);
   if (index < 0) {
     LOG(INFO) << "cert has no subject alt name";
-    return std::vector<string>();
+    return std::vector<std::string>();
   }
   X509_EXTENSION* subject_alt_name_extension = X509_get_ext(x509, index);
   if (!subject_alt_name_extension) {
     LOG(INFO) << "cert has no subject alt name extension";
-    return std::vector<string>();
+    return std::vector<std::string>();
   }
 
   GENERAL_NAMES* subject_alt_names = reinterpret_cast<GENERAL_NAMES*>(
       X509V3_EXT_d2i(subject_alt_name_extension));
   if (!subject_alt_names) {
     LOG(INFO) << "unable to get subject alt name extension";
-    return std::vector<string>();
+    return std::vector<std::string>();
   }
   VLOG(1) << "subject alt names=" << sk_GENERAL_NAME_num(subject_alt_names);
 
-  std::vector<string> names;
+  std::vector<std::string> names;
   for (size_t i = 0; i < sk_GENERAL_NAME_num(subject_alt_names); ++i) {
     GENERAL_NAME* subject_alt_name =
         sk_GENERAL_NAME_value(subject_alt_names, i);
@@ -630,7 +630,8 @@ std::vector<string> GetAltDNSNames(X509* x509) {
           if (!dns_name)
             continue;
           int len = ASN1_STRING_length(subject_alt_name->d.dNSName);
-          string name = string(reinterpret_cast<char*>(dns_name), len);
+          std::string name =
+              std::string(reinterpret_cast<char*>(dns_name), len);
           VLOG(1) << "subject alt name[" << i << "]=" << name;
           names.push_back(name);
         }
@@ -768,7 +769,7 @@ void DownloadCrl(
   // UNREACHABLE.
 }
 
-string GetCrlUrl(X509* x509) {
+std::string GetCrlUrl(X509* x509) {
   int loc = X509_get_ext_by_NID(x509, NID_crl_distribution_points, -1);
   if (loc < 0)
     return "";
@@ -781,7 +782,7 @@ string GetCrlUrl(X509* x509) {
     LOG(ERROR) << "could not find distpoints in CRL.";
     return "";
   }
-  string url;
+  std::string url;
   for (size_t i = 0; i < sk_DIST_POINT_num(dps) && url.empty(); i++) {
     DIST_POINT* dp = sk_DIST_POINT_value(dps, i);
     if (dp->distpoint && dp->distpoint->type == 0) {
@@ -823,7 +824,8 @@ bool VerifyCrl(X509_CRL* crl, X509_STORE_CTX* store_ctx) {
   return ok;
 }
 
-bool IsCrlExpired(const string& label, X509_CRL* crl,
+bool IsCrlExpired(const std::string& label,
+                  X509_CRL* crl,
                   absl::optional<absl::Duration> crl_max_valid_duration) {
   // Is the CRL expired?
   if (!X509_CRL_get_nextUpdate(crl) ||
@@ -854,10 +856,9 @@ bool IsCrlExpired(const string& label, X509_CRL* crl,
 //
 // OpenSSLContext
 //
-void OpenSSLContext::Init(
-    const string& hostname,
-    absl::optional<absl::Duration> crl_max_valid_duration,
-    OneshotClosure* invalidate_closure) {
+void OpenSSLContext::Init(const std::string& hostname,
+                          absl::optional<absl::Duration> crl_max_valid_duration,
+                          OneshotClosure* invalidate_closure) {
   AUTOLOCK(lock, &mu_);
   // To keep room to support higher version, let's allow to understand all
   // TLS protocols here, and limit min supported version below.
@@ -899,8 +900,8 @@ OpenSSLContext::~OpenSSLContext() {
   }
 }
 
-ScopedX509CRL OpenSSLContext::GetX509CrlsFromUrl(
-    const string& url, string* crl_str) {
+ScopedX509CRL OpenSSLContext::GetX509CrlsFromUrl(const std::string& url,
+                                                 std::string* crl_str) {
   LOG(INFO) << "ctx:" << this << ": DownloadCrl:" << url;
 
   HttpClient::Options options;
@@ -978,11 +979,11 @@ bool OpenSSLContext::SetupCrlsUnlocked(STACK_OF(X509)* x509s) {
   const int num_x509s = sk_X509_num(x509s);
   for (int i = 0; i < num_x509s; i++) {
     X509* x509 = sk_X509_value(x509s, i);
-    string url = GetCrlUrl(x509);
+    std::string url = GetCrlUrl(x509);
     if (url.empty())
       continue;
     ScopedX509CRL crl;
-    string crl_str;
+    std::string crl_str;
 
     // CRL is loaded in following steps:
     // 1. try memory cache.
@@ -1010,9 +1011,8 @@ bool OpenSSLContext::SetupCrlsUnlocked(STACK_OF(X509)* x509s) {
     }
 
     // Read from disk cache.
-    const string& cache_file =
-        file::JoinPath(GetCacheDirectory(),
-                       "CRL-" + NormalizeToUseFilename(url));
+    const std::string& cache_file = file::JoinPath(
+        GetCacheDirectory(), "CRL-" + NormalizeToUseFilename(url));
     bool is_disk_cache_used = false;
     if (!is_mem_cache_used && ReadFileToString(cache_file.c_str(), &crl_str)) {
       crl = ParseCrl(crl_str);
@@ -1071,7 +1071,7 @@ bool OpenSSLContext::SetupCrlsUnlocked(STACK_OF(X509)* x509s) {
     if (!is_mem_cache_used && !is_disk_cache_used) {
       LOG(INFO) << "ctx:" << this
                 << ": CRL loaded from: " << url;
-      const string& cache_dir = string(file::Dirname(cache_file));
+      const std::string& cache_dir = std::string(file::Dirname(cache_file));
       if (!EnsureDirectory(cache_dir, 0700)) {
         LOG(WARNING) << "Failed to create cache dir: " << cache_dir;
       }
@@ -1209,7 +1209,7 @@ bool OpenSSLContext::IsValidServerIdentity(X509* cert) {
     return false;
   }
 
-  const std::vector<string>& sans = GetAltDNSNames(cert);
+  const std::vector<std::string>& sans = GetAltDNSNames(cert);
   if (sans.empty()) {
     // Subject common name is used only when dNSName is not available.
     //
@@ -1217,7 +1217,7 @@ bool OpenSSLContext::IsValidServerIdentity(X509* cert) {
     // > If a subjectAltName extension of type dNSName is present, that MUST
     // > be used as the identity. Otherwise, the (most specific) Common Name
     // > field in the Subject field of the certificate MUST be used.
-    const string& cn = GetSubjectCommonName(cert);
+    const std::string& cn = GetSubjectCommonName(cert);
     if (OpenSSLContext::IsHostnameMatched(hostname_, cn)) {
       LOG(INFO) << "ctx:" << this
                 << ": Hostname matches with common name:"
@@ -1246,7 +1246,8 @@ bool OpenSSLContext::IsValidServerIdentity(X509* cert) {
   return false;
 }
 
-void OpenSSLContext::SetProxy(const string& proxy_host, const int proxy_port) {
+void OpenSSLContext::SetProxy(const std::string& proxy_host,
+                              const int proxy_port) {
   proxy_host_.assign(proxy_host);
   proxy_port_ = proxy_port;
 }
@@ -1354,7 +1355,7 @@ bool OpenSSLEngine::IsReady() const {
   return state_ == READY;
 }
 
-int OpenSSLEngine::GetDataToSendTransport(string* data) {
+int OpenSSLEngine::GetDataToSendTransport(std::string* data) {
   DCHECK_NE(state_, BEFORE_INIT);
   size_t max_read = BIO_ctrl(network_bio_, BIO_CTRL_PENDING, 0, nullptr);
   if (max_read > 0) {
@@ -1490,7 +1491,7 @@ int OpenSSLEngine::Connect() {
   return UpdateStatus(ret);
 }
 
-string OpenSSLEngine::GetErrorString() const {
+std::string OpenSSLEngine::GetErrorString() const {
   auto err = ERR_peek_last_error();
   if (err == 0) {
     return "ok";
@@ -1500,10 +1501,10 @@ string OpenSSLEngine::GetErrorString() const {
   return error_message;
 }
 
-string OpenSSLEngine::GetLastErrorMessage() const {
+std::string OpenSSLEngine::GetLastErrorMessage() const {
   std::ostringstream oss;
   oss << GetErrorString();
-  const string& ctx_err = ctx_->GetLastErrorMessage();
+  const std::string& ctx_err = ctx_->GetLastErrorMessage();
   if (!ctx_err.empty()) {
     oss << " ctx_error=" << ctx_err;
   }
@@ -1545,12 +1546,11 @@ std::unique_ptr<OpenSSLEngine> OpenSSLEngineCache::GetOpenSSLEngineUnlocked() {
 }
 
 void OpenSSLEngineCache::AddCertificateFromFile(
-    const string& ssl_cert_filename) {
+    const std::string& ssl_cert_filename) {
   OpenSSLCertificateStore::AddCertificateFromFile(ssl_cert_filename);
 }
 
-void OpenSSLEngineCache::AddCertificateFromString(
-    const string& ssl_cert) {
+void OpenSSLEngineCache::AddCertificateFromString(const std::string& ssl_cert) {
   OpenSSLCertificateStore::AddCertificateFromString("user", ssl_cert);
 }
 

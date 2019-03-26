@@ -13,13 +13,11 @@
 #include "counterz.h"
 #include "path.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // TODO: Add stats.
 
-FileStat GlobalFileStatCache::Get(const string& path) {
+FileStat GlobalFileStatCache::Get(const std::string& path) {
   {
     AUTO_SHARED_LOCK(lock, &mu_);
     auto it = file_stats_.find(path);
@@ -67,7 +65,7 @@ FileStatCache::~FileStatCache() {
   DCHECK(!is_acquired_ || THREAD_ID_IS_SELF(owner_thread_id_));
 }
 
-FileStat FileStatCache::Get(const string& filename) {
+FileStat FileStatCache::Get(const std::string& filename) {
   GOMA_COUNTERZ("Get");
 
   DCHECK(is_acquired_ && THREAD_ID_IS_SELF(owner_thread_id_));

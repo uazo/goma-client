@@ -12,7 +12,7 @@ namespace modulemap {
 
 namespace {
 
-bool Parse(const string& str, ModuleMap* module_map) {
+bool Parse(const std::string& str, ModuleMap* module_map) {
   std::unique_ptr<Content> content = Content::CreateFromString(str);
 
   std::vector<Token> tokens;
@@ -349,9 +349,9 @@ module foo {
   const Module& module_foo = module_map.modules()[0];
 
   ASSERT_EQ(1U, module_foo.config_macros().size());
-  EXPECT_EQ(std::vector<string>{"NDEBUG"},
+  EXPECT_EQ(std::vector<std::string>{"NDEBUG"},
             module_foo.config_macros()[0].macros());
-  EXPECT_EQ(std::vector<string>{"exhaustive"},
+  EXPECT_EQ(std::vector<std::string>{"exhaustive"},
             module_foo.config_macros()[0].attributes());
 }
 

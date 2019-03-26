@@ -6,8 +6,6 @@
 
 #include "gtest/gtest.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 TEST(ChromeOSCompilerInfoBuilderHelperTest, IsSimpleChromeClangCommand) {

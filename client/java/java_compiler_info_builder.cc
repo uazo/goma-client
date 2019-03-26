@@ -21,9 +21,9 @@ void JavacCompilerInfoBuilder::SetLanguageExtension(
 
 void JavacCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const string& abs_local_compiler_path,
-    const std::vector<string>& compiler_info_envs,
+    const std::string& local_compiler_path,
+    const std::string& abs_local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs,
     CompilerInfoData* data) const {
   if (!GetJavacVersion(local_compiler_path, compiler_info_envs, flags.cwd(),
                        data->mutable_version())) {
@@ -36,9 +36,11 @@ void JavacCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
 }
 
 // static
-bool JavacCompilerInfoBuilder::ParseJavacVersion(const string& version_info,
-                                                 string* version) {
-  version->assign(string(absl::StripTrailingAsciiWhitespace(version_info)));
+bool JavacCompilerInfoBuilder::ParseJavacVersion(
+    const std::string& version_info,
+    std::string* version) {
+  version->assign(
+      std::string(absl::StripTrailingAsciiWhitespace(version_info)));
   static const char kJavac[] = "javac ";
   static const size_t kJavacLength = sizeof(kJavac) - 1;  // Removed '\0'.
   if (!absl::StartsWith(*version, kJavac)) {
@@ -52,17 +54,17 @@ bool JavacCompilerInfoBuilder::ParseJavacVersion(const string& version_info,
 
 // static
 bool JavacCompilerInfoBuilder::GetJavacVersion(
-    const string& javac,
-    const std::vector<string>& compiler_info_envs,
-    const string& cwd,
-    string* version) {
-  std::vector<string> argv;
+    const std::string& javac,
+    const std::vector<std::string>& compiler_info_envs,
+    const std::string& cwd,
+    std::string* version) {
+  std::vector<std::string> argv;
   argv.push_back(javac);
   argv.push_back("-version");
-  std::vector<string> env(compiler_info_envs);
+  std::vector<std::string> env(compiler_info_envs);
   env.push_back("LC_ALL=C");
   int32_t status = 0;
-  string javac_out;
+  std::string javac_out;
   {
     GOMA_COUNTERZ("ReadCommandOutput(version)");
     javac_out =
@@ -87,10 +89,9 @@ void JavaCompilerInfoBuilder::SetLanguageExtension(
 
 void JavaCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const string& abs_local_compiler_path,
-    const std::vector<string>& compiler_info_envs,
-    CompilerInfoData* data) const {
-}
+    const std::string& local_compiler_path,
+    const std::string& abs_local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs,
+    CompilerInfoData* data) const {}
 
 }  // namespace devtools_goma

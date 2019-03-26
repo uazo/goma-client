@@ -32,8 +32,6 @@ namespace devtools_goma {
 
 namespace {
 
-using std::string;
-
 const char kGCERefreshToken[] = "gce-metadata-service-account";
 const char kServiceAccountRefreshTokenPrefix[] =
     "google-cloud-service-account:";
@@ -55,9 +53,9 @@ class AuthRefreshConfig {
   virtual bool CanRefresh() const = 0;
   virtual bool InitRequest(HttpRequest* req) const = 0;
   // TODO: use absl::string_view for resp_body instead?
-  virtual bool ParseResponseBody(const string& resp_body,
-                                 string* token_type,
-                                 string* access_token,
+  virtual bool ParseResponseBody(const std::string& resp_body,
+                                 std::string* token_type,
+                                 std::string* access_token,
                                  absl::Duration* expires_in) const = 0;
 };
 
@@ -85,8 +83,8 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
     CHECK(shutting_down_);
   }
 
-  string GetAccount() override LOCKS_EXCLUDED(mu_) {
-    string access_token;
+  std::string GetAccount() override LOCKS_EXCLUDED(mu_) {
+    std::string access_token;
     {
       AUTOLOCK(lock, &mu_);
       access_token = access_token_;
@@ -125,9 +123,9 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
       return "";
     }
 
-    string email;
+    std::string email;
     {
-      string err;
+      std::string err;
       Json::Reader reader;
       Json::Value root;
       if (reader.parse(resp.parsed_body(), root, false)) {
@@ -149,7 +147,7 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
     return config_->GetOAuth2Config(config);
   }
 
-  string GetAuthorization() const override LOCKS_EXCLUDED(mu_) {
+  std::string GetAuthorization() const override LOCKS_EXCLUDED(mu_) {
     AUTOLOCK(lock, &mu_);
     if (absl::Now() < token_expiration_time_ && !token_type_.empty() &&
         !access_token_.empty()) {
@@ -516,9 +514,9 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
   std::unique_ptr<HttpClient::Status> status_ GUARDED_BY(mu_);
   State state_ GUARDED_BY(mu_) = NOT_STARTED;
   absl::optional<absl::Time> refresh_deadline_ GUARDED_BY(mu_);
-  string token_type_ GUARDED_BY(mu_);
-  string access_token_ GUARDED_BY(mu_);
-  string account_email_ GUARDED_BY(mu_);
+  std::string token_type_ GUARDED_BY(mu_);
+  std::string access_token_ GUARDED_BY(mu_);
+  std::string account_email_ GUARDED_BY(mu_);
   absl::Time token_expiration_time_ GUARDED_BY(mu_);
   absl::optional<absl::Time> last_network_error_time_ GUARDED_BY(mu_);
   absl::Duration refresh_backoff_duration_ GUARDED_BY(mu_);
@@ -571,9 +569,9 @@ class OAuth2RefreshConfig : public AuthRefreshConfig {
     return !config_.refresh_token.empty();
   }
 
-  bool ParseResponseBody(const string& resp_body,
-                         string* token_type,
-                         string* access_token,
+  bool ParseResponseBody(const std::string& resp_body,
+                         std::string* token_type,
+                         std::string* access_token,
                          absl::Duration* expires_in) const override {
     return ParseOAuth2AccessToken(
         resp_body, token_type, access_token, expires_in);
@@ -692,12 +690,11 @@ class ServiceAccountRefreshConfig : public OAuth2RefreshConfig {
   }
 
   bool InitRequest(HttpRequest* req) const override {
-    const string& service_account_json_filename =
-        config_.refresh_token.substr(
-            strlen(kServiceAccountRefreshTokenPrefix));
+    const std::string& service_account_json_filename =
+        config_.refresh_token.substr(strlen(kServiceAccountRefreshTokenPrefix));
     LOG(INFO) << service_account_json_filename;
     // service account.
-    string saj;
+    std::string saj;
     if (!ReadFileToString(service_account_json_filename, &saj)) {
       LOG(ERROR) << "Failed to read "
                  << service_account_json_filename;
@@ -729,10 +726,10 @@ class ServiceAccountRefreshConfig : public OAuth2RefreshConfig {
       cs.scopes.emplace_back(config_.scope);
     }
     JsonWebToken jwt(cs);
-    string assertion = jwt.Token(*key);
-    const string req_body = absl::StrCat(
-        "grant_type=", JsonWebToken::kGrantTypeEncoded,
-        "&assertion=", assertion);
+    std::string assertion = jwt.Token(*key);
+    const std::string req_body =
+        absl::StrCat("grant_type=", JsonWebToken::kGrantTypeEncoded,
+                     "&assertion=", assertion);
     VLOG(1) << req_body;
     req->SetBody(req_body);
     return true;
@@ -787,11 +784,10 @@ class RefreshTokenRefreshConfig : public OAuth2RefreshConfig {
     LOG(INFO) << "init request:refresh token";
 
     // TODO: reconstruct client if config_.token_uri has been changed?
-    const string req_body = absl::StrCat(
+    const std::string req_body = absl::StrCat(
         "client_id=", config_.client_id,
         "&client_secret=", config_.client_secret,
-        "&refresh_token=", config_.refresh_token,
-        "&grant_type=refresh_token");
+        "&refresh_token=", config_.refresh_token, "&grant_type=refresh_token");
     VLOG(1) << req_body;
     req->SetBody(req_body);
     return true;
@@ -819,9 +815,9 @@ class LuciAuthRefreshConfig : public AuthRefreshConfig {
     options.dest_host_name = kLuciLocalAuthServiceHost;
     options.dest_port = local_auth.rpc_port;
     options.url_path_prefix = kLuciLocalAuthServicePath;
-    std::vector<string> scopes;
+    std::vector<std::string> scopes;
     scopes.emplace_back(kGomaAuthScope);
-    const string& scope = http_options.oauth2_config.scope;
+    const std::string& scope = http_options.oauth2_config.scope;
     if (scope != "" && scope != kGomaAuthScope) {
       scopes.emplace_back(scope);
     }
@@ -875,9 +871,9 @@ class LuciAuthRefreshConfig : public AuthRefreshConfig {
     return true;
   }
 
-  bool ParseResponseBody(const string& resp_body,
-                         string* token_type,
-                         string* access_token,
+  bool ParseResponseBody(const std::string& resp_body,
+                         std::string* token_type,
+                         std::string* access_token,
                          absl::Duration* expires_in) const override {
     static const char kTokenType[] = "Bearer";
     LuciOAuthTokenResponse resp;
@@ -893,11 +889,12 @@ class LuciAuthRefreshConfig : public AuthRefreshConfig {
   }
 
  private:
-  LuciAuthRefreshConfig(LuciContextAuth local_auth, std::vector<string> scopes)
+  LuciAuthRefreshConfig(LuciContextAuth local_auth,
+                        std::vector<std::string> scopes)
       : local_auth_(std::move(local_auth)), scopes_(std::move(scopes)) {}
 
   LuciContextAuth local_auth_;
-  const std::vector<string> scopes_;
+  const std::vector<std::string> scopes_;
 };
 
 }  // namespace

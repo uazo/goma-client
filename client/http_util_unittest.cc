@@ -9,8 +9,6 @@
 #include "absl/strings/escaping.h"
 #include "client/ioutil.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 TEST(HttpUtilTest, ExtractHeaderField) {
@@ -32,9 +30,9 @@ TEST(HttpUtilTest, ExtractHeaderField) {
 }
 
 TEST(HttpUtilTest, FindContentLengthAndBodyOffset) {
-  string data = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nH";
-  size_t body_offset = string::npos;
-  size_t content_length = string::npos;
+  std::string data = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nH";
+  size_t body_offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_TRUE(FindContentLengthAndBodyOffset(
       data, &content_length, &body_offset, &is_chunked));
@@ -51,33 +49,33 @@ TEST(HttpUtilTest, FindContentLengthAndBodyOffset) {
 }
 
 TEST(HttpUtilTest, FindContentLengthAndBodyOffsetInHeader) {
-  string data = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nH";
-  size_t body_offset = string::npos;
-  size_t content_length = string::npos;
+  std::string data = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nH";
+  size_t body_offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_FALSE(FindContentLengthAndBodyOffset(
       data, &content_length, &body_offset, &is_chunked));
-  EXPECT_EQ(string::npos, body_offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, body_offset);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 
   data = "GET / HTTP/1.1\r\nContent-Length: 5\r\nH";
   EXPECT_FALSE(FindContentLengthAndBodyOffset(
       data, &content_length, &body_offset, &is_chunked));
-  EXPECT_EQ(string::npos, body_offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, body_offset);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 }
 
 TEST(HttpUtilTest, FindContentLengthAndBodyOffsetNoLength) {
-  string data = "HTTP/1.1 200 OK\r\nHost: example.com\r\n\r\nH";
-  size_t body_offset = string::npos;
-  size_t content_length = string::npos;
+  std::string data = "HTTP/1.1 200 OK\r\nHost: example.com\r\n\r\nH";
+  size_t body_offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_TRUE(FindContentLengthAndBodyOffset(
       data, &content_length, &body_offset, &is_chunked));
   EXPECT_EQ(data.size() - 1, body_offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 
   data = "HTTP/1.1 200 Ok\r\nHost: example.com\r\n\r\n"
@@ -85,14 +83,14 @@ TEST(HttpUtilTest, FindContentLengthAndBodyOffsetNoLength) {
   EXPECT_TRUE(FindContentLengthAndBodyOffset(
       data, &content_length, &body_offset, &is_chunked));
   EXPECT_EQ(data.size() - strlen("Content-Length: 10"), body_offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 
   data = "GET / HTTP/1.1\r\nHost: example.com\r\n\r\nH";
   EXPECT_TRUE(FindContentLengthAndBodyOffset(
       data, &content_length, &body_offset, &is_chunked));
   EXPECT_EQ(data.size() - 1, body_offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 
   data = "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"
@@ -100,34 +98,34 @@ TEST(HttpUtilTest, FindContentLengthAndBodyOffsetNoLength) {
   EXPECT_TRUE(FindContentLengthAndBodyOffset(
       data, &content_length, &body_offset, &is_chunked));
   EXPECT_EQ(data.size() - strlen("Content-Length: 10"), body_offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 }
 
 TEST(HttpUtilTest, FindContentLengthAndBodyOffsetChunked) {
-  string data = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n1";
-  size_t body_offset = string::npos;
-  size_t content_length = string::npos;
+  std::string data = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n1";
+  size_t body_offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_TRUE(FindContentLengthAndBodyOffset(
       data, &content_length, &body_offset, &is_chunked));
   EXPECT_EQ(data.size() - 1, body_offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_TRUE(is_chunked);
 
   data = "GET / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1";
   EXPECT_TRUE(FindContentLengthAndBodyOffset(
       data, &content_length, &body_offset, &is_chunked));
   EXPECT_EQ(data.size() - 1, body_offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_TRUE(is_chunked);
 }
 
 TEST(HttpUtilTest, ParseHttpResponse) {
-  string response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello";
+  std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello";
   int http_status_code = 0;
-  size_t offset = string::npos;
-  size_t content_length = string::npos;
+  size_t offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_TRUE(ParseHttpResponse(response, &http_status_code,
                                 &offset, &content_length, &is_chunked));
@@ -138,10 +136,10 @@ TEST(HttpUtilTest, ParseHttpResponse) {
 }
 
 TEST(HttpUtilTest, ParseHttpResponseInStatusLine) {
-  string response = "H";
+  std::string response = "H";
   int http_status_code = 0;
-  size_t offset = string::npos;
-  size_t content_length = string::npos;
+  size_t offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_FALSE(ParseHttpResponse(response, &http_status_code,
                                  &offset, &content_length, &is_chunked));
@@ -162,16 +160,16 @@ TEST(HttpUtilTest, ParseHttpResponseInStatusLine) {
 }
 
 TEST(HttpUtilTest, ParseHttpResponseBadStatus) {
-  string response = "220 localhost ESMTP";
+  std::string response = "220 localhost ESMTP";
   int http_status_code = 0;
-  size_t offset = string::npos;
-  size_t content_length = string::npos;
+  size_t offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_TRUE(ParseHttpResponse(response, &http_status_code,
                                 &offset, &content_length, &is_chunked));
   EXPECT_EQ(0, http_status_code);
   EXPECT_EQ(0UL, offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 
   response = "HTTP/1.1 301 Moved Parmenently\r\n";
@@ -179,7 +177,7 @@ TEST(HttpUtilTest, ParseHttpResponseBadStatus) {
                                 &offset, &content_length, &is_chunked));
   EXPECT_EQ(301, http_status_code);
   EXPECT_EQ(0UL, offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 
   response = "HTTP/1.1 403 Forbidden\r\n";
@@ -187,7 +185,7 @@ TEST(HttpUtilTest, ParseHttpResponseBadStatus) {
                                 &offset, &content_length, &is_chunked));
   EXPECT_EQ(403, http_status_code);
   EXPECT_EQ(0UL, offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 
   response = "HTTP/1.1 502 Bad Gateway\r\n";
@@ -195,28 +193,28 @@ TEST(HttpUtilTest, ParseHttpResponseBadStatus) {
                                 &offset, &content_length, &is_chunked));
   EXPECT_EQ(502, http_status_code);
   EXPECT_EQ(0UL, offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 }
 
 TEST(HttpUtilTest, ParseHttpResponseInHeader) {
-  string response = "HTTP/1.1 200 Ok\r\nHost: example.com";
+  std::string response = "HTTP/1.1 200 Ok\r\nHost: example.com";
   int http_status_code = 0;
-  size_t offset = string::npos;
-  size_t content_length = string::npos;
+  size_t offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_FALSE(ParseHttpResponse(response, &http_status_code,
                                  &offset, &content_length, &is_chunked));
   EXPECT_EQ(200, http_status_code);
   EXPECT_EQ(0UL, offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 
   response = "HTTP/1.1 200 Ok\r\nHost: example.com\r\nContent-Length: 5\r\n";
   EXPECT_FALSE(ParseHttpResponse(response, &http_status_code,
                                  &offset, &content_length, &is_chunked));
   EXPECT_EQ(200, http_status_code);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_FALSE(is_chunked);
 
   response = "HTTP/1.1 200 Ok\r\nHost: example.com\r\n"
@@ -230,11 +228,12 @@ TEST(HttpUtilTest, ParseHttpResponseInHeader) {
 }
 
 TEST(HttpUtilTest, ParseHttpResponseShortBody) {
-  string response = "HTTP/1.1 200 Ok\r\nHost: example.com\r\n"
+  std::string response =
+      "HTTP/1.1 200 Ok\r\nHost: example.com\r\n"
       "Content-Length: 5\r\n\r\nH";
   int http_status_code = 0;
-  size_t offset = string::npos;
-  size_t content_length = string::npos;
+  size_t offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_TRUE(ParseHttpResponse(response, &http_status_code,
                                 &offset, &content_length, &is_chunked));
@@ -245,22 +244,23 @@ TEST(HttpUtilTest, ParseHttpResponseShortBody) {
 }
 
 TEST(HttpUtilTest, ParseHttpResponseChunked) {
-  string response = "HTTP/1.1 200 Ok\r\nHost: example.com\r\n"
+  std::string response =
+      "HTTP/1.1 200 Ok\r\nHost: example.com\r\n"
       "Transfer-Encoding: chunked\r\n\r\n5\r\nhello";
   int http_status_code = 0;
-  size_t offset = string::npos;
-  size_t content_length = string::npos;
+  size_t offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_TRUE(ParseHttpResponse(response, &http_status_code,
                                 &offset, &content_length, &is_chunked));
   EXPECT_EQ(200, http_status_code);
   EXPECT_EQ(response.size() - strlen("5\r\nhello"), offset);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_TRUE(is_chunked);
 }
 
-string CombineChunks(const std::vector<absl::string_view>& chunks) {
-  string dechunked;
+std::string CombineChunks(const std::vector<absl::string_view>& chunks) {
+  std::string dechunked;
   for (const auto& it : chunks) {
     dechunked.append(it.data(), it.size());
   }
@@ -281,18 +281,18 @@ TEST(HttpUtilTest, ChunkedTransferEncodingWithTwoSpace) {
       "\r\n";
 
   int http_status_code = 0;
-  size_t offset = string::npos;
-  size_t content_length = string::npos;
+  size_t offset = std::string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   EXPECT_TRUE(ParseHttpResponse(kResponse, &http_status_code,
                                 &offset, &content_length, &is_chunked));
   EXPECT_EQ(200, http_status_code);
-  EXPECT_EQ(string::npos, content_length);
+  EXPECT_EQ(std::string::npos, content_length);
   EXPECT_EQ(true, is_chunked);
 }
 
 TEST(HttpUtilTest, ParseQuery) {
-  std::map<string, string> params = ParseQuery("");
+  std::map<std::string, std::string> params = ParseQuery("");
   EXPECT_TRUE(params.empty());
 
   static const char* kQuery = "a=b&";

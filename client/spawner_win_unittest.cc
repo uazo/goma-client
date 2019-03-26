@@ -30,21 +30,21 @@ TEST(SpawnerWin, SpawnerAndLogToFile) {
   GetModuleFileNameA(nullptr, buffer, PATH_MAX);
   *strrchr(buffer, '\\') = 0;
 
-  const string cwd(buffer);
-  const string prog(".\\dump_env.exe");
-  std::vector<string> argv;
+  const std::string cwd(buffer);
+  const std::string prog(".\\dump_env.exe");
+  std::vector<std::string> argv;
   argv.push_back("dump_env.exe");
   argv.push_back("arg1");
   argv.push_back("arg2");
-  std::vector<string> envs;
+  std::vector<std::string> envs;
   envs.push_back("TEST_STRING1=goma");
   envs.push_back("TEST_STRING2=win");
   // TODO: remove these when spawn_win do not find command.
   envs.push_back("PATH=" + devtools_goma::GetEnv("PATH"));
   envs.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT"));
 
-  const string stdout_filename("dump_env.stdout.log");
-  const string stderr_filename("dump_env.stderr.log");
+  const std::string stdout_filename("dump_env.stdout.log");
+  const std::string stderr_filename("dump_env.stderr.log");
 
   // priority not supported yet
   // req.set_priority(devtools_goma::SubProcessReq_Priority_HIGH_PRIORITY);

@@ -24,8 +24,8 @@ bool Macro::IsParenBalanced(const ArrayTokenList& tokens) {
   return level == 0;
 }
 
-string Macro::DebugString(CppParser* parser) const {
-  string str;
+std::string Macro::DebugString(CppParser* parser) const {
+  std::string str;
   str.reserve(64);
   str.append("Macro[");
   str.append(name);

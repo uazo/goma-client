@@ -24,8 +24,6 @@
 #include "path.h"
 #include "unittest_util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class LibraryPathResolverTest : public testing::Test {
@@ -63,7 +61,7 @@ TEST_F(LibraryPathResolverTest, SimpleTest) {
   tmpdir_util_->CreateEmptyFile("/usr/local/lib/libX11.so");
   tmpdir_util_->CreateEmptyFile("/usr/local/lib/libglib.so");
 
-  std::vector<string> search_dirs;
+  std::vector<std::string> search_dirs;
   search_dirs.push_back("/lib");
   search_dirs.push_back("/usr/lib");
   LibraryPathResolver library_path_resolver(cwd_);
@@ -95,7 +93,7 @@ TEST_F(LibraryPathResolverTest, SimpleTest) {
   tmpdir_util_->CreateEmptyFile("/yet/another/dir/libdummy3.dylib");
 
   // /usr/lib and /usr/local/lib are default search path.
-  std::vector<string> search_dirs;
+  std::vector<std::string> search_dirs;
   search_dirs.push_back("/this/is/test/dir");
   LibraryPathResolver library_path_resolver(cwd_);
   library_path_resolver.AppendSearchdirs(search_dirs);
@@ -123,7 +121,7 @@ TEST_F(LibraryPathResolverTest, SimpleTest) {
   tmpdir_util_->CreateEmptyFile(
       "\\Program Files\\Microsoft SDKs\\Windows\\v7.1\\Lib\\msxml2.lib");
   tmpdir_util_->CreateEmptyFile("\\vs10\\vc\\lib\\libcmtd.lib");
-  std::vector<string> search_dirs;
+  std::vector<std::string> search_dirs;
   search_dirs.push_back("\\vs9\\vc\\lib");
   search_dirs.push_back("\\Program Files\\Microsoft SDKs\\Windows\\v7.1\\Lib");
   LibraryPathResolver library_path_resolver(cwd_);
@@ -153,7 +151,7 @@ TEST_F(LibraryPathResolverTest, SimpleTestStatic) {
   tmpdir_util_->CreateEmptyFile("/usr/local/lib/libglib.so");
   tmpdir_util_->CreateEmptyFile("/usr/local/lib/libglib.a");
 
-  std::vector<string> search_dirs;
+  std::vector<std::string> search_dirs;
   search_dirs.push_back("/lib");
   search_dirs.push_back("/usr/lib");
   LibraryPathResolver library_path_resolver(cwd_);

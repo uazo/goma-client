@@ -73,17 +73,19 @@ namespace devtools_goma {
 namespace {
 
 #ifdef _WIN32
-string FindLogFile(string log_dir, string base_name, string log_type) {
+std::string FindLogFile(std::string log_dir,
+                        std::string base_name,
+                        std::string log_type) {
   // Log file is in log_dir and its name is like
   // <base_name>.<host_name>.<user_name>.log.<log_type>.<timestamp>.<pid>
-  const string pid = std::to_string(GetCurrentProcessId());
+  const std::string pid = std::to_string(GetCurrentProcessId());
 
-  string pattern = log_dir;
+  std::string pattern = log_dir;
   pattern.append("\\");
   pattern.append(base_name);
   pattern.append("*");
 
-  string found_file;
+  std::string found_file;
   WIN32_FIND_DATAA find_data = {};
   HANDLE find_handle = FindFirstFileA(pattern.c_str(), &find_data);
   if (find_handle != INVALID_HANDLE_VALUE) {
@@ -102,9 +104,9 @@ string FindLogFile(string log_dir, string base_name, string log_type) {
 
 }  // namespace
 
-CompilerProxyHttpHandler::CompilerProxyHttpHandler(string myname,
-                                                   string setting,
-                                                   string tmpdir,
+CompilerProxyHttpHandler::CompilerProxyHttpHandler(std::string myname,
+                                                   std::string setting,
+                                                   std::string tmpdir,
                                                    WorkerThreadManager* wm)
     : myname_(std::move(myname)),
       setting_(std::move(setting)),
@@ -191,7 +193,7 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(string myname,
       << "GOMA_NETWORK_ERROR_THRESHOLD_PERCENT must be less than 100: "
       << FLAGS_NETWORK_ERROR_THRESHOLD_PERCENT;
   if (FLAGS_BACKEND_SOFT_STICKINESS) {
-    string cookie;
+    std::string cookie;
     if (FLAGS_BACKEND_SOFT_STICKINESS_REFRESH) {
       cookie = GetRandomAlphanumeric(64);
     } else {
@@ -286,7 +288,7 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(string myname,
   service_.SetAllowedMaxActiveFailFallbackDuration(
       absl::Seconds(FLAGS_ALLOWED_MAX_ACTIVE_FAIL_FALLBACK_DURATION));
 
-  std::vector<string> timeout_secs_str = ToVector(absl::StrSplit(
+  std::vector<std::string> timeout_secs_str = ToVector(absl::StrSplit(
       FLAGS_COMPILER_PROXY_RPC_TIMEOUT_SECS, ',', absl::SkipEmpty()));
   std::vector<absl::Duration> timeouts;
   timeouts.reserve(timeout_secs_str.size());
@@ -474,7 +476,7 @@ bool CompilerProxyHttpHandler::InitialPing() {
 
 void CompilerProxyHttpHandler::HandleHttpRequest(
     ThreadpoolHttpServer::HttpServerRequest* http_server_request) {
-  const string& path = http_server_request->req_path();
+  const std::string& path = http_server_request->req_path();
   if (service_.compiler_proxy_id_prefix().empty()) {
     std::ostringstream ss;
     ss << service_.username() << "@" << service_.nodename() << ":"
@@ -483,7 +485,7 @@ void CompilerProxyHttpHandler::HandleHttpRequest(
     if (FLAGS_SEND_USER_INFO) {
       service_.SetCompilerProxyIdPrefix(ss.str());
     } else {
-      string hash;
+      std::string hash;
       ComputeDataHashKey(ss.str(), &hash);
       std::ostringstream sss;
       sss << "anonymous@" << hash << ":8088/" << service_.start_time() << "/";
@@ -549,7 +551,7 @@ void CompilerProxyHttpHandler::HandleHttpRequest(
   // Most paths will be accessed by browser, so checked by IsTrusted().
   if (http_server_request->IsTrusted()) {
     HttpHandlerMethod handler = nullptr;
-    std::map<string, HttpHandlerMethod>::const_iterator found =
+    std::map<std::string, HttpHandlerMethod>::const_iterator found =
         internal_http_handlers_.find(path);
     if (found != internal_http_handlers_.end()) {
       handler = found->second;
@@ -557,10 +559,10 @@ void CompilerProxyHttpHandler::HandleHttpRequest(
       handler = found->second;
       // Users are checking the console... This would be a good
       // timing for flushing logs.
-      devtools_goma::FlushLogFiles();
+      FlushLogFiles();
     }
     if (handler != nullptr) {
-      string response;
+      std::string response;
       int responsecode = (this->*handler)(*http_server_request, &response);
       if (response.empty()) {
         if (responsecode == 404) {
@@ -582,7 +584,7 @@ void CompilerProxyHttpHandler::HandleHttpRequest(
       DumpCounterz();
       DumpDirectiveOptimizer();
       LOG(INFO) << "Dump done.";
-      devtools_goma::FlushLogFiles();
+      FlushLogFiles();
       http_server_request->SendReply("HTTP/1.1 200 OK\r\n\r\nquit!");
       http_server_request = nullptr;
       service_.Quit();
@@ -624,7 +626,8 @@ void CompilerProxyHttpHandler::OutputOkHeader(const char* content_type,
       << "Content-Type: " << content_type << "\r\n\r\n";
 }
 
-int CompilerProxyHttpHandler::Redirect(const string& url, string* response) {
+int CompilerProxyHttpHandler::Redirect(const std::string& url,
+                                       std::string* response) {
   std::ostringstream ss;
   ss << "HTTP/1.1 302 Found\r\n"
      << "Location: " << url << "\r\n"
@@ -633,7 +636,7 @@ int CompilerProxyHttpHandler::Redirect(const string& url, string* response) {
   return 302;
 }
 
-int CompilerProxyHttpHandler::BadRequest(string* response) {
+int CompilerProxyHttpHandler::BadRequest(std::string* response) {
   *response = "HTTP/1.1 400 Bad Request\r\n\r\n";
   return 400;
 }
@@ -649,16 +652,17 @@ void CompilerProxyHttpHandler::OutputOkHeaderAndBody(const char* content_type,
 
 int CompilerProxyHttpHandler::HandleStatusRequest(
     const HttpServerRequest& request,
-    string* response) {
-  return HandleStatusRequestHtml(request,
-                                 string(compiler_proxy_status_html5_html_start,
-                                        compiler_proxy_status_html5_html_size),
-                                 response);
+    std::string* response) {
+  return HandleStatusRequestHtml(
+      request,
+      std::string(compiler_proxy_status_html5_html_start,
+                  compiler_proxy_status_html5_html_size),
+      response);
 }
 
 int CompilerProxyHttpHandler::HandleCompilerzRequest(
     const HttpServerRequest& request,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeaderAndBody(
       "text/html; charset=utf-8",
@@ -670,7 +674,7 @@ int CompilerProxyHttpHandler::HandleCompilerzRequest(
 
 int CompilerProxyHttpHandler::HandleCompilerzScript(
     const HttpServerRequest& request,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeaderAndBody(
       "text/javascript; charset=utf-8",
@@ -682,7 +686,7 @@ int CompilerProxyHttpHandler::HandleCompilerzScript(
 
 int CompilerProxyHttpHandler::HandleCompilerzStyle(
     const HttpServerRequest& request,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeaderAndBody(
       "text/css; charset=utf-8",
@@ -693,7 +697,7 @@ int CompilerProxyHttpHandler::HandleCompilerzStyle(
 }
 
 int CompilerProxyHttpHandler::HandleJQuery(const HttpServerRequest& request,
-                                           string* response) {
+                                           std::string* response) {
   std::ostringstream ss;
   OutputOkHeaderAndBody(
       "text/javascript; charset=utf-8",
@@ -704,7 +708,7 @@ int CompilerProxyHttpHandler::HandleJQuery(const HttpServerRequest& request,
 }
 
 int CompilerProxyHttpHandler::HandleChartJS(const HttpServerRequest& request,
-                                            string* response) {
+                                            std::string* response) {
   std::ostringstream ss;
   OutputOkHeaderAndBody(
       "text/javascript; charset=utf-8",
@@ -715,9 +719,8 @@ int CompilerProxyHttpHandler::HandleChartJS(const HttpServerRequest& request,
   return 200;
 }
 
-int CompilerProxyHttpHandler::HandleLegendHelp(
-    const HttpServerRequest& request,
-    string* response) {
+int CompilerProxyHttpHandler::HandleLegendHelp(const HttpServerRequest& request,
+                                               std::string* response) {
   std::ostringstream ss;
   OutputOkHeaderAndBody(
       "text/html; charset=utf-8",
@@ -728,7 +731,7 @@ int CompilerProxyHttpHandler::HandleLegendHelp(
 }
 
 int CompilerProxyHttpHandler::HandleStatusLogo(const HttpServerRequest& request,
-                                               string* response) {
+                                               std::string* response) {
   std::ostringstream ss;
   OutputOkHeaderAndBody("image/png; charset=utf-8",
                         absl::string_view(compiler_proxy_status_logo_png_start,
@@ -740,7 +743,7 @@ int CompilerProxyHttpHandler::HandleStatusLogo(const HttpServerRequest& request,
 
 int CompilerProxyHttpHandler::HandleStatusJavaScript(
     const HttpServerRequest& request,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeaderAndBody("text/javascript; charset=utf-8",
                         absl::string_view(compiler_proxy_status_script_js_start,
@@ -752,7 +755,7 @@ int CompilerProxyHttpHandler::HandleStatusJavaScript(
 
 int CompilerProxyHttpHandler::HandleContentionzJavaScript(
     const HttpServerRequest& request,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeaderAndBody(
       "text/javascript; charset=utf-8",
@@ -764,7 +767,7 @@ int CompilerProxyHttpHandler::HandleContentionzJavaScript(
 }
 
 int CompilerProxyHttpHandler::HandleStatusCSS(const HttpServerRequest& request,
-                                              string* response) {
+                                              std::string* response) {
   std::ostringstream ss;
   OutputOkHeaderAndBody("text/css; charset=utf-8",
                         absl::string_view(compiler_proxy_status_style_css_start,
@@ -777,13 +780,13 @@ int CompilerProxyHttpHandler::HandleStatusCSS(const HttpServerRequest& request,
 // Helper function for HandleStatusRequest() and HandleStatusRequestOld().
 int CompilerProxyHttpHandler::HandleStatusRequestHtml(
     const HttpServerRequest& request,
-    const string& original_status,
-    string* response) {
+    const std::string& original_status,
+    std::string* response) {
   std::ostringstream endpoints;
   GetEndpoints(&endpoints);
   std::ostringstream global_info;
   GetGlobalInfo(request, &global_info);
-  string status = absl::StrReplaceAll(
+  std::string status = absl::StrReplaceAll(
       original_status, {
                            {"{{ENDPOINTS}}", endpoints.str()},
                            {"{{GLOBAL_INFO}}", global_info.str()},
@@ -882,11 +885,11 @@ void CompilerProxyHttpHandler::GetGlobalInfo(const HttpServerRequest& request,
 
 int CompilerProxyHttpHandler::HandleTaskRequest(
     const HttpServerRequest& request,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   if (request.method() != "POST") {
     // Check for cross-site script inclusion (XSSI).
-    const string content =
+    const std::string content =
         "unacceptable http method:" + request.method() + "\r\n";
     ss << "HTTP/1.1 405 Method Not Allowed\r\n";
     ss << "Content-Type: text/plain\r\n";
@@ -897,22 +900,22 @@ int CompilerProxyHttpHandler::HandleTaskRequest(
     return 405;
   }
   if (!FLAGS_API_TASKZ_FILE_FOR_TEST.empty()) {
-    string content;
+    std::string content;
     CHECK(ReadFileToString(FLAGS_API_TASKZ_FILE_FOR_TEST, &content))
         << FLAGS_API_TASKZ_FILE_FOR_TEST;
     OutputOkHeaderAndBody("application/json", content, &ss);
     *response = ss.str();
     return 200;
   }
-  const string& query = request.query();
-  std::map<string, string> params = ParseQuery(query);
+  const std::string& query = request.query();
+  std::map<std::string, std::string> params = ParseQuery(query);
   auto p = params.find("id");
   if (p != params.end()) {
-    const string& task_id_str = p->second;
+    const std::string& task_id_str = p->second;
     int task_id = atoi(task_id_str.c_str());
 
     if (params["dump"] == "req") {
-      string message;
+      std::string message;
       if (!service_.DumpTaskRequest(task_id, &message)) {
         ss << "HTTP/1.1 404 Not found\r\n";
         ss << "\r\n";
@@ -924,7 +927,7 @@ int CompilerProxyHttpHandler::HandleTaskRequest(
       return 200;
     }
 
-    string json;
+    std::string json;
     if (!service_.DumpTask(task_id, &json)) {
       ss << "HTTP/1.1 404 Not found\r\n";
       ss << "\r\n";
@@ -938,7 +941,7 @@ int CompilerProxyHttpHandler::HandleTaskRequest(
   int64_t after_ms = 0;
   p = params.find("after");
   if (p != params.end()) {
-    const string& after_str = p->second;
+    const std::string& after_str = p->second;
 #ifndef _WIN32
     after_ms = strtoll(after_str.c_str(), nullptr, 10);
 #else
@@ -959,13 +962,13 @@ int CompilerProxyHttpHandler::HandleTaskRequest(
 
 int CompilerProxyHttpHandler::HandleAccountRequest(
     const HttpServerRequest& /* req */,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("application/json", &ss);
   ss << "{";
   ss << "\"status\": "
      << EscapeString(service_.http_client()->GetHealthStatusMessage());
-  const string& account = service_.http_client()->GetAccount();
+  const std::string& account = service_.http_client()->GetAccount();
   if (!account.empty()) {
     ss << ", \"account\": " << EscapeString(account);
   }
@@ -992,7 +995,7 @@ int CompilerProxyHttpHandler::HandleAccountRequest(
 
 int CompilerProxyHttpHandler::HandleStatsRequest(
     const HttpServerRequest& request,
-    string* response) {
+    std::string* response) {
   bool emit_json = false;
   for (const auto& s : absl::StrSplit(request.query(), '&')) {
     if (s == "format=json") {
@@ -1004,7 +1007,7 @@ int CompilerProxyHttpHandler::HandleStatsRequest(
   std::ostringstream ss;
   if (emit_json) {
     OutputOkHeader("text/json", &ss);
-    string json_string;
+    std::string json_string;
     service_.DumpStatsJson(&json_string, CompileService::kHumanReadable);
     ss << json_string;
   } else {
@@ -1018,8 +1021,8 @@ int CompilerProxyHttpHandler::HandleStatsRequest(
 
 int CompilerProxyHttpHandler::HandleHistogramRequest(
     const HttpServerRequest& request,
-    string* response) {
-  const string& query = request.query();
+    std::string* response) {
+  const std::string& query = request.query();
   bool reset = strstr(query.c_str(), "reset") != nullptr;
   std::ostringstream ss;
   OutputOkHeader("text/plain", &ss);
@@ -1034,7 +1037,7 @@ int CompilerProxyHttpHandler::HandleHistogramRequest(
 
 int CompilerProxyHttpHandler::HandleHttpRpcRequest(
     const HttpServerRequest& /* request */,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("text/plain", &ss);
   ss << "[http configuration]\n\n" << service_.http_client()->DebugString();
@@ -1048,7 +1051,7 @@ int CompilerProxyHttpHandler::HandleHttpRpcRequest(
 
 int CompilerProxyHttpHandler::HandleThreadRequest(
     const HttpServerRequest& /* request */,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("text/plain", &ss);
   ss << "[worker threads]\n\n" << service_.wm()->DebugString();
@@ -1059,12 +1062,13 @@ int CompilerProxyHttpHandler::HandleThreadRequest(
 
 int CompilerProxyHttpHandler::HandleContentionRequest(
     const HttpServerRequest& request,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
 
   if (g_auto_lock_stats) {
-    std::unordered_set<string> skip_name = {
-        "descriptor_poller::PollEvents", "worker_thread::NextClosure",
+    std::unordered_set<std::string> skip_name = {
+        "descriptor_poller::PollEvents",
+        "worker_thread::NextClosure",
     };
 
     for (const auto& s : absl::StrSplit(request.query(), '&')) {
@@ -1090,7 +1094,7 @@ int CompilerProxyHttpHandler::HandleContentionRequest(
 
 int CompilerProxyHttpHandler::HandleFileCacheRequest(
     const HttpServerRequest& /* request */,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("text/plain", &ss);
   ss << "[file hash cache]\n\n" << service_.file_hash_cache()->DebugString();
@@ -1100,7 +1104,7 @@ int CompilerProxyHttpHandler::HandleFileCacheRequest(
 
 int CompilerProxyHttpHandler::HandleCompilerInfoRequest(
     const HttpServerRequest& /* request */,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("text/plain", &ss);
   service_.DumpCompilerInfo(&ss);
@@ -1110,7 +1114,7 @@ int CompilerProxyHttpHandler::HandleCompilerInfoRequest(
 
 int CompilerProxyHttpHandler::HandleCompilerJSONRequest(
     const HttpServerRequest& /* request */,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("application/json", &ss);
 
@@ -1124,7 +1128,7 @@ int CompilerProxyHttpHandler::HandleCompilerJSONRequest(
 
 int CompilerProxyHttpHandler::HandleIncludeCacheRequest(
     const HttpServerRequest& /* request */,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("text/plain", &ss);
   IncludeCache::DumpAll(&ss);
@@ -1134,7 +1138,7 @@ int CompilerProxyHttpHandler::HandleIncludeCacheRequest(
 
 int CompilerProxyHttpHandler::HandleFlagRequest(
     const HttpServerRequest& /* request */,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("text/plain", &ss);
   DumpEnvFlag(&ss);
@@ -1144,7 +1148,7 @@ int CompilerProxyHttpHandler::HandleFlagRequest(
 
 int CompilerProxyHttpHandler::HandleVersionRequest(
     const HttpServerRequest& /* request */,
-    string* response) {
+    std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("text/plain", &ss);
   ss << kBuiltRevisionString;
@@ -1154,9 +1158,10 @@ int CompilerProxyHttpHandler::HandleVersionRequest(
 
 int CompilerProxyHttpHandler::HandleHealthRequest(
     const HttpServerRequest& request,
-    string* response) {
-  const string& query = request.query();
-  const string health_status = service_.http_client()->GetHealthStatusMessage();
+    std::string* response) {
+  const std::string& query = request.query();
+  const std::string health_status =
+      service_.http_client()->GetHealthStatusMessage();
   *response = "HTTP/1.1 200 OK\r\n\r\n" + health_status;
   if (!setting_.empty()) {
     *response += "\nsetting=" + setting_;
@@ -1173,11 +1178,11 @@ int CompilerProxyHttpHandler::HandleHealthRequest(
 
 int CompilerProxyHttpHandler::HandlePortRequest(
     const HttpServerRequest& request,
-    string* response) {
+    std::string* response) {
   LOG(INFO) << "handle portz port=" << request.server().port();
   HttpPortResponse resp;
   resp.set_port(request.server().port());
-  string serialized_resp;
+  std::string serialized_resp;
   resp.SerializeToString(&serialized_resp);
 
   std::ostringstream oss;
@@ -1190,11 +1195,11 @@ int CompilerProxyHttpHandler::HandlePortRequest(
 }
 
 int CompilerProxyHttpHandler::HandleLogRequest(const HttpServerRequest& request,
-                                               string* response) {
+                                               std::string* response) {
   std::ostringstream oss;
-  const string& log_request = request.query();
+  const std::string& log_request = request.query();
   if (log_request.empty()) {
-    string content =
+    std::string content =
         ("<a href=\"?INFO\">INFO</a> /"
          "<a href=\"?WARNING\">WARNING</a> /"
          "<a href=\"?ERROR\">ERROR</a>"
@@ -1210,13 +1215,13 @@ int CompilerProxyHttpHandler::HandleLogRequest(const HttpServerRequest& request,
         << "Content-Length: " << content.size() << "\r\n\r\n"
         << content;
   } else {
-    const std::vector<string>& log_dirs = google::GetLoggingDirectories();
+    const std::vector<std::string>& log_dirs = google::GetLoggingDirectories();
     if (log_dirs.empty()) {
       LOG(ERROR) << "No logging directories";
       return 404;
     }
-    string log_suffix;
-    string log_type = log_request;
+    std::string log_suffix;
+    std::string log_type = log_request;
     if (log_request.find("subproc-") == 0) {
       log_suffix = "-subproc";
       log_type = log_request.substr(strlen("subproc-"));
@@ -1226,16 +1231,17 @@ int CompilerProxyHttpHandler::HandleLogRequest(const HttpServerRequest& request,
       LOG(WARNING) << "Unknown log type: " << log_type;
       return 404;
     }
-    string log_filename =
+    std::string log_filename =
         file::JoinPath(log_dirs[0], myname_ + log_suffix + "." + log_type);
 #ifdef _WIN32
-    const string& original_log = FindLogFile(log_dirs[0], myname_, log_type);
+    const std::string& original_log =
+        FindLogFile(log_dirs[0], myname_, log_type);
     // Workaround GLOG not opening file in share read.
     if (!CopyFileA(original_log.c_str(), log_filename.c_str(), FALSE)) {
       log_filename = original_log;  // Can't copy, let's just try share read.
     }
 #endif
-    string log;
+    std::string log;
     if (!ReadFileToString(log_filename.c_str(), &log)) {
       return 404;
     }
@@ -1250,7 +1256,7 @@ int CompilerProxyHttpHandler::HandleLogRequest(const HttpServerRequest& request,
 }
 
 int CompilerProxyHttpHandler::HandleErrorStatusRequest(const HttpServerRequest&,
-                                                       string* response) {
+                                                       std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("application/json", &ss);
   service_.DumpErrorStatus(&ss);
@@ -1260,7 +1266,7 @@ int CompilerProxyHttpHandler::HandleErrorStatusRequest(const HttpServerRequest&,
 
 #ifdef HAVE_COUNTERZ
 int CompilerProxyHttpHandler::HandleCounterRequest(const HttpServerRequest&,
-                                                   string* response) {
+                                                   std::string* response) {
   // TODO: implement better view using javascript if necessary.
   std::ostringstream ss;
   OutputOkHeader("application/json", &ss);
@@ -1297,7 +1303,7 @@ void CompilerProxyHttpHandler::ExecDone(RpcController* rpc, ExecResp* resp) {
 void CompilerProxyHttpHandler::SendErrorMessage(
     ThreadpoolHttpServer::HttpServerRequest* http_server_request,
     int response_code,
-    const string& status_message) {
+    const std::string& status_message) {
   std::ostringstream http_response_message;
   http_response_message << "HTTP/1.1 " << response_code << " " << status_message
                         << "\r\n\r\n";
@@ -1464,7 +1470,7 @@ int CompilerProxyHttpHandler::HandleHeapRequest(
 #if HAVE_CPU_PROFILER
 int CompilerProxyHttpHandler::HandleProfileRequest(
     const HttpServerRequest& request,
-    string* response) {
+    std::string* response) {
   *response = "HTTP/1.1 200 OK\r\n\r\n";
   if (cpu_profiling_) {
     ProfilerStop();

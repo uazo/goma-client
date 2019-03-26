@@ -15,8 +15,6 @@
 #include "path.h"
 #include "path_resolver.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 static ReadCommandOutputFunc gReadCommandOutput = nullptr;
@@ -25,10 +23,12 @@ void InstallReadCommandOutputFunc(ReadCommandOutputFunc func) {
   gReadCommandOutput = func;
 }
 
-string ReadCommandOutput(
-    const string& prog, const std::vector<string>& argv,
-    const std::vector<string>& env,
-    const string& cwd, CommandOutputOption option, int32_t* status) {
+std::string ReadCommandOutput(const std::string& prog,
+                              const std::vector<std::string>& argv,
+                              const std::vector<std::string>& env,
+                              const std::string& cwd,
+                              CommandOutputOption option,
+                              int32_t* status) {
   if (gReadCommandOutput == nullptr) {
     LOG(FATAL) << "gReadCommandOutput should be set before calling."
                << " prog=" << prog
@@ -40,7 +40,7 @@ string ReadCommandOutput(
 }
 
 // Platform independent getenv.
-string GetEnv(const string& name) {
+std::string GetEnv(const std::string& name) {
 #ifndef _WIN32
   char* ret = getenv(name.c_str());
   if (ret == nullptr)
@@ -52,7 +52,7 @@ string GetEnv(const string& name) {
     CHECK(GetLastError() == ERROR_ENVVAR_NOT_FOUND);
     return "";
   }
-  string envvar(size, '\0');
+  std::string envvar(size, '\0');
   DWORD ret = GetEnvironmentVariableA(name.c_str(), &envvar[0], size);
   CHECK_EQ(ret, size - 1)
       << "GetEnvironmentVariableA failed but should not:" << name
@@ -63,7 +63,7 @@ string GetEnv(const string& name) {
 #endif
 }
 
-void SetEnv(const string& name, const string& value) {
+void SetEnv(const std::string& name, const std::string& value) {
 #ifndef _WIN32
   if (setenv(name.c_str(), value.c_str(), 1) != 0) {
     PLOG(ERROR) << "setenv name=" << name << " value=" << value;

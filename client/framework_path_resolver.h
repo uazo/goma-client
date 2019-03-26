@@ -11,31 +11,30 @@
 
 #include "basictypes.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class FrameworkPathResolver {
  public:
-  explicit FrameworkPathResolver(string cwd);
+  explicit FrameworkPathResolver(std::string cwd);
   ~FrameworkPathResolver() {}
 
   // Returns list of files in the framework.
-  string ExpandFrameworkPath(const string& framework) const;
-  void SetSyslibroot(const string& syslibroot) {
+  std::string ExpandFrameworkPath(const std::string& framework) const;
+  void SetSyslibroot(const std::string& syslibroot) {
     syslibroot_ = syslibroot;
   }
-  void AppendSearchpaths(const std::vector<string>& searchpaths);
+  void AppendSearchpaths(const std::vector<std::string>& searchpaths);
 
  private:
-  string FrameworkFile(const string& syslibroot, const string& dirname,
-                       const string& name,
-                       const std::vector<string>& candidates) const;
+  std::string FrameworkFile(const std::string& syslibroot,
+                            const std::string& dirname,
+                            const std::string& name,
+                            const std::vector<std::string>& candidates) const;
 
-  const string cwd_;
-  string syslibroot_;
-  std::vector<string> searchpaths_;
-  std::vector<string> default_searchpaths_;
+  const std::string cwd_;
+  std::string syslibroot_;
+  std::vector<std::string> searchpaths_;
+  std::vector<std::string> default_searchpaths_;
 
   DISALLOW_COPY_AND_ASSIGN(FrameworkPathResolver);
 };

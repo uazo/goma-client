@@ -99,7 +99,7 @@ TEST_F(ListDirCacheTest, FirstTimeCacheMiss) {
 
 TEST_F(ListDirCacheTest, SecondTimeCacheHit) {
   std::vector<DirEntry> entries1, entries2;
-  const string path = GetTestDirPath();
+  const std::string path = GetTestDirPath();
   FileStat file_stat(path);
 
   // Decrease mtime for cache hit in second attempt.
@@ -123,7 +123,7 @@ TEST_F(ListDirCacheTest, SecondTimeCacheHit) {
 
 TEST_F(ListDirCacheTest, CreateFile) {
   std::vector<DirEntry> entries1, entries2;
-  const string path = GetTestDirPath();
+  const std::string path = GetTestDirPath();
   FileStat file_stat(path);
 
   EXPECT_TRUE(Cache()->GetDirEntries(path, file_stat, &entries1));

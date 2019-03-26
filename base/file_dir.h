@@ -9,13 +9,11 @@
 #include <string>
 #include <vector>
 
-using std::string;
-
 namespace devtools_goma {
 
 struct DirEntry {
   DirEntry() : is_dir(false) {}
-  string name;
+  std::string name;
   bool is_dir;
 };
 
@@ -24,13 +22,13 @@ struct DirEntry {
 // If dirname is not a directory, it returns true, but *entries is empty.
 // If dirname is a directory, it returns true, and *entries is filled with
 // the directory's entries.
-bool ListDirectory(const string& dirname, std::vector<DirEntry>* entries);
+bool ListDirectory(const std::string& dirname, std::vector<DirEntry>* entries);
 
 // Returns true if dirname is successfully deleted.
-bool DeleteDirectory(const string& dirname);
+bool DeleteDirectory(const std::string& dirname);
 
 // Ensure directory exists.
-bool EnsureDirectory(const string& dirname, int mode);
+bool EnsureDirectory(const std::string& dirname, int mode);
 
 }  // namespace devtools_goma
 

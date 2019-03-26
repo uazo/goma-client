@@ -15,7 +15,7 @@ class CxxCompilerTypeSpecific : public CompilerTypeSpecific {
   void operator=(const CxxCompilerTypeSpecific&) = delete;
 
   IncludeProcessorResult RunIncludeProcessor(
-      const string& trace_id,
+      const std::string& trace_id,
       const CompilerFlags& compiler_flags,
       const CompilerInfo& compiler_info,
       const CommandSpec& command_spec,

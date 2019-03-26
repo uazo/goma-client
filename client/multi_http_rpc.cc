@@ -176,7 +176,7 @@ class MultiHttpRPC::MultiJob {
  private:
   ~MultiJob() {}
 
-  string TraceIdList() const {
+  std::string TraceIdList() const {
     std::ostringstream ss;
     for (const auto* job : jobs_) {
       ss << " " << job->http_rpc_stat()->trace_id;
@@ -266,8 +266,8 @@ class MultiHttpRPC::MultiJob {
 };
 
 MultiHttpRPC::MultiHttpRPC(HttpRPC* http_rpc,
-                           string path,
-                           string multi_path,
+                           std::string path,
+                           std::string multi_path,
                            const Options& options,
                            WorkerThreadManager* wm)
     : wm_(wm),
@@ -316,7 +316,7 @@ void MultiHttpRPC::Call(
           NewPermanentCallback(this, &MultiHttpRPC::CheckPending));
     }
 
-    const string& key = MultiJobKey(req);
+    const std::string& key = MultiJobKey(req);
     MultiJob* pending_multi_job = pending_multi_jobs_[key];
     if (pending_multi_job == nullptr) {
       pending_multi_job = pending_multi_jobs_[key] = new MultiJob(wm_, this);
@@ -380,7 +380,7 @@ bool MultiHttpRPC::available() {
   return available_;
 }
 
-string MultiHttpRPC::MultiJobKey(const google::protobuf::Message* req) {
+std::string MultiHttpRPC::MultiJobKey(const google::protobuf::Message* req) {
   return "";
 }
 
@@ -441,7 +441,7 @@ void MultiHttpRPC::JobDone() {
   --num_multi_job_;
 }
 
-string MultiHttpRPC::DebugString() const {
+std::string MultiHttpRPC::DebugString() const {
   AUTOLOCK(lock, &mu_);
 
   std::ostringstream ss;
@@ -464,13 +464,11 @@ string MultiHttpRPC::DebugString() const {
   return ss.str();
 }
 
-MultiFileStore::MultiFileStore(
-    HttpRPC* http_rpc,
-    const string& path,
-    const MultiHttpRPC::Options& options,
-    WorkerThreadManager* wm)
-    : MultiHttpRPC(http_rpc, path, path, options, wm) {
-}
+MultiFileStore::MultiFileStore(HttpRPC* http_rpc,
+                               const std::string& path,
+                               const MultiHttpRPC::Options& options,
+                               WorkerThreadManager* wm)
+    : MultiHttpRPC(http_rpc, path, path, options, wm) {}
 
 MultiFileStore::~MultiFileStore() {
 }

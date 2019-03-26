@@ -17,14 +17,12 @@
 #include "base/path.h"
 #include "gtest/gtest.h"
 
-using std::string;
-
 // TODO: add test for non WIN32
 
 namespace {
 
 // Creates a unique tmp dir. Should be removed by yourself.
-string CreateUniqueTmpDir() {
+std::string CreateUniqueTmpDir() {
 #ifdef _WIN32
   char tmp_dir[PATH_MAX], first_dir[PATH_MAX];
   EXPECT_NE(0, GetTempPathA(PATH_MAX, tmp_dir));
@@ -49,11 +47,11 @@ string CreateUniqueTmpDir() {
 
 #if defined(_WIN32)
 TEST(FilesystemTest, RecursivelyDelete) {
-  string first_dir = CreateUniqueTmpDir();
-  string second_dir = first_dir;
+  std::string first_dir = CreateUniqueTmpDir();
+  std::string second_dir = first_dir;
   second_dir += "\\foo";
   EXPECT_EQ(TRUE, CreateDirectoryA(second_dir.c_str(), nullptr));
-  string file = second_dir;
+  std::string file = second_dir;
   file += "\\something.txt";
   FILE* fp = nullptr;
   EXPECT_EQ(0, fopen_s(&fp, file.c_str(), "w"));
@@ -67,10 +65,10 @@ TEST(FilesystemTest, RecursivelyDelete) {
 #endif
 
 TEST(FilesystemTest, Copy) {
-  string tmpdir = CreateUniqueTmpDir();
+  std::string tmpdir = CreateUniqueTmpDir();
 
-  string src = file::JoinPath(tmpdir, "src.txt");
-  string dst = file::JoinPath(tmpdir, "dst.txt");
+  std::string src = file::JoinPath(tmpdir, "src.txt");
+  std::string dst = file::JoinPath(tmpdir, "dst.txt");
   {
     std::ofstream fs(src);
     fs << "ABC";
@@ -80,7 +78,7 @@ TEST(FilesystemTest, Copy) {
   EXPECT_TRUE(file::Copy(src, dst, file::Defaults()).ok());
   {
     std::ifstream fs(dst);
-    string s;
+    std::string s;
     fs >> s;
     EXPECT_EQ("ABC", s);
   }

@@ -17,19 +17,15 @@ FileServiceBlobDownloader::FileServiceBlobDownloader(
 
 bool FileServiceBlobDownloader::Download(const ExecResult_Output& output,
                                          OutputFileInfo* info) {
-  if (info->tmp_filename.empty()) {
-    std::unique_ptr<FileDataOutput> str_output(
-        FileDataOutput::NewStringOutput(output.filename(), &info->content));
-    return file_service_->OutputFileBlob(output.blob(), str_output.get());
-  } else {
-    // TODO: We might want to restrict paths this program may write?
-    const auto& filename = info->tmp_filename;
-    remove(filename.c_str());
-    std::unique_ptr<FileDataOutput> file_output(
-        FileDataOutput::NewFileOutput(filename, info->mode));
-
-    return file_service_->OutputFileBlob(output.blob(), file_output.get());
-  }
+  // TODO: Previously, this code passed |output.filename()| to
+  // FileDataOutput::NewStringOutput(), but the StringOutput class only uses the
+  // filename for debug purposes, in ToString().
+  //
+  // In the current version of the code, |output.filename()| is not passed in.
+  // If we want to use this debug string, then we should store
+  // |output.filename()| in |info->filename| before calling NewFileDataOutput().
+  auto file_data_output = info->NewFileDataOutput();
+  return file_service_->OutputFileBlob(output.blob(), file_data_output.get());
 }
 
 }  // namespace devtools_goma

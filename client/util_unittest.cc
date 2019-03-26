@@ -15,11 +15,9 @@
 #include "absl/strings/str_split.h"
 #include "unittest_util.h"
 
-using std::string;
-
 TEST(Util, GetEnvFromEnvIter) {
   using devtools_goma::GetEnvFromEnvIter;
-  std::vector<string> envs;
+  std::vector<std::string> envs;
   envs.push_back("PATH=/usr/bin");
   envs.push_back("pAtHeXt=.EXE");
 
@@ -42,12 +40,12 @@ TEST(Util, GetEnvFromEnvIter) {
 
 TEST(Util, ReplaceEnvInEnvIter) {
   using devtools_goma::ReplaceEnvInEnvIter;
-  std::vector<string> envs;
+  std::vector<std::string> envs;
   envs.push_back("dummy1=dummy");
   envs.push_back("PATH=/usr/bin");
   envs.push_back("dummy2=dummy");
 
-  std::vector<string> expected_envs;
+  std::vector<std::string> expected_envs;
 
   // Should return false if env not found and envs should be kept as is.
   std::copy(envs.begin(), envs.end(), std::back_inserter(expected_envs));
@@ -70,8 +68,8 @@ TEST(Util, ReplaceEnvInEnvIter) {
 }
 
 TEST(Util, GetEnvShouldReturnValueContainingNul) {
-  const string& env = devtools_goma::GetEnv("PATH");
-  EXPECT_EQ(string(env.c_str()), env);
+  const std::string& env = devtools_goma::GetEnv("PATH");
+  EXPECT_EQ(std::string(env.c_str()), env);
 }
 
 TEST(Util, SumRepeatedInt32) {
@@ -99,6 +97,6 @@ TEST(Util, SumRepeatedInt32) {
 }
 
 TEST(Util, ToVector) {
-  std::vector<string> vs = ToVector(absl::StrSplit("x:y:z", ':'));
-  EXPECT_EQ((std::vector<string> { "x", "y", "z" }), vs);
+  std::vector<std::string> vs = ToVector(absl::StrSplit("x:y:z", ':'));
+  EXPECT_EQ((std::vector<std::string>{"x", "y", "z"}), vs);
 }

@@ -15,19 +15,18 @@
 #include "basictypes.h"
 #include "scoped_fd.h"
 
-using std::string;
 struct fat_arch;
 
 namespace devtools_goma {
 
 struct MacFatArch {
-  string arch_name;
+  std::string arch_name;
   off_t offset;
   size_t size;
 };
 
 struct MacFatHeader {
-  string raw;
+  std::string raw;
   std::vector<MacFatArch> archs;
 };
 
@@ -39,19 +38,19 @@ bool GetFatHeader(const ScopedFd& fd, MacFatHeader* fheader);
 class MachO {
  public:
   struct DylibEntry {
-    string name;
+    std::string name;
     uint32_t timestamp;
     uint32_t current_version;
     uint32_t compatibility_version;
   };
-  explicit MachO(const string& filename);
+  explicit MachO(const std::string& filename);
   ~MachO();
-  bool GetDylibs(const string& cpu_type, std::vector<DylibEntry>* dylibs);
+  bool GetDylibs(const std::string& cpu_type, std::vector<DylibEntry>* dylibs);
   bool valid() const;
 
  private:
-  std::map<string, fat_arch> archs_;
-  string filename_;
+  std::map<std::string, fat_arch> archs_;
+  std::string filename_;
   ScopedFd fd_;
 
   DISALLOW_COPY_AND_ASSIGN(MachO);

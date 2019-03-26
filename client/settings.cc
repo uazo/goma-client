@@ -26,17 +26,15 @@ MSVC_POP_WARNING()
 
 namespace devtools_goma {
 
-using std::string;
-
 void SettingsGetCall(HttpRPC* http_rpc,
                      SettingsReq* req, SettingsResp* resp,
                      HttpRPC::Status* status) {
   http_rpc->Call("", req, resp, status);
 }
 
-string ApplySettings(const string& settings_server,
-                     const string& expect_settings,
-                     WorkerThreadManager* wm) {
+std::string ApplySettings(const std::string& settings_server,
+                          const std::string& expect_settings,
+                          WorkerThreadManager* wm) {
   HttpClient::Options http_options;
   InitHttpClientOptions(&http_options);
   http_options.InitFromURL(settings_server);

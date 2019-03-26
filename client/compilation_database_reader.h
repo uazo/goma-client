@@ -54,7 +54,7 @@ class CompilationDatabaseReader {
   static bool MakeClangArgsFromCommandLine(
       bool seen_hyphen_hyphen,
       const std::vector<std::string>& args_after_hyphen_hyphen,
-      const string& input_file,
+      const std::string& input_file,
       const std::string& cwd,
       const std::string& build_path,
       const std::vector<std::string>& extra_arg,

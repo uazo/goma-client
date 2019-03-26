@@ -63,8 +63,6 @@
 #include "util.h"
 #include "watchdog.h"
 
-using std::string;
-
 #ifndef _WIN32
 using devtools_goma::Daemonize;
 #endif
@@ -74,7 +72,7 @@ namespace devtools_goma {
 namespace {
 
 #ifndef _WIN32
-bool CheckFileOwnedByMyself(const string& filename, uid_t uid) {
+bool CheckFileOwnedByMyself(const std::string& filename, uid_t uid) {
   struct stat st;
   if (stat(filename.c_str(), &st) == -1)
     return true;
@@ -89,11 +87,11 @@ bool CheckFileOwnedByMyself(const string& filename, uid_t uid) {
   return false;
 }
 
-ScopedFd LockMyself(const string& filename, int port) {
+ScopedFd LockMyself(const std::string& filename, int port) {
   // Open myself and lock it during execution.
   std::ostringstream filename_buf;
   filename_buf << filename << "." << port;
-  string lock_filename = filename_buf.str();
+  std::string lock_filename = filename_buf.str();
   if (!CheckFileOwnedByMyself(lock_filename.c_str(), getuid())) {
     exit(1);
   }
@@ -160,12 +158,12 @@ void InitTrustedIps(TrustedIpsManager* trustedipsmanager) {
   for (auto&& ip : absl::StrSplit(FLAGS_COMPILER_PROXY_TRUSTED_IPS,
                                   ',',
                                   absl::SkipEmpty())) {
-    trustedipsmanager->AddAllow(string(ip));
+    trustedipsmanager->AddAllow(std::string(ip));
   }
 }
 
 void DepsCacheInit() {
-  string cache_filename;
+  std::string cache_filename;
   if (!FLAGS_DEPS_CACHE_FILE.empty()) {
     cache_filename = file::JoinPathRespectAbsolute(GetCacheDirectory(),
                                                    FLAGS_DEPS_CACHE_FILE);
@@ -204,19 +202,17 @@ int main(int argc, char* argv[], const char* envp[]) {
     devtools_goma::GlobalFileStatCache::Init();
   }
 
-  const string tmpdir = FLAGS_TMP_DIR;
+  const std::string tmpdir = FLAGS_TMP_DIR;
 #ifndef _WIN32
-  const string compiler_proxy_addr = file::JoinPathRespectAbsolute(
-      tmpdir,
-      FLAGS_COMPILER_PROXY_SOCKET_NAME);
+  const std::string compiler_proxy_addr =
+      file::JoinPathRespectAbsolute(tmpdir, FLAGS_COMPILER_PROXY_SOCKET_NAME);
 
   if (!devtools_goma::CheckFileOwnedByMyself(compiler_proxy_addr, getuid())) {
     exit(1);
   }
 
-  const string lock_filename = file::JoinPathRespectAbsolute(
-      tmpdir,
-      FLAGS_COMPILER_PROXY_LOCK_FILENAME);
+  const std::string lock_filename =
+      file::JoinPathRespectAbsolute(tmpdir, FLAGS_COMPILER_PROXY_LOCK_FILENAME);
   devtools_goma::ScopedFd lockfd(
       devtools_goma::LockMyself(lock_filename, FLAGS_COMPILER_PROXY_PORT));
   if (FLAGS_COMPILER_PROXY_DAEMON_MODE) {
@@ -256,13 +252,13 @@ int main(int argc, char* argv[], const char* envp[]) {
   if (!devtools_goma::Chdir(tmpdir.c_str())) {
     LOG(ERROR) << "failed to chdir to " << tmpdir;
   }
-  const string compiler_proxy_addr = FLAGS_COMPILER_PROXY_SOCKET_NAME;
+  const std::string compiler_proxy_addr = FLAGS_COMPILER_PROXY_SOCKET_NAME;
   WinsockHelper wsa;
   devtools_goma::ScopedFd lock_fd;
   std::ostringstream filename_buf;
   filename_buf << "Global\\" << FLAGS_COMPILER_PROXY_LOCK_FILENAME << "."
                << FLAGS_COMPILER_PROXY_PORT;
-  string lock_filename = filename_buf.str();
+  std::string lock_filename = filename_buf.str();
 
   lock_fd.reset(CreateEventA(nullptr, TRUE, FALSE, lock_filename.c_str()));
   DWORD last_error = GetLastError();
@@ -354,13 +350,13 @@ int main(int argc, char* argv[], const char* envp[]) {
   devtools_goma::TrustedIpsManager trustedipsmanager;
   devtools_goma::InitTrustedIps(&trustedipsmanager);
 
-  string setting;
+  std::string setting;
   if (!FLAGS_SETTINGS_SERVER.empty()) {
     setting = ApplySettings(FLAGS_SETTINGS_SERVER, FLAGS_ASSERT_SETTINGS, &wm);
   }
   std::unique_ptr<devtools_goma::CompilerProxyHttpHandler> handler(
       new devtools_goma::CompilerProxyHttpHandler(
-          string(file::Basename(argv[0])), setting, tmpdir, &wm));
+          std::string(file::Basename(argv[0])), setting, tmpdir, &wm));
 
   devtools_goma::ThreadpoolHttpServer server(
       FLAGS_COMPILER_PROXY_LISTEN_ADDR, FLAGS_COMPILER_PROXY_PORT,
@@ -384,7 +380,7 @@ int main(int argc, char* argv[], const char* envp[]) {
   if (FLAGS_WATCHDOG_TIMER > 0) {
     std::unique_ptr<devtools_goma::Watchdog> watchdog(
         new devtools_goma::Watchdog);
-    std::vector<string> env;
+    std::vector<std::string> env;
     env.push_back("GOMA_COMPILER_PROXY_SOCKET_NAME=" + compiler_proxy_addr);
     env.push_back("PATH=" + devtools_goma::GetEnv("PATH"));
     env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT"));

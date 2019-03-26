@@ -11,8 +11,6 @@
 #include "absl/strings/string_view.h"
 #include "prototmp/compiler_info_data.pb.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class ChromeOSCompilerInfoBuilderHelper {
@@ -23,10 +21,10 @@ class ChromeOSCompilerInfoBuilderHelper {
 
   // Collects simple chrome toolchain resources for Arbitrary Toolchain Support.
   static bool CollectSimpleChromeClangResources(
-      const string& cwd,
+      const std::string& cwd,
       absl::string_view local_compiler_path,
       absl::string_view real_compiler_path,
-      std::vector<string>* resource_paths);
+      std::vector<std::string>* resource_paths);
 
   // Estimates major version from chromeos simple chrome toolchain.
   // Here, assuming real compiler is like `clang-<VERSION>.elf`.
@@ -38,10 +36,11 @@ class ChromeOSCompilerInfoBuilderHelper {
   // local_compiler_path indicates a system clang in the chroot env.
   static bool IsClangInChrootEnv(absl::string_view local_compiler_path);
   // Collects clang resources in chromeos chroot env.
-  static bool CollectChrootClangResources(const string& cwd,
-                                          absl::string_view local_compiler_path,
-                                          absl::string_view real_compiler_path,
-                                          std::vector<string>* resource_paths);
+  static bool CollectChrootClangResources(
+      const std::string& cwd,
+      absl::string_view local_compiler_path,
+      absl::string_view real_compiler_path,
+      std::vector<std::string>* resource_paths);
 
   static void SetAdditionalFlags(
       absl::string_view local_compiler_path,

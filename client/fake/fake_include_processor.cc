@@ -9,15 +9,15 @@
 
 namespace devtools_goma {
 
-bool FakeIncludeProcessor::Run(const string& trace_id,
+bool FakeIncludeProcessor::Run(const std::string& trace_id,
                                const FakeFlags& fake_flags,
                                const FakeCompilerInfo& compiler_info,
-                               std::set<string>* required_files) {
+                               std::set<std::string>* required_files) {
   if (fake_flags.input_filenames().empty()) {
     return false;
   }
 
-  const string& input = fake_flags.input_filenames()[0];
+  const std::string& input = fake_flags.input_filenames()[0];
   // fake compiler's include processor fails if the input filename contains
   // `fail`.
   if (absl::StrContains(file::Basename(input), "fail")) {

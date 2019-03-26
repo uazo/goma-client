@@ -10,17 +10,16 @@
 #include "glog/stl_logging.h"
 #include "lib/clang_flags_helper.h"
 #include "lib/gcc_flags.h"
-using std::string;
 
 namespace devtools_goma {
 
 ConfigurableExecReqNormalizer::Config GCCExecReqNormalizer::Configure(
     int id,
-    const std::vector<string>& args,
+    const std::vector<std::string>& args,
     bool normalize_include_path,
     bool is_linking,
-    const std::vector<string>& normalize_weak_relative_for_arg,
-    const std::map<string, string>& debug_prefix_map,
+    const std::vector<std::string>& normalize_weak_relative_for_arg,
+    const std::map<std::string, std::string>& debug_prefix_map,
     const ExecReq* req) const {
   int keep_cwd = kOmit;
   int keep_args = kNormalizeWithCwd;
@@ -59,7 +58,7 @@ ConfigurableExecReqNormalizer::Config GCCExecReqNormalizer::Configure(
     has_debug_flag = true;
   }
 
-  absl::optional<string> fdebug_compilation_dir;
+  absl::optional<std::string> fdebug_compilation_dir;
   if (has_debug_flag) {
     ClangFlagsHelper clang_flags_helper(args);
     fdebug_compilation_dir = clang_flags_helper.fdebug_compilation_dir();
@@ -158,10 +157,10 @@ ConfigurableExecReqNormalizer::Config GCCExecReqNormalizer::Configure(
 
 void GCCExecReqNormalizer::NormalizeExecReqArgs(
     int keep_args,
-    const std::vector<string>& args,
-    const std::vector<string>& normalize_weak_relative_for_arg,
-    const std::map<string, string>& debug_prefix_map,
-    const string& debug_prefix_map_signature,
+    const std::vector<std::string>& args,
+    const std::vector<std::string>& normalize_weak_relative_for_arg,
+    const std::map<std::string, std::string>& debug_prefix_map,
+    const std::string& debug_prefix_map_signature,
     ExecReq* req) const {
   if (keep_args & kAsIs) {
     return;
@@ -182,7 +181,7 @@ void GCCExecReqNormalizer::NormalizeExecReqArgs(
         absl::make_unique<PathRewriterWithDebugPrefixMap>(debug_prefix_map);
   } else {
     rewrite_path = absl::make_unique<PathRewriterWithDebugPrefixMap>(
-        std::map<string, string>());
+        std::map<std::string, std::string>());
   }
   parser.AddFlag("fdebug-prefix-map")
       ->SetCallbackForParsedArgs(rewrite_path.get());
@@ -202,7 +201,7 @@ void GCCExecReqNormalizer::NormalizeExecReqArgs(
 
   parser.Parse(args);
   if (fix_path.is_fixed() || rewrite_path->removed_fdebug_prefix_map()) {
-    std::vector<string> parsed_args = parser.GetParsedArgs();
+    std::vector<std::string> parsed_args = parser.GetParsedArgs();
     if (req->expanded_arg_size() > 0) {
       req->clear_expanded_arg();
       std::copy(parsed_args.begin(), parsed_args.end(),

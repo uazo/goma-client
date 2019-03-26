@@ -12,7 +12,7 @@
 
 namespace devtools_goma {
 
-bool GetTrustedRootCerts(string* certs) {
+bool GetTrustedRootCerts(std::string* certs) {
   *certs = absl::StrCat(
       absl::string_view(certs_roots_pem_start, certs_roots_pem_size),
       absl::string_view(certs_DST_Root_CA_X3_pem_start,

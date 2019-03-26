@@ -17,8 +17,6 @@
 #include "lockhelper.h"
 #include "platform_thread.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // GlobalFileStatCache caches FileStats globally.
@@ -26,7 +24,7 @@ namespace devtools_goma {
 // The instance of this class is thread-safe.
 class GlobalFileStatCache {
  public:
-  FileStat Get(const string& path);
+  FileStat Get(const std::string& path);
 
   static void Init();
   static void Quit();
@@ -34,7 +32,7 @@ class GlobalFileStatCache {
 
  private:
   mutable ReadWriteLock mu_;
-  std::unordered_map<string, FileStat> file_stats_ GUARDED_BY(mu_);
+  std::unordered_map<std::string, FileStat> file_stats_ GUARDED_BY(mu_);
 
   static GlobalFileStatCache* instance_;
 };
@@ -47,7 +45,7 @@ class FileStatCache {
   ~FileStatCache();
 
   // Returns FileStat cache if any. If not, we create FileStat for |filename|.
-  FileStat Get(const string& filename);
+  FileStat Get(const std::string& filename);
 
   // Clears all caches.
   void Clear();
@@ -61,7 +59,7 @@ class FileStatCache {
   friend class DepsCacheTest;
 
  private:
-  typedef std::unordered_map<string, FileStat> FileStatMap;
+  typedef std::unordered_map<std::string, FileStat> FileStatMap;
 
   bool is_acquired_;
   PlatformThreadId owner_thread_id_;

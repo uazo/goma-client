@@ -10,18 +10,17 @@
 #include "absl/base/macros.h"
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
-using std::string;
 
 namespace devtools_goma {
 
 // Parsing Command-Line Arguments (on posix for gcc, javac)
 bool ParsePosixCommandLineToArgv(absl::string_view cmdline,
-                                 std::vector<string>* argv) {
+                                 std::vector<std::string>* argv) {
   bool dquote = false;
   bool squote = false;
   bool backslash = false;
   bool in_arg = false;
-  string arg = "";
+  std::string arg = "";
 
   for (size_t i = 0; i < cmdline.size(); ++i) {
     char ch = cmdline[i];
@@ -96,11 +95,11 @@ bool ParsePosixCommandLineToArgv(absl::string_view cmdline,
 // Parsing Command-Line Arguments (on Windows)
 // http://msdn.microsoft.com/en-us/library/windows/desktop/17w5ykft(v=vs.85).aspx
 bool ParseWinCommandLineToArgv(absl::string_view cmdline,
-                               std::vector<string>* argv) {
+                               std::vector<std::string>* argv) {
   size_t num_backslash = 0;
   bool arg_delimiter = false;
   bool in_quote = false;
-  string arg = "";
+  std::string arg = "";
   for (size_t i = 0; i < cmdline.size(); ++i) {
     char c = cmdline[i];
     switch (c) {

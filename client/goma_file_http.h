@@ -22,14 +22,15 @@ class FileServiceHttpClient : public FileServiceClient {
  public:
   // It doesn't take ownership of http and multi_file_store.
   FileServiceHttpClient(HttpRPC* http,
-                        string store_path,
-                        string lookup_path,
+                        std::string store_path,
+                        std::string lookup_path,
                         MultiFileStore* multi_file_store);
   ~FileServiceHttpClient() override;
 
   // This function doesn't clone |status_|.
   std::unique_ptr<FileServiceHttpClient> WithRequesterInfoAndTraceId(
-      const RequesterInfo& requester_info, const string& trace_id) const;
+      const RequesterInfo& requester_info,
+      const std::string& trace_id) const;
 
   std::unique_ptr<AsyncTask<StoreFileReq, StoreFileResp>>
       NewAsyncStoreFileTask() override;
@@ -51,8 +52,8 @@ class FileServiceHttpClient : public FileServiceClient {
 
  private:
   HttpRPC* http_;
-  const string store_path_;
-  const string lookup_path_;
+  const std::string store_path_;
+  const std::string lookup_path_;
 
   // For stats.
   int num_rpc_;

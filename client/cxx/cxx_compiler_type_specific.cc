@@ -13,7 +13,7 @@ namespace devtools_goma {
 
 CompilerTypeSpecific::IncludeProcessorResult
 CxxCompilerTypeSpecific::RunIncludeProcessor(
-    const string& trace_id,
+    const std::string& trace_id,
     const CompilerFlags& compiler_flags,
     const CompilerInfo& compiler_info,
     const CommandSpec& command_spec,
@@ -29,10 +29,10 @@ CxxCompilerTypeSpecific::RunIncludeProcessor(
         "multiple inputs are not supported.");
   }
 
-  const string& input_filename = compiler_flags.input_filenames()[0];
+  const std::string& input_filename = compiler_flags.input_filenames()[0];
 
   CppIncludeProcessor include_processor;
-  std::set<string> required_files;
+  std::set<std::string> required_files;
   bool ok = include_processor.GetIncludeFiles(
       input_filename, compiler_flags.cwd_for_include_processor(),
       compiler_flags, info, &required_files, file_stat_cache);

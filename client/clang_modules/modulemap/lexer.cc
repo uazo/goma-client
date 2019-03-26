@@ -51,7 +51,7 @@ Token Lexer::Next() {
     if (pos_ == content_->buf_end()) {
       return Token::Invalid();
     }
-    return Token::String(string(begin, pos_++));
+    return Token::String(std::string(begin, pos_++));
   }
 
   if (absl::ascii_isdigit(*pos_)) {
@@ -59,7 +59,7 @@ Token Lexer::Next() {
     const char* const end =
         std::find_if_not(begin, content_->buf_end(), absl::ascii_isdigit);
     pos_ = end;
-    return Token::Integer(string(begin, end));
+    return Token::Integer(std::string(begin, end));
   }
 
   if (absl::ascii_isalpha(*pos_) || *pos_ == '_') {
@@ -68,7 +68,7 @@ Token Lexer::Next() {
            (absl::ascii_isalnum(*pos_) || *pos_ == '_')) {
       ++pos_;
     }
-    return Token::Ident(string(begin, pos_));
+    return Token::Ident(std::string(begin, pos_));
   }
 
   if (absl::StartsWith(rest_view(), "//")) {

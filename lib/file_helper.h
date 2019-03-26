@@ -9,11 +9,10 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-using std::string;
 
 namespace devtools_goma {
 
-bool ReadFileToString(absl::string_view file_name, string* OUTPUT);
+bool ReadFileToString(absl::string_view file_name, std::string* OUTPUT);
 bool WriteStringToFile(absl::string_view data, absl::string_view file_name);
 
 }  // namespace devtools_goma

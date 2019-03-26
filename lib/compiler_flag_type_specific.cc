@@ -62,8 +62,8 @@ CompilerFlagTypeSpecific CompilerFlagTypeSpecific::FromArg(
 }
 
 std::unique_ptr<CompilerFlags> CompilerFlagTypeSpecific::NewCompilerFlags(
-    const std::vector<string>& args,
-    const string& cwd) const {
+    const std::vector<std::string>& args,
+    const std::string& cwd) const {
   switch (type_) {
     case CompilerFlagType::Unknown:
       return nullptr;
@@ -82,7 +82,8 @@ std::unique_ptr<CompilerFlags> CompilerFlagTypeSpecific::NewCompilerFlags(
   }
 }
 
-string CompilerFlagTypeSpecific::GetCompilerName(absl::string_view arg) const {
+std::string CompilerFlagTypeSpecific::GetCompilerName(
+    absl::string_view arg) const {
   switch (type_) {
     case CompilerFlagType::Unknown:
       return "";

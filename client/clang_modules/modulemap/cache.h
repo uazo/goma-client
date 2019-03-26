@@ -16,8 +16,6 @@
 #include "lockhelper.h"
 #include "processor.h"
 
-using std::string;
-
 namespace devtools_goma {
 namespace modulemap {
 
@@ -36,9 +34,9 @@ class Cache {
   // Returns true if succeeded.
   // false otherwise (e.g. a file is missing, a file is not valid
   // module-map-file).
-  bool AddModuleMapFileAndDependents(const string& module_map_file,
-                                     const string& cwd,
-                                     std::set<string>* include_files,
+  bool AddModuleMapFileAndDependents(const std::string& module_map_file,
+                                     const std::string& cwd,
+                                     std::set<std::string>* include_files,
                                      FileStatCache* file_stat_cache);
 
   size_t size() const;
@@ -55,7 +53,7 @@ class Cache {
   // cwd besides abs_module_map_file.
   struct CacheKey {
     CacheKey() = default;
-    CacheKey(string cwd, string abs_module_map_file)
+    CacheKey(std::string cwd, std::string abs_module_map_file)
         : cwd(std::move(cwd)),
           abs_module_map_file(std::move(abs_module_map_file)) {}
 
@@ -72,8 +70,8 @@ class Cache {
       return !(lhs == rhs);
     }
 
-    string cwd;
-    string abs_module_map_file;
+    std::string cwd;
+    std::string abs_module_map_file;
   };
 
   explicit Cache(size_t max_cache_entries)

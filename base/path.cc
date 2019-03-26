@@ -9,13 +9,11 @@
 
 #include "glog/logging.h"
 
-using std::string;
-
 namespace {
 
 // Appends |path2| to |path1|.
 // Assuming |path1| and |path2| are not empty.
-void AppendPath(string* path1, absl::string_view path2) {
+void AppendPath(std::string* path1, absl::string_view path2) {
   DCHECK(!path1->empty());
   DCHECK(!path2.empty());
 
@@ -44,10 +42,10 @@ namespace file {
 
 namespace internal {
 
-string JoinPathIterators(const absl::string_view* begin,
-                         const absl::string_view* end,
-                         size_t cap) {
-  string result;
+std::string JoinPathIterators(const absl::string_view* begin,
+                              const absl::string_view* end,
+                              size_t cap) {
+  std::string result;
   result.reserve(cap);
 
   while (begin != end) {
@@ -66,7 +64,7 @@ string JoinPathIterators(const absl::string_view* begin,
   return result;
 }
 
-string JoinPathImpl(std::initializer_list<absl::string_view> paths) {
+std::string JoinPathImpl(std::initializer_list<absl::string_view> paths) {
   size_t cap = 0;
   for (const auto& path : paths) {
     cap += path.size() + 1;
@@ -75,7 +73,7 @@ string JoinPathImpl(std::initializer_list<absl::string_view> paths) {
   return JoinPathIterators(paths.begin(), paths.end(), cap);
 }
 
-string JoinPathRespectAbsoluteImpl(
+std::string JoinPathRespectAbsoluteImpl(
     std::initializer_list<absl::string_view> paths) {
   size_t cap = 0;
   auto start_iter = paths.end();
@@ -104,8 +102,9 @@ absl::string_view Basename(absl::string_view fname) {
   // TODO: support UNC path.
   char name[_MAX_FNAME] = {0};
   char ext[_MAX_EXT] = {0};
-  CHECK_EQ(_splitpath_s(string(fname).c_str(), nullptr, 0, nullptr, 0,
-                        name, sizeof name, ext, sizeof ext), 0);
+  CHECK_EQ(_splitpath_s(std::string(fname).c_str(), nullptr, 0, nullptr, 0,
+                        name, sizeof name, ext, sizeof ext),
+           0);
   size_t basename_length = strlen(name);
   if (ext[0] == '.')
     basename_length += strlen(ext);
@@ -131,7 +130,7 @@ absl::string_view Dirname(absl::string_view fname) {
   // TODO: support UNC path.
   char drive[_MAX_DRIVE] = {0};
   char dir[_MAX_DIR] = {0};
-  _splitpath_s(string(fname).c_str(), drive, sizeof drive, dir, sizeof dir,
+  _splitpath_s(std::string(fname).c_str(), drive, sizeof drive, dir, sizeof dir,
                nullptr, 0, nullptr, 0);
   const size_t dir_length = strlen(dir);
   size_t dirname_length = strlen(drive) + dir_length;

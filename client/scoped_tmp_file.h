@@ -10,8 +10,6 @@
 
 #include "scoped_fd.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // A class to provide a temporary file available within the scope.
@@ -20,19 +18,19 @@ namespace devtools_goma {
 // Close.  If Close is not called, it is automatically closed in destructor.
 class ScopedTmpFile {
  public:
-  explicit ScopedTmpFile(const string& prefix);
+  explicit ScopedTmpFile(const std::string& prefix);
   // |extension| should starts with '.'. e.g. ".cc"
-  ScopedTmpFile(const string& prefix, const string& extension);
+  ScopedTmpFile(const std::string& prefix, const std::string& extension);
   ~ScopedTmpFile();
 
-  const string& filename() const { return filename_; }
+  const std::string& filename() const { return filename_; }
   bool valid() const;
   ssize_t Write(const void* ptr, size_t len) const;
   bool Close();
 
  private:
   ScopedFd fd_;
-  string filename_;
+  std::string filename_;
 
   DISALLOW_COPY_AND_ASSIGN(ScopedTmpFile);
 };
@@ -40,7 +38,7 @@ class ScopedTmpFile {
 // A class to provide a temporary directory available within the scope.
 class ScopedTmpDir {
  public:
-  explicit ScopedTmpDir(const string& prefix);
+  explicit ScopedTmpDir(const std::string& prefix);
   ~ScopedTmpDir();
 
   ScopedTmpDir(ScopedTmpDir&&) = delete;
@@ -48,11 +46,11 @@ class ScopedTmpDir {
   ScopedTmpDir& operator=(const ScopedTmpDir&) = delete;
   ScopedTmpDir& operator=(ScopedTmpDir&&) = delete;
 
-  const string& dirname() const { return dirname_; }
+  const std::string& dirname() const { return dirname_; }
   bool valid() const { return !dirname_.empty(); }
 
  private:
-  string dirname_;
+  std::string dirname_;
 };
 
 }  // namespace devtools_goma

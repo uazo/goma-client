@@ -15,16 +15,16 @@
 namespace devtools_goma {
 
 TEST(ExecReqNormalizerTest, RewritePathWithDebugPrefixMap) {
-  const std::map<string, string> empty_map;
-  const std::map<string, string> single_rule_map = {
-    {"/usr/local", "/debug"},
+  const std::map<std::string, std::string> empty_map;
+  const std::map<std::string, std::string> single_rule_map = {
+      {"/usr/local", "/debug"},
   };
-  const std::map<string, string> value_shows_up_in_key_map = {
-    {"/usr/local", "/foo"},
-    {"/foo", "/bar"},
+  const std::map<std::string, std::string> value_shows_up_in_key_map = {
+      {"/usr/local", "/foo"},
+      {"/foo", "/bar"},
   };
 
-  string path;
+  std::string path;
   path = "";
   EXPECT_FALSE(
       devtools_goma::RewritePathWithDebugPrefixMap(
@@ -56,44 +56,42 @@ TEST(ExecReqNormalizerTest, RewritePathWithDebugPrefixMap) {
 
 TEST(ExecReqNormalizerTest, HasAmbiguityInDebugPrefixMap) {
   EXPECT_FALSE(devtools_goma::HasAmbiguityInDebugPrefixMap(
-      std::map<string, string>()));
-  EXPECT_FALSE(
-      devtools_goma::HasAmbiguityInDebugPrefixMap(
-          std::map<string, string>({
-            {"/usr/local", "/debug"},
-          })));
-  EXPECT_TRUE(
-      devtools_goma::HasAmbiguityInDebugPrefixMap(
-          std::map<string, string>({
-                {"/usr/local", "/debug"}, {"/usr", "/debug2"},
-          })));
-  EXPECT_TRUE(
-      devtools_goma::HasAmbiguityInDebugPrefixMap(
-          std::map<string, string>({
-            {"/usr/lib", "/debug"}, {"/usr/libexec", "/debug2"},
-          })));
-  EXPECT_FALSE(
-      devtools_goma::HasAmbiguityInDebugPrefixMap(
-          std::map<string, string>({
-            {"/usr/lib", "/debug"}, {"/usr//libexec", "/debug2"},
-          })));
-  EXPECT_TRUE(
-      devtools_goma::HasAmbiguityInDebugPrefixMap(
-          std::map<string, string>({
-            {"/usr/local", "/debug"}, {"dummy", "dummy2"},
-                {"/usr", "/debug2"},
-          })));
-  EXPECT_TRUE(
-      devtools_goma::HasAmbiguityInDebugPrefixMap(
-          std::map<string, string>({
-            {"lib", "/debug"}, {"dummy", "dummy2"},
-                {"lib64", "/debug2"},
-          })));
-  EXPECT_FALSE(
-      devtools_goma::HasAmbiguityInDebugPrefixMap(
-          std::map<string, string>({
-            {"/home/alice/chromium/src", "."},
-          })));
+      std::map<std::string, std::string>()));
+  EXPECT_FALSE(devtools_goma::HasAmbiguityInDebugPrefixMap(
+      std::map<std::string, std::string>({
+          {"/usr/local", "/debug"},
+      })));
+  EXPECT_TRUE(devtools_goma::HasAmbiguityInDebugPrefixMap(
+      std::map<std::string, std::string>({
+          {"/usr/local", "/debug"},
+          {"/usr", "/debug2"},
+      })));
+  EXPECT_TRUE(devtools_goma::HasAmbiguityInDebugPrefixMap(
+      std::map<std::string, std::string>({
+          {"/usr/lib", "/debug"},
+          {"/usr/libexec", "/debug2"},
+      })));
+  EXPECT_FALSE(devtools_goma::HasAmbiguityInDebugPrefixMap(
+      std::map<std::string, std::string>({
+          {"/usr/lib", "/debug"},
+          {"/usr//libexec", "/debug2"},
+      })));
+  EXPECT_TRUE(devtools_goma::HasAmbiguityInDebugPrefixMap(
+      std::map<std::string, std::string>({
+          {"/usr/local", "/debug"},
+          {"dummy", "dummy2"},
+          {"/usr", "/debug2"},
+      })));
+  EXPECT_TRUE(devtools_goma::HasAmbiguityInDebugPrefixMap(
+      std::map<std::string, std::string>({
+          {"lib", "/debug"},
+          {"dummy", "dummy2"},
+          {"lib64", "/debug2"},
+      })));
+  EXPECT_FALSE(devtools_goma::HasAmbiguityInDebugPrefixMap(
+      std::map<std::string, std::string>({
+          {"/home/alice/chromium/src", "."},
+      })));
 }
 
 }  // namespace devtools_goma

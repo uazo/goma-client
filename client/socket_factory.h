@@ -15,8 +15,6 @@
 # include "socket_helper_win.h"
 #endif
 
-using std::string;
-
 namespace devtools_goma {
 
 class ScopedSocket;
@@ -72,11 +70,11 @@ class SocketFactory {
   virtual void CloseSocket(ScopedSocket&& sock, bool err) = 0;
 
   // Destination name in form of "host:port".
-  virtual string DestName() const = 0;
-  virtual string host_name() const { return ""; }
+  virtual std::string DestName() const = 0;
+  virtual std::string host_name() const { return ""; }
   virtual int port() const { return -1; }
 
-  virtual string DebugString() const = 0;
+  virtual std::string DebugString() const = 0;
 
  protected:
   SocketFactory() : observer_(NULL) {}

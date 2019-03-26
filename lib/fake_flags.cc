@@ -6,18 +6,18 @@
 
 #include "absl/strings/match.h"
 #include "lib/path_util.h"
-using std::string;
 
 namespace devtools_goma {
 
-FakeFlags::FakeFlags(const std::vector<string>& args, const string& cwd)
+FakeFlags::FakeFlags(const std::vector<std::string>& args,
+                     const std::string& cwd)
     : CompilerFlags(args, cwd) {
   // Set language as "fake".
   lang_ = "fake";
 
   // Everything ends with .fake is an input. and the outputs are *.out.
   for (size_t i = 1; i < args.size(); ++i) {
-    const string& arg = args[i];
+    const std::string& arg = args[i];
     if (absl::EndsWith(arg, ".fake")) {
       input_filenames_.push_back(arg);
       output_files_.push_back(arg.substr(0, arg.size() - 4) + "out");

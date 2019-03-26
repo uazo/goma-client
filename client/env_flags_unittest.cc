@@ -9,8 +9,6 @@
 
 #include "gtest/gtest.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 static const int kInitialValue = 0;

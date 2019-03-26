@@ -17,8 +17,6 @@
 
 #include "absl/time/time.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class OneshotClosure;
@@ -56,7 +54,7 @@ class Descriptor {
   virtual bool NeedRetry() const = 0;
   // CanReuse returns true if underlying socket can be reused.
   virtual bool CanReuse() const = 0;
-  virtual string GetLastErrorMessage() const = 0;
+  virtual std::string GetLastErrorMessage() const = 0;
 
   // stop more notification.
   // you can call this in notification closure.

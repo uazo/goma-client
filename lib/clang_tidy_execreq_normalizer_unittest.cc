@@ -23,8 +23,8 @@ void NormalizeExecReqForCacheKey(
     int id,
     bool normalize_include_path,
     bool is_linking,
-    const std::vector<string>& normalize_weak_relative_for_arg,
-    const std::map<string, string>& debug_prefix_map,
+    const std::vector<std::string>& normalize_weak_relative_for_arg,
+    const std::map<std::string, std::string>& debug_prefix_map,
     ExecReq* req) {
   CompilerFlagTypeSpecific::FromArg(req->command_spec().name())
       .NewExecReqNormalizer()
@@ -56,7 +56,7 @@ Input {
   // Nothing will be normalized.
   static const char* const kExecReqExpected = kExecReq;
 
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ExecReq req, req_expected;
@@ -66,10 +66,10 @@ Input {
   ASSERT_TRUE(VerifyExecReq(req_expected));
 
   NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                              std::map<string, string>(), &req);
+                              std::map<std::string, std::string>(), &req);
 
   MessageDifferencer differencer;
-  string difference_reason;
+  std::string difference_reason;
   differencer.ReportDifferencesToString(&difference_reason);
   EXPECT_TRUE(differencer.Compare(req_expected, req)) << difference_reason;
 }

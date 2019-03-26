@@ -15,8 +15,6 @@
 
 #include <string>
 
-using std::string;
-
 namespace devtools_goma {
 
 #ifndef _WIN32
@@ -46,7 +44,7 @@ static const int AF_GOMA_IPC = AF_UNIX;
 typedef struct sockaddr_in GomaIPCAddr;
 static const int AF_GOMA_IPC = AF_INET;
 #endif
-socklen_t InitializeGomaIPCAddress(const string& path, GomaIPCAddr* addr);
+socklen_t InitializeGomaIPCAddress(const std::string& path, GomaIPCAddr* addr);
 
 }  // namespace devtools_goma
 

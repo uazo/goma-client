@@ -213,8 +213,10 @@ const CppDirective* CppParser::NextDirective() {
   return nullptr;
 }
 
-void CppParser::AddMacroByString(const string& name, const string& body) {
-  string macro = "#define " + name + (body.empty() ? "" : " ") + body + '\n';
+void CppParser::AddMacroByString(const std::string& name,
+                                 const std::string& body) {
+  std::string macro =
+      "#define " + name + (body.empty() ? "" : " ") + body + '\n';
   AddStringInput(macro, "<macro>");
   ProcessDirectives();
 }
@@ -230,11 +232,11 @@ void CppParser::AddMacro(const Macro* macro) {
   }
 }
 
-const Macro* CppParser::GetMacro(const string& name) {
+const Macro* CppParser::GetMacro(const std::string& name) {
   return macro_env_.Get(name);
 }
 
-void CppParser::DeleteMacro(const string& name) {
+void CppParser::DeleteMacro(const std::string& name) {
   const Macro* existing_macro = macro_env_.Delete(name);
 
   if (existing_macro && existing_macro->IsPredefinedMacro()) {
@@ -242,7 +244,7 @@ void CppParser::DeleteMacro(const string& name) {
   }
 }
 
-bool CppParser::IsMacroDefined(const string& name) {
+bool CppParser::IsMacroDefined(const std::string& name) {
   const Macro* m = GetMacro(name);
   if (!m) {
     return false;
@@ -257,7 +259,7 @@ bool CppParser::IsMacroDefined(const string& name) {
   return true;
 }
 
-bool CppParser::EnablePredefinedMacro(const string& name, bool is_hidden) {
+bool CppParser::EnablePredefinedMacro(const std::string& name, bool is_hidden) {
   for (const auto& p : *predefined_macros_) {
     if (p.first == name && p.second->is_hidden == is_hidden) {
       const Macro* existing = macro_env_.Add(p.second.get());
@@ -269,7 +271,8 @@ bool CppParser::EnablePredefinedMacro(const string& name, bool is_hidden) {
   return false;
 }
 
-void CppParser::AddStringInput(const string& content, const string& pathname) {
+void CppParser::AddStringInput(const std::string& content,
+                               const std::string& pathname) {
   if (inputs_.size() >= kIncludeFileDepthLimit) {
     LOG(ERROR) << "Exceed include depth limit: " << kIncludeFileDepthLimit
                << " pathname: " << pathname;
@@ -295,7 +298,7 @@ void CppParser::AddPredefinedMacros(const CxxCompilerInfo& compiler_info) {
   // predefined_macros_ has `hidden` pattern and non-`hidden` pattern.
   // We need to check is_hidden, too.
   for (const auto& p : *predefined_macros_) {
-    const string& name = p.first;
+    const std::string& name = p.first;
     const Macro* macro = p.second.get();
     auto it = compiler_info.supported_predefined_macros().find(name);
     if (it == compiler_info.supported_predefined_macros().end()) {
@@ -313,8 +316,8 @@ void CppParser::AddPredefinedMacros(const CxxCompilerInfo& compiler_info) {
 }
 
 void CppParser::AddFileInput(IncludeItem include_item,
-                             const string& filepath,
-                             const string& directory,
+                             const std::string& filepath,
+                             const std::string& directory,
                              int include_dir_index) {
   if (inputs_.size() >= kIncludeFileDepthLimit) {
     LOG(ERROR) << "Exceeds include depth limit: " << kIncludeFileDepthLimit
@@ -341,7 +344,7 @@ void CppParser::AddPreparsedDirectivesInput(SharedCppDirectives directives) {
   input_protects_.push_back(std::move(directives));
 }
 
-string CppParser::DumpMacros() {
+std::string CppParser::DumpMacros() {
   std::stringstream ss;
   for (const auto& entry : macro_env_.UnderlyingMap()) {
     ss << entry.second->DebugString(this) << std::endl;
@@ -349,8 +352,8 @@ string CppParser::DumpMacros() {
   return ss.str();
 }
 
-string CppParser::DebugStringPrefix() {
-  string str;
+std::string CppParser::DebugStringPrefix() {
+  std::string str;
   str.reserve(input()->filepath().size() + 32);
   str.append("(");
   str.append(input()->filepath());
@@ -370,7 +373,7 @@ void CppParser::Error(absl::string_view error) {
 void CppParser::Error(absl::string_view error, absl::string_view arg) {
   if (!error_observer_)
     return;
-  string str;
+  std::string str;
   str.reserve(error.size() + input()->filepath().size() + 100);
   str.append("CppParser");
   str.append(DebugStringPrefix());
@@ -508,7 +511,7 @@ void CppParser::ProcessError(const CppDirectiveError& d) {
 void CppParser::ProcessIncludeInternal(const CppDirectiveIncludeBase& d) {
   // Simple <filepath> case.
   if (d.delimiter() == '<') {
-    const string& path = d.filename();
+    const std::string& path = d.filename();
     if (!path.empty() && include_observer_) {
       int next_index = bracket_include_dir_index_;
       if (d.type() == CppDirectiveType::DIRECTIVE_INCLUDE_NEXT) {
@@ -530,7 +533,7 @@ void CppParser::ProcessIncludeInternal(const CppDirectiveIncludeBase& d) {
       }
       if (d.type() == CppDirectiveType::DIRECTIVE_IMPORT) {
         DCHECK(!inputs_.empty());
-        const string& filepath = inputs_.back()->filepath();
+        const std::string& filepath = inputs_.back()->filepath();
         pragma_once_fileset_.Insert(filepath);
         VLOG(1) << "HandleInclude #import " << filepath;
       }
@@ -540,7 +543,7 @@ void CppParser::ProcessIncludeInternal(const CppDirectiveIncludeBase& d) {
 
   // Simple "filepath" case
   if (d.delimiter() == '"') {
-    const string& path = d.filename();
+    const std::string& path = d.filename();
     if (!path.empty() && include_observer_) {
       int quote_char = '"';
       int next_index = input()->include_dir_index();
@@ -561,7 +564,7 @@ void CppParser::ProcessIncludeInternal(const CppDirectiveIncludeBase& d) {
       }
       if (d.type() == CppDirectiveType::DIRECTIVE_IMPORT) {
         DCHECK(!inputs_.empty());
-        const string& filepath = inputs_.back()->filepath();
+        const std::string& filepath = inputs_.back()->filepath();
         pragma_once_fileset_.Insert(filepath);
         VLOG(1) << "HandleInclude #import " << filepath;
       }
@@ -583,7 +586,7 @@ void CppParser::ProcessIncludeInternal(const CppDirectiveIncludeBase& d) {
   // See if the expanded token(s) is <filepath> or "filepath".
   CppToken token = expanded.front();
   if (token.type == Token::LT) {
-    string path;
+    std::string path;
     auto iter = expanded.begin();
     ++iter;
     for (; iter != expanded.end() && iter->type != Token::GT; ++iter) {
@@ -608,7 +611,7 @@ void CppParser::ProcessIncludeInternal(const CppDirectiveIncludeBase& d) {
       }
       if (d.type() == CppDirectiveType::DIRECTIVE_IMPORT) {
         DCHECK(!inputs_.empty());
-        const string& filepath = inputs_.back()->filepath();
+        const std::string& filepath = inputs_.back()->filepath();
         pragma_once_fileset_.Insert(filepath);
         VLOG(1) << "HandleInclude #import " << filepath;
       }
@@ -636,7 +639,7 @@ void CppParser::ProcessIncludeInternal(const CppDirectiveIncludeBase& d) {
       }
       if (d.type() == CppDirectiveType::DIRECTIVE_IMPORT) {
         DCHECK(!inputs_.empty());
-        const string& filepath = inputs_.back()->filepath();
+        const std::string& filepath = inputs_.back()->filepath();
         pragma_once_fileset_.Insert(filepath);
         VLOG(1) << "HandleInclude #import " << filepath;
       }
@@ -701,7 +704,7 @@ void CppParser::PopInput() {
   last_input_ = std::move(current);
 }
 
-bool CppParser::IsProcessedFileInternal(const string& path,
+bool CppParser::IsProcessedFileInternal(const std::string& path,
                                         int include_dir_index) {
   VLOG(2) << "IsProcessedFileInternal:"
           << " path=" << path
@@ -786,7 +789,7 @@ bool CppParser::ProcessHasIncludeInternal(const ArrayTokenList& tokens,
 
   Token token = expanded.front();
   if (token.type == Token::LT) {
-    string path;
+    std::string path;
     auto iter = expanded.begin();
     ++iter;
     for (; iter != expanded.end() && iter->type != Token::GT; ++iter) {
@@ -819,9 +822,9 @@ bool CppParser::ProcessHasIncludeInternal(const ArrayTokenList& tokens,
 }
 
 CppParser::Token CppParser::ProcessHasCheckMacro(
-    const string& name,
+    const std::string& name,
     const ArrayTokenList& tokens,
-    const std::unordered_map<string, int>& has_check_macro) {
+    const std::unordered_map<std::string, int>& has_check_macro) {
   GOMA_COUNTERZ("ProcessHasCheckMacro");
 
   if (tokens.empty()) {
@@ -845,7 +848,7 @@ CppParser::Token CppParser::ProcessHasCheckMacro(
   //
   // b/71611716
 
-  string ident;
+  std::string ident;
   if (expanded.size() > 1) {
     // Concat the expanded tokens. Allow only ident or ':'.
     for (const auto& t : expanded) {

@@ -30,7 +30,6 @@
 // warning C4996: 'strdup': The POSIX name for this item is deprecated.
 # pragma warning(disable:4996)
 #endif  // _WIN32
-using std::string;
 
 namespace devtools_goma {
 

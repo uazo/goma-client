@@ -15,7 +15,7 @@
 
 namespace devtools_goma {
 
-socklen_t InitializeGomaIPCAddress(const string& path, GomaIPCAddr* addr) {
+socklen_t InitializeGomaIPCAddress(const std::string& path, GomaIPCAddr* addr) {
   memset(addr, 0, sizeof(GomaIPCAddr));
 #ifndef _WIN32
   // unix domain.

@@ -5,15 +5,14 @@
 #include "lib/compiler_flag_type_specific.h"
 
 #include "gtest/gtest.h"
-using std::string;
 
 namespace devtools_goma {
 
 TEST(CompilerFlagTypeSpecificTest, CompilerFlagTypeAndCompilerName) {
   const struct TestCase {
     CompilerFlagType compiler_type_expected;
-    string compiler_name_expected;
-    string arg;
+    std::string compiler_name_expected;
+    std::string arg;
   } testcases[] = {
       {CompilerFlagType::Gcc, "gcc", "gcc"},
       {CompilerFlagType::Gcc, "gcc", "gcc.exe"},

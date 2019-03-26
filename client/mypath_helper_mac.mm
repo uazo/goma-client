@@ -6,12 +6,12 @@
 
 namespace devtools_goma {
 
-string GetPlatformSpecificTempDirectory() {
+std::string GetPlatformSpecificTempDirectory() {
   NSString* dir = NSTemporaryDirectory();
   if (dir == nil) {
-    return string();
+    return std::string();
   }
-  return string([dir UTF8String]);
+  return std::string([dir UTF8String]);
 }
 
 }  // namespace devtools_goma

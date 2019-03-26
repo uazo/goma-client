@@ -23,18 +23,18 @@ using ::absl::StrCat;
 
 namespace devtools_goma {
 
-string FixPathToBeCwdRelative::ParseFlagValue(const FlagParser::Flag& flag,
-                                              const string& value) {
-  string normalized_path = PathResolver::WeakRelativePath(value, cwd_);
+std::string FixPathToBeCwdRelative::ParseFlagValue(const FlagParser::Flag& flag,
+                                                   const std::string& value) {
+  std::string normalized_path = PathResolver::WeakRelativePath(value, cwd_);
   if (normalized_path != value) {
     is_fixed_ = true;
   }
   return normalized_path;
 }
 
-string PathRewriterWithDebugPrefixMap::ParseFlagValue(
+std::string PathRewriterWithDebugPrefixMap::ParseFlagValue(
     const FlagParser::Flag& flag,
-    const string& value) {
+    const std::string& value) {
   // TODO: need to support Windows?
   if (!IsPosixAbsolutePath(value)) {
     return value;
@@ -46,7 +46,7 @@ string PathRewriterWithDebugPrefixMap::ParseFlagValue(
     return "";
   }
 
-  string path = value;
+  std::string path = value;
   if (RewritePathWithDebugPrefixMap(debug_prefix_map_, &path)) {
     is_rewritten_ = true;
     return path;
@@ -55,8 +55,8 @@ string PathRewriterWithDebugPrefixMap::ParseFlagValue(
 }
 
 bool RewritePathWithDebugPrefixMap(
-    const std::map<string, string>& debug_prefix_map,
-    string* path) {
+    const std::map<std::string, std::string>& debug_prefix_map,
+    std::string* path) {
   if (path->empty()) {
     return false;
   }
@@ -91,12 +91,12 @@ bool RewritePathWithDebugPrefixMap(
 // using std::vector<std::pair<string, string>> looks better than
 // std::map<string, string>?
 bool HasAmbiguityInDebugPrefixMap(
-    const std::map<string, string>& debug_prefix_map) {
+    const std::map<std::string, std::string>& debug_prefix_map) {
   if (debug_prefix_map.size() <= 1) {
     return false;
   }
 
-  string prev;
+  std::string prev;
   for (const auto& path : debug_prefix_map) {
     if (!prev.empty() && absl::StartsWith(path.first, prev)) {
       return true;
@@ -108,8 +108,8 @@ bool HasAmbiguityInDebugPrefixMap(
 
 void ConfigurableExecReqNormalizer::NormalizeExecReqSystemIncludeDirs(
     int keep_system_include_dirs,
-    const std::map<string, string>& debug_prefix_map,
-    const string& debug_prefix_map_signature,
+    const std::map<std::string, std::string>& debug_prefix_map,
+    const std::string& debug_prefix_map_signature,
     ExecReq* req) const {
   if (keep_system_include_dirs & kAsIs) {
     return;
@@ -147,14 +147,16 @@ void ConfigurableExecReqNormalizer::NormalizeExecReqSystemIncludeDirs(
   } else if (keep_system_include_dirs & kNormalizeWithCwd) {
     bool is_include_path_normalized = false;
     for (auto& path : *normalized_spec->mutable_system_include_path()) {
-      string normalized_path = PathResolver::WeakRelativePath(path, req->cwd());
+      std::string normalized_path =
+          PathResolver::WeakRelativePath(path, req->cwd());
       if (path != normalized_path) {
         path.assign(normalized_path);
         is_include_path_normalized = true;
       }
     }
     for (auto& path : *normalized_spec->mutable_cxx_system_include_path()) {
-      string normalized_path = PathResolver::WeakRelativePath(path, req->cwd());
+      std::string normalized_path =
+          PathResolver::WeakRelativePath(path, req->cwd());
       if (path != normalized_path) {
         path.assign(normalized_path);
         is_include_path_normalized = true;
@@ -175,10 +177,10 @@ void ConfigurableExecReqNormalizer::NormalizeExecReqSystemIncludeDirs(
 
 void ConfigurableExecReqNormalizer::NormalizeExecReqArgs(
     int keep_args,
-    const std::vector<string>& args,
-    const std::vector<string>& normalize_weak_relative_for_arg,
-    const std::map<string, string>& debug_prefix_map,
-    const string& debug_prefix_map_signature,
+    const std::vector<std::string>& args,
+    const std::vector<std::string>& normalize_weak_relative_for_arg,
+    const std::map<std::string, std::string>& debug_prefix_map,
+    const std::string& debug_prefix_map_signature,
     ExecReq* req) const {
   DCHECK(keep_args & kAsIs) << keep_args;
   LOG_IF(ERROR, (keep_args & kAsIs) == 0)
@@ -189,8 +191,8 @@ void ConfigurableExecReqNormalizer::NormalizeExecReqArgs(
 
 void ConfigurableExecReqNormalizer::NormalizeExecReqPathnamesInInput(
     int keep_pathnames_in_input,
-    const std::map<string, string>& debug_prefix_map,
-    const string& debug_prefix_map_signature,
+    const std::map<std::string, std::string>& debug_prefix_map,
+    const std::string& debug_prefix_map_signature,
     ExecReq* req) const {
   if (keep_pathnames_in_input & kAsIs) {
     return;
@@ -228,9 +230,9 @@ void ConfigurableExecReqNormalizer::NormalizeExecReqPathnamesInInput(
 
 void ConfigurableExecReqNormalizer::NormalizeExecReqCwd(
     int keep_cwd,
-    const absl::optional<string>& new_cwd,
-    const std::map<string, string>& debug_prefix_map,
-    const string& debug_prefix_map_signature,
+    const absl::optional<std::string>& new_cwd,
+    const std::map<std::string, std::string>& debug_prefix_map,
+    const std::string& debug_prefix_map_signature,
     ExecReq* req) const {
   if (keep_cwd & kAsIs) {
     return;
@@ -273,7 +275,7 @@ void ConfigurableExecReqNormalizer::NormalizeExecReqCwd(
   while (it != req->mutable_env()->end()) {
     if (absl::StartsWith(*it, kPwd)) {
       if (keep_cwd & kNormalizeWithDebugPrefixMap) {
-        string path = it->substr(strlen(kPwd));
+        std::string path = it->substr(strlen(kPwd));
         RewritePathWithDebugPrefixMap(debug_prefix_map, &path);
         *it = StrCat(kPwd, path);
         is_rewritten = true;
@@ -309,7 +311,7 @@ void ConfigurableExecReqNormalizer::NormalizeExecReqSubprograms(
 }
 
 void ConfigurableExecReqNormalizer::NormalizeExecReqEnvs(ExecReq* req) const {
-  std::vector<string> new_env;
+  std::vector<std::string> new_env;
   bool changed = false;
   for (const auto& env_var : req->env()) {
     if (absl::StartsWith(env_var, "DEVELOPER_DIR=")) {
@@ -391,8 +393,8 @@ void ConfigurableExecReqNormalizer::NormalizeForCacheKey(
     int id,
     bool normalize_include_path,
     bool is_linking,
-    const std::vector<string>& normalize_weak_relative_for_arg,
-    const std::map<string, string>& debug_prefix_map,
+    const std::vector<std::string>& normalize_weak_relative_for_arg,
+    const std::map<std::string, std::string>& debug_prefix_map,
     ExecReq* req) const {
   req->clear_requester_info();
   req->clear_cache_policy();
@@ -403,10 +405,10 @@ void ConfigurableExecReqNormalizer::NormalizeForCacheKey(
   }
 
   req->mutable_command_spec()->clear_local_compiler_path();
-  const string& command_name = req->command_spec().name();
+  const std::string& command_name = req->command_spec().name();
   LOG_IF(ERROR, command_name.empty())
       << "empty command_spec.name:" << req->command_spec().DebugString();
-  std::vector<string> args;
+  std::vector<std::string> args;
   // Normalize args.
   // we use CommandSpec.name for arg(0) for cache key.
   // see b/11973647
@@ -430,7 +432,7 @@ void ConfigurableExecReqNormalizer::NormalizeForCacheKey(
             << " keep_pathnames_in_input=" << config.keep_pathnames_in_input
             << " keep_system_include_dirs=" << config.keep_system_include_dirs;
 
-  string debug_prefix_map_signature;
+  std::string debug_prefix_map_signature;
   if (!debug_prefix_map.empty()) {
     debug_prefix_map_signature += "debug_prefix_map:";
     for (const auto& iter : debug_prefix_map) {
@@ -463,11 +465,11 @@ void ConfigurableExecReqNormalizer::NormalizeForCacheKey(
 
 ConfigurableExecReqNormalizer::Config AsIsExecReqNormalizer::Configure(
     int id,
-    const std::vector<string>& args,
+    const std::vector<std::string>& args,
     bool normalize_include_path,
     bool is_linking,
-    const std::vector<string>& normalize_weak_relative_for_arg,
-    const std::map<string, string>& debug_prefix_map,
+    const std::vector<std::string>& normalize_weak_relative_for_arg,
+    const std::map<std::string, std::string>& debug_prefix_map,
     const ExecReq* req) const {
   return Config::AsIs();
 }

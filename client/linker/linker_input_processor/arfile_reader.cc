@@ -29,7 +29,7 @@ ArFileReader::ArFileReader(std::unique_ptr<ArFile> arfile)
 }
 
 /* static */
-std::unique_ptr<FileReader> ArFileReader::Create(const string& filename) {
+std::unique_ptr<FileReader> ArFileReader::Create(const std::string& filename) {
   if (!CanHandle(filename)) {
     return nullptr;
   }
@@ -58,7 +58,7 @@ std::unique_ptr<FileReader> ArFileReader::Create(const string& filename) {
 }
 
 /* static */
-bool ArFileReader::CanHandle(const string& filename) {
+bool ArFileReader::CanHandle(const std::string& filename) {
   // TODO: ignore system archives.
   // Since system archives won't change by build to build,
   // there is no merit to use ArFileReader.
@@ -77,7 +77,7 @@ ssize_t ArFileReader::Read(void* ptr, size_t len) {
             << " len=" << len
             << " total_off=" << read_bytes + current_offset_;
     ArFile::EntryHeader entry_header;
-    string entry_body;
+    std::string entry_body;
     if (!arfile_->ReadEntry(&entry_header, &entry_body)) {
       LOG(ERROR) << "failed to read entry."
                  << " current_offset_=" << current_offset_
@@ -113,8 +113,8 @@ void ArFileReader::NormalizeArHdr(ArFile::EntryHeader* hdr) {
 }
 
 #ifdef __MACH__
-FatArFileReader::FatArFileReader(
-    const string& filename, std::unique_ptr<MacFatHeader> f_hdr)
+FatArFileReader::FatArFileReader(const std::string& filename,
+                                 std::unique_ptr<MacFatHeader> f_hdr)
     : FileReader(filename),
       is_valid_(true),
       filename_(filename),
@@ -125,9 +125,9 @@ FatArFileReader::FatArFileReader(
   Init();
 }
 
-FatArFileReader::FatArFileReader(
-    const string& filename, std::unique_ptr<MacFatHeader> f_hdr,
-    ArFileReaderFactory* create_arfile_reader)
+FatArFileReader::FatArFileReader(const std::string& filename,
+                                 std::unique_ptr<MacFatHeader> f_hdr,
+                                 ArFileReaderFactory* create_arfile_reader)
     : FileReader(filename),
       is_valid_(true),
       filename_(filename),
@@ -219,7 +219,8 @@ off_t FatArFileReader::Seek(off_t offset, ScopedFd::Whence whence) const {
 }
 
 std::unique_ptr<ArFileReader> FatArFileReader::CreateArFileReader(
-    const string& filename, off_t offset) {
+    const std::string& filename,
+    off_t offset) {
   if (create_arfile_reader_factory_) {
     return create_arfile_reader_factory_->CreateArFileReader(filename, offset);
   } else {

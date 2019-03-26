@@ -10,13 +10,13 @@
 
 namespace devtools_goma {
 
-string GetPlatformSpecificTempDirectory() {
+std::string GetPlatformSpecificTempDirectory() {
   char buf[MAX_PATH + 1];
   DWORD size = GetTempPathA(sizeof(buf), buf);
   if (size == 0) {
     LOG(WARNING) << "failed ot get temporary directory.";
     LOG_SYSRESULT(GetLastError());
-    return string();
+    return std::string();
   }
   return buf;
 }

@@ -23,7 +23,7 @@
 
 namespace devtools_goma {
 
-ScopedTmpFile::ScopedTmpFile(const string& prefix) {
+ScopedTmpFile::ScopedTmpFile(const std::string& prefix) {
 #ifndef _WIN32
   static const char kMkstempMarker[] = "XXXXXX";
   filename_.assign(file::JoinPath(GetGomaTmpDir(), prefix));
@@ -43,7 +43,8 @@ ScopedTmpFile::ScopedTmpFile(const string& prefix) {
   }
 }
 
-ScopedTmpFile::ScopedTmpFile(const string& prefix, const string& extension) {
+ScopedTmpFile::ScopedTmpFile(const std::string& prefix,
+                             const std::string& extension) {
   DCHECK(!extension.empty());
   DCHECK_EQ(extension[0], '.');
   static const int kNumRetries = 5;
@@ -80,7 +81,7 @@ bool ScopedTmpFile::Close() {
   return fd_.Close();
 }
 
-ScopedTmpDir::ScopedTmpDir(const string& prefix) {
+ScopedTmpDir::ScopedTmpDir(const std::string& prefix) {
   char tmpdir[PATH_MAX];
   CheckTempDirectory(GetGomaTmpDir());
   static const char kTmpdirTemplate[] = "%s/%s_XXXXXXXX";

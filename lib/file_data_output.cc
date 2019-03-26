@@ -20,12 +20,12 @@ namespace devtools_goma {
 
 namespace {
 
-bool CreateDirectoryForFile(const string& filename) {
+bool CreateDirectoryForFile(const std::string& filename) {
 #ifndef _WIN32
-  std::stack<string> ancestors;
+  std::stack<std::string> ancestors;
   size_t last_slash = filename.rfind('/');
-  while (last_slash != string::npos) {
-    const string& dirname = filename.substr(0, last_slash);
+  while (last_slash != std::string::npos) {
+    const std::string& dirname = filename.substr(0, last_slash);
     int result = mkdir(dirname.c_str(), 0777);
     if (result == 0) {
       VLOG(1) << "created " << dirname << " to store " << filename;
@@ -44,7 +44,7 @@ bool CreateDirectoryForFile(const string& filename) {
   }
 
   while (!ancestors.empty()) {
-    const string& dirname = ancestors.top();
+    const std::string& dirname = ancestors.top();
     int result = mkdir(dirname.c_str(), 0777);
     if (result < 0 && errno != EEXIST) {
       PLOG(INFO) << "failed to create directory: " << dirname;
@@ -56,7 +56,7 @@ bool CreateDirectoryForFile(const string& filename) {
   return true;
 #else
   size_t last_slash = filename.rfind('\\');
-  const string& dirname = filename.substr(0, last_slash);
+  const std::string& dirname = filename.substr(0, last_slash);
   int result = SHCreateDirectoryExA(nullptr, dirname.c_str(), nullptr);
   if (result == ERROR_SUCCESS) {
     VLOG(1) << "created " << dirname;
@@ -72,7 +72,7 @@ bool CreateDirectoryForFile(const string& filename) {
 
 class FileOutputImpl : public FileDataOutput {
  public:
-  FileOutputImpl(const string& filename, int mode)
+  FileOutputImpl(const std::string& filename, int mode)
       : filename_(filename),
         fd_(devtools_goma::ScopedFd::Create(filename, mode)),
         error_(false) {
@@ -103,7 +103,7 @@ class FileOutputImpl : public FileDataOutput {
   }
 
   bool IsValid() const override { return fd_.valid(); }
-  bool WriteAt(off_t offset, const string& content) override {
+  bool WriteAt(off_t offset, const std::string& content) override {
     off_t pos = fd_.Seek(offset, devtools_goma::ScopedFd::SeekAbsolute);
     if (pos < 0 || pos != offset) {
       PLOG(ERROR) << "seek failed? " << filename_ << " pos=" << pos
@@ -132,10 +132,10 @@ class FileOutputImpl : public FileDataOutput {
     return r;
   }
 
-  string ToString() const override { return filename_; }
+  std::string ToString() const override { return filename_; }
 
  private:
-  const string filename_;
+  const std::string filename_;
   devtools_goma::ScopedFd fd_;
   bool error_;
   DISALLOW_COPY_AND_ASSIGN(FileOutputImpl);
@@ -143,16 +143,16 @@ class FileOutputImpl : public FileDataOutput {
 
 class StringOutputImpl : public FileDataOutput {
  public:
-  StringOutputImpl(string name, string* buf)
+  StringOutputImpl(std::string name, std::string* buf)
       : name_(std::move(name)), buf_(buf), size_(0UL) {}
   ~StringOutputImpl() override {}
 
   bool IsValid() const override { return buf_ != nullptr; }
-  bool WriteAt(off_t offset, const string& content) override {
+  bool WriteAt(off_t offset, const std::string& content) override {
     if (buf_->size() < offset + content.size()) {
       buf_->resize(offset + content.size());
     }
-    if (content.size() > 0) {
+    if (!content.empty()) {
       memcpy(&(buf_->at(offset)), content.data(), content.size());
     }
     if (size_ < offset + content.size()) {
@@ -165,11 +165,11 @@ class StringOutputImpl : public FileDataOutput {
     buf_->resize(size_);
     return true;
   }
-  string ToString() const override { return name_; }
+  std::string ToString() const override { return name_; }
 
  private:
-  const string name_;
-  string* buf_;
+  const std::string name_;
+  std::string* buf_;
   size_t size_;
   DISALLOW_COPY_AND_ASSIGN(StringOutputImpl);
 };
@@ -178,15 +178,15 @@ class StringOutputImpl : public FileDataOutput {
 
 /* static */
 std::unique_ptr<FileDataOutput> FileDataOutput::NewFileOutput(
-    const string& filename,
+    const std::string& filename,
     int mode) {
   return std::unique_ptr<FileDataOutput>(new FileOutputImpl(filename, mode));
 }
 
 /* static */
 std::unique_ptr<FileDataOutput> FileDataOutput::NewStringOutput(
-    const string& name,
-    string* buf) {
+    const std::string& name,
+    std::string* buf) {
   return std::unique_ptr<FileDataOutput>(new StringOutputImpl(name, buf));
 }
 

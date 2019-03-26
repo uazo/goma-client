@@ -25,8 +25,6 @@
 #include "unittest_util.h"
 #include "util.h"
 
-using std::string;
-
 namespace {
 constexpr absl::Duration kCacheHoldingTime = absl::Hours(24 * 30);  // 30 days
 }
@@ -39,7 +37,7 @@ class TestCompilerInfoValidator
   TestCompilerInfoValidator() {}
 
   bool Validate(const CompilerInfo& compiler_info,
-                const string& local_compiler_path) override {
+                const std::string& local_compiler_path) override {
     return true;
   }
 
@@ -54,7 +52,7 @@ class HashCheckingCompilerInfoValidator
   HashCheckingCompilerInfoValidator() {}
 
   bool Validate(const CompilerInfo& compiler_info,
-                const string& local_compiler_path) override {
+                const std::string& local_compiler_path) override {
     // If FileStat is the same, this should be ok.
     if (compiler_info.local_compiler_stat() == local_compiler_file_stat_) {
       return true;
@@ -96,7 +94,7 @@ class CompilerInfoCacheTest : public testing::Test {
   bool Marshal(CompilerInfoDataTable* table) {
     return cache_->Marshal(table);
   }
-  string HashKey(const CompilerInfoData& data) {
+  std::string HashKey(const CompilerInfoData& data) {
     return cache_->HashKey(data);
   }
   void Clear() {
@@ -129,11 +127,13 @@ class CompilerInfoCacheTest : public testing::Test {
     compiler_info->data_->set_hash(hash);
   }
 
-  const std::unordered_map<string, CompilerInfoState*>& compiler_info() const {
+  const std::unordered_map<std::string, CompilerInfoState*>& compiler_info()
+      const {
     return cache_->compiler_info_;
   }
 
-  const std::unordered_map<string, std::unique_ptr<std::unordered_set<string>>>&
+  const std::unordered_map<std::string,
+                           std::unique_ptr<std::unordered_set<std::string>>>&
   keys_by_hash() const {
     return cache_->keys_by_hash_;
   }
@@ -143,11 +143,11 @@ class CompilerInfoCacheTest : public testing::Test {
 };
 
 TEST_F(CompilerInfoCacheTest, Lookup) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/gcc");
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "/tmp"));
-  std::vector<string> key_env;
+  std::vector<std::string> key_env;
 
   CompilerInfoCache::Key key(CompilerInfoCache::CreateKey(
       *flags, "/usr/bin/gcc", key_env));
@@ -182,8 +182,8 @@ TEST_F(CompilerInfoCacheTest, Lookup) {
 }
 
 TEST_F(CompilerInfoCacheTest, CompilerInfoCacheKeyRelative) {
-  std::vector<string> args {"./clang"};
-  std::vector<string> key_env;
+  std::vector<std::string> args{"./clang"};
+  std::vector<std::string> key_env;
 
   std::unique_ptr<CompilerFlags> flags1(
       CompilerFlagsParser::MustNew(args, "/dir1"));
@@ -203,8 +203,8 @@ TEST_F(CompilerInfoCacheTest, CompilerInfoCacheKeyRelative) {
 }
 
 TEST_F(CompilerInfoCacheTest, CompilerInfoCacheKeyAbsolute) {
-  std::vector<string> args {"/usr/bin/clang"};
-  std::vector<string> key_env;
+  std::vector<std::string> args{"/usr/bin/clang"};
+  std::vector<std::string> key_env;
 
   std::unique_ptr<CompilerFlags> flags1(
       CompilerFlagsParser::MustNew(args, "/dir1"));
@@ -227,11 +227,11 @@ TEST_F(CompilerInfoCacheTest, CompilerInfoCacheKeyAbsolute) {
 }
 
 TEST_F(CompilerInfoCacheTest, DupStore) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/gcc");
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "/tmp"));
-  std::vector<string> key_env;
+  std::vector<std::string> key_env;
 
   CompilerInfoCache::Key key(CompilerInfoCache::CreateKey(
       *flags, "/usr/bin/gcc", key_env));
@@ -250,7 +250,8 @@ TEST_F(CompilerInfoCacheTest, DupStore) {
 
   {
     EXPECT_EQ(1U, keys_by_hash().size());
-    const std::unordered_set<string>& keys = *keys_by_hash().begin()->second;
+    const std::unordered_set<std::string>& keys =
+        *keys_by_hash().begin()->second;
     EXPECT_EQ(1U, keys.size());
   }
 
@@ -291,7 +292,8 @@ TEST_F(CompilerInfoCacheTest, DupStore) {
 
   {
     EXPECT_EQ(1U, keys_by_hash().size());
-    const std::unordered_set<string>& keys = *keys_by_hash().begin()->second;
+    const std::unordered_set<std::string>& keys =
+        *keys_by_hash().begin()->second;
     EXPECT_EQ(2U, keys.size());
   }
 
@@ -319,13 +321,13 @@ TEST_F(CompilerInfoCacheTest, DupStore) {
 }
 
 TEST_F(CompilerInfoCacheTest, NegativeCache) {
-  const string compiler_path("/invalid/gcc");
+  const std::string compiler_path("/invalid/gcc");
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(compiler_path);
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "/tmp"));
-  std::vector<string> key_env;
+  std::vector<std::string> key_env;
 
   CompilerInfoCache::Key key(CompilerInfoCache::CreateKey(
       *flags, compiler_path, key_env));
@@ -382,13 +384,13 @@ TEST_F(CompilerInfoCacheTest, NegativeCache) {
 }
 
 TEST_F(CompilerInfoCacheTest, MissingCompilerCache) {
-  const string compiler_path("/missing/gcc");
+  const std::string compiler_path("/missing/gcc");
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(compiler_path);
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "/tmp"));
-  std::vector<string> key_env;
+  std::vector<std::string> key_env;
 
   CompilerInfoCache::Key key(CompilerInfoCache::CreateKey(
       *flags, compiler_path, key_env));
@@ -457,11 +459,10 @@ TEST_F(CompilerInfoCacheTest, Marshal) {
   cid->set_lang("c");
   cid->set_found(true);
   cid->mutable_cxx();
-  const string hash1 = HashKey(*cid.get());
+  const std::string hash1 = HashKey(*cid.get());
 
   ASSERT_TRUE(file::IsAbsolutePath(key.local_compiler_path));
-  const string key1 = key.ToString(
-      !CompilerInfoCache::Key::kCwdRelative);
+  const std::string key1 = key.ToString(!CompilerInfoCache::Key::kCwdRelative);
   ScopedCompilerInfoState cis(cache_->Store(key, std::move(cid)));
 
   key.base = "/usr/bin/gcc -O2 -fno-diagnostics-show-option";
@@ -472,8 +473,7 @@ TEST_F(CompilerInfoCacheTest, Marshal) {
   cid->mutable_cxx();
   EXPECT_EQ(hash1, HashKey(*cid.get()));
   ASSERT_TRUE(file::IsAbsolutePath(key.local_compiler_path));
-  const string key2 = key.ToString(
-      !CompilerInfoCache::Key::kCwdRelative);
+  const std::string key2 = key.ToString(!CompilerInfoCache::Key::kCwdRelative);
   EXPECT_NE(key1, key2);
   cis.reset(cache_->Store(key, std::move(cid)));
 
@@ -484,11 +484,10 @@ TEST_F(CompilerInfoCacheTest, Marshal) {
   cid->set_lang("c++");
   cid->set_found(true);
   cid->mutable_cxx();
-  const string hash3 = HashKey(*cid.get());
+  const std::string hash3 = HashKey(*cid.get());
   EXPECT_NE(hash1, hash3);
   ASSERT_TRUE(file::IsAbsolutePath(key.local_compiler_path));
-  const string key3 = key.ToString(
-      !CompilerInfoCache::Key::kCwdRelative);
+  const std::string key3 = key.ToString(!CompilerInfoCache::Key::kCwdRelative);
   EXPECT_NE(key1, key3);
   EXPECT_NE(key2, key3);
   cis.reset(cache_->Store(key, std::move(cid)));
@@ -500,12 +499,11 @@ TEST_F(CompilerInfoCacheTest, Marshal) {
   cid->set_lang("c");
   cid->set_found(true);
   cid->mutable_cxx();
-  const string hash4 = HashKey(*cid.get());
+  const std::string hash4 = HashKey(*cid.get());
   EXPECT_NE(hash1, hash4);
   EXPECT_NE(hash3, hash4);
   ASSERT_TRUE(file::IsAbsolutePath(key.local_compiler_path));
-  const string key4 = key.ToString(
-      !CompilerInfoCache::Key::kCwdRelative);
+  const std::string key4 = key.ToString(!CompilerInfoCache::Key::kCwdRelative);
   EXPECT_NE(key1, key4);
   EXPECT_NE(key2, key4);
   EXPECT_NE(key3, key4);
@@ -525,15 +523,15 @@ TEST_F(CompilerInfoCacheTest, Marshal) {
     switch (entry.keys_size()) {
       case 2: // hash1: key1, key2
         {
-          std::unordered_set<string> keys(entry.keys().begin(),
-                                          entry.keys().end());
-          EXPECT_EQ(1U, keys.count(key1));
-          EXPECT_EQ(1U, keys.count(key2));
-          EXPECT_EQ("gcc", entry.data().name());
-          EXPECT_EQ("c", entry.data().lang());
-          EXPECT_TRUE(entry.data().found());
-          EXPECT_EQ(hash1, HashKey(entry.data()));
-          hash1_found = true;
+        std::unordered_set<std::string> keys(entry.keys().begin(),
+                                             entry.keys().end());
+        EXPECT_EQ(1U, keys.count(key1));
+        EXPECT_EQ(1U, keys.count(key2));
+        EXPECT_EQ("gcc", entry.data().name());
+        EXPECT_EQ("c", entry.data().lang());
+        EXPECT_TRUE(entry.data().found());
+        EXPECT_EQ(hash1, HashKey(entry.data()));
+        hash1_found = true;
         }
         break;
       case 1: // hash3: key3
@@ -584,7 +582,7 @@ TEST_F(CompilerInfoCacheTest, Unmarshal) {
   EXPECT_EQ("gcc", state->info().data().name());
   EXPECT_EQ("c", state->info().data().lang());
   EXPECT_TRUE(state->info().data().found());
-  const string& hash1 = HashKey(state->info().data());
+  const std::string& hash1 = HashKey(state->info().data());
 
   p = compiler_info().find("/usr/bin/gcc -O2 -fno-diagnostics-show-option @");
   EXPECT_TRUE(p != compiler_info().end());
@@ -602,13 +600,13 @@ TEST_F(CompilerInfoCacheTest, Unmarshal) {
   EXPECT_EQ("g++", state->info().data().name());
   EXPECT_EQ("c++", state->info().data().lang());
   EXPECT_TRUE(state->info().data().found());
-  const string& hash2 = HashKey(state->info().data());
+  const std::string& hash2 = HashKey(state->info().data());
   EXPECT_NE(hash1, hash2);
 
   EXPECT_EQ(2U, keys_by_hash().size());
   auto found = keys_by_hash().find(hash1);
   EXPECT_TRUE(found != keys_by_hash().end());
-  const std::unordered_set<string>* keys = found->second.get();
+  const std::unordered_set<std::string>* keys = found->second.get();
   EXPECT_EQ(2U, keys->size());
   EXPECT_EQ(1U, keys->count("/usr/bin/gcc -O2 @"));
   EXPECT_EQ(1U, keys->count("/usr/bin/gcc -O2 -fno-diagnostics-show-option @"));
@@ -632,22 +630,22 @@ TEST_F(CompilerInfoCacheTest, UpdateOlderCompilerInfo)
   validator->SetLocalCompilerFileStat(valid_filestat);
   validator->SetLocalCompilerHash(valid_hash);
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/gcc");
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "/tmp"));
-  std::vector<string> key_env;
+  std::vector<std::string> key_env;
 
   CompilerInfoCache::Key key(CompilerInfoCache::CreateKey(
       *flags, "/usr/bin/gcc", key_env));
   ScopedCompilerInfoState cis(cache_->Lookup(key));
   EXPECT_TRUE(cis.get() == nullptr);
 
-  std::vector<string> old_args;
+  std::vector<std::string> old_args;
   old_args.push_back("/usr/bin/oldgcc");
   std::unique_ptr<CompilerFlags> old_flags(
       CompilerFlagsParser::MustNew(old_args, "/tmp"));
-  std::vector<string> old_key_env;
+  std::vector<std::string> old_key_env;
 
   CompilerInfoCache::Key old_key(CompilerInfoCache::CreateKey(
       *old_flags, "/usr/bin/oldgcc", old_key_env));
@@ -796,11 +794,11 @@ TEST_F(CompilerInfoCacheTest, RelativePathCompiler) {
 
   CompilerInfoCache::Init(tmpdir_util.tmpdir(), kCompilerInfoCache,
                           absl::Hours(1));
-  const std::vector<string> empty_env;
+  const std::vector<std::string> empty_env;
   CompilerInfoCache::Key key1, key2, key3;
 
   {
-    std::vector<string> args { "usr/bin/gcc" };
+    std::vector<std::string> args{"usr/bin/gcc"};
     std::unique_ptr<CompilerFlags> flags(
         CompilerFlagsParser::MustNew(args, "/"));
     std::unique_ptr<CompilerInfoData> cid(
@@ -815,7 +813,7 @@ TEST_F(CompilerInfoCacheTest, RelativePathCompiler) {
   }
 
   {
-    std::vector<string> args { "../usr/bin/gcc" };
+    std::vector<std::string> args{"../usr/bin/gcc"};
     std::unique_ptr<CompilerFlags> flags(
         CompilerFlagsParser::MustNew(args, "/bin"));
     std::unique_ptr<CompilerInfoData> cid(
@@ -830,7 +828,7 @@ TEST_F(CompilerInfoCacheTest, RelativePathCompiler) {
   }
 
   {
-    std::vector<string> args { "/usr/bin/gcc" };
+    std::vector<std::string> args{"/usr/bin/gcc"};
     std::unique_ptr<CompilerFlags> flags(
         CompilerFlagsParser::MustNew(args, tmpdir_util.cwd()));
     std::unique_ptr<CompilerInfoData> cid(

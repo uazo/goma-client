@@ -22,14 +22,14 @@ const char kFakeExe[] = "fake";
 const char kFakeExe[] = "fake.exe";
 #endif
 
-std::vector<string> DefaultCompilerInfoEnvs(const string& cwd) {
+std::vector<std::string> DefaultCompilerInfoEnvs(const std::string& cwd) {
 #ifndef _WIN32
-  return std::vector<string>();
+  return std::vector<std::string>();
 #else
   // On Windows, PATH and PATHEXT must exist in compiler_info_envs.
-  return std::vector<string> {
-    "PATH=" + cwd,
-    "PATHEXT=.exe",
+  return std::vector<std::string>{
+      "PATH=" + cwd,
+      "PATHEXT=.exe",
   };
 #endif
 }
@@ -49,12 +49,15 @@ class FakeCompilerInfoBuilderTest : public ::testing::Test {
 
 TEST_F(FakeCompilerInfoBuilderTest, Success) {
   // Assuming `fake` exists the same directory with this unittest.
-  const std::vector<string> args{
-      kFakeExe, "foo.fake", "bar.fake",
+  const std::vector<std::string> args{
+      kFakeExe,
+      "foo.fake",
+      "bar.fake",
   };
-  const string cwd = GetCurrentDirNameOrDie();
-  const string local_compiler_path = file::JoinPath(cwd, kFakeExe);
-  const std::vector<string> compiler_info_envs = DefaultCompilerInfoEnvs(cwd);
+  const std::string cwd = GetCurrentDirNameOrDie();
+  const std::string local_compiler_path = file::JoinPath(cwd, kFakeExe);
+  const std::vector<std::string> compiler_info_envs =
+      DefaultCompilerInfoEnvs(cwd);
 
   FakeFlags flags(args, cwd);
 
@@ -69,15 +72,18 @@ TEST_F(FakeCompilerInfoBuilderTest, Success) {
 
 TEST_F(FakeCompilerInfoBuilderTest, Failure) {
 #ifndef _WIN32
-  const string local_compiler_path = "/somewhere/not/exist/fake";
+  const std::string local_compiler_path = "/somewhere/not/exist/fake";
 #else
-  const string local_compiler_path = "C:\\somewhere\\not\\exist\\fake.exe";
+  const std::string local_compiler_path = "C:\\somewhere\\not\\exist\\fake.exe";
 #endif
-  const std::vector<string> args{
-      local_compiler_path, "foo.fake", "bar.fake",
+  const std::vector<std::string> args{
+      local_compiler_path,
+      "foo.fake",
+      "bar.fake",
   };
-  const string cwd = GetCurrentDirNameOrDie();
-  const std::vector<string> compiler_info_envs = DefaultCompilerInfoEnvs(cwd);
+  const std::string cwd = GetCurrentDirNameOrDie();
+  const std::vector<std::string> compiler_info_envs =
+      DefaultCompilerInfoEnvs(cwd);
 
   FakeFlags flags(args, cwd);
 

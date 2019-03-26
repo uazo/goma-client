@@ -16,28 +16,28 @@
 #include "file_stat_cache.h"
 #include "type.h"
 
-using std::string;
-
 namespace devtools_goma {
 namespace modulemap {
 
 struct CollectedModuleMapFile {
-  CollectedModuleMapFile(string rel_path, string abs_path, FileStat file_stat)
+  CollectedModuleMapFile(std::string rel_path,
+                         std::string abs_path,
+                         FileStat file_stat)
       : rel_path(std::move(rel_path)),
         abs_path(std::move(abs_path)),
         file_stat(std::move(file_stat)) {}
 
   // An relative path from cwd.
   // Possible absolute if an absolute path is specified as a module map file.
-  string rel_path;
-  string abs_path;
+  std::string rel_path;
+  std::string abs_path;
   FileStat file_stat;
 };
 
 // Processor parses a modulemap file, and lists all extern modulemap files.
 class Processor {
  public:
-  Processor(string cwd, FileStatCache* file_stat_cache)
+  Processor(std::string cwd, FileStatCache* file_stat_cache)
       : cwd_(std::move(cwd)), file_stat_cache_(file_stat_cache) {}
 
   Processor(const Processor&) = delete;
@@ -67,11 +67,11 @@ class Processor {
   bool AddExternMapduleMapFilesRecursively(const Module& module_decl,
                                            absl::string_view module_map_dir);
 
-  const string cwd_;
+  const std::string cwd_;
   FileStatCache* file_stat_cache_;
 
   std::vector<CollectedModuleMapFile> collected_module_map_files_;
-  absl::flat_hash_set<string> visited_abs_paths_;
+  absl::flat_hash_set<std::string> visited_abs_paths_;
 };
 
 }  // namespace modulemap

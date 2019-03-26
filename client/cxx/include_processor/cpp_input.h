@@ -17,9 +17,9 @@ namespace devtools_goma {
 class CppInput {
  public:
   CppInput(const CppDirectiveList* directives,
-           const string& include_guard_ident,
-           const string& filepath,
-           const string& directory,
+           const std::string& include_guard_ident,
+           const std::string& filepath,
+           const std::string& directory,
            int include_dir_index)
       : filepath_(filepath),
         directory_(directory),
@@ -28,13 +28,15 @@ class CppInput {
         directives_(directives),
         include_guard_ident_(include_guard_ident) {}
 
-  const string& filepath() const { return filepath_; }
-  const string& directory() const { return directory_; }
+  const std::string& filepath() const { return filepath_; }
+  const std::string& directory() const { return directory_; }
   int include_dir_index() const { return include_dir_index_; }
 
   size_t directive_pos() const { return directive_pos_; }
 
-  const string& include_guard_ident() const { return include_guard_ident_; }
+  const std::string& include_guard_ident() const {
+    return include_guard_ident_;
+  }
 
   const CppDirective* NextDirective() {
     const CppDirectiveList& directives = *directives_;
@@ -46,13 +48,13 @@ class CppInput {
   }
 
  private:
-  const string filepath_;
-  const string directory_;
+  const std::string filepath_;
+  const std::string directory_;
   const int include_dir_index_;
 
   size_t directive_pos_;
   const CppDirectiveList* directives_;
-  const string include_guard_ident_;
+  const std::string include_guard_ident_;
 
   DISALLOW_COPY_AND_ASSIGN(CppInput);
 };

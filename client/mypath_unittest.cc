@@ -29,7 +29,7 @@ class MyPathTest : public testing::Test {
     orig_goma_tmp_dir_ = FLAGS_TMP_DIR;
     // Since we will test GetGomaTmpDir(), we cannot use a function that
     // use GetGomaTmpDir().  That is why we do not use TmpDirUtil here.
-    string tmpdir;
+    std::string tmpdir;
 #ifdef _WIN32
     char tmp_dir[PATH_MAX], first_dir[PATH_MAX];
     ASSERT_NE(0, GetTempPathA(PATH_MAX, tmp_dir));
@@ -47,11 +47,11 @@ class MyPathTest : public testing::Test {
     FLAGS_TMP_DIR = orig_goma_tmp_dir_;
   }
  private:
-  string orig_goma_tmp_dir_;
+  std::string orig_goma_tmp_dir_;
 };
 
 TEST(MyPath, GetUsername) {
-  const string& user = devtools_goma::GetUsername();
+  const std::string& user = devtools_goma::GetUsername();
   // smoke test.
   EXPECT_FALSE(user.empty());
   EXPECT_NE(user, "root");
@@ -67,7 +67,7 @@ TEST(MyPath, GetUsernameWithoutEnv) {
   EXPECT_EQ(devtools_goma::GetEnv("USER"), "");
 
   EXPECT_TRUE(devtools_goma::GetUsernameEnv().empty());
-  const string username = devtools_goma::GetUsernameNoEnv();
+  const std::string username = devtools_goma::GetUsernameNoEnv();
   EXPECT_FALSE(username.empty());
   EXPECT_NE(username, "root");
   EXPECT_NE(username, "unknown");
@@ -92,12 +92,11 @@ TEST(MyPath, GetMyDirectory) {
 #if GTEST_HAS_DEATH_TEST
 
 TEST_F(MyPathTest, CheckTempDiretoryNotDirectory) {
-  const string& tmpdir = devtools_goma::GetGomaTmpDir();
+  const std::string& tmpdir = devtools_goma::GetGomaTmpDir();
   file::RecursivelyDelete(tmpdir, file::Defaults());
   ASSERT_TRUE(file::CreateDir(tmpdir.c_str(), file::CreationMode(0700)).ok())
       << tmpdir;
-  const string& tmpdir_file =
-      file::JoinPath(tmpdir, "tmpdir_is_not_dir");
+  const std::string& tmpdir_file = file::JoinPath(tmpdir, "tmpdir_is_not_dir");
   ASSERT_TRUE(devtools_goma::WriteStringToFile("", tmpdir_file));
 #ifndef _WIN32
 // TODO: enable CheckTempDiretoryNotDirectory on win.
@@ -115,7 +114,7 @@ TEST_F(MyPathTest, CheckTempDiretoryNotDirectory) {
 #ifndef _WIN32
 
 TEST_F(MyPathTest, CheckTempDiretoryBadPermission) {
-  const string& tmpdir = devtools_goma::GetGomaTmpDir();
+  const std::string& tmpdir = devtools_goma::GetGomaTmpDir();
   file::RecursivelyDelete(tmpdir, file::Defaults());
   mode_t omask = umask(022);
   ASSERT_EQ(mkdir(tmpdir.c_str(), 0744), 0) << tmpdir;

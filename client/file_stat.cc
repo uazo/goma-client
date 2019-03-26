@@ -20,11 +20,12 @@
 #include "counterz.h"
 #include "glog/logging.h"
 
+namespace devtools_goma {
+
 #ifdef _WIN32
 namespace {
 
-bool InitFromInfo(const WIN32_FILE_ATTRIBUTE_DATA& info,
-                  devtools_goma::FileStat* file_stat) {
+bool InitFromInfo(const WIN32_FILE_ATTRIBUTE_DATA& info, FileStat* file_stat) {
   if (info.nFileSizeHigh != 0) {
     LOG(ERROR) << "Goma won't handle a file whose size is larger than 4 GB.";
     return false;
@@ -35,19 +36,16 @@ bool InitFromInfo(const WIN32_FILE_ATTRIBUTE_DATA& info,
   }
 
   file_stat->size = static_cast<off_t>(info.nFileSizeLow);
-  file_stat->mtime =
-      devtools_goma::ConvertFiletimeToAbslTime(info.ftLastWriteTime);
+  file_stat->mtime = ConvertFiletimeToAbslTime(info.ftLastWriteTime);
   return true;
 }
 
-}  // namespace
+}  // anonymous namespace
 #endif
-
-namespace devtools_goma {
 
 const off_t FileStat::kInvalidFileSize = -1;
 
-FileStat::FileStat(const string& filename)
+FileStat::FileStat(const std::string& filename)
     : size(kInvalidFileSize), is_directory(false), taken_at(absl::Now()) {
   GOMA_COUNTERZ("FileStat");
 #ifndef _WIN32

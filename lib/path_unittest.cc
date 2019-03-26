@@ -6,7 +6,6 @@
 #include "base/path.h"
 
 #include "gtest/gtest.h"
-using std::string;
 
 TEST(PathTest, fileJoinPath) {
   EXPECT_EQ("", file::JoinPath());

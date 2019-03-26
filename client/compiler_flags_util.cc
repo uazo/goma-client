@@ -17,18 +17,20 @@
 #include "gcc_flags.h"
 #include "path_resolver.h"
 
+namespace devtools_goma {
+
 namespace {
 
 class FixNonSystemPath : public FlagParser::Callback {
  public:
-  explicit FixNonSystemPath(string cwd) : cwd_(std::move(cwd)) {}
+  explicit FixNonSystemPath(std::string cwd) : cwd_(std::move(cwd)) {}
 
-  void RegisterSystemPath(const string& path) {
+  void RegisterSystemPath(const std::string& path) {
     path_resolver_.RegisterSystemPath(path);
   }
 
-  string ParseFlagValue(const FlagParser::Flag& flag ALLOW_UNUSED,
-                        const string& value) override {
+  std::string ParseFlagValue(const FlagParser::Flag& flag ALLOW_UNUSED,
+                             const std::string& value) override {
     if (path_resolver_.IsSystemPath(value))
       return value;
 
@@ -36,17 +38,15 @@ class FixNonSystemPath : public FlagParser::Callback {
   }
 
  private:
-  string cwd_;
-  devtools_goma::PathResolver path_resolver_;
+  std::string cwd_;
+  PathResolver path_resolver_;
 };
 
 }  // anonymous namespace
 
-namespace devtools_goma {
-
-std::vector<string> CompilerFlagsUtil::MakeWeakRelative(
-    const std::vector<string>& args,
-    const string& cwd,
+std::vector<std::string> CompilerFlagsUtil::MakeWeakRelative(
+    const std::vector<std::string>& args,
+    const std::string& cwd,
     const CxxCompilerInfo& compiler_info) {
   FixNonSystemPath fix_path(cwd);
   for (const auto& path : compiler_info.cxx_system_include_paths())

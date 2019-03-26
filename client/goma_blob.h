@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "file_data_output.h"
 #include "goma_file_http.h"
 #include "http.h"
 
@@ -67,7 +68,7 @@ class BlobClient {
     // |content|.
     struct OutputFileInfo {
       // actual output filename.
-      string filename;
+      std::string filename;
       // file mode/permission.
       int mode = 0666;
 
@@ -78,17 +79,24 @@ class BlobClient {
       // rename it to real output filename in CommitOutput().
       // if tmp file was not written in OutputFileTask, because it holds content
       // in content field, tmp_filename will be "".
-      string tmp_filename;
+      std::string tmp_filename;
 
       // hash_key is hash of output filename. It will be stored in file hash
       // cache once output file is committed.
       // TODO: fix this to support cas digest.
-      string hash_key;
+      std::string hash_key;
 
       // content is output content.
       // it is used to hold output content in memory while output file task.
       // it will be used iff tmp_filename == "".
-      string content;
+      std::string content;
+
+      // Generates a FileDataOutput object based on the output destination
+      // described by this struct.
+      // Note that this might acquire a pointer to the contents of this struct.
+      // To maintain predictable behavior, do not call this function more than
+      // once on each struct.
+      std::unique_ptr<FileDataOutput> NewFileDataOutput();
     };
 
     virtual ~Downloader() = default;

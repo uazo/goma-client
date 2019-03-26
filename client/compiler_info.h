@@ -20,8 +20,6 @@ MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/compiler_info_data.pb.h"
 MSVC_POP_WARNING()
 
-using std::string;
-
 namespace devtools_goma {
 
 class CompilerFlags;
@@ -71,11 +69,11 @@ class CompilerInfo {
              abs_path == rhs.abs_path && hash == rhs.hash &&
              file_stat == rhs.file_stat;
     }
-    string DebugString() const;
+    std::string DebugString() const;
 
-    string abs_path;
-    string user_specified_path;
-    string hash;
+    std::string abs_path;
+    std::string user_specified_path;
+    std::string hash;
     FileStat file_stat;
   };
 
@@ -94,29 +92,29 @@ class CompilerInfo {
              file_stat == rhs.file_stat && is_executable == rhs.is_executable &&
              symlink_path == rhs.symlink_path;
     }
-    string DebugString() const;
+    std::string DebugString() const;
 
     // Returns true if this resource is up to date.
     // Returns false if not, and set the reason to |reason|.
-    bool IsUpToDate(const string& cwd, string* reason) const;
+    bool IsUpToDate(const std::string& cwd, std::string* reason) const;
 
-    string name;
+    std::string name;
     CompilerInfoData::ResourceType type;
-    string hash;
+    std::string hash;
     FileStat file_stat;
     bool is_executable = false;
-    string symlink_path;
+    std::string symlink_path;
   };
 
   virtual ~CompilerInfo() = default;
   // Returns compiler info type.
   virtual CompilerInfoType type() const = 0;
 
-  string DebugString() const;
+  std::string DebugString() const;
 
   // Returns true if |local_compiler_path| is up to date.
   // i.e. FileStat of |local_compiler_path| matches |local_compiler_stat|.
-  bool IsUpToDate(const string& local_compiler_path) const;
+  bool IsUpToDate(const std::string& local_compiler_path) const;
 
   // Updates FileStat to the current FileStat when hash is matched.
   // Returns false if hash doesn't match.
@@ -135,19 +133,19 @@ class CompilerInfo {
   //   (a) a path is relative
   //   (b) a path starts with cwd
   // (b) is to cover a path like /path/to/cwd/../../somewhere/to/gcc.
-  virtual bool DependsOnCwd(const string& cwd) const;
+  virtual bool DependsOnCwd(const std::string& cwd) const;
 
   // See field's comment below.
   const FileStat& local_compiler_stat() const { return local_compiler_stat_; }
   // See field's comment below.
-  const string& local_compiler_path() const {
+  const std::string& local_compiler_path() const {
     return data_->local_compiler_path();
   }
   // Absolute path of local_compiler_path. Joined with cwd if
   // local_compiler_path() is relative.
-  string abs_local_compiler_path() const;
+  std::string abs_local_compiler_path() const;
   // See field's comment below.
-  const string& local_compiler_hash() const {
+  const std::string& local_compiler_hash() const {
     return data_->local_compiler_hash();
   }
 
@@ -156,36 +154,34 @@ class CompilerInfo {
   // The path to real compiler.
   // For the difference between real compiler and local compiler, see the field
   // comment of this class.
-  const string& real_compiler_path() const {
+  const std::string& real_compiler_path() const {
     return data_->real_compiler_path();
   }
   // See field's comment below.
-  const string& real_compiler_hash() const {
-    return data_->hash();
-  }
+  const std::string& real_compiler_hash() const { return data_->hash(); }
 
   // compiler hash to identify the compiler in backend.
-  const string& request_compiler_hash() const;
+  const std::string& request_compiler_hash() const;
 
   // compiler family name. (e.g. gcc, g++, clang, clang++).
   // For example, if compiler's basename is "x86_64-linux-gcc-7", name will be
   // "gcc".
-  const string& name() const { return data_->name(); }
+  const std::string& name() const { return data_->name(); }
   // Returns true if name is defined.
   bool HasName() const { return data_->has_name(); }
 
   // compiler's version. e.g. "4.2.1[clang version 7.0.0 (trunk 338452)]"
-  const string& version() const { return data_->version(); }
+  const std::string& version() const { return data_->version(); }
   // compiler's target. e.g. "x86_64-pc-linux-gnu"
-  const string& target() const { return data_->target(); }
+  const std::string& target() const { return data_->target(); }
   // input source's language. e.g. "c++". The compiler will treat the input
   // language is this.
-  const string& lang() const { return data_->lang(); }
+  const std::string& lang() const { return data_->lang(); }
   // If taking CopmilerInfo is failed, error message is stored here.
-  const string& error_message() const { return data_->error_message(); }
+  const std::string& error_message() const { return data_->error_message(); }
 
   // See field's comment below.
-  const std::vector<string>& additional_flags() const {
+  const std::vector<std::string>& additional_flags() const {
     return additional_flags_;
   }
   // Returns true if additional flags exist.
@@ -249,7 +245,7 @@ class CompilerInfo {
   // Additional flags to correct compile arguments in remote.
   // These flags will be automatically added to compile flags.
   // e.g. -resource-dir for clang.
-  std::vector<string> additional_flags_;
+  std::vector<std::string> additional_flags_;
 
   // A list of subprograms specified by -B flag.
   std::vector<SubprogramInfo> subprograms_;

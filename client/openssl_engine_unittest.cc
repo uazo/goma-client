@@ -17,8 +17,6 @@
 #include "gtest/gtest.h"
 #include "unittest_util.h"
 
-using std::string;
-
 namespace {
 
 static const size_t kBufsize = 4096;
@@ -113,7 +111,7 @@ class OpenSSLServerEngine {
     CHECK(BIO_free(network_bio_));
   }
 
-  string GetErrorMessage() const {
+  std::string GetErrorMessage() const {
     char errmsg[1024];
     ERR_error_string_n(ERR_peek_last_error(), errmsg, sizeof(errmsg));
     return errmsg;
@@ -148,7 +146,7 @@ class OpenSSLServerEngine {
     return BIO_ctrl(network_bio_, BIO_CTRL_PENDING, 0, nullptr);
   }
 
-  int GetDataToSendTransport(string* data, size_t acceptable_size) {
+  int GetDataToSendTransport(std::string* data, size_t acceptable_size) {
     char buf[kBufsize];
     if (acceptable_size > sizeof(buf))
       acceptable_size = sizeof(buf);
@@ -174,7 +172,7 @@ class OpenSSLServerEngine {
     return r;
   }
 
-  int Read(string* data) {
+  int Read(std::string* data) {
     char tmp[kBufsize];
     int r = SSL_read(ssl_, tmp, sizeof(tmp));
     if (r > 0) {
@@ -198,9 +196,7 @@ class OpenSSLServerEngine {
     return SSL_in_init(ssl_) != 0;
   }
 
-  string StateString() {
-    return SSL_state_string_long(ssl_);
-  }
+  std::string StateString() { return SSL_state_string_long(ssl_); }
 
  private:
   SSL* ssl_;
@@ -234,12 +230,12 @@ class OpenSSLEngineTest : public :: testing::Test {
     }
   }
 
-  void AddCertificateFromFile(const string& filename) {
+  void AddCertificateFromFile(const std::string& filename) {
     static_cast<OpenSSLEngineCache*>(factory_.get())->AddCertificateFromFile(
         GetTestFilePath(filename));
   }
 
-  void SetHostname(const string& hostname) {
+  void SetHostname(const std::string& hostname) {
     factory_->SetHostname(hostname);
   }
 
@@ -271,7 +267,7 @@ class OpenSSLEngineTest : public :: testing::Test {
     for (size_t i = 0; i < kMaxIterate; ++i) {
       // Server: Send to client.
       if (!s_sent) {
-        const string msg = "Hello From Server";
+        const std::string msg = "Hello From Server";
         int r = server_engine.Write(msg);
         if (r < 0 && !server_engine.CanRetry()) {
           LOG(ERROR) << "Did not send server data but could not retry.";
@@ -285,7 +281,7 @@ class OpenSSLEngineTest : public :: testing::Test {
 
       // Server: receive from client.
       if (!s_recv) {
-        string data;
+        std::string data;
         int r = server_engine.Read(&data);
         if (r > 0) {
           VLOG(1) << "Sever received: " << data;
@@ -295,7 +291,7 @@ class OpenSSLEngineTest : public :: testing::Test {
 
       // Client: Send to server.
       if (!c_sent && !engine_->IsIOPending()) {
-        const string msg = "Hello From Client";
+        const std::string msg = "Hello From Client";
         int r = engine_->Write(msg.c_str(), msg.length());
         if (r > 0) {
           c_sent = true;
@@ -309,7 +305,7 @@ class OpenSSLEngineTest : public :: testing::Test {
         int r = engine_->Read(tmp, sizeof(tmp));
         if (r > 0) {
           c_recv = true;
-          VLOG(1) << "Client received:" << string(tmp, r);
+          VLOG(1) << "Client received:" << std::string(tmp, r);
         }
       }
 
@@ -331,7 +327,7 @@ class OpenSSLEngineTest : public :: testing::Test {
         if (r2 < num)
           num = r2;
         if (num) {
-          string data;
+          std::string data;
           int r = server_engine.GetDataToSendTransport(&data, num);
           CHECK_GT(r, 0);
           CHECK_LE(r, static_cast<int>(num));
@@ -353,7 +349,7 @@ class OpenSSLEngineTest : public :: testing::Test {
 
       /* client to server */
       {
-        string data;
+        std::string data;
         size_t r3 = engine_->GetDataToSendTransport(&data);
         if (r3) {
           CHECK_EQ(r3, data.size());

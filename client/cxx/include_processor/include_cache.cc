@@ -36,7 +36,7 @@ class IncludeCache::Item {
 
   ~Item() {}
 
-  static std::unique_ptr<Item> CreateFromFile(const string& filepath,
+  static std::unique_ptr<Item> CreateFromFile(const std::string& filepath,
                                               const FileStat& file_stat,
                                               bool needs_directive_hash) {
     std::unique_ptr<Content> content(Content::CreateFromFile(filepath));
@@ -55,7 +55,7 @@ class IncludeCache::Item {
 
     CppDirectiveOptimizer::Optimize(&directives);
 
-    string include_guard_ident = IncludeGuardDetector::Detect(directives);
+    std::string include_guard_ident = IncludeGuardDetector::Detect(directives);
 
     absl::optional<SHA256HashValue> directive_hash;
     if (needs_directive_hash) {
@@ -113,7 +113,7 @@ IncludeCache::IncludeCache(size_t max_cache_entries,
 IncludeCache::~IncludeCache() {
 }
 
-IncludeItem IncludeCache::GetIncludeItem(const string& filepath,
+IncludeItem IncludeCache::GetIncludeItem(const std::string& filepath,
                                          const FileStat& file_stat) {
   GOMA_COUNTERZ("GetDirectiveList");
 
@@ -144,7 +144,7 @@ IncludeItem IncludeCache::GetIncludeItem(const string& filepath,
 }
 
 absl::optional<SHA256HashValue> IncludeCache::GetDirectiveHash(
-    const string& filepath,
+    const std::string& filepath,
     const FileStat& file_stat) {
   DCHECK(calculates_directive_hash_);
 
@@ -170,7 +170,7 @@ absl::optional<SHA256HashValue> IncludeCache::GetDirectiveHash(
 }
 
 const IncludeCache::Item* IncludeCache::GetItemIfNotModifiedUnlocked(
-    const string& key,
+    const std::string& key,
     const FileStat& file_stat) const {
   auto it = cache_items_.find(key);
   if (it == cache_items_.end())
@@ -183,10 +183,9 @@ const IncludeCache::Item* IncludeCache::GetItemIfNotModifiedUnlocked(
   return item;
 }
 
-void IncludeCache::InsertUnlocked(const string& key,
+void IncludeCache::InsertUnlocked(const std::string& key,
                                   std::unique_ptr<Item> item,
                                   const FileStat& file_stat) {
-
   auto it = cache_items_.find(key);
   if (it == cache_items_.end()) {
     cache_items_.emplace_back(key, std::move(item));

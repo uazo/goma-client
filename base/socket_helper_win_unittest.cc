@@ -14,7 +14,6 @@
 #include "absl/time/time.h"
 #include "lockhelper.h"
 #include "platform_thread.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -108,7 +107,7 @@ class SocketPairTestThread : public PlatformThread::Delegate {
     SetEvent(signal_);
   }
 
-  string message() {
+  std::string message() {
     AutoLock lock(&lock_);
     return message_;
   }
@@ -121,7 +120,7 @@ class SocketPairTestThread : public PlatformThread::Delegate {
  private:
   Lock lock_;
   State state_;
-  string message_;
+  std::string message_;
   HANDLE signal_;
   int socket_;
   DISALLOW_COPY_AND_ASSIGN(SocketPairTestThread);

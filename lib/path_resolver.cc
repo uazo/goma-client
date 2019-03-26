@@ -19,11 +19,10 @@
 #include "absl/strings/string_view.h"
 #include "glog/logging.h"
 #include "lib/path_util.h"
-using std::string;
 
 namespace {
 
-void trim(string* s) {
+void trim(std::string* s) {
   s->erase(s->begin(),
            std::find_if(s->begin(), s->end(),
                         std::not1(std::ptr_fun<int, int>(std::isspace))));
@@ -34,7 +33,7 @@ void trim(string* s) {
 
 // Get the separator position where the UNC/drive letters end and the path
 // part begins.
-string::size_type GetDrivePrefixPosition(absl::string_view path) {
+std::string::size_type GetDrivePrefixPosition(absl::string_view path) {
   if (path.size() < 2) return 0;
   absl::string_view preserve = path.substr(0, 2);
   bool is_unc = (preserve == "\\\\");
@@ -42,15 +41,15 @@ string::size_type GetDrivePrefixPosition(absl::string_view path) {
     return 0;
   if (!is_unc)
     return 2;
-  string::size_type pos = absl::ClippedSubstr(path, 2).find('\\');
-  return (pos == string::npos) ? path.size() : pos + 2;
+  std::string::size_type pos = absl::ClippedSubstr(path, 2).find('\\');
+  return (pos == std::string::npos) ? path.size() : pos + 2;
 }
 
 // Separate UNC/drive letter from path so that path operations can be done
 // correctly.  The UNC/drive letter will be kept in |preserve|, and the
 // path relative to topmost level (i.e. UNC host/drive letter) is in
 // |resolved_path|.
-void SeparatePath(string* preserve, string* resolved_path) {
+void SeparatePath(std::string* preserve, std::string* resolved_path) {
   *preserve = resolved_path->substr(0, 2);
   bool is_unc = (strcmp(preserve->c_str(), "\\\\") == 0);
   if (!is_unc && (*preserve)[1] != ':') {
@@ -58,8 +57,8 @@ void SeparatePath(string* preserve, string* resolved_path) {
   } else {
     *resolved_path = resolved_path->substr(2);
     if (is_unc) {  // we need to preserve \\host
-      string::size_type pos = resolved_path->find('\\');
-      if (pos == string::npos) {
+      std::string::size_type pos = resolved_path->find('\\');
+      if (pos == std::string::npos) {
         *preserve += *resolved_path;
         resolved_path->clear();
       } else {
@@ -86,14 +85,14 @@ PathResolver::PathResolver() {
 PathResolver::~PathResolver() {
 }
 
-string PathResolver::PlatformConvert(const string& path) {
-  string OUTPUT;
+std::string PathResolver::PlatformConvert(const std::string& path) {
+  std::string OUTPUT;
   PlatformConvertToString(path, &OUTPUT);
   return OUTPUT;
 }
 
-void PathResolver::PlatformConvertToString(const string& path,
-                                           string* OUTPUT) {
+void PathResolver::PlatformConvertToString(const std::string& path,
+                                           std::string* OUTPUT) {
 #ifdef _WIN32
   PlatformConvertToString(path,
                           PathResolver::kWin32PathSep,
@@ -107,17 +106,20 @@ void PathResolver::PlatformConvertToString(const string& path,
 #endif
 }
 
-string PathResolver::PlatformConvert(
-    const string& path, PathResolver::PathSeparatorType sep_type,
+std::string PathResolver::PlatformConvert(
+    const std::string& path,
+    PathResolver::PathSeparatorType sep_type,
     PathResolver::PathCaseType case_type) {
-  string OUTPUT;
+  std::string OUTPUT;
   PlatformConvertToString(path, sep_type, case_type, &OUTPUT);
   return OUTPUT;
 }
 
 void PathResolver::PlatformConvertToString(
-    const string& path, PathResolver::PathSeparatorType sep_type,
-    PathResolver::PathCaseType case_type, string* OUTPUT) {
+    const std::string& path,
+    PathResolver::PathSeparatorType sep_type,
+    PathResolver::PathCaseType case_type,
+    std::string* OUTPUT) {
   // TODO: use Chrome base FilePath object, which has everything
   //                  we need and is much better than the hack below.
   *OUTPUT = path;
@@ -126,11 +128,11 @@ void PathResolver::PlatformConvertToString(
   if (sep_type == PathResolver::kWin32PathSep) {
     std::replace(OUTPUT->begin(), OUTPUT->end(), '/', '\\');
     if (OUTPUT->size() > 2) {
-      string::size_type pos = 2;
-      while (pos < OUTPUT->size() && pos != string::npos) {
+      std::string::size_type pos = 2;
+      while (pos < OUTPUT->size() && pos != std::string::npos) {
         pos = OUTPUT->find("\\\\", pos);
-        if (pos != string::npos) {
-          OUTPUT->replace(pos, strlen("\\\\"), string("\\"));
+        if (pos != std::string::npos) {
+          OUTPUT->replace(pos, strlen("\\\\"), std::string("\\"));
           pos += strlen("\\");
         }
       }
@@ -146,7 +148,7 @@ void PathResolver::PlatformConvertToString(
     absl::AsciiStrToLower(OUTPUT);
 }
 
-string PathResolver::ResolvePath(absl::string_view path) {
+std::string PathResolver::ResolvePath(absl::string_view path) {
 #ifndef _WIN32
   return PathResolver::ResolvePath(path, kPosixPathSep);
 #else
@@ -157,21 +159,21 @@ string PathResolver::ResolvePath(absl::string_view path) {
 // TODO: This does similar path conversion to PlatformConvert inline.
 // Probably we should also (or rather) improve the method too.
 /* static */
-string PathResolver::ResolvePath(absl::string_view path,
-                                 PathSeparatorType sep_type) {
+std::string PathResolver::ResolvePath(absl::string_view path,
+                                      PathSeparatorType sep_type) {
   // Note: Windows PathCanonicalize() API has different behavior than
   //       what's expected, so we'll do a lot of due dilligence here.
   absl::string_view buf(path);
   absl::InlinedVector<char, 1024> ibuf;
 
-  if (sep_type == kWin32PathSep && path.find('/') != string::npos) {
+  if (sep_type == kWin32PathSep && path.find('/') != std::string::npos) {
     // Normalize path separator.
     ibuf.assign(path.begin(), path.end());
     std::replace(ibuf.begin(), ibuf.end(), '/', '\\');
     buf = absl::string_view(ibuf.begin(), ibuf.size());
   }
 
-  string resolved_path;
+  std::string resolved_path;
   resolved_path.reserve(path.size());
 
   char sep_char = '/';
@@ -179,7 +181,7 @@ string PathResolver::ResolvePath(absl::string_view path,
   } else if (sep_type == kWin32PathSep) {
     sep_char = '\\';
     // Split UNC paths and drive letter.
-    string::size_type drive_position = GetDrivePrefixPosition(buf);
+    std::string::size_type drive_position = GetDrivePrefixPosition(buf);
     resolved_path.append(buf.begin(), drive_position);
     if (drive_position == buf.size()) {
       return resolved_path;
@@ -187,7 +189,7 @@ string PathResolver::ResolvePath(absl::string_view path,
     buf = absl::ClippedSubstr(buf, drive_position);
   } else {
     LOG(ERROR) << "Unknown sep_type=" << sep_type;
-    return string(path);
+    return std::string(path);
   }
 
   size_t found = 0;
@@ -210,7 +212,7 @@ string PathResolver::ResolvePath(absl::string_view path,
       continue;
     }
     components.push_back(component);
-  } while (found != string::npos);
+  } while (found != std::string::npos);
 
   if (is_absolute) {
     resolved_path.push_back(sep_type);
@@ -227,8 +229,8 @@ string PathResolver::ResolvePath(absl::string_view path,
 }
 
 /* static */
-string PathResolver::WeakRelativePath(
-    const string& raw_path, const string& raw_cwd) {
+std::string PathResolver::WeakRelativePath(const std::string& raw_path,
+                                           const std::string& raw_cwd) {
   // Note: Windows PathRelativePathTo() API has a way different behavior than
   //       what's expected, so we'll do a lot of due dilligence here.
   PathSeparatorType sep_type;
@@ -241,8 +243,8 @@ string PathResolver::WeakRelativePath(
     return raw_path;
   }
 
-  string path = raw_path;
-  string cwd = raw_cwd;
+  std::string path = raw_path;
+  std::string cwd = raw_cwd;
   if (sep_type == kWin32PathSep) {
     PlatformConvertToString(raw_path,
                             kWin32PathSep,
@@ -258,21 +260,21 @@ string PathResolver::WeakRelativePath(
     return path;
   }
 
-  string preserve_path;
+  std::string preserve_path;
   if (sep_type == kWin32PathSep) {
     if (!IsWindowsAbsolutePath(path)) {
       return path;
     }
 
     SeparatePath(&preserve_path, &path);
-    string preserve_cwd;
+    std::string preserve_cwd;
     SeparatePath(&preserve_cwd, &cwd);
     if (preserve_path != preserve_cwd) {
       return preserve_path + path;
     }
   }
 
-  string resolved_cwd = ResolvePath(cwd, sep_type);
+  std::string resolved_cwd = ResolvePath(cwd, sep_type);
   absl::string_view real_cwd = resolved_cwd;
   CHECK_EQ(real_cwd[0], sep_type)
       << "expect real_cwd[0] == sep_type"
@@ -292,11 +294,12 @@ string PathResolver::WeakRelativePath(
 
   if (HasPrefixDirWithSep(target, real_cwd, sep_type)) {
     target.remove_prefix(real_cwd.size() + 1);
-    return string(target);
+    return std::string(target);
   }
   size_t found;
   size_t last_slash = 0;
-  while ((found = real_cwd.find(sep_type, last_slash + 1)) != string::npos) {
+  while ((found = real_cwd.find(sep_type, last_slash + 1)) !=
+         std::string::npos) {
     if (real_cwd.substr(0, found) == target.substr(0, found)) {
       last_slash = found;
       continue;
@@ -311,21 +314,21 @@ string PathResolver::WeakRelativePath(
       path = preserve_path + path;
       return path;
     }
-    return string(target);
+    return std::string(target);
   }
   target = absl::ClippedSubstr(target, last_slash + 1);
   int depth = 1;
   found = last_slash;
-  while ((found = real_cwd.find(sep_type, found + 1)) != string::npos) {
+  while ((found = real_cwd.find(sep_type, found + 1)) != std::string::npos) {
     ++depth;
   }
-  string relative_path;
+  std::string relative_path;
   relative_path.reserve(depth * 3 + target.size());
   for (int i = 0; i < depth; ++i) {
     relative_path += "..";
     relative_path += sep_type;
   }
-  relative_path += string(target);
+  relative_path += std::string(target);
 
   if (sep_type == kWin32PathSep && relative_path == path) {
     relative_path = preserve_path + relative_path;
@@ -334,11 +337,11 @@ string PathResolver::WeakRelativePath(
   return relative_path;
 }
 
-bool PathResolver::IsSystemPath(const string& raw_path) const {
+bool PathResolver::IsSystemPath(const std::string& raw_path) const {
 #ifndef _WIN32
-  const string& path = raw_path;
+  const std::string& path = raw_path;
 #else
-  string path = PlatformConvert(raw_path);
+  std::string path = PlatformConvert(raw_path);
 #endif
 
   for (const auto& iter : system_paths_) {
@@ -348,11 +351,11 @@ bool PathResolver::IsSystemPath(const string& raw_path) const {
   return false;
 }
 
-void PathResolver::RegisterSystemPath(const string& raw_path) {
+void PathResolver::RegisterSystemPath(const std::string& raw_path) {
 #ifndef _WIN32
-  const string& path = raw_path;
+  const std::string& path = raw_path;
 #else
-  string path = PlatformConvert(raw_path);
+  std::string path = PlatformConvert(raw_path);
 #endif
 
   system_paths_.push_back(path);

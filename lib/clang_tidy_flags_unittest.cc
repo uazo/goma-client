@@ -7,7 +7,6 @@
 #include "base/path.h"
 #include "gtest/gtest.h"
 #include "lib/compiler_flags_parser.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -15,26 +14,26 @@ class ClangTidyFlagsTest : public testing::Test {
 };
 
 TEST_F(ClangTidyFlagsTest, ClangTidyFlag) {
-  const std::vector<string> args {
-    "clang-tidy",
-    "-analyze-temporary-drots",
-    "-checks=*",
-    "-config={}",
-    "-dump-config",
-    "-enable-check-profile",
-    "-explain-config",
-    "-export-fixes=ex.yaml",
-    "-extra-arg=-std=c++11",
-    "-extra-arg-before=-DFOO",
-    "-fix",
-    "-fix-errors",
-    "-header-filter=*",
-    "-line-filter=[]",
-    "-list-checks",
-    "-p=.",
-    "-system-headers",
-    "-warnings-as-errors=*",
-    "foo.cc",
+  const std::vector<std::string> args{
+      "clang-tidy",
+      "-analyze-temporary-drots",
+      "-checks=*",
+      "-config={}",
+      "-dump-config",
+      "-enable-check-profile",
+      "-explain-config",
+      "-export-fixes=ex.yaml",
+      "-extra-arg=-std=c++11",
+      "-extra-arg-before=-DFOO",
+      "-fix",
+      "-fix-errors",
+      "-header-filter=*",
+      "-line-filter=[]",
+      "-list-checks",
+      "-p=.",
+      "-system-headers",
+      "-warnings-as-errors=*",
+      "foo.cc",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -55,38 +54,38 @@ TEST_F(ClangTidyFlagsTest, ClangTidyFlag) {
 
   const ClangTidyFlags& clang_tidy_flags =
       static_cast<const ClangTidyFlags&>(*flags);
-  EXPECT_EQ(std::vector<string> { "-std=c++11" },
+  EXPECT_EQ(std::vector<std::string>{"-std=c++11"},
             clang_tidy_flags.extra_arg());
-  EXPECT_EQ(std::vector<string> { "-DFOO" },
+  EXPECT_EQ(std::vector<std::string>{"-DFOO"},
             clang_tidy_flags.extra_arg_before());
   EXPECT_FALSE(clang_tidy_flags.seen_hyphen_hyphen());
-  EXPECT_EQ(std::vector<string> {},
+  EXPECT_EQ(std::vector<std::string>{},
             clang_tidy_flags.args_after_hyphen_hyphen());
 }
 
 TEST_F(ClangTidyFlagsTest, ClangTidyFlagWithClangArgs) {
-  const std::vector<string> args {
-    "clang-tidy",
-    "-analyze-temporary-drots",
-    "-checks=*",
-    "-config={}",
-    "-dump-config",
-    "-enable-check-profile",
-    "-explain-config",
-    "-export-fixes=ex.yaml",
-    "-extra-arg=-std=c++11",
-    "-extra-arg-before=-DFOO",
-    "-fix",
-    "-fix-errors",
-    "-header-filter=*",
-    "-line-filter=[]",
-    "-list-checks",
-    "-p=.",
-    "-system-headers",
-    "-warnings-as-errors=*",
-    "foo.cc",
-    "--",
-    "-DBAR",
+  const std::vector<std::string> args{
+      "clang-tidy",
+      "-analyze-temporary-drots",
+      "-checks=*",
+      "-config={}",
+      "-dump-config",
+      "-enable-check-profile",
+      "-explain-config",
+      "-export-fixes=ex.yaml",
+      "-extra-arg=-std=c++11",
+      "-extra-arg-before=-DFOO",
+      "-fix",
+      "-fix-errors",
+      "-header-filter=*",
+      "-line-filter=[]",
+      "-list-checks",
+      "-p=.",
+      "-system-headers",
+      "-warnings-as-errors=*",
+      "foo.cc",
+      "--",
+      "-DBAR",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -107,37 +106,37 @@ TEST_F(ClangTidyFlagsTest, ClangTidyFlagWithClangArgs) {
 
   const ClangTidyFlags& clang_tidy_flags =
       static_cast<const ClangTidyFlags&>(*flags);
-  EXPECT_EQ(std::vector<string> { "-std=c++11" },
+  EXPECT_EQ(std::vector<std::string>{"-std=c++11"},
             clang_tidy_flags.extra_arg());
-  EXPECT_EQ(std::vector<string> { "-DFOO" },
+  EXPECT_EQ(std::vector<std::string>{"-DFOO"},
             clang_tidy_flags.extra_arg_before());
   EXPECT_TRUE(clang_tidy_flags.seen_hyphen_hyphen());
-  EXPECT_EQ(std::vector<string> { "-DBAR" },
+  EXPECT_EQ(std::vector<std::string>{"-DBAR"},
             clang_tidy_flags.args_after_hyphen_hyphen());
 }
 
 TEST_F(ClangTidyFlagsTest, ClangTidyFlagWithClangArgsEndingWithHyphenHyphen) {
-  const std::vector<string> args {
-    "clang-tidy",
-    "-analyze-temporary-drots",
-    "-checks=*",
-    "-config={}",
-    "-dump-config",
-    "-enable-check-profile",
-    "-explain-config",
-    "-export-fixes=ex.yaml",
-    "-extra-arg=-std=c++11",
-    "-extra-arg-before=-DFOO",
-    "-fix",
-    "-fix-errors",
-    "-header-filter=*",
-    "-line-filter=[]",
-    "-list-checks",
-    "-p=.",
-    "-system-headers",
-    "-warnings-as-errors=*",
-    "foo.cc",
-    "--",
+  const std::vector<std::string> args{
+      "clang-tidy",
+      "-analyze-temporary-drots",
+      "-checks=*",
+      "-config={}",
+      "-dump-config",
+      "-enable-check-profile",
+      "-explain-config",
+      "-export-fixes=ex.yaml",
+      "-extra-arg=-std=c++11",
+      "-extra-arg-before=-DFOO",
+      "-fix",
+      "-fix-errors",
+      "-header-filter=*",
+      "-line-filter=[]",
+      "-list-checks",
+      "-p=.",
+      "-system-headers",
+      "-warnings-as-errors=*",
+      "foo.cc",
+      "--",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -158,9 +157,9 @@ TEST_F(ClangTidyFlagsTest, ClangTidyFlagWithClangArgsEndingWithHyphenHyphen) {
 
   const ClangTidyFlags& clang_tidy_flags =
       static_cast<const ClangTidyFlags&>(*flags);
-  EXPECT_EQ(std::vector<string> { "-std=c++11" },
+  EXPECT_EQ(std::vector<std::string>{"-std=c++11"},
             clang_tidy_flags.extra_arg());
-  EXPECT_EQ(std::vector<string> { "-DFOO" },
+  EXPECT_EQ(std::vector<std::string>{"-DFOO"},
             clang_tidy_flags.extra_arg_before());
   EXPECT_TRUE(clang_tidy_flags.seen_hyphen_hyphen());
   EXPECT_TRUE(clang_tidy_flags.args_after_hyphen_hyphen().empty());

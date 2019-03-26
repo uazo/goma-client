@@ -312,7 +312,7 @@ WorkerThreadManager::RunDelayedClosureInThread(const char* const location,
   return worker->RunDelayedClosure(location, delay, closure);
 }
 
-string WorkerThreadManager::DebugString() const {
+std::string WorkerThreadManager::DebugString() const {
   AUTO_SHARED_LOCK(lock, &mu_);
   std::ostringstream s;
   s << workers_.size() << " workers\n";

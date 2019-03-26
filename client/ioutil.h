@@ -15,8 +15,6 @@
 
 #include "absl/strings/string_view.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class ScopedFd;
@@ -51,7 +49,7 @@ void FlushLogFiles();
 
 // Escape strings as javascript string.
 // TODO: move to json_util?
-string EscapeString(const string& str);
+std::string EscapeString(const std::string& str);
 
 }  // namespace devtools_goma
 

@@ -24,8 +24,8 @@ template<typename Req, typename Resp>
 class HttpTask : public devtools_goma::FileServiceClient::AsyncTask<Req, Resp> {
  public:
   HttpTask(devtools_goma::FileServiceHttpClient* file_service,
-           string path,
-           const string& trace_id)
+           std::string path,
+           const std::string& trace_id)
       : file_service_(file_service),
         http_(file_service->http()),
         path_(std::move(path)) {
@@ -59,7 +59,7 @@ class HttpTask : public devtools_goma::FileServiceClient::AsyncTask<Req, Resp> {
  private:
   devtools_goma::FileServiceHttpClient* file_service_;
   devtools_goma::HttpRPC* http_;
-  string path_;
+  std::string path_;
   devtools_goma::HttpRPC::Status status_;
 
   // disallow copy and assign
@@ -72,8 +72,8 @@ class HttpTask : public devtools_goma::FileServiceClient::AsyncTask<Req, Resp> {
 namespace devtools_goma {
 
 FileServiceHttpClient::FileServiceHttpClient(HttpRPC* http,
-                                             string store_path,
-                                             string lookup_path,
+                                             std::string store_path,
+                                             std::string lookup_path,
                                              MultiFileStore* multi_file_store)
     : http_(http),
       store_path_(std::move(store_path)),
@@ -87,7 +87,7 @@ FileServiceHttpClient::~FileServiceHttpClient() {
 std::unique_ptr<FileServiceHttpClient>
 FileServiceHttpClient::WithRequesterInfoAndTraceId(
     const RequesterInfo& requester_info,
-    const string& trace_id) const {
+    const std::string& trace_id) const {
   std::unique_ptr<FileServiceHttpClient> cloned(
       new FileServiceHttpClient(http_, store_path_, lookup_path_,
                                 multi_file_store_));

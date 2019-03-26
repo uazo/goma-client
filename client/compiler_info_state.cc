@@ -14,8 +14,6 @@
 #include "glog/stl_logging.h"
 #include "java/java_compiler_info.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // static
@@ -82,13 +80,13 @@ bool CompilerInfoState::disabled() const {
   return disabled_;
 }
 
-string CompilerInfoState::GetDisabledReason() const {
+std::string CompilerInfoState::GetDisabledReason() const {
   AUTOLOCK(lock, &mu_);
   return disabled_reason_;
 }
 
 void CompilerInfoState::SetDisabled(bool disabled,
-                                    const string& disabled_reason) {
+                                    const std::string& disabled_reason) {
   AUTOLOCK(lock, &mu_);
   LOG(INFO) << "CompilerInfoState " << this << " disabled=" << disabled
             << " reason=" << disabled_reason;
@@ -96,7 +94,7 @@ void CompilerInfoState::SetDisabled(bool disabled,
   disabled_reason_ = disabled_reason;
 }
 
-void CompilerInfoState::Use(const string& local_compiler_path,
+void CompilerInfoState::Use(const std::string& local_compiler_path,
                             const CompilerFlags& flags) {
   {
     AUTOLOCK(lock, &mu_);
@@ -114,7 +112,7 @@ void CompilerInfoState::Use(const string& local_compiler_path,
   // google::protobuf::TextFormat::Printer, but it is hardcoding ':'
   // (key: value), so I gave it up to make a neat Printer with
   // TextFormat::Printer.
-  string info = compiler_info_->DebugString();
+  std::string info = compiler_info_->DebugString();
   absl::string_view piece(info);
 
   LOG(INFO) << "compiler_info_state=" << this << " path=" << local_compiler_path
@@ -173,9 +171,9 @@ bool ScopedCompilerInfoState::disabled() const {
   return state_->disabled();
 }
 
-string ScopedCompilerInfoState::GetDisabledReason() const {
+std::string ScopedCompilerInfoState::GetDisabledReason() const {
   if (state_ == nullptr)
-    return string();
+    return std::string();
 
   return state_->GetDisabledReason();
 }

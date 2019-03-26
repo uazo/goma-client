@@ -23,15 +23,13 @@
 #include "path.h"
 #include "util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // Returns cache ID if it was found in cache.
-bool FileHashCache::GetFileCacheKey(const string& filename,
+bool FileHashCache::GetFileCacheKey(const std::string& filename,
                                     absl::optional<absl::Time> missed_timestamp,
                                     const FileStat& file_stat,
-                                    string* cache_key) {
+                                    std::string* cache_key) {
   DCHECK(file::IsAbsolutePath(filename)) << filename;
   cache_key->clear();
 
@@ -46,7 +44,7 @@ bool FileHashCache::GetFileCacheKey(const string& filename,
   FileInfo info;
   {
     AUTO_SHARED_LOCK(lock, &file_cache_mutex_);
-    std::unordered_map<string, struct FileInfo>::iterator it =
+    std::unordered_map<std::string, struct FileInfo>::iterator it =
         file_cache_.find(filename);
     if (it == file_cache_.end()) {
       num_cache_miss_.Add(1);
@@ -93,11 +91,11 @@ bool FileHashCache::GetFileCacheKey(const string& filename,
 // TODO: there is a race condition that if file changed
 // between send and receive, it won't be detected correctly. Fix
 // that later if it's a problem..
-bool FileHashCache::StoreFileCacheKey(const string& filename,
-                                      const string& cache_key,
-                                      absl::optional<absl::Time>
-                                          upload_timestamp,
-                                      const FileStat& file_stat) {
+bool FileHashCache::StoreFileCacheKey(
+    const std::string& filename,
+    const std::string& cache_key,
+    absl::optional<absl::Time> upload_timestamp,
+    const FileStat& file_stat) {
   if (!file_stat.IsValid()) {
     LOG(WARNING) << "Try to store, but clear cache: failed taking FileStat: "
                  << filename;
@@ -119,8 +117,8 @@ bool FileHashCache::StoreFileCacheKey(const string& filename,
 
     AUTO_EXCLUSIVE_LOCK(lock, &file_cache_mutex_);
 
-    std::pair<std::unordered_map<string, struct FileInfo>::iterator, bool> p =
-        file_cache_.insert(make_pair(filename, info));
+    std::pair<std::unordered_map<std::string, struct FileInfo>::iterator, bool>
+        p = file_cache_.insert(make_pair(filename, info));
     if (!p.second) {
       if (!info.last_uploaded_timestamp.has_value()) {
         info.last_uploaded_timestamp = p.first->second.last_uploaded_timestamp;
@@ -131,12 +129,12 @@ bool FileHashCache::StoreFileCacheKey(const string& filename,
   }
 
   AUTO_EXCLUSIVE_LOCK(lock, &known_cache_keys_mutex_);
-  std::pair<std::unordered_set<string>::iterator, bool> p2 =
+  std::pair<std::unordered_set<std::string>::iterator, bool> p2 =
       known_cache_keys_.insert(cache_key);
   return p2.second;
 }
 
-bool FileHashCache::IsKnownCacheKey(const string& cache_key) {
+bool FileHashCache::IsKnownCacheKey(const std::string& cache_key) {
   AUTO_SHARED_LOCK(lock, &known_cache_keys_mutex_);
   return known_cache_keys_.count(cache_key) > 0;
 }
@@ -144,7 +142,7 @@ bool FileHashCache::IsKnownCacheKey(const string& cache_key) {
 FileHashCache::FileHashCache() {
 }
 
-string FileHashCache::DebugString() {
+std::string FileHashCache::DebugString() {
   std::stringstream ss;
   ss << "[GetFileCacheKey]" << std::endl;
   ss << "cache hit=" << num_cache_hit_.value() << std::endl;

@@ -34,8 +34,6 @@
 #include "worker_thread.h"
 #include "worker_thread_manager.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class AutoUpdater;
@@ -92,10 +90,10 @@ class CompileService {
         : flags(nullptr), cache_hit(false), updated(false) {}
     // request
     WorkerThread::ThreadId thread_id;
-    string trace_id;
+    std::string trace_id;
     CompilerInfoCache::Key key;
     const CompilerFlags* flags;
-    std::vector<string> run_envs;
+    std::vector<std::string> run_envs;
 
     // response
     ScopedCompilerInfoState state;
@@ -124,14 +122,14 @@ class CompileService {
                                  int max_failed_tasks,
                                  int max_long_tasks);
 
-  const string& username() const { return username_; }
+  const std::string& username() const { return username_; }
 
-  const string& nodename() const { return nodename_; }
+  const std::string& nodename() const { return nodename_; }
   absl::Time start_time() const { return start_time_; }
-  const string& compiler_proxy_id_prefix() const {
+  const std::string& compiler_proxy_id_prefix() const {
     return compiler_proxy_id_prefix_;
   }
-  void SetCompilerProxyIdPrefix(const string& prefix);
+  void SetCompilerProxyIdPrefix(const std::string& prefix);
 
   void SetSubProcessOptionSetter(
       std::unique_ptr<SubProcessOptionSetter> option_setter);
@@ -170,7 +168,7 @@ class CompileService {
   void SetAutoUpdater(std::unique_ptr<AutoUpdater> auto_updater);
 
   void SetWatchdog(std::unique_ptr<Watchdog> watchdog,
-                   const std::vector<string>& goma_ipc_env);
+                   const std::vector<std::string>& goma_ipc_env);
 
   void WatchdogStart(ThreadpoolHttpServer* server, int count) {
     watchdog_->Start(server, count);
@@ -217,10 +215,12 @@ class CompileService {
     return use_user_specified_path_for_subprograms_;
   }
 
-  void SetCommandCheckLevel(const string& level) {
+  void SetCommandCheckLevel(const std::string& level) {
     command_check_level_ = level;
   }
-  const string& command_check_level() const { return command_check_level_; }
+  const std::string& command_check_level() const {
+    return command_check_level_;
+  }
 
   void SetHermetic(bool hermetic) {
     hermetic_ = hermetic;
@@ -267,8 +267,8 @@ class CompileService {
     return should_fail_for_unsupported_compiler_flag_;
   }
 
-  void SetTmpDir(const string& tmp_dir) { tmp_dir_ = tmp_dir; }
-  const string& tmp_dir() const { return tmp_dir_; }
+  void SetTmpDir(const std::string& tmp_dir) { tmp_dir_ = tmp_dir; }
+  const std::string& tmp_dir() const { return tmp_dir_; }
 
   void SetTimeouts(const std::vector<absl::Duration>& timeouts) {
     timeouts_ = timeouts;
@@ -314,12 +314,12 @@ class CompileService {
   // Waits for all tasks finish.
   void Wait();
 
-  bool DumpTask(int task_id, string* out);
-  bool DumpTaskRequest(int task_id, string* message);
+  bool DumpTask(int task_id, std::string* out);
+  bool DumpTaskRequest(int task_id, std::string* message);
   // Dump the tasks whose state is active or frozen time stamp is after |after|.
   void DumpToJson(Json::Value* json, absl::Time after);
   void DumpStats(std::ostringstream* ss);
-  void DumpStatsToFile(const string& filename);
+  void DumpStatsToFile(const std::string& filename);
   // Dump stats in json form (converted from GomaStatzStats).
   void DumpStatsJson(std::string* json_string, HumanReadability human_readable);
 
@@ -335,38 +335,38 @@ class CompileService {
   // *local_compiler_path returned from this is not be gomacc.
   // |pathext| should only be given on Windows, which represents PATHEXT
   // environment variable.
-  bool FindLocalCompilerPath(const string& gomacc_path,
-                             const string& basename,
-                             const string& cwd,
-                             const string& local_path,
-                             const string& pathext,
-                             string* local_compiler_path,
-                             string* no_goma_local_path);
+  bool FindLocalCompilerPath(const std::string& gomacc_path,
+                             const std::string& basename,
+                             const std::string& cwd,
+                             const std::string& local_path,
+                             const std::string& pathext,
+                             std::string* local_compiler_path,
+                             std::string* no_goma_local_path);
 
   void GetCompilerInfo(GetCompilerInfoParam* param,
                        OneshotClosure* callback);
   bool DisableCompilerInfo(CompilerInfoState* state,
-                           const string& disabled_reason);
+                           const std::string& disabled_reason);
   void DumpCompilerInfo(std::ostringstream* ss);
 
   bool RecordCommandSpecVersionMismatch(
-      const string& exec_command_version_mismatch);
+      const std::string& exec_command_version_mismatch);
   bool RecordCommandSpecBinaryHashMismatch(
-      const string& exec_command_binary_hash_mismatch);
-  bool RecordSubprogramMismatch(const string& subprogram_mismatch);
+      const std::string& exec_command_binary_hash_mismatch);
+  bool RecordSubprogramMismatch(const std::string& subprogram_mismatch);
   // Record |error_message| is logged with LOG(ERROR) or LOG(WARNING).
   // If |is_error| is true, logged to LOG(ERROR), otherwise LOG(WARNING).
   // Statistics would be kept in CompileService.
-  void RecordErrorToLog(const string& error_message, bool is_error);
+  void RecordErrorToLog(const std::string& error_message, bool is_error);
   // Record |error_message| is sent to gomacc as GOMA Error.
   // Statistics would be kept in CompileService.
-  void RecordErrorsToUser(const std::vector<string>& error_messages);
+  void RecordErrorsToUser(const std::vector<std::string>& error_messages);
 
   // Records result for inputs.
-  void RecordInputResult(const std::vector<string>& inputs, bool success);
+  void RecordInputResult(const std::vector<std::string>& inputs, bool success);
   // Returns true if RecordInputResult recorded any of inputs as not succuess
   // before.
-  bool ContainFailedInput(const std::vector<string>& inputs) const;
+  bool ContainFailedInput(const std::vector<std::string>& inputs) const;
 
   void SetMaxSumOutputSize(size_t size) LOCKS_EXCLUDED(buf_mu_) {
     AUTO_EXCLUSIVE_LOCK(lock, &buf_mu_);
@@ -376,11 +376,11 @@ class CompileService {
   // Acquire output buffer in buf for filesize. buf must be empty.
   // Returns true when succeeded and buf would have filesize buffer.
   // Returns false otherwise, and buf remains empty.
-  bool AcquireOutputBuffer(size_t filesize, string* buf)
+  bool AcquireOutputBuffer(size_t filesize, std::string* buf)
       LOCKS_EXCLUDED(buf_mu_);
   // Release output buffer acquired by AcquireOutputBuffer.
   // filesize and buf should be the same with AcquireOutputBuffer.
-  void ReleaseOutputBuffer(size_t filesize, string* buf)
+  void ReleaseOutputBuffer(size_t filesize, std::string* buf)
       LOCKS_EXCLUDED(buf_mu_);
 
   // Records output file is renamed or not.
@@ -403,21 +403,20 @@ class CompileService {
   // Called when reply from Exec.
   void ExecDone(WorkerThread::ThreadId thread_id, OneshotClosure* done);
 
-  bool FindLocalCompilerPathUnlocked(const string& key,
-                                     const string& key_cwd,
-                                     string* local_compiler_path,
-                                     string* no_goma_local_path) const
+  bool FindLocalCompilerPathUnlocked(const std::string& key,
+                                     const std::string& key_cwd,
+                                     std::string* local_compiler_path,
+                                     std::string* no_goma_local_path) const
       SHARED_LOCKS_REQUIRED(compiler_mu_);
-  bool FindLocalCompilerPathAndUpdate(
-      const string& key,
-      const string& key_cwd,
-      const string& gomacc_path,
-      const string& basename,
-      const string& cwd,
-      const string& local_path,
-      const string& pathext,
-      string* local_compiler_path,
-      string* no_goma_local_path);
+  bool FindLocalCompilerPathAndUpdate(const std::string& key,
+                                      const std::string& key_cwd,
+                                      const std::string& gomacc_path,
+                                      const std::string& basename,
+                                      const std::string& cwd,
+                                      const std::string& local_path,
+                                      const std::string& pathext,
+                                      std::string* local_compiler_path,
+                                      std::string* no_goma_local_path);
 
   void ClearTasksUnlocked();
 
@@ -455,12 +454,12 @@ class CompileService {
 
   // CompileTask's input that failed.
   mutable ReadWriteLock failed_inputs_mu_;
-  std::unordered_set<string> failed_inputs_ GUARDED_BY(failed_inputs_mu_);
+  std::unordered_set<std::string> failed_inputs_ GUARDED_BY(failed_inputs_mu_);
 
-  string username_;
-  string nodename_;
+  std::string username_;
+  std::string nodename_;
   absl::Time start_time_;
-  string compiler_proxy_id_prefix_;
+  std::string compiler_proxy_id_prefix_;
 
   std::unique_ptr<SubProcessOptionSetter> subprocess_option_setter_;
   std::unique_ptr<HttpClient> http_client_;
@@ -500,7 +499,7 @@ class CompileService {
   bool enable_gch_hack_;
   bool use_relative_paths_in_argv_ = false;
   bool send_expected_outputs_ = false;
-  string command_check_level_;
+  std::string command_check_level_;
   bool send_compiler_binary_as_input_ = false;
   bool use_user_specified_path_for_subprograms_ = false;
 
@@ -518,27 +517,27 @@ class CompileService {
   absl::Duration local_run_delay_;
   bool store_local_run_output_ = false;
   bool should_fail_for_unsupported_compiler_flag_ = false;
-  string tmp_dir_;
+  std::string tmp_dir_;
 
   // key: "req_ver - resp_ver", value: count
-  std::unordered_map<string, int> command_version_mismatch_;
-  std::unordered_map<string, int> command_binary_hash_mismatch_;
+  std::unordered_map<std::string, int> command_version_mismatch_;
+  std::unordered_map<std::string, int> command_binary_hash_mismatch_;
 
   // key: "path hash", value: count
-  std::unordered_map<string, int> subprogram_mismatch_;
+  std::unordered_map<std::string, int> subprogram_mismatch_;
 
   // key: error reason, value: pair<is_error, count>
-  std::unordered_map<string, std::pair<bool, int>> error_to_log_;
+  std::unordered_map<std::string, std::pair<bool, int>> error_to_log_;
   // key: error reason, value: count
-  std::unordered_map<string, int> error_to_user_;
+  std::unordered_map<std::string, int> error_to_user_;
 
   mutable ReadWriteLock compiler_mu_;
 
   // key: <gomacc_path>:<basename>:<cwd>:<local_path>
   //     if all path in <local_path> are absolute, "." is used for <cwd>.
   // value: (local_compiler_path, no_goma_local_path)
-  std::unordered_map<string, std::pair<string, string>> local_compiler_paths_
-      GUARDED_BY(compiler_mu_);
+  std::unordered_map<std::string, std::pair<std::string, std::string>>
+      local_compiler_paths_ GUARDED_BY(compiler_mu_);
 
   int num_exec_request_ = 0;
   int num_exec_success_ = 0;
@@ -556,7 +555,7 @@ class CompileService {
   int num_exec_local_finished_ = 0;
   int num_exec_fail_fallback_ = 0;
 
-  std::map<string, int> local_run_reason_;
+  std::map<std::string, int> local_run_reason_;
 
   mutable ReadWriteLock buf_mu_;
 

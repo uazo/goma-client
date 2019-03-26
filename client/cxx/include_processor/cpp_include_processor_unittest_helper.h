@@ -8,13 +8,11 @@
 #include <set>
 #include <string>
 
-using std::string;
-
 namespace devtools_goma {
 
-void CompareFiles(const std::set<string>& expected_files,
-                  const std::set<string>& actual_files,
-                  const std::set<string>& allowed_extra_files);
+void CompareFiles(const std::set<std::string>& expected_files,
+                  const std::set<std::string>& actual_files,
+                  const std::set<std::string>& allowed_extra_files);
 
 }  // namespace devtools_goma
 

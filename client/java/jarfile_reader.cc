@@ -141,7 +141,7 @@ void JarFileReader::NormalizeBuffer() {
   is_buffer_normalized_ = true;
   for (;;) {
     cur = buffer_.find("PK", cur);
-    if (cur == string::npos) {
+    if (cur == std::string::npos) {
       // 'K' may come just after 'P'.  Let me mark this not normalized.
       if (!buffer_.empty() && buffer_[buffer_.size() - 1] == 'P') {
         is_buffer_normalized_ = false;

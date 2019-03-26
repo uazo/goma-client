@@ -21,7 +21,7 @@ class SubProcessTask;
 
 class AutoUpdater {
  public:
-  explicit AutoUpdater(string goma_ctl);
+  explicit AutoUpdater(std::string goma_ctl);
   ~AutoUpdater();
 
   // Sets environments to run goma_ctl.
@@ -45,7 +45,7 @@ class AutoUpdater {
  private:
   // Reads manifest file specified by path, and sets version.
   // Returns true if success, false otherwise.
-  bool ReadManifest(const string& path, int* version);
+  bool ReadManifest(const std::string& path, int* version);
 
   void CheckUpdate();
 
@@ -54,7 +54,7 @@ class AutoUpdater {
 
   void StartGomaCtlUpdate();
 
-  string dir_;
+  std::string dir_;
   int my_version_;
   int pulled_version_;
   int idle_counter_;
@@ -68,8 +68,8 @@ class AutoUpdater {
   // If subproc_ != nullptr, "goma_ctl pull" is running.
   SubProcessTask* subproc_ GUARDED_BY(mu_);
 
-  std::vector<string> env_;
-  string goma_ctl_;
+  std::vector<std::string> env_;
+  std::string goma_ctl_;
 
   DISALLOW_COPY_AND_ASSIGN(AutoUpdater);
 };

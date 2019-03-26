@@ -16,8 +16,6 @@
 #include "platform_thread.h"
 #include "worker_thread.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class Closure;
@@ -118,7 +116,7 @@ class WorkerThreadManager {
                                                absl::Duration delay,
                                                Closure* closure);
 
-  string DebugString() const;
+  std::string DebugString() const;
   void DebugLog() const;
 
  private:

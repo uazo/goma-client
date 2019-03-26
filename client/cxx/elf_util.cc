@@ -14,6 +14,8 @@
 #include "path_resolver.h"
 #include "util.h"
 
+namespace devtools_goma {
+
 namespace {
 
 absl::string_view GetContentInBrackets(absl::string_view line) {
@@ -23,15 +25,14 @@ absl::string_view GetContentInBrackets(absl::string_view line) {
   return line.substr(0, pos);
 }
 
-std::string FindLibInternal(const string& cwd,
+std::string FindLibInternal(const std::string& cwd,
                             absl::string_view dir,
                             const absl::string_view lib_filename,
                             const absl::string_view origin) {
   std::string new_dir = absl::StrReplaceAll(dir, {
                                                      {"$ORIGIN", origin},
                                                  });
-  if (devtools_goma::PathResolver::ResolvePath(new_dir) ==
-      devtools_goma::PathResolver::ResolvePath(origin)) {
+  if (PathResolver::ResolvePath(new_dir) == PathResolver::ResolvePath(origin)) {
     dir = origin;
   } else {
     dir = new_dir;
@@ -39,28 +40,26 @@ std::string FindLibInternal(const string& cwd,
   if (absl::StrContains(dir, "$")) {
     LOG(ERROR) << "found non supported $ pattern."
                << " dir=" << dir;
-    return string();
+    return std::string();
   }
   std::string path = file::JoinPathRespectAbsolute(dir, lib_filename);
   if (access(file::JoinPathRespectAbsolute(cwd, path).c_str(), X_OK) == 0) {
     return path;
   }
-  return string();
+  return std::string();
 }
 
 }  // namespace
-
-namespace devtools_goma {
 
 bool ElfDepParser::GetDeps(const absl::string_view cmd_or_lib,
                            absl::flat_hash_set<std::string>* deps) {
   // TODO: can we expect readelf always exists in /usr/bin?
   std::vector<std::string> readelf_argv = {"/usr/bin/readelf", "-d",
-                                           string(cmd_or_lib)};
+                                           std::string(cmd_or_lib)};
   int32_t status;
-  string output = ReadCommandOutput(readelf_argv[0], readelf_argv,
-                                    std::vector<std::string>(), cwd_,
-                                    MERGE_STDOUT_STDERR, &status);
+  std::string output = ReadCommandOutput(readelf_argv[0], readelf_argv,
+                                         std::vector<std::string>(), cwd_,
+                                         MERGE_STDOUT_STDERR, &status);
   if (status != 0) {
     LOG(ERROR) << "ReadCommandOutput readelf with non-zero exit status code."
                << " cmd_or_lib=" << cmd_or_lib << " output=" << output
@@ -127,7 +126,7 @@ std::string ElfDepParser::FindLib(
       return lib;
     }
   }
-  return string();
+  return std::string();
 }
 
 /* static */
@@ -178,7 +177,7 @@ std::vector<std::string> ParseLdSoConf(absl::string_view content) {
       LOG(WARNING) << "non supported line:" << line;
       continue;
     }
-    ret.push_back(string(line));
+    ret.push_back(std::string(line));
   }
   return ret;
 }

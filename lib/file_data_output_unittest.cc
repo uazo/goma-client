@@ -11,11 +11,11 @@
 namespace devtools_goma {
 
 TEST(StringOutput, EmptyContent) {
-  string buf;
+  std::string buf;
   std::unique_ptr<FileDataOutput> output =
       FileDataOutput::NewStringOutput("test", &buf);
   EXPECT_TRUE(output->IsValid());
-  string content;
+  std::string content;
   EXPECT_TRUE(output->WriteAt(0, content));
   EXPECT_TRUE(output->Close());
   EXPECT_EQ(buf, content);

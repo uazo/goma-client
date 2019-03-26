@@ -12,7 +12,6 @@
 #include "goma_hash.h"
 
 #include "prototmp/goma_data.pb.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -21,11 +20,11 @@ bool IsSameSubprograms(const ExecReq& req, const ExecResp& resp) {
     return false;
   }
 
-  std::vector<string> req_hashes;
+  std::vector<std::string> req_hashes;
   for (const auto& subprogram : req.subprogram()) {
     req_hashes.push_back(subprogram.binary_hash());
   }
-  std::vector<string> resp_hashes;
+  std::vector<std::string> resp_hashes;
   for (const auto& subprogram : resp.result().subprogram()) {
     resp_hashes.push_back(subprogram.binary_hash());
   }
@@ -73,10 +72,10 @@ bool IsValidFileBlob(const FileBlob& blob) {
   }
 }
 
-string ComputeFileBlobHashKey(const FileBlob& blob) {
-  string s;
+std::string ComputeFileBlobHashKey(const FileBlob& blob) {
+  std::string s;
   blob.SerializeToString(&s);
-  string md_str;
+  std::string md_str;
   ComputeDataHashKey(s, &md_str);
   return md_str;
 }

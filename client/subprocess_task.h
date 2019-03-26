@@ -19,8 +19,6 @@ MSVC_POP_WARNING()
 #include "util.h"
 #include "worker_thread.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class Closure;
@@ -46,15 +44,18 @@ class SubProcessTask {
   // Since program exit status is usually positive value on Posix and Windows,
   // ReadCommandOutput set SubProcessTerminated::kInternalError to |status|
   // for its internal error.
-  static string ReadCommandOutput(
-      const string& prog,
-      const std::vector<string>& argv, const std::vector<string>& env,
-      const string& cwd, CommandOutputOption option, int32_t* status);
+  static std::string ReadCommandOutput(const std::string& prog,
+                                       const std::vector<std::string>& argv,
+                                       const std::vector<std::string>& env,
+                                       const std::string& cwd,
+                                       CommandOutputOption option,
+                                       int32_t* status);
 
   // Creates new sub process task.
   // The created instance will be used on the thread where it was created.
-  SubProcessTask(const string& trace_id,
-                 const char* prog, char* const argv[]);
+  SubProcessTask(const std::string& trace_id,
+                 const char* prog,
+                 char* const argv[]);
 
   WorkerThread::ThreadId thread_id() { return thread_id_; }
 

@@ -30,11 +30,9 @@
 # include "posix_helper_win.h"
 #endif
 
-using std::string;
-
 namespace devtools_goma {
 
-TmpdirUtil::TmpdirUtil(const string& id) : cwd_("/cwd") {
+TmpdirUtil::TmpdirUtil(const std::string& id) : cwd_("/cwd") {
   char tmpdir[PATH_MAX];
   CheckTempDirectory(GetGomaTmpDir());
 #ifndef _WIN32
@@ -59,24 +57,25 @@ TmpdirUtil::~TmpdirUtil() {
   EXPECT_TRUE(file::RecursivelyDelete(tmpdir_, file::Defaults()).ok());
 }
 
-string TmpdirUtil::realcwd() const {
+std::string TmpdirUtil::realcwd() const {
   return file::JoinPath(tmpdir_, cwd_);
 }
 
-string TmpdirUtil::FullPath(const string& path) const {
+std::string TmpdirUtil::FullPath(const std::string& path) const {
   return file::JoinPath(tmpdir_, file::JoinPathRespectAbsolute(cwd_, path));
 }
 
-void TmpdirUtil::CreateTmpFile(const string& path, const string& data) {
+void TmpdirUtil::CreateTmpFile(const std::string& path,
+                               const std::string& data) {
   MkdirForPath(path, false);
   ASSERT_TRUE(WriteStringToFile(data, FullPath(path)));
 }
 
-void TmpdirUtil::CreateEmptyFile(const string& path) {
+void TmpdirUtil::CreateEmptyFile(const std::string& path) {
   CreateTmpFile(path, "");
 }
 
-void TmpdirUtil::RemoveTmpFile(const string& path) {
+void TmpdirUtil::RemoveTmpFile(const std::string& path) {
 #ifndef _WIN32
   unlink(FullPath(path).c_str());
 #else
@@ -84,13 +83,13 @@ void TmpdirUtil::RemoveTmpFile(const string& path) {
 #endif
 }
 
-void TmpdirUtil::MkdirForPath(const string& path, bool is_dir) {
-  string fullpath = FullPath(path);
+void TmpdirUtil::MkdirForPath(const std::string& path, bool is_dir) {
+  std::string fullpath = FullPath(path);
 #ifndef _WIN32
   size_t pos = tmpdir_.size();
-  while (pos != string::npos) {
+  while (pos != std::string::npos) {
     pos = fullpath.find_first_of('/', pos + 1);
-    if (pos != string::npos) {
+    if (pos != std::string::npos) {
       VLOG(1) << "dir:" << fullpath.substr(0, pos);
       if (access(fullpath.substr(0, pos).c_str(), R_OK) == 0)
         continue;
@@ -103,7 +102,7 @@ void TmpdirUtil::MkdirForPath(const string& path, bool is_dir) {
     PCHECK(mkdir(fullpath.c_str(), 0777) == 0) << fullpath;
   }
 #else
-  string dirname;
+  std::string dirname;
   if (is_dir) {
     dirname = fullpath;
   } else {
@@ -126,12 +125,12 @@ void TmpdirUtil::MkdirForPath(const string& path, bool is_dir) {
 #endif
 }
 
-string GetTestFilePath(const string& test_name) {
+std::string GetTestFilePath(const std::string& test_name) {
   // This module is out/Release/ar_unittest (Linux & Mac),
   // build\Release\ar_unittest.exe (Windows msvs),
   // or out\Release\ar_unittest.exe (Windows ninja).
   // Test files should be stored under test directory.
-  const string fullpath =
+  const std::string fullpath =
       file::JoinPath(GetMyDirectory(), "..", "..", "test", test_name);
 
   CHECK_EQ(access(fullpath.c_str(), R_OK), 0)
@@ -140,7 +139,7 @@ string GetTestFilePath(const string& test_name) {
   return fullpath;
 }
 
-bool UpdateMtime(const string& path, absl::Time mtime) {
+bool UpdateMtime(const std::string& path, absl::Time mtime) {
 #ifdef _WIN32
   using utimbuf = _utimbuf;
   const auto utime = _utime;
@@ -154,29 +153,29 @@ bool UpdateMtime(const string& path, absl::Time mtime) {
   return utime(path.c_str(), &new_stat) == 0;
 }
 
-string GetClangPath() {
+std::string GetClangPath() {
   // If GOMATEST_CLANG_PATH is specified, we prefer it.
   char* clang = getenv("GOMATEST_CLANG_PATH");
   if (clang != nullptr) {
     if (access(clang, X_OK) < 0) {
       LOG(ERROR)
           << "GOMATEST_CLANG_PATH is specified, but it's not executable.";
-      return string();
+      return std::string();
     }
     return clang;
   }
 
 #ifdef _WIN32
-  const string clang_path = "clang-cl.exe";
+  const std::string clang_path = "clang-cl.exe";
 #else
-  const string clang_path = "clang";
+  const std::string clang_path = "clang";
 #endif
-  const string fullpath =
+  const std::string fullpath =
       file::JoinPath(GetMyDirectory(), "..", "..", "third_party", "llvm-build",
                      "Release+Asserts", "bin", clang_path);
   if (access(fullpath.c_str(), X_OK) < 0) {
     LOG(ERROR) << "clang is not an executable: clang=" << fullpath;
-    return string();
+    return std::string();
   }
 
   return fullpath;

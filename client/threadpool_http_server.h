@@ -22,8 +22,6 @@
 #include "worker_thread.h"
 #include "worker_thread_manager.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class TrustedIpsManager;
@@ -91,10 +89,10 @@ class ThreadpoolHttpServer {
     virtual bool IsTrusted() = 0;
 
     // Send response and delete this object.
-    virtual void SendReply(const string& response) = 0;
+    virtual void SendReply(const std::string& response) = 0;
 
     // Full request string with all the headers and body.
-    const string& request() const { return request_; }
+    const std::string& request() const { return request_; }
 
     absl::string_view header() const {
       absl::string_view h(request_.data(), request_offset_);
@@ -111,11 +109,11 @@ class ThreadpoolHttpServer {
     }
 
     // "GET", "POST", etc.
-    const string& method() const { return method_; }
-    const string& req_path() const { return req_path_; }
+    const std::string& method() const { return method_; }
+    const std::string& req_path() const { return req_path_; }
 
     // The string after ?
-    const string& query() const { return query_; }
+    const std::string& query() const { return query_; }
 
     pid_t peer_pid() const { return peer_pid_; }
 
@@ -140,11 +138,11 @@ class ThreadpoolHttpServer {
     size_t request_offset_;
     size_t request_content_length_;
     size_t request_len_;
-    string request_;
-    string method_;
-    string req_path_;
-    string query_;
-    string response_;
+    std::string request_;
+    std::string method_;
+    std::string req_path_;
+    std::string query_;
+    std::string response_;
     // true if it got valid http request.
     bool parsed_valid_http_request_;
 
@@ -156,7 +154,7 @@ class ThreadpoolHttpServer {
   };
   static const RegisteredClosureID kInvalidClosureId = 0;
 
-  ThreadpoolHttpServer(string listen_addr,
+  ThreadpoolHttpServer(std::string listen_addr,
                        int port,
                        int num_find_ports,
                        WorkerThreadManager* wm,
@@ -182,7 +180,8 @@ class ThreadpoolHttpServer {
   // Starts IPC handlers on addr.  Must call before Loop.
   // num_threads and max_overcommit_incoming_sockets are used
   // to calculate max num incoming requests for IPC handlers.
-  void StartIPC(const string& addr, int num_threads,
+  void StartIPC(const std::string& addr,
+                int num_threads,
                 int max_overcommit_incoming_sockets);
 
   // Stops IPC handlers.
@@ -190,12 +189,14 @@ class ThreadpoolHttpServer {
 
   // Utility function: Parse HTTP request string and extract method,
   // path, and query string.
-  static bool ParseRequestLine(
-      absl::string_view request, string* method, string* path, string* query);
+  static bool ParseRequestLine(absl::string_view request,
+                               std::string* method,
+                               std::string* path,
+                               std::string* query);
 
   int port() const { return port_; }
 
-  const string& un_socket_name() const { return un_socket_name_; }
+  const std::string& un_socket_name() const { return un_socket_name_; }
 
   // Registers idle closure.  closure must be permanent callback.
   // closure will be called after idle counter reaches "count".
@@ -223,7 +224,7 @@ class ThreadpoolHttpServer {
   // Opens unix domain socket to serve.  Must call before Loop().
   // Returns true if unix domain socket is successully opened.
   // On Windows, the path is actually the port number for socket IPC.
-  bool OpenUnixDomainSocket(const string& path);
+  bool OpenUnixDomainSocket(const std::string& path);
   void CloseUnixDomainSocket();
 #endif
 
@@ -241,7 +242,7 @@ class ThreadpoolHttpServer {
   void UpdateSocketIdleUnlocked(SocketType socket_type)
       EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  const string listen_addr_;
+  const std::string listen_addr_;
   int port_;
   int port_ready_ GUARDED_BY(mu_);
   int num_find_ports_;
@@ -252,7 +253,7 @@ class ThreadpoolHttpServer {
   Monitor* monitor_;
   TrustedIpsManager* trustedipsmanager_;
   ScopedSocket un_socket_;
-  string un_socket_name_;
+  std::string un_socket_name_;
 
   const int max_num_sockets_;
 

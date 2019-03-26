@@ -16,7 +16,7 @@ class FileServiceHttpClient;
 
 class FileServiceBlobUploader : public BlobClient::Uploader {
  public:
-  FileServiceBlobUploader(string filename,
+  FileServiceBlobUploader(std::string filename,
                           std::unique_ptr<FileServiceHttpClient> file_service);
   ~FileServiceBlobUploader() override = default;
 

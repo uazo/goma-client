@@ -126,7 +126,7 @@ class DepsCache {
   typedef SHA256HashValue Key;
   typedef absl::node_hash_map<Key, DepsTableData> DepsTable;
 
-  DepsCache(const string& cache_filename,
+  DepsCache(const std::string& cache_filename,
             absl::optional<absl::Duration> identifier_alive_duration,
             size_t deps_table_size_threshold,
             int max_proto_size_in_mega_bytes);
@@ -141,7 +141,7 @@ class DepsCache {
   void IncrMissedByUpdatedCount();
   void IncrHitCount();
 
-  static bool IsDirectiveModified(const string& filename,
+  static bool IsDirectiveModified(const std::string& filename,
                                   const FileStat& old_file_stat,
                                   const SHA256HashValue& old_directive_hash,
                                   FileStatCache* file_stat_cache);

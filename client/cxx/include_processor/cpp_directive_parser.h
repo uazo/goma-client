@@ -14,8 +14,6 @@
 #include "cpp_input_stream.h"
 #include "cpp_tokenizer.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class CppDirectiveParser {
@@ -26,12 +24,12 @@ class CppDirectiveParser {
   void operator=(const CppDirectiveParser&) = delete;
 
   static SharedCppDirectives ParseFromContent(const Content& content,
-                                              const string& filename);
-  static SharedCppDirectives ParseFromString(const string& string_content,
-                                             const string& filename);
+                                              const std::string& filename);
+  static SharedCppDirectives ParseFromString(const std::string& string_content,
+                                             const std::string& filename);
 
   bool Parse(const Content& content,
-             const string& filename,
+             const std::string& filename,
              CppDirectiveList* result);
 
   bool has_unknown_directives() const { return has_unknown_directives_; }

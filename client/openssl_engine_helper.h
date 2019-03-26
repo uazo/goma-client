@@ -8,13 +8,11 @@
 
 #include <string>
 
-using std::string;
-
 namespace devtools_goma {
 
 // Gets trusted root certificates (PEM).
 // Returns true if succeeded.  Otherwise, false.
-bool GetTrustedRootCerts(string* certs);
+bool GetTrustedRootCerts(std::string* certs);
 
 }  // namespace devtools_goma
 

@@ -51,7 +51,7 @@ bool Parser::Run(const std::vector<Token>& tokens, ModuleMap* module_map) {
   return parser.current().type() == Token::Type::END;
 }
 
-bool Parser::ParseIdent(string* ident) {
+bool Parser::ParseIdent(std::string* ident) {
   if (current().type() == Token::Type::IDENT) {
     *ident = current().value();
     pos_ += 1;
@@ -61,7 +61,7 @@ bool Parser::ParseIdent(string* ident) {
   return false;
 }
 
-bool Parser::ParseString(string* s) {
+bool Parser::ParseString(std::string* s) {
   if (current().type() == Token::Type::STRING) {
     *s = current().value();
     pos_ += 1;
@@ -71,7 +71,7 @@ bool Parser::ParseString(string* s) {
   return false;
 }
 
-bool Parser::ParseInteger(string* s) {
+bool Parser::ParseInteger(std::string* s) {
   if (current().type() == Token::Type::INTEGER) {
     *s = current().value();
     pos_ += 1;
@@ -118,8 +118,8 @@ bool Parser::ParseModuleMapFile(ModuleMap* modules) {
 
 // module-id:
 //  identifier ('.' identifier)*
-bool Parser::ParseModuleId(string* module_id) {
-  string s;
+bool Parser::ParseModuleId(std::string* module_id) {
+  std::string s;
   if (!ParseIdent(&s)) {
     return false;
   }
@@ -226,7 +226,7 @@ bool Parser::ParseModuleMembersOpt(Module* module_decl) {
       continue;
     }
     if (current().IsIdent(kUmbrella) && next().type() == Token::Type::STRING) {
-      string name;
+      std::string name;
       if (!ParseUmbrellaDirDeclaration(&name)) {
         return false;
       }
@@ -242,7 +242,7 @@ bool Parser::ParseModuleMembersOpt(Module* module_decl) {
       continue;
     }
     if (current().IsIdent(kExport)) {
-      string s;
+      std::string s;
       if (!ParseExportDeclaration(&s)) {
         return false;
       }
@@ -250,7 +250,7 @@ bool Parser::ParseModuleMembersOpt(Module* module_decl) {
       continue;
     }
     if (current().IsIdent(kExportAs)) {
-      string s;
+      std::string s;
       if (!ParseExportAsDeclaration(&s)) {
         return false;
       }
@@ -258,7 +258,7 @@ bool Parser::ParseModuleMembersOpt(Module* module_decl) {
       continue;
     }
     if (current().IsIdent(kUse)) {
-      string s;
+      std::string s;
       if (!ParseUseDeclaration(&s)) {
         return false;
       }
@@ -439,7 +439,7 @@ bool Parser::ParseHeaderAttr(Header* header) {
 
 // umbrella-dir-declaration:
 //   umbrella string-literal
-bool Parser::ParseUmbrellaDirDeclaration(string* dirname) {
+bool Parser::ParseUmbrellaDirDeclaration(std::string* dirname) {
   if (!ConsumeIdent(kUmbrella)) {
     return false;
   }
@@ -537,7 +537,7 @@ bool Parser::ParseInferredSubmoduleMember(Module* module_decl) {
 
 // export-declaration:
 //  export wildcard-module-id
-bool Parser::ParseExportDeclaration(string* module_id) {
+bool Parser::ParseExportDeclaration(std::string* module_id) {
   if (!ConsumeIdent(kExport)) {
     return false;
   }
@@ -553,13 +553,13 @@ bool Parser::ParseExportDeclaration(string* module_id) {
 //   identifier
 //   '*'
 //   identifier '.' wildcard-module-id
-bool Parser::ParseWildcardModuleId(string* module_id) {
+bool Parser::ParseWildcardModuleId(std::string* module_id) {
   if (ConsumePunc('*')) {
     *module_id += "*";
     return true;
   }
 
-  string s;
+  std::string s;
   if (!ParseIdent(&s)) {
     return false;
   }
@@ -575,7 +575,7 @@ bool Parser::ParseWildcardModuleId(string* module_id) {
 
 // export-as-declaration:
 //   export_as identifier
-bool Parser::ParseExportAsDeclaration(string* export_as) {
+bool Parser::ParseExportAsDeclaration(std::string* export_as) {
   if (!ConsumeIdent(kExportAs)) {
     return false;
   }
@@ -587,7 +587,7 @@ bool Parser::ParseExportAsDeclaration(string* export_as) {
 
 // use-declaration:
 //  use module-id
-bool Parser::ParseUseDeclaration(string* module_id) {
+bool Parser::ParseUseDeclaration(std::string* module_id) {
   if (!ConsumeIdent(kUse)) {
     return false;
   }
@@ -640,8 +640,8 @@ bool Parser::ParseConfigMacrosDeclaration(ConfigMacro* config_macro) {
 
 // config-macro-list:
 //  identifier (',' identifier)*
-bool Parser::ParseConfigMacroList(std::vector<string>* names) {
-  string s;
+bool Parser::ParseConfigMacroList(std::vector<std::string>* names) {
+  std::string s;
   if (!ParseIdent(&s)) {
     return false;
   }
@@ -684,8 +684,8 @@ bool Parser::ParseConflictDeclaration(Conflict* conflict) {
 //  attribute attributesopt
 //
 //  first(attributes) = '['
-bool Parser::ParseAttributes(std::vector<string>* attributes) {
-  string s;
+bool Parser::ParseAttributes(std::vector<std::string>* attributes) {
+  std::string s;
   if (!ParseAttribute(&s)) {
     return false;
   }
@@ -701,7 +701,7 @@ bool Parser::ParseAttributes(std::vector<string>* attributes) {
   return true;
 }
 
-bool Parser::ParseAttributesOpt(std::vector<string>* attributes) {
+bool Parser::ParseAttributesOpt(std::vector<std::string>* attributes) {
   if (current().IsPunc('[')) {
     return ParseAttributes(attributes);
   }
@@ -711,7 +711,7 @@ bool Parser::ParseAttributesOpt(std::vector<string>* attributes) {
 
 // attribute:
 //  '[' identifier ']'
-bool Parser::ParseAttribute(string* s) {
+bool Parser::ParseAttribute(std::string* s) {
   if (!ConsumePunc('[')) {
     return false;
   }

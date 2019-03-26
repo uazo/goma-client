@@ -15,8 +15,18 @@ MSVC_POP_WARNING()
 
 namespace devtools_goma {
 
-BlobClient::Uploader::Uploader(string filename)
-    : filename_(std::move(filename)) {
+BlobClient::Uploader::Uploader(std::string filename)
+    : filename_(std::move(filename)) {}
+
+std::unique_ptr<FileDataOutput>
+BlobClient::Downloader::OutputFileInfo::NewFileDataOutput() {
+  if (this->tmp_filename.empty()) {
+    return FileDataOutput::NewStringOutput(this->filename, &this->content);
+  }
+  const auto& filename = this->tmp_filename;
+  // TODO: We might want to restrict paths this program may write?
+  remove(filename.c_str());
+  return FileDataOutput::NewFileOutput(filename, this->mode);
 }
 
 FileBlobClient::FileBlobClient(
@@ -24,9 +34,9 @@ FileBlobClient::FileBlobClient(
     : BlobClient(), file_service_client_(std::move(file_service_client)) {}
 
 std::unique_ptr<BlobClient::Uploader> FileBlobClient::NewUploader(
-    string filename,
+    std::string filename,
     const RequesterInfo& requester_info,
-    string trace_id) {
+    std::string trace_id) {
   return absl::make_unique<FileServiceBlobUploader>(
       std::move(filename), file_service_client_->WithRequesterInfoAndTraceId(
                                requester_info, std::move(trace_id)));
@@ -34,7 +44,7 @@ std::unique_ptr<BlobClient::Uploader> FileBlobClient::NewUploader(
 
 std::unique_ptr<BlobClient::Downloader> FileBlobClient::NewDownloader(
     const RequesterInfo& requester_info,
-    string trace_id) {
+    std::string trace_id) {
   return absl::make_unique<FileBlobDownloader>(
       absl::make_unique<FileServiceBlobDownloader>(
           file_service_client_->WithRequesterInfoAndTraceId(

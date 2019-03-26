@@ -17,7 +17,6 @@
 MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/goma_data.pb.h"
 MSVC_POP_WARNING()
-using std::string;
 
 namespace devtools_goma {
 
@@ -35,8 +34,8 @@ class ExecReqNormalizer {
       int id,
       bool normalize_include_path,
       bool is_linking,
-      const std::vector<string>& normalize_weak_relative_for_arg,
-      const std::map<string, string>& debug_prefix_map,
+      const std::vector<std::string>& normalize_weak_relative_for_arg,
+      const std::map<std::string, std::string>& debug_prefix_map,
       ExecReq* req) const = 0;
 };
 
@@ -51,8 +50,8 @@ class ConfigurableExecReqNormalizer : public ExecReqNormalizer {
       int id,
       bool normalize_include_path,
       bool is_linking,
-      const std::vector<string>& normalize_weak_relative_for_arg,
-      const std::map<string, string>& debug_prefix_map,
+      const std::vector<std::string>& normalize_weak_relative_for_arg,
+      const std::map<std::string, std::string>& debug_prefix_map,
       ExecReq* req) const final;
 
  protected:
@@ -71,7 +70,7 @@ class ConfigurableExecReqNormalizer : public ExecReqNormalizer {
     // When new_cwd is not nullopt, `cwd` of ExecReq is replaced with `new_cwd`.
     // Also, `new_cwd` can be rewritten by fdebug-prefix-map.
     // But if kAsIs is set in keep_cwd, `new_cwd` is not used.
-    absl::optional<string> new_cwd;
+    absl::optional<std::string> new_cwd;
 
     // Returns Config to keep everything as-is.
     static Config AsIs() { return Config(); }
@@ -83,25 +82,25 @@ class ConfigurableExecReqNormalizer : public ExecReqNormalizer {
   // be eventually removed. b/79662256
   virtual Config Configure(
       int id,
-      const std::vector<string>& args,
+      const std::vector<std::string>& args,
       bool normalize_include_path,
       bool is_linking,
-      const std::vector<string>& normalize_weak_relative_for_arg,
-      const std::map<string, string>& debug_prefix_map,
+      const std::vector<std::string>& normalize_weak_relative_for_arg,
+      const std::map<std::string, std::string>& debug_prefix_map,
       const ExecReq* req) const = 0;
 
  private:
   void NormalizeExecReqSystemIncludeDirs(
       int keep_system_include_dirs,
-      const std::map<string, string>& debug_prefix_map,
-      const string& debug_prefix_map_signature,
+      const std::map<std::string, std::string>& debug_prefix_map,
+      const std::string& debug_prefix_map_signature,
       ExecReq* req) const;
   virtual void NormalizeExecReqArgs(
       int keep_args,
-      const std::vector<string>& args,
-      const std::vector<string>& normalize_weak_relative_for_arg,
-      const std::map<string, string>& debug_prefix_map,
-      const string& debug_prefix_map_signature,
+      const std::vector<std::string>& args,
+      const std::vector<std::string>& normalize_weak_relative_for_arg,
+      const std::map<std::string, std::string>& debug_prefix_map,
+      const std::string& debug_prefix_map_signature,
       ExecReq* req) const;
 
   // This method needs cwd and filename in ExecReq_Input.
@@ -110,14 +109,15 @@ class ConfigurableExecReqNormalizer : public ExecReqNormalizer {
 
   void NormalizeExecReqPathnamesInInput(
       int keep_pathnames_in_input,
-      const std::map<string, string>& debug_prefix_map,
-      const string& debug_prefix_map_signature,
+      const std::map<std::string, std::string>& debug_prefix_map,
+      const std::string& debug_prefix_map_signature,
       ExecReq* req) const;
-  void NormalizeExecReqCwd(int keep_cwd,
-                           const absl::optional<string>& new_cwd,
-                           const std::map<string, string>& debug_prefix_map,
-                           const string& debug_prefix_map_signature,
-                           ExecReq* req) const;
+  void NormalizeExecReqCwd(
+      int keep_cwd,
+      const absl::optional<std::string>& new_cwd,
+      const std::map<std::string, std::string>& debug_prefix_map,
+      const std::string& debug_prefix_map_signature,
+      ExecReq* req) const;
 
   void NormalizeExecReqSubprograms(ExecReq* req) const;
   void NormalizeExecReqEnvs(ExecReq* req) const;
@@ -126,54 +126,55 @@ class ConfigurableExecReqNormalizer : public ExecReqNormalizer {
 
 class AsIsExecReqNormalizer : public ConfigurableExecReqNormalizer {
  protected:
-  Config Configure(int id,
-                   const std::vector<string>& args,
-                   bool normalize_include_path,
-                   bool is_linking,
-                   const std::vector<string>& normalize_weak_relative_for_arg,
-                   const std::map<string, string>& debug_prefix_map,
-                   const ExecReq* req) const override;
+  Config Configure(
+      int id,
+      const std::vector<std::string>& args,
+      bool normalize_include_path,
+      bool is_linking,
+      const std::vector<std::string>& normalize_weak_relative_for_arg,
+      const std::map<std::string, std::string>& debug_prefix_map,
+      const ExecReq* req) const override;
 };
 
 class FixPathToBeCwdRelative : public FlagParser::Callback {
  public:
-  explicit FixPathToBeCwdRelative(string cwd)
+  explicit FixPathToBeCwdRelative(std::string cwd)
       : cwd_(std::move(cwd)), is_fixed_(false) {}
-  string ParseFlagValue(const FlagParser::Flag& flag,
-                        const string& value) override;
+  std::string ParseFlagValue(const FlagParser::Flag& flag,
+                             const std::string& value) override;
   bool is_fixed() const { return is_fixed_; }
 
  private:
-  const string cwd_;
+  const std::string cwd_;
   bool is_fixed_;
 };
 
 class PathRewriterWithDebugPrefixMap : public FlagParser::Callback {
  public:
   explicit PathRewriterWithDebugPrefixMap(
-      const std::map<string, string>& debug_prefix_map)
+      const std::map<std::string, std::string>& debug_prefix_map)
       : debug_prefix_map_(debug_prefix_map),
         is_rewritten_(false),
         removed_fdebug_prefix_map_(false) {}
 
-  string ParseFlagValue(const FlagParser::Flag& flag,
-                        const string& value) override;
+  std::string ParseFlagValue(const FlagParser::Flag& flag,
+                             const std::string& value) override;
 
   bool is_rewritten() const { return is_rewritten_; }
   bool removed_fdebug_prefix_map() const { return removed_fdebug_prefix_map_; }
 
  private:
-  const std::map<string, string>& debug_prefix_map_;
+  const std::map<std::string, std::string>& debug_prefix_map_;
   bool is_rewritten_;
   bool removed_fdebug_prefix_map_;
 };
 
 bool RewritePathWithDebugPrefixMap(
-    const std::map<string, string>& debug_prefix_map,
-    string* path);
+    const std::map<std::string, std::string>& debug_prefix_map,
+    std::string* path);
 
 bool HasAmbiguityInDebugPrefixMap(
-    const std::map<string, string>& debug_prefix_map);
+    const std::map<std::string, std::string>& debug_prefix_map);
 
 }  // namespace devtools_goma
 

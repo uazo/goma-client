@@ -17,8 +17,6 @@
 #include "file_stat_cache.h"
 #include "include_file_finder.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class Content;
@@ -31,11 +29,11 @@ class CppIncludeProcessor {
   // Enumerates all include files. When FileStats are created for them,
   // we cache them in |file_stat_cache| so that we can reuse them later,
   // because creating FileStat is so slow especially on Windows.
-  bool GetIncludeFiles(const string& filename,
-                       const string& current_directory,
+  bool GetIncludeFiles(const std::string& filename,
+                       const std::string& current_directory,
                        const CompilerFlags& compiler_flags,
                        const CxxCompilerInfo& compiler_info,
-                       std::set<string>* include_files,
+                       std::set<std::string>* include_files,
                        FileStatCache* file_stat_cache);
 
   const CppParser* cpp_parser() const { return &cpp_parser_; }
@@ -45,16 +43,17 @@ class CppIncludeProcessor {
 
  private:
   // Returns a vector of tuple<filepath, dir_index>.
-  std::vector<std::pair<string, int>> CalculateRootIncludesWithIncludeDirIndex(
-      const std::vector<string>& root_includes,
-      const string& current_directory,
+  std::vector<std::pair<std::string, int>>
+  CalculateRootIncludesWithIncludeDirIndex(
+      const std::vector<std::string>& root_includes,
+      const std::string& current_directory,
       const CompilerFlags& compiler_flags,
       IncludeFileFinder* include_file_finder,
-      std::set<string>* include_files);
+      std::set<std::string>* include_files);
 
   bool AddClangModulesFiles(const GCCFlags& flags,
-                            const string& current_directory,
-                            std::set<string>* include_files,
+                            const std::string& current_directory,
+                            std::set<std::string>* include_files,
                             FileStatCache* file_stat_cache) const;
 
   CppParser cpp_parser_;

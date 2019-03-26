@@ -8,9 +8,9 @@
 
 namespace devtools_goma {
 
-ClangFlagsHelper::ClangFlagsHelper(const std::vector<string>& args) {
+ClangFlagsHelper::ClangFlagsHelper(const std::vector<std::string>& args) {
   FlagParser parser;
-  std::vector<string> xclang_flags;
+  std::vector<std::string> xclang_flags;
   parser.AddFlag("Xclang")->SetValueOutputWithCallback(nullptr, &xclang_flags);
   parser.Parse(args);
 

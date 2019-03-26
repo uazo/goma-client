@@ -20,8 +20,6 @@ MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/goma_data.pb.h"
 MSVC_POP_WARNING()
 
-using std::string;
-
 namespace devtools_goma {
 
 // CompilerTypeSpecific contains compiler type specific routines.
@@ -32,15 +30,15 @@ class CompilerTypeSpecific {
   virtual ~CompilerTypeSpecific() = default;
 
   // Returns true if remote compile is supported.
-  virtual bool RemoteCompileSupported(const string& trace_id,
+  virtual bool RemoteCompileSupported(const std::string& trace_id,
                                       const CompilerFlags& flags,
                                       bool verify_output) const = 0;
 
   // Builds CompilerInfoData.
   virtual std::unique_ptr<CompilerInfoData> BuildCompilerInfoData(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const std::vector<string>& compiler_info_envs) = 0;
+      const std::string& local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs) = 0;
 
   // Returns true if DepsCache is supported.
   virtual bool SupportsDepsCache(const CompilerFlags& flags) const = 0;
@@ -50,7 +48,7 @@ class CompilerTypeSpecific {
   // The required_files of the return result should be in relative path form
   // from cwd (of compiler_flags).
   virtual IncludeProcessorResult RunIncludeProcessor(
-      const string& trace_id,
+      const std::string& trace_id,
       const CompilerFlags& compiler_flags,
       const CompilerInfo& compiler_info,
       const CommandSpec& command_spec,
@@ -59,26 +57,26 @@ class CompilerTypeSpecific {
 
 struct CompilerTypeSpecific::IncludeProcessorResult {
   // Ok means IncludeProcessor run correctly.
-  static IncludeProcessorResult Ok(std::set<string> required_files);
+  static IncludeProcessorResult Ok(std::set<std::string> required_files);
 
   // ErrorToLog means IncludeProcessor didn't finish. However, it's an internal
   // error, so compile task should be fallen back. Error is logged, but won't be
   // shown to a user.
-  static IncludeProcessorResult ErrorToLog(string error_reason);
+  static IncludeProcessorResult ErrorToLog(std::string error_reason);
 
   // ErrorToUser means IncludeProcessor didn't finish due to user's input.
   // Error is delivered to a user.
-  static IncludeProcessorResult ErrorToUser(string error_reason);
+  static IncludeProcessorResult ErrorToUser(std::string error_reason);
 
   // true if IncludeProcessor run correctly.
   bool ok = false;
   // the set of include files.
-  std::set<string> required_files;
+  std::set<std::string> required_files;
   bool error_to_user = false;
-  string error_reason;
+  std::string error_reason;
 
   // optional. used in linker include processor.
-  std::vector<string> system_library_paths;
+  std::vector<std::string> system_library_paths;
 
   // optional. stats if any.
   absl::optional<int> total_files;

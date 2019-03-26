@@ -49,11 +49,11 @@ ArrayTokenList::const_iterator NextNonSpaceTokenFrom(
 // const CppToken&.
 template <typename ToToken, typename Iter>
 CppToken StringizeInternal(Iter begin, Iter end, ToToken to_token) {
-  string s;
+  std::string s;
   for (Iter it = begin; it != end; ++it) {
     const CppToken& token = to_token(*it);
     if (token.type == CppToken::STRING) {
-      string temp;
+      std::string temp;
       temp += "\"";
       for (char c : token.string_value) {
         if (c == '\\' || c == '"') {
@@ -547,25 +547,25 @@ bool CppMacroExpanderNaive::Glue(TokenHSList* output, const TokenHS& ths) {
   // However,
   //  GLUE("foo",) or GLUE(, "bar") works.
 
-  string s1;
+  std::string s1;
   if (output->back().token.type == CppToken::STRING) {
     s1 = absl::StrCat("\"", output->back().token.string_value, "\"");
   } else {
     s1 = output->back().token.GetCanonicalString();
   }
 
-  string s2;
+  std::string s2;
   if (ths.token.type == CppToken::STRING) {
     s2 = absl::StrCat("\"", ths.token.string_value, "\"");
   } else {
     s2 = ths.token.GetCanonicalString();
   }
 
-  string s = s1 + s2;
+  std::string s = s1 + s2;
 
   ArrayTokenList tokens;
   if (!CppTokenizer::TokenizeAll(s, SpaceHandling::kSkip, &tokens)) {
-    string error_message =
+    std::string error_message =
         "does not give a valid preprocessing token: failed to tokenize: " + s;
     parser_->Error(error_message);
     LOG(WARNING) << error_message;

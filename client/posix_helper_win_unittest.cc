@@ -15,12 +15,12 @@ namespace devtools_goma {
 
 TEST(PosixHelperWin, mkdtemp) {
   const char kTemplate[] = "abc_XXXXXX";
-  string original = file::JoinPath(GetGomaTmpDir(), kTemplate);
+  std::string original = file::JoinPath(GetGomaTmpDir(), kTemplate);
   if (!file::IsDirectory(file::Dirname(original), file::Defaults()).ok()) {
     EXPECT_TRUE(file::CreateDir(file::Dirname(original),
                                 file::CreationMode(0755)).ok());
   }
-  string to_change = original;
+  std::string to_change = original;
   EXPECT_NE(nullptr, mkdtemp(&to_change[0])) << to_change;
   EXPECT_NE(original, to_change);
   EXPECT_TRUE(file::IsDirectory(to_change, file::Defaults()).ok())
@@ -31,12 +31,12 @@ TEST(PosixHelperWin, mkdtemp) {
 
 TEST(PosixHelperWin, mkdtemp_insufficient_Xs) {
   const char kTemplate[] = "abc_XXXXX";  // expect at least 6 Xs but 5.
-  string original = file::JoinPath(GetGomaTmpDir(), kTemplate);
+  std::string original = file::JoinPath(GetGomaTmpDir(), kTemplate);
   if (!file::IsDirectory(file::Dirname(original), file::Defaults()).ok()) {
     EXPECT_TRUE(file::CreateDir(file::Dirname(original),
                                 file::CreationMode(0755)).ok());
   }
-  string to_change = original;
+  std::string to_change = original;
   EXPECT_EQ(nullptr, mkdtemp(&to_change[0])) << to_change;
   EXPECT_EQ(original, to_change);
   EXPECT_FALSE(file::IsDirectory(to_change, file::Defaults()).ok())
@@ -47,12 +47,12 @@ TEST(PosixHelperWin, mkdtemp_insufficient_Xs) {
 
 TEST(PosixHelperWin, mkdtemp_no_Xs) {
   const char kTemplate[] = "abcdefg";
-  string original = file::JoinPath(GetGomaTmpDir(), kTemplate);
+  std::string original = file::JoinPath(GetGomaTmpDir(), kTemplate);
   if (!file::IsDirectory(file::Dirname(original), file::Defaults()).ok()) {
     EXPECT_TRUE(file::CreateDir(file::Dirname(original),
                                 file::CreationMode(0755)).ok());
   }
-  string to_change = original;
+  std::string to_change = original;
   EXPECT_EQ(nullptr, mkdtemp(&to_change[0])) << to_change;
   EXPECT_EQ(original, to_change);
   EXPECT_FALSE(file::IsDirectory(to_change, file::Defaults()).ok())

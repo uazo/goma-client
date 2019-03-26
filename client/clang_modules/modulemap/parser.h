@@ -37,15 +37,15 @@ class Parser {
   // If the current token type is ident, returns true and stores the value
   // in |ident|.
   // Otherwise, returns false and doesn't consume anything.
-  bool ParseIdent(string* ident);
+  bool ParseIdent(std::string* ident);
   // If the current token type is string, returns true and stores the value
   // in |s|.
   // Otherwise, returns false and doesn't consume anything.
-  bool ParseString(string* s);
+  bool ParseString(std::string* s);
   // If the current token type is integer, returns true and stores the value
   // in |s|.
   // Otherwise, returns false and doesn't consume anything.
-  bool ParseInteger(string* s);
+  bool ParseInteger(std::string* s);
 
   // If the current token is punc and value is |c|, consumes it and
   // returns true. Otherwise, returns false and doesn't consume anything.
@@ -64,7 +64,7 @@ class Parser {
   // ParseXXXOpt means, it consumes nothing (and returns true) or
   // it's the same as ParseXXX.
   bool ParseModuleMapFile(ModuleMap* module_map);
-  bool ParseModuleId(string* module_id);
+  bool ParseModuleId(std::string* module_id);
   bool ParseModuleDeclaration(Module* module_decl);
   bool ParseModuleMembersOpt(Module* module_decl);
   bool ParseRequiresDeclaration(std::vector<Feature>* features);
@@ -74,20 +74,20 @@ class Parser {
   bool ParseHeaderAttrs(Header* header);
   bool ParseHeaderAttrsOpt(Header* header);
   bool ParseHeaderAttr(Header* header);
-  bool ParseUmbrellaDirDeclaration(string* dirname);
+  bool ParseUmbrellaDirDeclaration(std::string* dirname);
   bool ParseSubmoduleDeclaration(Module* module_decl);
   bool ParseInferredSubmoduleMember(Module* module_decl);
-  bool ParseExportDeclaration(string* module_id);
-  bool ParseWildcardModuleId(string* module_id);
-  bool ParseExportAsDeclaration(string* export_as);
-  bool ParseUseDeclaration(string* module_id);
+  bool ParseExportDeclaration(std::string* module_id);
+  bool ParseWildcardModuleId(std::string* module_id);
+  bool ParseExportAsDeclaration(std::string* export_as);
+  bool ParseUseDeclaration(std::string* module_id);
   bool ParseLinkDeclaration(Link* link);
   bool ParseConfigMacrosDeclaration(ConfigMacro* config_macro);
-  bool ParseConfigMacroList(std::vector<string>* names);
+  bool ParseConfigMacroList(std::vector<std::string>* names);
   bool ParseConflictDeclaration(Conflict* conflict);
-  bool ParseAttributesOpt(std::vector<string>*);
-  bool ParseAttributes(std::vector<string>*);
-  bool ParseAttribute(string*);
+  bool ParseAttributesOpt(std::vector<std::string>*);
+  bool ParseAttributes(std::vector<std::string>*);
+  bool ParseAttribute(std::string*);
 
   // internal state.
   const std::vector<Token>& tokens_;

@@ -35,12 +35,12 @@ namespace {
 
 class GetClangPluginPath : public FlagParser::Callback {
  public:
-  explicit GetClangPluginPath(std::vector<string>* subprograms)
+  explicit GetClangPluginPath(std::vector<std::string>* subprograms)
       : load_seen_(false), subprograms_(subprograms) {}
   ~GetClangPluginPath() override {}
 
-  string ParseFlagValue(const FlagParser::Flag& flag ALLOW_UNUSED,
-                        const string& value) override {
+  std::string ParseFlagValue(const FlagParser::Flag& flag ALLOW_UNUSED,
+                             const std::string& value) override {
     if (load_seen_) {
       load_seen_ = false;
       if (!used_plugin_.insert(value).second) {
@@ -58,13 +58,13 @@ class GetClangPluginPath : public FlagParser::Callback {
 
  private:
   bool load_seen_;
-  std::vector<string>* subprograms_;
-  std::set<string> used_plugin_;
+  std::vector<std::string>* subprograms_;
+  std::set<std::string> used_plugin_;
 };
 
 bool AddSubprogramInfo(
-    const string& user_specified_path,
-    const string& abs_path,
+    const std::string& user_specified_path,
+    const std::string& abs_path,
     google::protobuf::RepeatedPtrField<CompilerInfoData::SubprogramInfo>* ss) {
   CompilerInfoData::SubprogramInfo* s = ss->Add();
   if (!CxxCompilerInfoBuilder::SubprogramInfoFromPath(user_specified_path,
@@ -76,17 +76,17 @@ bool AddSubprogramInfo(
 }
 
 // Execute GCC and get the string output for GCC version
-bool GetGccVersion(const string& bare_gcc,
-                   const std::vector<string>& compiler_info_envs,
-                   const string& cwd,
-                   string* version) {
-  std::vector<string> argv;
+bool GetGccVersion(const std::string& bare_gcc,
+                   const std::vector<std::string>& compiler_info_envs,
+                   const std::string& cwd,
+                   std::string* version) {
+  std::vector<std::string> argv;
   argv.push_back(bare_gcc);
   argv.push_back("-dumpversion");
-  std::vector<string> env(compiler_info_envs);
+  std::vector<std::string> env(compiler_info_envs);
   env.push_back("LC_ALL=C");
   int32_t status = 0;
-  string dumpversion_output;
+  std::string dumpversion_output;
   {
     GOMA_COUNTERZ("ReadCommandOutput(dumpversion)");
     dumpversion_output = ReadCommandOutput(bare_gcc, argv, env, cwd,
@@ -102,7 +102,7 @@ bool GetGccVersion(const string& bare_gcc,
   }
 
   argv[1] = "--version";
-  string version_output;
+  std::string version_output;
   {
     GOMA_COUNTERZ("ReadCommandOutput(version)");
     version_output = ReadCommandOutput(bare_gcc, argv, env, cwd,
@@ -132,17 +132,17 @@ bool GetGccVersion(const string& bare_gcc,
 // Execute GCC and get the string output for GCC target architecture
 // This target is used to pick the same compiler in the backends, so
 // we don't need to use compiler_info_flags here.
-bool GetGccTarget(const string& bare_gcc,
-                  const std::vector<string>& compiler_info_envs,
-                  const string& cwd,
-                  string* target) {
-  std::vector<string> argv;
+bool GetGccTarget(const std::string& bare_gcc,
+                  const std::vector<std::string>& compiler_info_envs,
+                  const std::string& cwd,
+                  std::string* target) {
+  std::vector<std::string> argv;
   argv.push_back(bare_gcc);
   argv.push_back("-dumpmachine");
-  std::vector<string> env(compiler_info_envs);
+  std::vector<std::string> env(compiler_info_envs);
   env.push_back("LC_ALL=C");
   int32_t status = 0;
-  string gcc_output;
+  std::string gcc_output;
   {
     GOMA_COUNTERZ("ReadCommandOutput(dumpmachine)");
     gcc_output = ReadCommandOutput(bare_gcc, argv, env, cwd,
@@ -159,23 +159,23 @@ bool GetGccTarget(const string& bare_gcc,
   return !target->empty();
 }
 
-bool IsExecutable(const string& cwd, const string& path) {
-  const string abs_path = file::JoinPathRespectAbsolute(cwd, path);
+bool IsExecutable(const std::string& cwd, const std::string& path) {
+  const std::string abs_path = file::JoinPathRespectAbsolute(cwd, path);
   return access(abs_path.c_str(), X_OK) == 0;
 }
 
 #if defined(__linux__) || defined(__MACH__)
-string GetRealClangPath(const string& normal_gcc_path,
-                        const string& cwd,
-                        const std::vector<string>& envs) {
-  std::vector<string> argv;
+std::string GetRealClangPath(const std::string& normal_gcc_path,
+                             const std::string& cwd,
+                             const std::vector<std::string>& envs) {
+  std::vector<std::string> argv;
   argv.push_back(normal_gcc_path);
   argv.push_back("-xc");
   argv.push_back("-v");
   argv.push_back("-E");
   argv.push_back("/dev/null");
   int32_t status = 0;
-  string v_output;
+  std::string v_output;
   {
     GOMA_COUNTERZ("ReadCommandOutput(-xc -v)");
     v_output = ReadCommandOutput(normal_gcc_path, argv, envs, cwd,
@@ -186,12 +186,12 @@ string GetRealClangPath(const string& normal_gcc_path,
       << " normal_gcc_path=" << normal_gcc_path << " status=" << status
       << " argv=" << argv << " envs=" << envs << " cwd=" << cwd
       << " v_output=" << v_output;
-  const string clang_path =
+  const std::string clang_path =
       ClangCompilerInfoBuilderHelper::ParseRealClangPath(v_output);
   if (!clang_path.empty() && IsExecutable(cwd, clang_path)) {
     return clang_path;
   }
-  return string();
+  return std::string();
 }
 #endif
 
@@ -199,9 +199,9 @@ string GetRealClangPath(const string& normal_gcc_path,
 
 void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const string& abs_local_compiler_path,
-    const std::vector<string>& compiler_info_envs,
+    const std::string& local_compiler_path,
+    const std::string& abs_local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs,
     CompilerInfoData* data) const {
   // Some compilers uses wrapper script to set build target, and in such a
   // situation, build target could be different.
@@ -315,18 +315,18 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
 
     if (has_include && !has_include__ &&
         (data->cxx().predefined_macros().find("__has_include__") !=
-         string::npos)) {
+         std::string::npos)) {
       data->mutable_cxx()->add_hidden_predefined_macros("__has_include__");
     }
     if (has_include_next && !has_include_next__ &&
         (data->cxx().predefined_macros().find("__has_include_next__") !=
-         string::npos)) {
+         std::string::npos)) {
       data->mutable_cxx()->add_hidden_predefined_macros("__has_include_next__");
     }
   }
 
   // --- Experimental. Add compiler resource.
-  std::vector<string> resource_paths_to_collect;
+  std::vector<std::string> resource_paths_to_collect;
 
   // local compiler.
   // The server assumes the first resource path is always the local compiler.
@@ -400,7 +400,7 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
   }
 #endif  // __linux__
 
-  absl::flat_hash_set<string> visited_paths;
+  absl::flat_hash_set<std::string> visited_paths;
   for (const auto& resource_path : resource_paths_to_collect) {
     if (!AddResourceAsExecutableBinary(resource_path, gcc_flags, &visited_paths,
                                        data)) {
@@ -411,9 +411,9 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
 
 // static
 bool GCCCompilerInfoBuilder::AddResourceAsExecutableBinary(
-    const string& resource_path,
+    const std::string& resource_path,
     const GCCFlags& gcc_flags,
-    absl::flat_hash_set<string>* visited_paths,
+    absl::flat_hash_set<std::string>* visited_paths,
     CompilerInfoData* data) {
   // On Linux, MAX_NESTED_LINKS is 8, so I chose 8 here.
   static const int kMaxNestedLinks = 8;
@@ -423,12 +423,12 @@ bool GCCCompilerInfoBuilder::AddResourceAsExecutableBinary(
 
 // static
 bool GCCCompilerInfoBuilder::AddResourceAsExecutableBinaryInternal(
-    const string& resource_path,
+    const std::string& resource_path,
     const GCCFlags& gcc_flags,
     int rest_symlink_follow_count,
-    absl::flat_hash_set<string>* visited_paths,
+    absl::flat_hash_set<std::string>* visited_paths,
     CompilerInfoData* data) {
-  string abs_resource_path =
+  std::string abs_resource_path =
       file::JoinPathRespectAbsolute(gcc_flags.cwd(), resource_path);
   if (!visited_paths->insert(std::move(abs_resource_path)).second) {
     // This path has been visited before. Don't proceed.
@@ -461,7 +461,7 @@ bool GCCCompilerInfoBuilder::AddResourceAsExecutableBinaryInternal(
     AddErrorMessage("too deep nested symlink: " + resource_path, data);
     return false;
   }
-  string symlink_path = file::JoinPathRespectAbsolute(
+  std::string symlink_path = file::JoinPathRespectAbsolute(
       file::Dirname(resource_path), r.symlink_path());
 
   // Implementation Note: the original resource must come first. If the resource
@@ -476,15 +476,15 @@ bool GCCCompilerInfoBuilder::AddResourceAsExecutableBinaryInternal(
 
 void GCCCompilerInfoBuilder::SetCompilerPath(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const std::vector<string>& compiler_info_envs,
+    const std::string& local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs,
     CompilerInfoData* data) const {
   data->set_local_compiler_path(local_compiler_path);
   data->set_real_compiler_path(GetRealCompilerPath(
       local_compiler_path, flags.cwd(), compiler_info_envs));
 }
 
-string GCCCompilerInfoBuilder::GetCompilerName(
+std::string GCCCompilerInfoBuilder::GetCompilerName(
     const CompilerInfoData& data) const {
   absl::string_view base = file::Basename(data.local_compiler_path());
   if (base != "cc" && base != "c++") {
@@ -501,34 +501,35 @@ string GCCCompilerInfoBuilder::GetCompilerName(
   // clang++ is usually symlink to clang, and real compiler path is
   // usually be clang.  It does not usually reflect what we expect as a
   // compiler name.
-  string real_name = GCCFlags::GetCompilerName(data.real_compiler_path());
+  std::string real_name = GCCFlags::GetCompilerName(data.real_compiler_path());
   if (base == "cc") {
     return real_name;
   }
   if (real_name == "clang") {
-    return string("clang++");
+    return std::string("clang++");
   }
   LOG(WARNING) << "Cannot detect compiler name:"
                << " local=" << data.local_compiler_path()
                << " real=" << data.real_compiler_path();
-  return string();
+  return std::string();
 }
 
 /* static */
 bool GCCCompilerInfoBuilder::GetExtraSubprograms(
-    const string& normal_gcc_path,
+    const std::string& normal_gcc_path,
     const GCCFlags& gcc_flags,
-    const std::vector<string>& compiler_info_envs,
+    const std::vector<std::string>& compiler_info_envs,
     CompilerInfoData* compiler_info) {
   // TODO: support linker subprograms on linking.
-  std::vector<string> clang_plugins;
-  std::vector<string> B_options;
+  std::vector<std::string> clang_plugins;
+  std::vector<std::string> B_options;
   bool no_integrated_as = false;
-  std::set<string> known_subprograms;
+  std::set<std::string> known_subprograms;
   ParseSubprogramFlags(normal_gcc_path, gcc_flags, &clang_plugins, &B_options,
                        &no_integrated_as);
   for (const auto& path : clang_plugins) {
-    string absolute_path = file::JoinPathRespectAbsolute(gcc_flags.cwd(), path);
+    std::string absolute_path =
+        file::JoinPathRespectAbsolute(gcc_flags.cwd(), path);
     if (!known_subprograms.insert(absolute_path).second) {
       LOG(INFO) << "ignored duplicated subprogram: " << absolute_path;
       continue;
@@ -543,7 +544,7 @@ bool GCCCompilerInfoBuilder::GetExtraSubprograms(
     }
   }
 
-  std::vector<string> subprogram_paths;
+  std::vector<std::string> subprogram_paths;
   if (!CxxCompilerInfoBuilder::GetSubprograms(
           normal_gcc_path, gcc_flags.lang(), gcc_flags.compiler_info_flags(),
           compiler_info_envs, gcc_flags.cwd(), no_integrated_as,
@@ -562,7 +563,7 @@ bool GCCCompilerInfoBuilder::GetExtraSubprograms(
     } else {
       // List only subprograms under -B path for backward compatibility.
       // See b/63082235
-      for (const string& b : B_options) {
+      for (const std::string& b : B_options) {
         if (absl::StartsWith(path, b)) {
           may_register = true;
           break;
@@ -577,7 +578,8 @@ bool GCCCompilerInfoBuilder::GetExtraSubprograms(
       continue;
     }
 
-    string absolute_path = file::JoinPathRespectAbsolute(gcc_flags.cwd(), path);
+    std::string absolute_path =
+        file::JoinPathRespectAbsolute(gcc_flags.cwd(), path);
     if (!known_subprograms.insert(absolute_path).second) {
       LOG(INFO) << "ignored duplicated subprogram: " << absolute_path;
       continue;
@@ -596,12 +598,12 @@ bool GCCCompilerInfoBuilder::GetExtraSubprograms(
 
 /* static */
 void GCCCompilerInfoBuilder::ParseSubprogramFlags(
-    const string& normal_gcc_path,
+    const std::string& normal_gcc_path,
     const GCCFlags& gcc_flags,
-    std::vector<string>* clang_plugins,
-    std::vector<string>* B_options,
+    std::vector<std::string>* clang_plugins,
+    std::vector<std::string>* B_options,
     bool* no_integrated_as) {
-  const std::vector<string>& compiler_info_flags =
+  const std::vector<std::string>& compiler_info_flags =
       gcc_flags.compiler_info_flags();
   FlagParser flag_parser;
   GCCFlags::DefineFlags(&flag_parser);
@@ -618,7 +620,7 @@ void GCCCompilerInfoBuilder::ParseSubprogramFlags(
   // Parse -B options.
   FlagParser::Flag* flag_B = flag_parser.AddBoolFlag("B");
 
-  std::vector<string> argv;
+  std::vector<std::string> argv;
   argv.push_back(normal_gcc_path);
   copy(compiler_info_flags.begin(), compiler_info_flags.end(),
        back_inserter(argv));
@@ -630,7 +632,7 @@ void GCCCompilerInfoBuilder::ParseSubprogramFlags(
 
 // static
 bool GCCCompilerInfoBuilder::HasAsPath(
-    const std::vector<string>& subprogram_paths) {
+    const std::vector<std::string>& subprogram_paths) {
   for (const auto& path : subprogram_paths) {
     absl::string_view basename = file::Basename(path);
     if (basename == "as" || absl::EndsWith(basename, "-as")) {
@@ -641,10 +643,10 @@ bool GCCCompilerInfoBuilder::HasAsPath(
 }
 
 // static
-string GCCCompilerInfoBuilder::GetRealCompilerPath(
-    const string& normal_gcc_path,
-    const string& cwd,
-    const std::vector<string>& envs) {
+std::string GCCCompilerInfoBuilder::GetRealCompilerPath(
+    const std::string& normal_gcc_path,
+    const std::string& cwd,
+    const std::vector<std::string>& envs) {
 #if !defined(__linux__) && !defined(__MACH__) && !defined(_WIN32)
   return normal_gcc_path;
 #endif
@@ -661,7 +663,7 @@ string GCCCompilerInfoBuilder::GetRealCompilerPath(
   // command_spec in request, we also need real compiler to check toolchain
   // update for compiler_info_cache.
   if (GCCFlags::IsClangCommand(normal_gcc_path)) {
-    const string real_path = GetRealClangPath(normal_gcc_path, cwd, envs);
+    const std::string real_path = GetRealClangPath(normal_gcc_path, cwd, envs);
     if (real_path.empty()) {
       LOG(WARNING) << "seems not be a clang?"
                    << " normal_gcc_path=" << normal_gcc_path;
@@ -676,7 +678,7 @@ string GCCCompilerInfoBuilder::GetRealCompilerPath(
     //
     // Consider the clang is ChromeOS clang, which runs via a wrapper.
     // TODO: more reliable ways?
-    string real_chromeos_clang_path = real_path + ".elf";
+    std::string real_chromeos_clang_path = real_path + ".elf";
     if (IsExecutable(cwd, real_chromeos_clang_path)) {
       return real_chromeos_clang_path;
     }
@@ -689,11 +691,11 @@ string GCCCompilerInfoBuilder::GetRealCompilerPath(
   // For ChromeOS compilers.
   // Note: Ubuntu Linux is required to build ChromeOS.
   // http://www.chromium.org/chromium-os/quick-start-guide
-  std::vector<string> argv;
+  std::vector<std::string> argv;
   argv.push_back(normal_gcc_path);
   argv.push_back("-v");
   int32_t status = 0;
-  string v_output;
+  std::string v_output;
   {
     GOMA_COUNTERZ("ReadCommandOutput(-v)");
     v_output = ReadCommandOutput(normal_gcc_path, argv, envs, cwd,
@@ -706,16 +708,16 @@ string GCCCompilerInfoBuilder::GetRealCompilerPath(
       << " v_output=" << v_output;
   const char* kCollectGcc = "COLLECT_GCC=";
   size_t index = v_output.find(kCollectGcc);
-  if (index == string::npos)
+  if (index == std::string::npos)
     return normal_gcc_path;
   index += strlen(kCollectGcc);
 
   // If COLLECT_GCC is specified and gcc is accompanied by gcc.real,
   // we assume the "real" one is the last binary we will run.
   // TODO: More reliable ways?
-  const string& gcc_path =
+  const std::string& gcc_path =
       v_output.substr(index, v_output.find_first_of("\r\n", index) - index);
-  const string& real_gcc_path = gcc_path + ".real";
+  const std::string& real_gcc_path = gcc_path + ".real";
   if (IsExecutable(cwd, real_gcc_path)) {
     return real_gcc_path;
   }
@@ -726,7 +728,7 @@ string GCCCompilerInfoBuilder::GetRealCompilerPath(
   if (file::Dirname(normal_gcc_path) != "/usr/bin") {
     return normal_gcc_path;
   }
-  const string clang_path = GetRealClangPath(normal_gcc_path, cwd, envs);
+  const std::string clang_path = GetRealClangPath(normal_gcc_path, cwd, envs);
   if (!clang_path.empty()) {
     return clang_path;
   }
@@ -738,7 +740,7 @@ string GCCCompilerInfoBuilder::GetRealCompilerPath(
   // The real binary is ../libexec/nacl-{gcc,g++}.exe.  Binaries under
   // the bin directory are just wrappers to them.
   if (GCCFlags::IsNaClGCCCommand(normal_gcc_path)) {
-    const string& candidate_path = file::JoinPath(
+    const std::string& candidate_path = file::JoinPath(
         NaClCompilerInfoBuilderHelper::GetNaClToolchainRoot(normal_gcc_path),
         file::JoinPath("libexec", file::Basename(normal_gcc_path)));
     if (IsExecutable(cwd, candidate_path)) {

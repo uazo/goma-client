@@ -335,7 +335,7 @@ void SocketDescriptor::UnregisterWritable() {
   }
 }
 
-string SocketDescriptor::PeerName() const {
+std::string SocketDescriptor::PeerName() const {
   struct sockaddr_storage storage;
   memset(&storage, 0, sizeof storage);
   socklen_t len = sizeof(storage);
@@ -353,7 +353,7 @@ string SocketDescriptor::PeerName() const {
       {
         struct sockaddr_in* in =
             reinterpret_cast<struct sockaddr_in*>(&storage);
-        string name = inet_ntop(AF_INET, &in->sin_addr, buf, sizeof buf);
+        std::string name = inet_ntop(AF_INET, &in->sin_addr, buf, sizeof buf);
         return name;
       }
       break;
@@ -361,7 +361,8 @@ string SocketDescriptor::PeerName() const {
       {
         struct sockaddr_in6* in6 =
             reinterpret_cast<struct sockaddr_in6*>(&storage);
-        string name = inet_ntop(AF_INET6, &in6->sin6_addr, buf, sizeof buf);
+        std::string name =
+            inet_ntop(AF_INET6, &in6->sin6_addr, buf, sizeof buf);
         return name;
       }
       break;

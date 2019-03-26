@@ -7,7 +7,7 @@
 
 namespace devtools_goma {
 
-bool VCCompilerTypeSpecific::RemoteCompileSupported(const string& trace_id,
+bool VCCompilerTypeSpecific::RemoteCompileSupported(const std::string& trace_id,
                                                     const CompilerFlags& flags,
                                                     bool verify_output) const {
   const VCFlags& vc_flag = static_cast<const VCFlags&>(flags);
@@ -28,8 +28,8 @@ bool VCCompilerTypeSpecific::RemoteCompileSupported(const string& trace_id,
 
 std::unique_ptr<CompilerInfoData> VCCompilerTypeSpecific::BuildCompilerInfoData(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const std::vector<string>& compiler_info_envs) {
+    const std::string& local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs) {
   return compiler_info_builder_.FillFromCompilerOutputs(
       flags, local_compiler_path, compiler_info_envs);
 }

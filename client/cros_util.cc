@@ -38,37 +38,38 @@ const char* const kDefaultBlacklist[] = {
 
 namespace devtools_goma {
 
-std::vector<string> ParseBlacklistContents(const string& contents) {
-  std::vector<string> parsed;
+std::vector<std::string> ParseBlacklistContents(const std::string& contents) {
+  std::vector<std::string> parsed;
   for (auto&& line : absl::StrSplit(contents,
                                     absl::ByAnyChar("\r\n"),
                                     absl::SkipEmpty())) {
     absl::string_view stripped_line = absl::StripAsciiWhitespace(line);
     if (!stripped_line.empty()) {
-      parsed.push_back(string(stripped_line));
+      parsed.push_back(std::string(stripped_line));
     }
   }
   return parsed;
 }
 
-std::vector<string> GetBlacklist() {
+std::vector<std::string> GetBlacklist() {
   const char* blacklist_file = getenv("GOMACC_BLACKLIST");
   if (blacklist_file == nullptr) {
-    std::vector<string> default_blacklist;
+    std::vector<std::string> default_blacklist;
     for (const auto& it : kDefaultBlacklist) {
       default_blacklist.push_back(it);
     }
     return default_blacklist;
   }
-  string contents;
+  std::string contents;
   CHECK(ReadFileToString(blacklist_file, &contents))
     << "Failed to read GOMACC_BLACKLIST=" << blacklist_file;
   return ParseBlacklistContents(contents);
 }
 
-bool IsBlacklisted(const string& path, const std::vector<string>& blacklist) {
+bool IsBlacklisted(const std::string& path,
+                   const std::vector<std::string>& blacklist) {
   for (size_t i = 0; i < blacklist.size(); ++i) {
-    if (path.find(blacklist[i]) != string::npos) {
+    if (path.find(blacklist[i]) != std::string::npos) {
       LOG(INFO) << "The path is blacklisted. "
                 << " path=" << path;
       return true;
@@ -78,7 +79,7 @@ bool IsBlacklisted(const string& path, const std::vector<string>& blacklist) {
 }
 
 float GetLoadAverage() {
-  string line;
+  std::string line;
   ScopedFd fd(ScopedFd::OpenForRead("/proc/loadavg"));
   if (!fd.valid()) {
     PLOG(ERROR) << "failed to open /proc/loadavg";
@@ -92,8 +93,8 @@ float GetLoadAverage() {
   }
   buf[r] = '\0';
 
-  std::vector<string> loadavgs = ToVector(
-      absl::StrSplit(buf, absl::ByAnyChar(" \t"), absl::SkipEmpty()));
+  std::vector<std::string> loadavgs =
+      ToVector(absl::StrSplit(buf, absl::ByAnyChar(" \t"), absl::SkipEmpty()));
   if (loadavgs.empty()) {
     LOG(ERROR) << "failed to get load average.";
     return -1;
@@ -120,7 +121,7 @@ int64_t RandInt64(int64_t a, int64_t b) {
 }
 
 bool CanGomaccHandleCwd() {
-  const std::vector<string> blacklist = GetBlacklist();
+  const std::vector<std::string> blacklist = GetBlacklist();
   std::unique_ptr<char, decltype(&free)> cwd(getcwd(nullptr, 0), free);
   if (IsBlacklisted(cwd.get(), blacklist) || getuid() == 0) {
     return false;

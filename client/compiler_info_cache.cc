@@ -24,8 +24,6 @@ MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/compiler_info_data.pb.h"
 MSVC_POP_WARNING()
 
-using std::string;
-
 namespace devtools_goma {
 
 constexpr absl::Duration kNegativeCacheDuration = absl::Minutes(10);
@@ -33,7 +31,7 @@ constexpr absl::Duration kUpdateLastUsedAtDuration = absl::Minutes(10);
 
 CompilerInfoCache* CompilerInfoCache::instance_;
 
-string CompilerInfoCache::Key::ToString(bool cwd_relative) const {
+std::string CompilerInfoCache::Key::ToString(bool cwd_relative) const {
   if (cwd_relative) {
     return local_compiler_path + " " + base + cwd;
   }
@@ -44,13 +42,13 @@ string CompilerInfoCache::Key::ToString(bool cwd_relative) const {
   return local_compiler_path + " " + base;
 }
 
-string CompilerInfoCache::Key::abs_local_compiler_path() const {
+std::string CompilerInfoCache::Key::abs_local_compiler_path() const {
   return file::JoinPathRespectAbsolute(cwd, local_compiler_path);
 }
 
 /* static */
-void CompilerInfoCache::Init(const string& cache_dir,
-                             const string& cache_filename,
+void CompilerInfoCache::Init(const std::string& cache_dir,
+                             const std::string& cache_filename,
                              absl::Duration cache_holding_time) {
   CHECK(instance_ == nullptr);
   if (cache_filename == "") {
@@ -67,7 +65,7 @@ void CompilerInfoCache::Quit() {
   instance_ = nullptr;
 }
 
-CompilerInfoCache::CompilerInfoCache(const string& cache_filename,
+CompilerInfoCache::CompilerInfoCache(const std::string& cache_filename,
                                      absl::Duration cache_holding_time)
     : cache_file_(cache_filename),
       cache_holding_time_(cache_holding_time),
@@ -109,10 +107,11 @@ CompilerInfoCache::Key CompilerInfoCache::CreateKey(
     const CompilerFlags& flags,
     const std::string& local_compiler_path,
     const std::vector<std::string>& key_envs) {
-  const std::vector<string>& compiler_info_flags = flags.compiler_info_flags();
-  std::vector<string> compiler_info_keys(compiler_info_flags);
+  const std::vector<std::string>& compiler_info_flags =
+      flags.compiler_info_flags();
+  std::vector<std::string> compiler_info_keys(compiler_info_flags);
   copy(key_envs.begin(), key_envs.end(), back_inserter(compiler_info_keys));
-  string compiler_info_keys_str = absl::StrJoin(compiler_info_keys, " ");
+  std::string compiler_info_keys_str = absl::StrJoin(compiler_info_keys, " ");
 
   Key key;
   key.base = compiler_info_keys_str + " lang:" + flags.lang() + " @";
@@ -143,8 +142,8 @@ CompilerInfoState* CompilerInfoCache::Lookup(const Key& key) {
 }
 
 CompilerInfoState* CompilerInfoCache::LookupUnlocked(
-    const string& compiler_info_key,
-    const string& abs_local_compiler_path) {
+    const std::string& compiler_info_key,
+    const std::string& abs_local_compiler_path) {
   auto it = compiler_info_.find(compiler_info_key);
   if (it == compiler_info_.end()) {
     return nullptr;
@@ -178,14 +177,14 @@ CompilerInfoState* CompilerInfoCache::Store(
   ScopedCompilerInfoState state;
 
   bool dup = false;
-  string dup_compiler_info_key;
-  string hash = HashKey(*data);
+  std::string dup_compiler_info_key;
+  std::string hash = HashKey(*data);
   {
     auto found = keys_by_hash_.find(hash);
     if (found != keys_by_hash_.end()) {
-      std::unordered_set<string>* keys = found->second.get();
+      std::unordered_set<std::string>* keys = found->second.get();
       if (!keys->empty()) {
-        const string& compiler_info_key = *keys->begin();
+        const std::string& compiler_info_key = *keys->begin();
         state.reset(LookupUnlocked(
             compiler_info_key, key.abs_local_compiler_path()));
         if (state.get() != nullptr) {
@@ -216,8 +215,8 @@ CompilerInfoState* CompilerInfoCache::Store(
     DCHECK(!state.get()->info().failed_at().has_value());
   }
 
-  string old_hash;
-  const string compiler_info_key =
+  std::string old_hash;
+  const std::string compiler_info_key =
       key.ToString(!file::IsAbsolutePath(key.local_compiler_path) ||
                    state.get()->info().DependsOnCwd(key.cwd));
   {
@@ -233,7 +232,7 @@ CompilerInfoState* CompilerInfoCache::Store(
   {
     auto p = keys_by_hash_.emplace(hash, nullptr);
     if (p.second) {
-      p.first->second = absl::make_unique<std::unordered_set<string>>();
+      p.first->second = absl::make_unique<std::unordered_set<std::string>>();
     }
     p.first->second->insert(compiler_info_key);
     LOG(INFO) << "hash=" << hash << " key=" << compiler_info_key;
@@ -414,15 +413,15 @@ void CompilerInfoCache::SetValidator(CompilerInfoValidator* validator) {
 
 bool CompilerInfoCache::CompilerInfoValidator::Validate(
     const CompilerInfo& compiler_info,
-    const string& local_compiler_path) {
+    const std::string& local_compiler_path) {
   return compiler_info.IsUpToDate(local_compiler_path);
 }
 
 /* static */
-string CompilerInfoCache::HashKey(const CompilerInfoData& data) {
-  string serialized;
+std::string CompilerInfoCache::HashKey(const CompilerInfoData& data) {
+  std::string serialized;
   data.SerializeToString(&serialized);
-  string hash;
+  std::string hash;
   ComputeDataHashKey(serialized, &hash);
   return hash;
 }
@@ -467,7 +466,7 @@ void CompilerInfoCache::UpdateOlderCompilerInfoUnlocked() {
   // Since calculating sha256 is slow, we need cache. Otherwise, we will
   // need more than 2 seconds to check.
   SHA256HashCache sha256_cache;
-  std::vector<string> keys_to_remove;
+  std::vector<std::string> keys_to_remove;
   const absl::Time now = absl::Now();
   for (const auto& entry : compiler_info_) {
     const std::string& key = entry.first;
@@ -519,8 +518,8 @@ bool CompilerInfoCache::Unmarshal(const CompilerInfoDataTable& table) {
 
 bool CompilerInfoCache::UnmarshalUnlocked(const CompilerInfoDataTable& table) {
   for (const auto& it : table.compiler_info_data()) {
-    std::unique_ptr<std::unordered_set<string>> keys(
-        new std::unordered_set<string>);
+    std::unique_ptr<std::unordered_set<std::string>> keys(
+        new std::unordered_set<std::string>);
     for (const auto& key : it.keys()) {
       keys->insert(key);
     }
@@ -532,7 +531,7 @@ bool CompilerInfoCache::UnmarshalUnlocked(const CompilerInfoDataTable& table) {
     }
     std::unique_ptr<CompilerInfoData> cid(new CompilerInfoData);
     *cid = data;
-    const string& hash = HashKey(*cid);
+    const std::string& hash = HashKey(*cid);
     ScopedCompilerInfoState state(new CompilerInfoState(std::move(cid)));
     for (const auto& key : *keys) {
       compiler_info_.insert(std::make_pair(key, state.get()));
@@ -570,15 +569,15 @@ bool CompilerInfoCache::Marshal(CompilerInfoDataTable* table) {
 }
 
 bool CompilerInfoCache::MarshalUnlocked(CompilerInfoDataTable* table) {
-  std::unordered_map<string, CompilerInfoDataTable::Entry*> by_hash;
+  std::unordered_map<std::string, CompilerInfoDataTable::Entry*> by_hash;
   for (const auto& it : compiler_info_) {
-    const string& info_key = it.first;
+    const std::string& info_key = it.first;
     CompilerInfoState* state = it.second;
     if (state->disabled()) {
       continue;
     }
     const CompilerInfoData& data = state->info().data();
-    string hash = HashKey(data);
+    std::string hash = HashKey(data);
     CompilerInfoDataTable::Entry* entry = nullptr;
     auto p = by_hash.insert(std::make_pair(hash, entry));
     if (p.second) {

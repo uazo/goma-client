@@ -20,8 +20,6 @@
 # include <unistd.h>
 #endif
 
-using std::string;
-
 namespace devtools_goma {
 
 class WorkerThreadManager;
@@ -72,13 +70,13 @@ class MockSocketFactory : public SocketFactory {
   void ReleaseSocket(ScopedSocket&& sock) override;
   void CloseSocket(ScopedSocket&& sock, bool err) override;
 
-  string DestName() const override { return dest_; }
-  string host_name() const override { return host_name_; }
+  std::string DestName() const override { return dest_; }
+  std::string host_name() const override { return host_name_; }
   int port() const override { return port_; }
-  string DebugString() const override { return "MockSocketFactory"; }
+  std::string DebugString() const override { return "MockSocketFactory"; }
 
-  void set_dest(const string& dest) { dest_ = dest; }
-  void set_host_name(const string& host_name) { host_name_ = host_name; }
+  void set_dest(const std::string& dest) { dest_ = dest; }
+  void set_host_name(const std::string& host_name) { host_name_ = host_name; }
   void set_port(int port) { port_ = port; }
 
   void set_is_owned(bool b) {
@@ -90,8 +88,8 @@ class MockSocketFactory : public SocketFactory {
 
  private:
   int sock_;
-  string dest_;
-  string host_name_;
+  std::string dest_;
+  std::string host_name_;
   int port_;
 
   // |is_owned_| is used to hold the state for ~MockSocketFactory()
@@ -111,10 +109,10 @@ class MockSocketServer {
   // Test server will read from sock and store received data in buf.
   // Caller should set expected size to buf by buf->resize(N).
   // Once N bytes are read in buf, this action will finish.
-  void ServerRead(int sock, string* buf);
+  void ServerRead(int sock, std::string* buf);
 
   // Test server will write buf to sock.
-  void ServerWrite(int sock, string buf);
+  void ServerWrite(int sock, std::string buf);
 
   // Test server will close the sock.
   void ServerClose(int sock);
@@ -123,8 +121,8 @@ class MockSocketServer {
   void ServerWait(absl::Duration wait_time);
 
  private:
-  void DoServerRead(int sock, string* buf);
-  void DoServerWrite(int sock, string buf);
+  void DoServerRead(int sock, std::string* buf);
+  void DoServerWrite(int sock, std::string buf);
   void DoServerClose(int sock);
   void DoServerWait(absl::Duration wait_time);
 

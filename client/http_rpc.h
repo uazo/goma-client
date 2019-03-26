@@ -16,8 +16,6 @@
 #include "lockhelper.h"
 #include "http.h"
 
-using std::string;
-
 namespace google {
 namespace protobuf {
 class Message;
@@ -40,10 +38,10 @@ class HttpRPC {
     Options();
     int compression_level;
     bool start_compression;
-    string accept_encoding;
-    string content_type_for_protobuf;
+    std::string accept_encoding;
+    std::string content_type_for_protobuf;
 
-    string DebugString() const;
+    std::string DebugString() const;
   };
   // TODO: HttpRPC specific status?
   typedef HttpClient::Status Status;
@@ -55,11 +53,10 @@ class HttpRPC {
   // Ping sends ping message.
   // This is in HttpRPC, not in HttpClient, because we might need to
   // call via RPC for Apiary case.
-  int Ping(WorkerThreadManager* wm, const string& path,
-           Status *status);
+  int Ping(WorkerThreadManager* wm, const std::string& path, Status* status);
 
   // Call calls a RPC synchronously.
-  int Call(const string& path,
+  int Call(const std::string& path,
            const google::protobuf::Message* req,
            google::protobuf::Message* resp,
            Status* status);
@@ -68,17 +65,16 @@ class HttpRPC {
   // Caller have ownership of req, resp and status until RPC is finished.
   // Once RPC is finished, callback is called (if callback != NULL), or
   // status->finished becomes true (if callback == NULL).
-  void CallWithCallback(
-      const string& path,
-      const google::protobuf::Message* req,
-      google::protobuf::Message* resp,
-      Status* status,
-      OneshotClosure* callback);
+  void CallWithCallback(const std::string& path,
+                        const google::protobuf::Message* req,
+                        google::protobuf::Message* resp,
+                        Status* status,
+                        OneshotClosure* callback);
 
   // Wait waits for a RPC initiated by CallWithCallback with callback=NULL.
   void Wait(Status* status);
 
-  string DebugString() const;
+  std::string DebugString() const;
 
   void DumpToJson(Json::Value* json) const;
   void DumpStatsToProto(HttpRPCStats* stats) const;
@@ -94,7 +90,7 @@ class HttpRPC {
   class CallResponse;
   class CallData;
 
-  void DoPing(string path, Status* status);
+  void DoPing(std::string path, Status* status);
   void PingDone(std::unique_ptr<Status> status,
                 std::unique_ptr<SimpleTimer> timer);
 
@@ -118,7 +114,7 @@ class HttpRPC {
 
 class ExecServiceClient {
  public:
-  ExecServiceClient(HttpRPC* http_rpc, string path);
+  ExecServiceClient(HttpRPC* http_rpc, std::string path);
   virtual ~ExecServiceClient() = default;
 
   ExecServiceClient(const ExecServiceClient&) = delete;
@@ -132,7 +128,7 @@ class ExecServiceClient {
 
  private:
   HttpRPC* http_rpc_;
-  const string path_;
+  const std::string path_;
 };
 
 }  // namespace devtools_goma

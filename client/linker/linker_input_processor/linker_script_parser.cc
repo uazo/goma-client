@@ -32,9 +32,9 @@ namespace devtools_goma {
 const char* LinkerScriptParser::fakeroot_ = "";
 
 LinkerScriptParser::LinkerScriptParser(std::unique_ptr<Content> content,
-                                       string current_directory,
-                                       std::vector<string> searchdirs,
-                                       string sysroot)
+                                       std::string current_directory,
+                                       std::vector<std::string> searchdirs,
+                                       std::string sysroot)
     : content_(new ContentCursor(std::move(content))),
       current_directory_(std::move(current_directory)),
       searchdirs_(std::move(searchdirs)),
@@ -47,8 +47,8 @@ bool LinkerScriptParser::Parse() {
   return ParseUntil("");
 }
 
-bool LinkerScriptParser::ParseUntil(const string& term_token) {
-  string token;
+bool LinkerScriptParser::ParseUntil(const std::string& term_token) {
+  std::string token;
   while (NextToken(&token)) {
     if (!term_token.empty() && token == term_token) {
       return true;
@@ -92,7 +92,7 @@ bool LinkerScriptParser::ParseUntil(const string& term_token) {
   return term_token.empty();
 }
 
-bool LinkerScriptParser::NextToken(string* token) {
+bool LinkerScriptParser::NextToken(std::string* token) {
   const char* p = nullptr;
   int ch = EOF;
   bool is_token_start = false;
@@ -116,11 +116,11 @@ bool LinkerScriptParser::NextToken(string* token) {
               break;
             }
           }
-          VLOG(2) << "Skip comment:" << string(p, content_->cur() - p);
+          VLOG(2) << "Skip comment:" << std::string(p, content_->cur() - p);
           continue;
         } else if (*content_->cur() == '=') {
           ch = content_->GetChar();
-          *token = string(p, content_->cur() - p);
+          *token = std::string(p, content_->cur() - p);
           VLOG(2) << "Token(op) '" << *token << "'";
           return true;
         }
@@ -131,29 +131,29 @@ bool LinkerScriptParser::NextToken(string* token) {
         continue;
       case '(': case ')': case '{': case '}': case ':': case '?':
       case '~': case '%':
-        *token = string(1, static_cast<char>(ch));
+        *token = std::string(1, static_cast<char>(ch));
         VLOG(2) << "Token(char) '" << *token << "'";
         return true;
 
       case '=': case '!': case '+': case '-': case '*':
         if (*content_->cur() == '=') {
           ch = content_->GetChar();
-          *token = string(p, content_->cur() - p);
+          *token = std::string(p, content_->cur() - p);
           VLOG(2) << "Token(op) '" << *token << "'";
           return true;
         }
-        *token = string(1, static_cast<char>(ch));
+        *token = std::string(1, static_cast<char>(ch));
         VLOG(2) << "Token(char) '" << *token << "'";
         return true;
 
       case '&': case '|':
         if (*content_->cur() == '=' || *content_->cur() == ch) {
           ch = content_->GetChar();
-          *token = string(p, content_->cur() - p);
+          *token = std::string(p, content_->cur() - p);
           VLOG(2) << "Token(op) '" << *token << "'";
           return true;
         }
-        *token = string(1, static_cast<char>(ch));
+        *token = std::string(1, static_cast<char>(ch));
         VLOG(2) << "Token(char) '" << *token << "'";
         return true;
 
@@ -162,11 +162,11 @@ bool LinkerScriptParser::NextToken(string* token) {
           ch = content_->GetChar();
         if (*content_->cur() == '=' || *content_->cur() == ch) {
           ch = content_->GetChar();
-          *token = string(p, content_->cur() - p);
+          *token = std::string(p, content_->cur() - p);
           VLOG(2) << "Token(op) '" << *token << "'";
           return true;
         }
-        *token = string(p, content_->cur() - p);
+        *token = std::string(p, content_->cur() - p);
         VLOG(1) << "Token(op) '" << *token << "'";
         return true;
 
@@ -175,7 +175,7 @@ bool LinkerScriptParser::NextToken(string* token) {
         if (!content_->SkipUntil('"'))
           return false;
         content_->Advance(1);
-        *token = string(p, content_->cur() - p - 1);
+        *token = std::string(p, content_->cur() - p - 1);
         VLOG(2) << "Token(quoted-string) " << *token;
         return true;
 
@@ -190,7 +190,7 @@ bool LinkerScriptParser::NextToken(string* token) {
   for (;;) {
     p = content_->cur();
     if (p == content_->buf_end()) {
-      *token = string(token_start, p - token_start - 1);
+      *token = std::string(token_start, p - token_start - 1);
       VLOG(2) << "Token(EOF) " << *token;
       return true;
     }
@@ -199,7 +199,7 @@ bool LinkerScriptParser::NextToken(string* token) {
       case '(': case ')': case '{': case '}':
       case '"':
         // end od token.
-        *token = string(token_start, p - token_start);
+        *token = std::string(token_start, p - token_start);
         VLOG(2) << "Token '" << *token << "'";
         return true;
       default:
@@ -209,9 +209,9 @@ bool LinkerScriptParser::NextToken(string* token) {
   }
 }
 
-bool LinkerScriptParser::GetToken(const string& token) {
+bool LinkerScriptParser::GetToken(const std::string& token) {
   VLOG(1) << "Expect token " << token;
-  string next_token;
+  std::string next_token;
   if (!NextToken(&next_token)) {
     LOG(WARNING) << "Expected " << token << ", but got " << next_token;
     return false;
@@ -223,7 +223,7 @@ bool LinkerScriptParser::ProcessFileList(bool accept_as_needed) {
   VLOG(1) << "FileList as_needed=" << accept_as_needed;
   if (!GetToken("("))
     return false;
-  string token;
+  std::string token;
   while (NextToken(&token)) {
     if (token == ")") {
       return true;
@@ -243,7 +243,7 @@ bool LinkerScriptParser::ProcessFileList(bool accept_as_needed) {
           HasPrefixDir(current_directory_, sysroot_)) {
         token = file::JoinPath(sysroot_, token.substr(1));
       }
-      string input_file;
+      std::string input_file;
       if (FindFile(token, &input_file)) {
         inputs_.push_back(input_file);
       } else {
@@ -254,7 +254,7 @@ bool LinkerScriptParser::ProcessFileList(bool accept_as_needed) {
   return false;
 }
 
-bool LinkerScriptParser::ProcessFile(string* filename) {
+bool LinkerScriptParser::ProcessFile(std::string* filename) {
   VLOG(1) << "File";
   if (!GetToken("("))
     return false;
@@ -265,10 +265,10 @@ bool LinkerScriptParser::ProcessFile(string* filename) {
 
 // INCLUDE filename
 bool LinkerScriptParser::ProcessInclude() {
-  string filename;
+  std::string filename;
   if (!NextToken(&filename))
     return false;
-  string include_file;
+  std::string include_file;
   if (!FindFile(filename, &include_file)) {
     LOG(ERROR) << "file:" << filename << " not found in searchdirs:"
                << searchdirs_;
@@ -320,7 +320,7 @@ bool LinkerScriptParser::ProcessOutput() {
 // SEARCH_DIR(path) => -Lpath
 bool LinkerScriptParser::ProcessSearchDir() {
   VLOG(1) << "Process SEARCH_DIR";
-  string path;
+  std::string path;
   if (!ProcessFile(&path))
     return false;
   searchdirs_.push_back(path);
@@ -333,10 +333,10 @@ bool LinkerScriptParser::ProcessStartup() {
   return ProcessFile(&startup_);
 }
 
-bool LinkerScriptParser::FindFile(const string& filename,
-                                  string* include_file) {
-  string resolved_filename = fakeroot_ +
-      file::JoinPathRespectAbsolute(current_directory_, filename);
+bool LinkerScriptParser::FindFile(const std::string& filename,
+                                  std::string* include_file) {
+  std::string resolved_filename =
+      fakeroot_ + file::JoinPathRespectAbsolute(current_directory_, filename);
   if (access(resolved_filename.c_str(), R_OK) == 0) {
     *include_file = resolved_filename.substr(strlen(fakeroot_));
     return true;

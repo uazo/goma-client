@@ -22,7 +22,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "base/basictypes.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -56,11 +55,11 @@ class ScopedFd {
     return *this;
   }
 
-  static FileDescriptor OpenForRead(const string& filename);
-  static FileDescriptor OpenForAppend(const string& filename, int mode);
-  static FileDescriptor OpenForRewrite(const string& filename);
-  static FileDescriptor Create(const string& filename, int mode);
-  static FileDescriptor CreateExclusive(const string& filename, int mode);
+  static FileDescriptor OpenForRead(const std::string& filename);
+  static FileDescriptor OpenForAppend(const std::string& filename, int mode);
+  static FileDescriptor OpenForRewrite(const std::string& filename);
+  static FileDescriptor Create(const std::string& filename, int mode);
+  static FileDescriptor CreateExclusive(const std::string& filename, int mode);
   static FileDescriptor OpenNull();
 
   bool valid() const;
@@ -123,7 +122,7 @@ class IOChannel {
 
   // Returns the last error message. Valid when called just after
   // Write(), Read(), etc.
-  virtual string GetLastErrorMessage() const = 0;
+  virtual std::string GetLastErrorMessage() const = 0;
 
   virtual bool is_secure() const { return false; }
 
@@ -167,7 +166,7 @@ class ScopedSocket : public IOChannel {
 
   // Returns the last error message. Valid when called just after
   // Write(), Read(), etc.
-  string GetLastErrorMessage() const override;
+  std::string GetLastErrorMessage() const override;
 
   bool SetCloseOnExec() const;
   bool SetNonBlocking() const;

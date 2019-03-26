@@ -19,8 +19,8 @@
 
 namespace devtools_goma {
 
-bool ReadFileToString(absl::string_view filename, string* OUTPUT) {
-  const string& name = string(filename);
+bool ReadFileToString(absl::string_view filename, std::string* OUTPUT) {
+  const std::string& name = std::string(filename);
   DCHECK(OUTPUT != nullptr) << filename;
   OUTPUT->clear();
 
@@ -71,7 +71,7 @@ bool ReadFileToString(absl::string_view filename, string* OUTPUT) {
 
 bool WriteStringToFile(absl::string_view data, absl::string_view file_name) {
   devtools_goma::ScopedFd fd(
-      devtools_goma::ScopedFd::Create(string(file_name), 0600));
+      devtools_goma::ScopedFd::Create(std::string(file_name), 0600));
   if (!fd.valid()) {
     LOG(ERROR) << "GOMA: failed to open " << file_name;
     return false;

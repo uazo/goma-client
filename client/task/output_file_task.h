@@ -12,8 +12,6 @@
 #include "goma_blob.h"
 #include "simple_timer.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class CompileTask;

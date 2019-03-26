@@ -11,16 +11,14 @@
 #include "fake_compiler_info.h"
 #include "fake_flags.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class FakeIncludeProcessor {
  public:
-  bool Run(const string& trace_id,
+  bool Run(const std::string& trace_id,
            const FakeFlags& fake_flags,
            const FakeCompilerInfo& compiler_info,
-           std::set<string>* required_files);
+           std::set<std::string>* required_files);
 };
 
 }  // namespace devtools_goma

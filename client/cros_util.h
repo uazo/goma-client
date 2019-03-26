@@ -11,14 +11,12 @@
 
 #include "absl/time/time.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 #ifdef __linux__
 
 // Parses blacklist file contents and returns a list of blacklised directories.
-std::vector<string> ParseBlacklistContents(const string& contents);
+std::vector<std::string> ParseBlacklistContents(const std::string& contents);
 
 // Returns list of portage package names to blacklist.
 //  If non-empty $GOMACC_BLACKLIST is set, we use its file contents in the file
@@ -29,10 +27,11 @@ std::vector<string> ParseBlacklistContents(const string& contents);
 //  /sys-fs/mtools
 //
 //  Note that empty line is just ignored.
-std::vector<string> GetBlacklist();
+std::vector<std::string> GetBlacklist();
 
 // Returns true if |path| matches with one of path name in |blacklist|.
-bool IsBlacklisted(const string& path, const std::vector<string>& blacklist);
+bool IsBlacklisted(const std::string& path,
+                   const std::vector<std::string>& blacklist);
 
 // Returns load average in 1 min.  Returns negative value on error.
 float GetLoadAverage();
@@ -53,7 +52,7 @@ void WaitUntilLoadAvgLowerThan(float load, absl::Duration max_sleep_time);
 #else
 
 // Provide dummy function for non-linux.
-bool CanGomaccHandle(const std::vector<string>& args) {
+bool CanGomaccHandle(const std::vector<std::string>& args) {
   return true;
 }
 void WaitUntilLoadAvgLowerThan(float load, absl::Duration max_sleep_time) {}

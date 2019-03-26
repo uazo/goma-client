@@ -15,8 +15,6 @@
 #include "http_rpc.h"
 #include "lockhelper.h"
 
-using std::string;
-
 namespace google {
 namespace protobuf {
 class Message;
@@ -59,22 +57,22 @@ class MultiHttpRPC {
   const Options& options() { return options_; }
   bool available();
 
-  string DebugString() const;
+  std::string DebugString() const;
 
  protected:
   class MultiJob;
   friend class MultiJob;
 
   MultiHttpRPC(HttpRPC* http_rpc,
-               string path,
-               string multi_path,
+               std::string path,
+               std::string multi_path,
                const Options& options,
                WorkerThreadManager* wm);
 
   // Returns a key for pending multi job for the given req.
   // req will be batched in same multi job if the key is the same.
   // Returns "" by default (so no affinity).
-  virtual string MultiJobKey(const google::protobuf::Message* req);
+  virtual std::string MultiJobKey(const google::protobuf::Message* req);
 
   virtual void Setup(MultiJob* job) = 0;
   virtual void Done(MultiJob* job, int i, HttpRPC::Status* stat,
@@ -88,8 +86,8 @@ class MultiHttpRPC {
 
   WorkerThreadManager* wm_;
   HttpRPC* http_rpc_;
-  const string path_;
-  const string multi_path_;
+  const std::string path_;
+  const std::string multi_path_;
   const Options options_;
 
   PeriodicClosureId periodic_callback_id_;
@@ -99,7 +97,7 @@ class MultiHttpRPC {
   ConditionVariable cond_;
   int num_multi_job_;  // number of jobs on-the-fly.
 
-  std::unordered_map<string, MultiJob*> pending_multi_jobs_;
+  std::unordered_map<std::string, MultiJob*> pending_multi_jobs_;
   bool available_;
   std::vector<int> num_call_by_multi_;
   int num_call_by_req_num_;
@@ -113,7 +111,7 @@ class MultiHttpRPC {
 class MultiFileStore : public MultiHttpRPC {
  public:
   MultiFileStore(HttpRPC* http_rpc,
-                 const string& path,
+                 const std::string& path,
                  const MultiHttpRPC::Options& options,
                  WorkerThreadManager* wm);
   ~MultiFileStore() override;

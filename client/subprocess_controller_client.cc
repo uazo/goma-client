@@ -32,8 +32,6 @@ MSVC_POP_WARNING()
 #include "subprocess_task.h"
 #include "worker_thread.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 namespace {
@@ -83,8 +81,8 @@ SubProcessControllerClient* SubProcessControllerClient::Get() {
 }
 
 /* static */
-void SubProcessControllerClient::Initialize(
-    WorkerThreadManager* wm, const string& tmp_dir) {
+void SubProcessControllerClient::Initialize(WorkerThreadManager* wm,
+                                            const std::string& tmp_dir) {
   wm->NewThread(
       NewCallback(
           Get(), &SubProcessControllerClient::Setup,
@@ -117,8 +115,8 @@ SubProcessControllerClient::~SubProcessControllerClient() {
   wm_ = nullptr;
 }
 
-void SubProcessControllerClient::Setup(
-    WorkerThreadManager* wm, string tmp_dir) {
+void SubProcessControllerClient::Setup(WorkerThreadManager* wm,
+                                       std::string tmp_dir) {
   wm_ = wm;
   thread_id_ = wm_->GetCurrentThreadId();
   socket_descriptor_ =
@@ -632,7 +630,7 @@ void SubProcessControllerClient::CheckSignaled() {
   }
 }
 
-string SubProcessControllerClient::DebugString() const {
+std::string SubProcessControllerClient::DebugString() const {
   AUTOLOCK(lock, &mu_);
   std::ostringstream ss;
 

@@ -43,8 +43,8 @@ SubProcessStarted* SubProcessImpl::Spawn() {
 
   started_.set_pending_ms(DurationToIntMs(timer_.GetDuration()));
 
-  std::vector<string> args(req_.argv().begin(), req_.argv().end());
-  std::vector<string> envs;
+  std::vector<std::string> args(req_.argv().begin(), req_.argv().end());
+  std::vector<std::string> envs;
   for (const auto& env : req_.env())
     envs.push_back(env.c_str());
 

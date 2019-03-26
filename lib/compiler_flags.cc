@@ -27,18 +27,18 @@
 #include "lib/known_warning_options.h"
 #include "lib/path_resolver.h"
 #include "lib/path_util.h"
-using std::string;
 
 namespace devtools_goma {
 
-CompilerFlags::CompilerFlags(const std::vector<string>& args, string cwd)
+CompilerFlags::CompilerFlags(const std::vector<std::string>& args,
+                             std::string cwd)
     : args_(args), cwd_(std::move(cwd)), is_successful_(false) {
   CHECK(!args.empty());
   compiler_name_ = args[0];
 }
 
 // TODO: wtf
-void CompilerFlags::Fail(const string& msg) {
+void CompilerFlags::Fail(const std::string& msg) {
   std::stringstream ss;
   ss << "Flag parsing failed: " + msg + "\n";
   ss << "ARGS:\n";
@@ -50,11 +50,12 @@ void CompilerFlags::Fail(const string& msg) {
 
 // static
 bool CompilerFlags::ExpandPosixArgs(
-    const string& cwd, const std::vector<string>& args,
-    std::vector<string>* expanded_args,
-    std::vector<string>* optional_input_filenames) {
+    const std::string& cwd,
+    const std::vector<std::string>& args,
+    std::vector<std::string>* expanded_args,
+    std::vector<std::string>* optional_input_filenames) {
   for (size_t i = 0; i < args.size(); ++i) {
-    const string& arg = args[i];
+    const std::string& arg = args[i];
     bool need_expand = false;
     if (absl::StartsWith(arg, "@")) {
       need_expand = true;
@@ -85,9 +86,9 @@ bool CompilerFlags::ExpandPosixArgs(
       expanded_args->push_back(arg);
       continue;
     }
-    const string& source_list_filename =
+    const std::string& source_list_filename =
         PathResolver::PlatformConvert(arg.substr(1));
-    string source_list;
+    std::string source_list;
     if (!ReadFileToString(
             file::JoinPathRespectAbsolute(cwd, source_list_filename),
             &source_list)) {
@@ -110,16 +111,16 @@ bool CompilerFlags::ExpandPosixArgs(
 
 // Return the base name of compiler, such as 'x86_64-linux-gcc-4.3',
 // 'g++', derived from compiler_name.
-string CompilerFlags::compiler_base_name() const {
-  string compiler_base_name = compiler_name_;
+std::string CompilerFlags::compiler_base_name() const {
+  std::string compiler_base_name = compiler_name_;
   size_t found_slash = compiler_base_name.rfind('/');
-  if (found_slash != string::npos) {
+  if (found_slash != std::string::npos) {
     compiler_base_name = compiler_base_name.substr(found_slash + 1);
   }
   return compiler_base_name;
 }
 
-string CompilerFlags::DebugString() const {
+std::string CompilerFlags::DebugString() const {
   std::stringstream ss;
   for (const auto& arg : args_) {
     ss << arg << " ";
@@ -134,7 +135,8 @@ string CompilerFlags::DebugString() const {
 }
 
 void CompilerFlags::GetClientImportantEnvs(
-    const char** envp, std::vector<string>* out_envs) const {
+    const char** envp,
+    std::vector<std::string>* out_envs) const {
   for (const char** e = envp; *e; e++) {
     if (IsClientImportantEnv(*e)) {
       out_envs->push_back(*e);
@@ -143,7 +145,8 @@ void CompilerFlags::GetClientImportantEnvs(
 }
 
 void CompilerFlags::GetServerImportantEnvs(
-    const char** envp, std::vector<string>* out_envs) const {
+    const char** envp,
+    std::vector<std::string>* out_envs) const {
   for (const char** e = envp; *e; e++) {
     if (IsServerImportantEnv(*e)) {
       out_envs->push_back(*e);

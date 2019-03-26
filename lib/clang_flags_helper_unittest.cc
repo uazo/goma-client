@@ -8,13 +8,12 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-using std::string;
 
 namespace devtools_goma {
 
 TEST(ClangFlagsHelperTest, FDebugCompilationDir) {
-  std::vector<string> args = {"clang", "-Xclang", "-fdebug-compilation-dir",
-                              "-Xclang", "."};
+  std::vector<std::string> args = {"clang", "-Xclang",
+                                   "-fdebug-compilation-dir", "-Xclang", "."};
   ClangFlagsHelper flag(args);
   ASSERT_TRUE(flag.fdebug_compilation_dir().has_value());
   EXPECT_EQ(*flag.fdebug_compilation_dir(), ".");

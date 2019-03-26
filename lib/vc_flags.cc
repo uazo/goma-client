@@ -18,7 +18,6 @@
 #include "lib/known_warning_options.h"
 #include "lib/path_resolver.h"
 #include "lib/path_util.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -26,7 +25,7 @@ namespace {
 
 // Normalize paths surrounded by '"' to paths without it.
 // e.g. "c:\Windows\Program Files" -> c:\Windows\Program Files.
-string NormalizeWin32Path(absl::string_view path) {
+std::string NormalizeWin32Path(absl::string_view path) {
   // TODO: omit orphan '"' at the end of path?
   if (absl::StartsWith(path, "\"")) {
     if (absl::EndsWith(path, "\"")) {
@@ -35,10 +34,10 @@ string NormalizeWin32Path(absl::string_view path) {
       path = path.substr(1);
     }
   }
-  return string(path);
+  return std::string(path);
 }
 
-string ToNormalizedBasename(absl::string_view in) {
+std::string ToNormalizedBasename(absl::string_view in) {
   // Note file::Basename does not understand "\\" as a path delimiter
   // on non-Windows.
   return absl::AsciiStrToLower(GetBasename(in));
@@ -49,12 +48,13 @@ string ToNormalizedBasename(absl::string_view in) {
 class Win32PathNormalizer : public FlagParser::Callback {
  public:
   // Returns parsed flag value of value for flag.
-  string ParseFlagValue(const FlagParser::Flag& flag,
-                        const string& value) override;
+  std::string ParseFlagValue(const FlagParser::Flag& flag,
+                             const std::string& value) override;
 };
 
-string Win32PathNormalizer::ParseFlagValue(const FlagParser::Flag& /* flag */,
-                                           const string& value) {
+std::string Win32PathNormalizer::ParseFlagValue(
+    const FlagParser::Flag& /* flag */,
+    const std::string& value) {
   return NormalizeWin32Path(value);
 }
 
@@ -63,29 +63,29 @@ bool VCFlags::IsVCCommand(absl::string_view arg) {
   // As a substring "cl" would be found in other commands like "clang" or
   // "nacl-gcc".  Also, "cl" is case-insensitive on Windows and can be postfixed
   // with ".exe".
-  const string& s = ToNormalizedBasename(arg);
+  const std::string& s = ToNormalizedBasename(arg);
   return s == "cl.exe" || s == "cl";
 }
 
 /* static */
 bool VCFlags::IsClangClCommand(absl::string_view arg) {
-  const string& s = ToNormalizedBasename(arg);
+  const std::string& s = ToNormalizedBasename(arg);
   return s == "clang-cl.exe" || s == "clang-cl";
 }
 
 /* static */
-string VCFlags::GetCompilerName(absl::string_view arg) {
+std::string VCFlags::GetCompilerName(absl::string_view arg) {
   if (IsClangClCommand(arg)) {
     return "clang-cl";
   }
   return "cl.exe";
 }
 
-string VCFlags::compiler_name() const {
+std::string VCFlags::compiler_name() const {
   return GetCompilerName(compiler_name_);
 }
 
-VCFlags::VCFlags(const std::vector<string>& args, const string& cwd)
+VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     : CxxFlags(args, cwd),
       is_cplusplus_(true),
       ignore_stdinc_(false),
@@ -185,7 +185,7 @@ VCFlags::VCFlags(const std::vector<string>& args, const string& cwd)
       parser.AddBoolFlag("no-canonical-prefixes");
   FlagParser::Flag* flag_target = parser.AddFlag("target");
   FlagParser::Flag* flag_hyphen_target = parser.AddFlag("-target");
-  std::vector<string> incremental_linker_flags;
+  std::vector<std::string> incremental_linker_flags;
   parser.AddBoolFlag("Brepro")->SetOutput(&incremental_linker_flags);
   parser.AddBoolFlag("Brepro-")->SetOutput(&incremental_linker_flags);
   if (compiler_name() == "clang-cl") {
@@ -278,7 +278,7 @@ VCFlags::VCFlags(const std::vector<string>& args, const string& cwd)
     // http://clang.llvm.org/docs/UsersManual.html:
     // > -fno-sanitize-blacklist: don't use blacklist file,
     // > if it was specified *earlier in the command line*.
-    const std::vector<string>& values = flag_fsanitize_blacklist->values();
+    const std::vector<std::string>& values = flag_fsanitize_blacklist->values();
     std::copy(values.begin(), values.end(),
               back_inserter(optional_input_filenames_));
   }
@@ -303,15 +303,15 @@ VCFlags::VCFlags(const std::vector<string>& args, const string& cwd)
   }
 
   if (!incremental_linker_flags.empty()) {
-    const string& last = incremental_linker_flags.back();
+    const std::string& last = incremental_linker_flags.back();
     if (last == "-mno-incremental-linker-compatible" || last == "/Brepro" ||
         last == "-Brepro") {
       has_Brepro_ = true;
     }
   }
 
-  string new_extension = ".obj";
-  string force_output;
+  std::string new_extension = ".obj";
+  std::string force_output;
   if (flag_Fo->seen())
     force_output = flag_Fo->GetLastValue();
 
@@ -460,8 +460,7 @@ void VCFlags::DefineFlags(FlagParser* parser) {
   parser->AddBoolFlag("GS-");
   parser->AddPrefixFlag("Gs");       // controls stack probes
   parser->AddBoolFlag("GT");         // fibre safety thread-local storage
-  parser->AddBoolFlag("guard:cf");   // enable control flow guard
-  parser->AddBoolFlag("guard:cf-");  // disable control flow guard
+  parser->AddPrefixFlag("guard:");   // control flow guard
   parser->AddBoolFlag("Gv");         // calling convention
   parser->AddBoolFlag("Gw");         // put each data item in its own section
   parser->AddBoolFlag("Gw-");  // don't put each data item in its own section
@@ -618,16 +617,16 @@ void VCFlags::DefineFlags(FlagParser* parser) {
 }
 
 // static
-bool VCFlags::ExpandArgs(const string& cwd,
-                         const std::vector<string>& args,
-                         std::vector<string>* expanded_args,
-                         std::vector<string>* optional_input_filenames) {
+bool VCFlags::ExpandArgs(const std::string& cwd,
+                         const std::vector<std::string>& args,
+                         std::vector<std::string>* expanded_args,
+                         std::vector<std::string>* optional_input_filenames) {
   // Expand arguments which start with '@'.
   for (const auto& arg : args) {
     if (absl::StartsWith(arg, "@")) {
-      const string& source_list_filename =
+      const std::string& source_list_filename =
           PathResolver::PlatformConvert(arg.substr(1));
-      string source_list;
+      std::string source_list;
       if (!ReadFileToString(
               file::JoinPathRespectAbsolute(cwd, source_list_filename),
               &source_list)) {
@@ -644,7 +643,7 @@ bool VCFlags::ExpandArgs(const string& cwd,
         // TODO: handle real wide character.
         // use WideCharToMultiByte on Windows, and iconv on posix?
         VLOG(1) << "Convert WC to MB in @" << source_list_filename;
-        string source_list_mb;
+        std::string source_list_mb;
         // We don't need BOM (the first 2 bytes: 0xFF 0xFE)
         source_list_mb.resize(source_list.size() / 2 - 1);
         for (size_t i = 2; i < source_list.size(); i += 2) {
@@ -670,11 +669,12 @@ bool VCFlags::ExpandArgs(const string& cwd,
 }
 
 // static
-string VCFlags::ComposeOutputFilePath(const string& input_file_name,
-                                      const string& output_file_or_dir,
-                                      const string& output_file_ext) {
-  string input_file = NormalizeWin32Path(input_file_name);
-  string output_target = NormalizeWin32Path(output_file_or_dir);
+std::string VCFlags::ComposeOutputFilePath(
+    const std::string& input_file_name,
+    const std::string& output_file_or_dir,
+    const std::string& output_file_ext) {
+  std::string input_file = NormalizeWin32Path(input_file_name);
+  std::string output_target = NormalizeWin32Path(output_file_or_dir);
 
   bool output_is_dir = false;
   if (output_target.length() &&
@@ -688,9 +688,9 @@ string VCFlags::ComposeOutputFilePath(const string& input_file_name,
   // We need only the filename part of input file
   size_t begin = input_file.find_last_of("/\\");
   size_t end = input_file.rfind('.');
-  begin = (begin == string::npos) ? 0 : begin + 1;
-  end = (end == string::npos) ? input_file_name.size() : end;
-  string new_output;
+  begin = (begin == std::string::npos) ? 0 : begin + 1;
+  end = (end == std::string::npos) ? input_file_name.size() : end;
+  std::string new_output;
   if (end > begin) {
     new_output = input_file.substr(begin, end - begin);
     new_output.append(output_file_ext);

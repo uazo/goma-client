@@ -31,11 +31,11 @@ class InputFileTask {
       std::unique_ptr<BlobClient::Uploader> blob_uploader,
       FileHashCache* file_hash_cache,
       const FileStat& file_stat,
-      const string& filename,
+      const std::string& filename,
       bool missed_content,
       bool linking,
       bool is_new_file,
-      const string& old_hash_key,
+      const std::string& old_hash_key,
       CompileTask* task,
       ExecReq_Input* input);
 
@@ -43,14 +43,14 @@ class InputFileTask {
 
   void Done(CompileTask* task);
 
-  const string& filename() const { return filename_; }
+  const std::string& filename() const { return filename_; }
   bool missed_content() const { return missed_content_; }
   bool need_hash_only() const { return need_hash_only_; }
   const absl::optional<absl::Time>& mtime() const { return file_stat_.mtime; }
   const SimpleTimer& timer() const { return timer_; }
   ssize_t file_size() const { return file_stat_.size; }
-  const string& old_hash_key() const { return old_hash_key_; }
-  const string& hash_key() const { return blob_uploader_->hash_key(); }
+  const std::string& old_hash_key() const { return old_hash_key_; }
+  const std::string& hash_key() const { return blob_uploader_->hash_key(); }
   bool success() const { return success_; }
   bool new_cache_key() const { return new_cache_key_; }
 
@@ -85,11 +85,11 @@ class InputFileTask {
                 std::unique_ptr<BlobClient::Uploader> blob_uploader,
                 FileHashCache* file_hash_cache,
                 const FileStat& file_stat,
-                string filename,
+                std::string filename,
                 bool missed_content,
                 bool linking,
                 bool is_new_file,
-                string old_hash_key);
+                std::string old_hash_key);
   ~InputFileTask();
 
   void SetTaskInput(CompileTask* task, ExecReq_Input* input);
@@ -101,7 +101,7 @@ class InputFileTask {
   FileHashCache* file_hash_cache_;
   const FileStat file_stat_;
 
-  const string filename_;
+  const std::string filename_;
   State state_;
 
   mutable Lock mu_;
@@ -123,7 +123,7 @@ class InputFileTask {
   const bool is_new_file_;
 
   // hash key stored in file_hash_cache.
-  const string old_hash_key_;
+  const std::string old_hash_key_;
 
   SimpleTimer timer_;
 
@@ -136,7 +136,7 @@ class InputFileTask {
   static absl::once_flag init_once_;
 
   static Lock global_mu_;
-  static std::unordered_map<string, InputFileTask*>* task_by_filename_
+  static std::unordered_map<std::string, InputFileTask*>* task_by_filename_
       GUARDED_BY(global_mu_);
 
   DISALLOW_COPY_AND_ASSIGN(InputFileTask);

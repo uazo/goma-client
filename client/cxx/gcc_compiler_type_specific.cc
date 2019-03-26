@@ -11,9 +11,10 @@
 
 namespace devtools_goma {
 
-bool GCCCompilerTypeSpecific::RemoteCompileSupported(const string& trace_id,
-                                                     const CompilerFlags& flags,
-                                                     bool verify_output) const {
+bool GCCCompilerTypeSpecific::RemoteCompileSupported(
+    const std::string& trace_id,
+    const CompilerFlags& flags,
+    bool verify_output) const {
   const GCCFlags& gcc_flag = static_cast<const GCCFlags&>(flags);
   if (gcc_flag.is_stdin_input()) {
     LOG(INFO) << trace_id << " force fallback."
@@ -77,15 +78,15 @@ bool GCCCompilerTypeSpecific::RemoteCompileSupported(const string& trace_id,
 std::unique_ptr<CompilerInfoData>
 GCCCompilerTypeSpecific::BuildCompilerInfoData(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const std::vector<string>& compiler_info_envs) {
+    const std::string& local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs) {
   return compiler_info_builder_.FillFromCompilerOutputs(
       flags, local_compiler_path, compiler_info_envs);
 }
 
 CompilerTypeSpecific::IncludeProcessorResult
 GCCCompilerTypeSpecific::RunIncludeProcessor(
-    const string& trace_id,
+    const std::string& trace_id,
     const CompilerFlags& compiler_flags,
     const CompilerInfo& compiler_info,
     const CommandSpec& command_spec,
@@ -97,7 +98,7 @@ GCCCompilerTypeSpecific::RunIncludeProcessor(
   if (flags.lang() == "ir") {
     if (flags.thinlto_index().empty()) {
       // No need to to read .imports file. imports is nothing.
-      return IncludeProcessorResult::Ok(std::set<string>());
+      return IncludeProcessorResult::Ok(std::set<std::string>());
     }
 
     // Otherwise, run ThinLTOImports.
@@ -107,7 +108,7 @@ GCCCompilerTypeSpecific::RunIncludeProcessor(
   if (flags.args().size() == 2 && flags.args()[1] == "--version") {
     // for requester_env_.verify_command()
     VLOG(1) << trace_id << " --version";
-    return IncludeProcessorResult::Ok(std::set<string>());
+    return IncludeProcessorResult::Ok(std::set<std::string>());
   }
 
   // LINK mode.
@@ -128,10 +129,10 @@ bool GCCCompilerTypeSpecific::SupportsDepsCache(
 }
 
 CompilerTypeSpecific::IncludeProcessorResult
-GCCCompilerTypeSpecific::RunThinLTOImports(const string& trace_id,
+GCCCompilerTypeSpecific::RunThinLTOImports(const std::string& trace_id,
                                            const GCCFlags& flags) {
   ThinLTOImportProcessor processor;
-  std::set<string> required_files;
+  std::set<std::string> required_files;
   if (!processor.GetIncludeFiles(flags.thinlto_index(), flags.cwd(),
                                  &required_files)) {
     LOG(ERROR) << trace_id << " failed to get ThinLTO imports";
@@ -143,14 +144,14 @@ GCCCompilerTypeSpecific::RunThinLTOImports(const string& trace_id,
 
 CompilerTypeSpecific::IncludeProcessorResult
 GCCCompilerTypeSpecific::RunLinkIncludeProcessor(
-    const string& trace_id,
+    const std::string& trace_id,
     const GCCFlags& flags,
     const CompilerInfo& compiler_info,
     const CommandSpec& command_spec) {
   LinkerInputProcessor linker_input_processor(flags.args(), flags.cwd());
 
-  std::set<string> required_files;
-  std::vector<string> system_library_paths;
+  std::set<std::string> required_files;
+  std::vector<std::string> system_library_paths;
   if (!linker_input_processor.GetInputFilesAndLibraryPath(
           compiler_info, command_spec, &required_files,
           &system_library_paths)) {

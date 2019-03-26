@@ -10,8 +10,6 @@
 #include <string>
 #include <vector>
 
-using std::string;
-
 namespace devtools_goma {
 
 // Builds "args" for ExecReq from gomacc argv.
@@ -73,11 +71,12 @@ namespace devtools_goma {
 //          local_path=%PATH%, gomacc_path=c:\gomadir\gomacc.exe
 //          local_compiler_path=c:\vc\bin\cl.exe
 //    local_compiler_path if the full path of compiler.
-bool BuildGomaccArgv(int orig_argc, const char* orig_argv[],
-                     std::vector<string>* args,
+bool BuildGomaccArgv(int orig_argc,
+                     const char* orig_argv[],
+                     std::vector<std::string>* args,
                      bool* masquerade_mode,
-                     string* verify_command,
-                     string* local_command_path);
+                     std::string* verify_command,
+                     std::string* local_command_path);
 
 #ifdef _WIN32
 // Used for GOMA_FAN_OUT_EXEC_REQ=true (under devenv or msbuild).
@@ -85,22 +84,20 @@ bool BuildGomaccArgv(int orig_argc, const char* orig_argv[],
 // Fans out "args" for each input filename, and sets command line args
 // for each input filename in "args_no_input".
 // Note that "args_no_input" doesn't have argv0.
-void FanOutArgsByInput(
-    const std::vector<string>& args,
-    const std::set<string>& input_filenames,
-    std::vector<string>* args_no_input);
+void FanOutArgsByInput(const std::vector<std::string>& args,
+                       const std::set<std::string>& input_filenames,
+                       std::vector<std::string>* args_no_input);
 
 // Creates command line per input file as
 //   args_no_input...  input_filename
 // The returned value is expected to be written in rsp_file, and
 // used as "cl @rsp_file".
-string BuildArgsForInput(
-    const std::vector<string>& args_no_input,
-    const string& input_filename);
+std::string BuildArgsForInput(const std::vector<std::string>& args_no_input,
+                              const std::string& input_filename);
 
 // Escape arg string for Windows.
 // http://msdn.microsoft.com/en-us/library/windows/desktop/17w5ykft(v=vs.85).aspx
-string EscapeWinArg(const string& arg);
+std::string EscapeWinArg(const std::string& arg);
 
 #endif
 

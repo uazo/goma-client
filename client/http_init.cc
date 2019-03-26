@@ -19,17 +19,15 @@
 #define GOMA_DECLARE_FLAGS_ONLY
 #include "goma_flags.cc"
 
-using std::string;
-
 namespace devtools_goma {
 
 namespace {
 
-template<typename T>
-static bool LoadConfig(const string& filename,
-                       bool (*config_parser)(const string&, T*),
+template <typename T>
+static bool LoadConfig(const std::string& filename,
+                       bool (*config_parser)(const std::string&, T*),
                        T* config) {
-  string config_string;
+  std::string config_string;
   if (!ReadFileToString(filename.c_str(), &config_string)) {
     LOG(WARNING) << "Failed to read " << filename;
     return false;
@@ -43,7 +41,7 @@ static bool LoadConfig(const string& filename,
   return true;
 }
 
-static string GetHomeDir() {
+static std::string GetHomeDir() {
 #ifndef _WIN32
   static const char *kHomeEnv = "HOME";
 #else
@@ -52,7 +50,7 @@ static string GetHomeDir() {
   return GetEnv(kHomeEnv);
 }
 
-void SetHttpProxyFromEnv(devtools_goma::HttpClient::Options* http_options) {
+void SetHttpProxyFromEnv(HttpClient::Options* http_options) {
   if (!FLAGS_PROXY_HOST.empty()) {
     http_options->proxy_host_name = FLAGS_PROXY_HOST;
     http_options->proxy_port = FLAGS_PROXY_PORT;
@@ -62,14 +60,14 @@ void SetHttpProxyFromEnv(devtools_goma::HttpClient::Options* http_options) {
   // We follow the order curl (https://curl.haxx.se/) searches
   // environment variables.
   // TODO: use http_proxy instead if GOMA_USE_SSL=false?
-  const std::vector<string> envs = {
-    "https_proxy",
-    "HTTPS_PROXY",
-    "all_proxy",
-    "ALL_PROXY",
+  const std::vector<std::string> envs = {
+      "https_proxy",
+      "HTTPS_PROXY",
+      "all_proxy",
+      "ALL_PROXY",
   };
   for (const auto& env : envs) {
-    const string& proxy = devtools_goma::GetEnv(env);
+    const std::string& proxy = GetEnv(env);
     if (proxy.empty()) {
       continue;
     }
@@ -132,7 +130,7 @@ void InitHttpClientOptions(HttpClient::Options* http_options) {
   // ambient authentication in LUCI environment. We'll decide whether we will
   // use them few lines below. Note that LUCI_CONTEXT environment variable may
   // be defined even if ambient auth is not enabled.
-  const string& luci_context_file = GetEnv("LUCI_CONTEXT");
+  const std::string& luci_context_file = GetEnv("LUCI_CONTEXT");
   LuciContextAuth luci_context_auth;
   if (!luci_context_file.empty()) {
     LuciContext luci_context;
@@ -159,14 +157,14 @@ void InitHttpClientOptions(HttpClient::Options* http_options) {
   // Note: having OAuth2 config and LUCI_CONTEXT at once is valid.
   //       (crbug.com/684735#c14).
   if (!FLAGS_HTTP_AUTHORIZATION_FILE.empty()) {
-    string auth_header;
+    std::string auth_header;
     CHECK(ReadFileToString(FLAGS_HTTP_AUTHORIZATION_FILE.c_str(),
                            &auth_header))
         << FLAGS_HTTP_AUTHORIZATION_FILE
         << " : you need http Authorization header in "
         << FLAGS_HTTP_AUTHORIZATION_FILE
         << " or unset GOMA_HTTP_AUTHORIZATION_FILE";
-    auth_header = string(absl::StripTrailingAsciiWhitespace(auth_header));
+    auth_header = std::string(absl::StripTrailingAsciiWhitespace(auth_header));
     http_options->authorization = auth_header;
 
     LOG_IF(WARNING, !FLAGS_OAUTH2_CONFIG_FILE.empty())
@@ -215,7 +213,7 @@ void InitHttpClientOptions(HttpClient::Options* http_options) {
     http_options->luci_context_auth = luci_context_auth;
 
   } else {
-    const string homedir = GetHomeDir();
+    const std::string homedir = GetHomeDir();
     if (!homedir.empty()) {
       static constexpr absl::string_view kConfigFile =
           ".goma_client_oauth2_config";

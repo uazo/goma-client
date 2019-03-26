@@ -112,7 +112,7 @@ MockSocketServer::~MockSocketServer() {
   LOG(INFO) << "all action done";
 }
 
-void MockSocketServer::ServerRead(int sock, string* buf) {
+void MockSocketServer::ServerRead(int sock, std::string* buf) {
   {
     AutoLock lock(&mu_);
     ++actions_;
@@ -125,7 +125,7 @@ void MockSocketServer::ServerRead(int sock, string* buf) {
       WorkerThread::PRIORITY_LOW);
 }
 
-void MockSocketServer::DoServerRead(int sock, string* buf) {
+void MockSocketServer::DoServerRead(int sock, std::string* buf) {
   const size_t read_size = buf->size();
   size_t nread = 0;
   LOG(INFO) << "DoServerRead sock=" << sock << " size=" << read_size;
@@ -136,8 +136,7 @@ void MockSocketServer::DoServerRead(int sock, string* buf) {
     int n = recv(sock, &(*buf)[nread], read_size - nread, 0);
 #endif
     LOG(INFO) << "DoServerRead sock=" << sock << " " << (read_size - nread)
-              << " => " << n
-              << " data=" << string(buf->data() + nread, n);
+              << " => " << n << " data=" << std::string(buf->data() + nread, n);
     if (n < 0) {
       PLOG(ERROR) << "read";
       break;
@@ -154,7 +153,7 @@ void MockSocketServer::DoServerRead(int sock, string* buf) {
   }
 }
 
-void MockSocketServer::ServerWrite(int sock, string buf) {
+void MockSocketServer::ServerWrite(int sock, std::string buf) {
   {
     AutoLock lock(&mu_);
     ++actions_;
@@ -167,7 +166,7 @@ void MockSocketServer::ServerWrite(int sock, string buf) {
       WorkerThread::PRIORITY_LOW);
 }
 
-void MockSocketServer::DoServerWrite(int sock, string buf) {
+void MockSocketServer::DoServerWrite(int sock, std::string buf) {
   size_t written = 0;
   LOG(INFO) << "DoServerWrite sock=" << sock << " size=" << buf.size();
   while (written < buf.size()) {

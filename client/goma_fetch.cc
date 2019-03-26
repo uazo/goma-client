@@ -33,7 +33,6 @@
 
 #include "goma_flags.cc"
 
-using std::string;
 using devtools_goma::HttpClient;
 using devtools_goma::PlatformThread;
 using devtools_goma::WorkerThreadManager;
@@ -46,21 +45,20 @@ class Fetcher {
  public:
   // Takes ownership of HttpClient.
   Fetcher(std::unique_ptr<HttpClient> client,
-          string method,
+          std::string method,
           HttpClient::Request* req,
           HttpClient::Response* resp)
       : client_(std::move(client)),
         method_(std::move(method)),
         req_(req),
-        resp_(resp) {
-  }
+        resp_(resp) {}
   ~Fetcher() {
   }
 
   void Run() {
     absl::Duration backoff = client_->options().min_retry_backoff;
 
-    string err_messages;
+    std::string err_messages;
     for (int i = 0; i < FLAGS_FETCH_RETRY; ++i) {
       client_->InitHttpRequest(req_, method_, "");
       resp_->Reset();
@@ -97,7 +95,7 @@ class Fetcher {
 
  private:
   std::unique_ptr<HttpClient> client_;
-  const string method_;
+  const std::string method_;
   HttpClient::Request* req_;
   HttpClient::Response* resp_;
   HttpClient::Status status_;
@@ -118,9 +116,8 @@ DEFINE_string(content_type, "application/x-www-form-urlencoded",
 
 int main(int argc, char* argv[], const char* envp[]) {
   devtools_goma::Init(argc, argv, envp);
-  const string usage = absl::StrCat(
-      "An HTTP client for goma.\n",
-      "Usage: ", argv[0], " [options...] <url>");
+  const std::string usage = absl::StrCat(
+      "An HTTP client for goma.\n", "Usage: ", argv[0], " [options...] <url>");
   gflags::SetUsageMessage(usage);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   if (argc < 2) {
@@ -136,7 +133,7 @@ int main(int argc, char* argv[], const char* envp[]) {
   absl::string_view method = "GET";
   absl::string_view output = "";
   absl::string_view url = argv[1];
-  string body = "";
+  std::string body = "";
   if (FLAGS_head && FLAGS_post) {
     std::cerr << "You must not set both --head and --post at once."
               << std::endl;
@@ -212,13 +209,12 @@ int main(int argc, char* argv[], const char* envp[]) {
     resp = httpresp.get();
   } else {
     fileresp = absl::make_unique<devtools_goma::HttpFileDownloadResponse>(
-        string(output), 0644);
+        std::string(output), 0644);
     resp = fileresp.get();
   }
 
-  std::unique_ptr<Fetcher> fetcher(
-      absl::make_unique<Fetcher>(std::move(client),
-                                 string(method), req, resp));
+  std::unique_ptr<Fetcher> fetcher(absl::make_unique<Fetcher>(
+      std::move(client), std::string(method), req, resp));
 
   std::unique_ptr<WorkerThreadRunner> fetch(
       absl::make_unique<WorkerThreadRunner>(

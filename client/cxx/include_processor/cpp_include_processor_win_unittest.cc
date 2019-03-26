@@ -28,8 +28,6 @@
 #include "unittest_util.h"
 #include "util.h"
 
-using std::string;
-
 namespace {
 
 // Wrapper batch file for cl.exe
@@ -53,14 +51,14 @@ class CppIncludeProcessorWinTest : public testing::Test {
  public:
   CppIncludeProcessorWinTest() {
     // This is out\Release\include_processor_unittest.exe or so.
-    const string my_dir = GetMyDirectory();
+    const std::string my_dir = GetMyDirectory();
 
     top_dir_ = file::JoinPath(my_dir, "..", "..");
 
     // Read environment.x86 and parse it to env_.
     // environment.x86 contains \0 separated strings.
-    const string envfile_path = file::JoinPath(my_dir, "environment.x86");
-    string content;
+    const std::string envfile_path = file::JoinPath(my_dir, "environment.x86");
+    std::string content;
     CHECK(ReadFileToString(envfile_path, &content))
         << "failed to read environment.x86: " << envfile_path;
     env_ = ToVector(absl::StrSplit(content, '\0', absl::SkipEmpty()));
@@ -80,8 +78,8 @@ class CppIncludeProcessorWinTest : public testing::Test {
 
   std::unique_ptr<CompilerInfoData> CreateCompilerInfoWithArgs(
       const CompilerFlags& flags,
-      const string& bare_gcc,
-      const std::vector<string>& compiler_envs) {
+      const std::string& bare_gcc,
+      const std::vector<std::string>& compiler_envs) {
     return CompilerTypeSpecificCollection()
         .Get(flags.type())
         ->BuildCompilerInfoData(flags, bare_gcc, compiler_envs);
@@ -89,8 +87,8 @@ class CppIncludeProcessorWinTest : public testing::Test {
 
   ScopedCompilerInfoState GetCompilerInfoFromCacheOrCreate(
       const CompilerFlags& flags,
-      const string& bare_gcc,
-      const std::vector<string>& compiler_envs) {
+      const std::string& bare_gcc,
+      const std::vector<std::string>& compiler_envs) {
     auto key = CompilerInfoCache::CreateKey(flags, bare_gcc, compiler_envs);
     ScopedCompilerInfoState cis(CompilerInfoCache::instance()->Lookup(key));
     if (cis.get() != nullptr) {
@@ -101,8 +99,9 @@ class CppIncludeProcessorWinTest : public testing::Test {
         key, CreateCompilerInfoWithArgs(flags, bare_gcc, compiler_envs)));
   };
 
-  std::set<string> RunCppIncludeProcessor(const string& source_file,
-                                          const std::vector<string>& args) {
+  std::set<std::string> RunCppIncludeProcessor(
+      const std::string& source_file,
+      const std::vector<std::string>& args) {
     std::unique_ptr<CompilerFlags> flags(
         CompilerFlagsParser::MustNew(args, tmpdir_util_->tmpdir()));
     std::unique_ptr<CompilerInfoData> data(new CompilerInfoData);
@@ -111,7 +110,7 @@ class CppIncludeProcessorWinTest : public testing::Test {
     CxxCompilerInfo compiler_info(std::move(data));
 
     CppIncludeProcessor processor;
-    std::set<string> files;
+    std::set<std::string> files;
     FileStatCache file_stat_cache;
     // ASSERT_TRUE cannot be used here, I don't know why.
     EXPECT_TRUE(processor.GetIncludeFiles(source_file, tmpdir_util_->tmpdir(),
@@ -120,11 +119,11 @@ class CppIncludeProcessorWinTest : public testing::Test {
     return files;
   }
 
-  void RunCppIncludeProcessorToEmptySource(const string& compiler,
-                                           std::set<string>* files) {
-    const string& source_file = CreateTmpFile("", "for_stdcpredef.cc");
+  void RunCppIncludeProcessorToEmptySource(const std::string& compiler,
+                                           std::set<std::string>* files) {
+    const std::string& source_file = CreateTmpFile("", "for_stdcpredef.cc");
 
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(compiler);
     args.push_back("-c");
     args.push_back(source_file);
@@ -141,9 +140,9 @@ class CppIncludeProcessorWinTest : public testing::Test {
         ToCxxCompilerInfo(cis.get()->info()), files, &file_stat_cache));
   }
 
-  void RemoveAndCheckEmptySourceIncludeHeaders(const string& compiler,
-                                               std::set<string>* files) {
-    std::set<string> emptysource_files;
+  void RemoveAndCheckEmptySourceIncludeHeaders(const std::string& compiler,
+                                               std::set<std::string>* files) {
+    std::set<std::string> emptysource_files;
     RunCppIncludeProcessorToEmptySource(compiler, &emptysource_files);
     for (const auto& it : emptysource_files) {
       EXPECT_GT(files->count(it), 0U);
@@ -152,9 +151,9 @@ class CppIncludeProcessorWinTest : public testing::Test {
   }
 
   // Runs test by comparing include_processor with cpp's output.
-  void RunClTest(const string& include_file,
-                 const std::vector<string>& additional_args) {
-    std::vector<string> args;
+  void RunClTest(const std::string& include_file,
+                 const std::vector<std::string>& additional_args) {
+    std::vector<std::string> args;
     args.push_back(cl_wrapper_path_);
     args.push_back("/nologo");
     args.push_back("/showIncludes");
@@ -168,10 +167,10 @@ class CppIncludeProcessorWinTest : public testing::Test {
     VLOG(1) << "args:" << args;
     VLOG(1) << "env:" << env_;
     int32_t status;
-    string command_output = ReadCommandOutputByRedirector(
+    std::string command_output = ReadCommandOutputByRedirector(
         cl_wrapper_path_, args, env_, tmpdir_util_->tmpdir(),
         MERGE_STDOUT_STDERR, &status);
-    std::vector<string> lines = ToVector(absl::StrSplit(
+    std::vector<std::string> lines = ToVector(absl::StrSplit(
         command_output, absl::ByAnyChar("\n\r"), absl::SkipEmpty()));
     if (status != 0) {
       LOG(INFO) << "status: " << status;
@@ -183,7 +182,7 @@ class CppIncludeProcessorWinTest : public testing::Test {
     VLOG(1) << "ReadCommand finished " << lines.size() << " lines.";
     VLOG(2) << lines;
 
-    std::set<string> expected_files;
+    std::set<std::string> expected_files;
     PathResolver pr;
 
     size_t lineno = 0;
@@ -194,7 +193,7 @@ class CppIncludeProcessorWinTest : public testing::Test {
       }
     }
 
-    string bare_cl = lines[lineno];
+    std::string bare_cl = lines[lineno];
     LOG(INFO) << "bare_cl=" << bare_cl;
     ++lineno;
     for (; lineno < lines.size(); ++lineno) {
@@ -204,7 +203,7 @@ class CppIncludeProcessorWinTest : public testing::Test {
       }
     }
 
-    std::vector<string> compiler_env;
+    std::vector<std::string> compiler_env;
     for (; lineno < lines.size(); ++lineno) {
       if (absl::StartsWith(lines[lineno], "run cl")) {
         ++lineno;
@@ -225,11 +224,11 @@ class CppIncludeProcessorWinTest : public testing::Test {
     // let me compare expected result and actual result after converting both
     // to lower case characters.
     for (; lineno < lines.size(); ++lineno) {
-      const string& line = lines[lineno];
+      const std::string& line = lines[lineno];
       if (absl::StartsWith(line, kNoteIncluding)) {
-        string path = line.substr(sizeof(kNoteIncluding) - 1);
+        std::string path = line.substr(sizeof(kNoteIncluding) - 1);
         size_t pos = path.find_first_not_of(' ');
-        if (pos != string::npos) {
+        if (pos != std::string::npos) {
           path = path.substr(pos);
           absl::AsciiStrToLower(&path);
           expected_files.insert(pr.ResolvePath(path));
@@ -247,14 +246,14 @@ class CppIncludeProcessorWinTest : public testing::Test {
         GetCompilerInfoFromCacheOrCreate(*flags, bare_cl, env_));
 
     CppIncludeProcessor processor;
-    std::set<string> files;
+    std::set<std::string> files;
     FileStatCache file_stat_cache;
     ASSERT_TRUE(processor.GetIncludeFiles(
         include_file, tmpdir_util_->tmpdir(), *flags,
         ToCxxCompilerInfo(cis.get()->info()), &files, &file_stat_cache));
     // TODO: don't use ResolvePath.
-    std::set<string> actual_files;
-    for (string path : files) {
+    std::set<std::string> actual_files;
+    for (std::string path : files) {
       absl::AsciiStrToLower(&path);
       actual_files.insert(pr.ResolvePath(path));
     }
@@ -262,10 +261,11 @@ class CppIncludeProcessorWinTest : public testing::Test {
     LOG(INFO) << "# of actual_files=" << actual_files.size();
     VLOG(1) << "expected_files: " << expected_files
             << " actual_files: " << actual_files;
-    CompareFiles(expected_files, actual_files, std::set<string>());
+    CompareFiles(expected_files, actual_files, std::set<std::string>());
   }
 
-  string CreateTmpFile(const string& content, const string& name) {
+  std::string CreateTmpFile(const std::string& content,
+                            const std::string& name) {
     tmpdir_util_->CreateTmpFile(name, content);
     return tmpdir_util_->FullPath(name);
   }
@@ -283,24 +283,24 @@ class CppIncludeProcessorWinTest : public testing::Test {
   };
 
   std::unique_ptr<TmpdirUtil> tmpdir_util_;
-  std::vector<string> env_;
-  string cl_wrapper_path_;
-  string top_dir_;
+  std::vector<std::string> env_;
+  std::string cl_wrapper_path_;
+  std::string top_dir_;
 };
 
 // TODO: Add more CppIncludeProcessorWinTest for VC
 TEST_F(CppIncludeProcessorWinTest, stdio) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunClTest(CreateTmpFile("#include <stdio.h>", "foo.c"), args);
 }
 
 TEST_F(CppIncludeProcessorWinTest, iostream) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunClTest(CreateTmpFile("#include <iostream>", "foo.cpp"), args);
 }
 
 TEST_F(CppIncludeProcessorWinTest, commandline_define) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/DDEBUG");
   RunClTest(CreateTmpFile("#ifdef DEBUG\r\n#include <iostream>\r\n#endif\r\n",
                           "foo.cpp"),
@@ -309,9 +309,9 @@ TEST_F(CppIncludeProcessorWinTest, commandline_define) {
 
 
 TEST_F(CppIncludeProcessorWinTest, AtFile) {
-  string at_file = CreateTmpFile("/DDEBUG", "at_file.rsp");
+  std::string at_file = CreateTmpFile("/DDEBUG", "at_file.rsp");
   at_file = "@" + at_file;
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(at_file.c_str());
   RunClTest(CreateTmpFile("#ifdef DEBUG\r\n#include <iostream>\r\n#endif\r\n",
                           "foo.cpp"),
@@ -319,11 +319,11 @@ TEST_F(CppIncludeProcessorWinTest, AtFile) {
 }
 
 TEST_F(CppIncludeProcessorWinTest, dont_include_directory) {
-  const string& iostream_dir =
+  const std::string& iostream_dir =
       file::JoinPath(tmpdir_util_->tmpdir(), "iostream");
   CreateDirectoryA(iostream_dir.c_str(), nullptr);
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/I" + tmpdir_util_->tmpdir());
   RunClTest(CreateTmpFile("#include <iostream>", "foo.cpp"), args);
 }

@@ -13,8 +13,6 @@
 
 #include "cxx/cxx_compiler_info.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 
@@ -35,9 +33,9 @@ class CompilerFlagsUtil {
   //
   //     -o /tmp/bar.o
   //  => -o /tmp/bar.o   # /home != /tmp
-  static std::vector<string> MakeWeakRelative(
-      const std::vector<string>& args,
-      const string& cwd,
+  static std::vector<std::string> MakeWeakRelative(
+      const std::vector<std::string>& args,
+      const std::string& cwd,
       const CxxCompilerInfo& compiler_info);
 };
 

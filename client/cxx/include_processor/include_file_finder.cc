@@ -22,8 +22,8 @@ namespace devtools_goma {
 namespace {
 
 // TODO: Merge with CleanPathSep(..) in include_dir_cache.cc.
-string RemoveDuplicateSlash(const string& path) {
-  string res;
+std::string RemoveDuplicateSlash(const std::string& path) {
+  std::string res;
   res.reserve(path.size());
   for (const auto& ch : path) {
     if (ch == '/' && !res.empty() && res.back() == '/') {
@@ -43,11 +43,12 @@ void IncludeFileFinder::Init(bool gch_hack) {
   gch_hack_ = gch_hack;
 }
 
-IncludeFileFinder::IncludeFileFinder(string cwd,
-                                     bool ignore_case,
-                                     const std::vector<string>* include_dirs,
-                                     const std::vector<string>* framework_dirs,
-                                     FileStatCache* file_stat_cache)
+IncludeFileFinder::IncludeFileFinder(
+    std::string cwd,
+    bool ignore_case,
+    const std::vector<std::string>* include_dirs,
+    const std::vector<std::string>* framework_dirs,
+    FileStatCache* file_stat_cache)
     : cwd_(std::move(cwd)),
       ignore_case_(ignore_case),
       include_dirs_(include_dirs),
@@ -61,20 +62,20 @@ IncludeFileFinder::IncludeFileFinder(string cwd,
   // Files and directories are used to skip unnecessary file checks.
   for (size_t i = CppParser::kIncludeDirIndexStarting;
        i < include_dirs_->size(); ++i) {
-    const string& abs_include_dir =
+    const std::string& abs_include_dir =
         file::JoinPathRespectAbsolute(cwd_, (*include_dirs)[i]);
     if (absl::EndsWith(abs_include_dir, ".hmap")) {
-      std::vector<std::pair<string, string>> entries;
+      std::vector<std::pair<std::string, std::string>> entries;
       if (!ReadHeaderMapContent(abs_include_dir, &entries)) {
         LOG(WARNING) << "failed to load header map:" << abs_include_dir;
         continue;
       }
 
       for (const auto& entry : entries) {
-        const string& key = entry.first;
-        const string& filename = entry.second;
+        const std::string& key = entry.first;
+        const std::string& filename = entry.second;
 
-        string top = TopPathComponent(key, ignore_case_);
+        std::string top = TopPathComponent(key, ignore_case_);
 
         files_in_include_dirs_[i].insert(top);
 
@@ -94,7 +95,7 @@ IncludeFileFinder::IncludeFileFinder(string cwd,
     }
 
     for (const auto& entry : entries) {
-      string name = entry.name;
+      std::string name = entry.name;
 
       if (ignore_case_) {
         absl::AsciiStrToLower(&name);
@@ -108,9 +109,9 @@ IncludeFileFinder::IncludeFileFinder(string cwd,
 }
 
 /* static */
-string IncludeFileFinder::TopPathComponent(string path_in_directive,
-                                           bool ignore_case) {
-  string::size_type slash_pos = string::npos;
+std::string IncludeFileFinder::TopPathComponent(std::string path_in_directive,
+                                                bool ignore_case) {
+  std::string::size_type slash_pos = std::string::npos;
   if (ignore_case) {
     absl::AsciiStrToLower(&path_in_directive);
     // Since some Windows SDK has a include like "foo\\bar",
@@ -120,17 +121,16 @@ string IncludeFileFinder::TopPathComponent(string path_in_directive,
     slash_pos = path_in_directive.find("/");
   }
 
-  if (slash_pos != string::npos) {
+  if (slash_pos != std::string::npos) {
     path_in_directive = path_in_directive.substr(0, slash_pos);
   }
 
   return path_in_directive;
 }
 
-bool IncludeFileFinder::Lookup(
-    const string& path_in_directive,
-    string* filepath,
-    int* include_dir_index) {
+bool IncludeFileFinder::Lookup(const std::string& path_in_directive,
+                               std::string* filepath,
+                               int* include_dir_index) {
   GOMA_COUNTERZ("Lookup");
   VLOG(2) << "Lookup=" << path_in_directive;
 
@@ -149,7 +149,7 @@ bool IncludeFileFinder::Lookup(
   // by checking precalculated direct children of include dirs.
   // e.g. if #include <foo/bar.h> comes, include directories not having
   // foo directory are not searched.
-  string top = TopPathComponent(path_in_directive, ignore_case_);
+  std::string top = TopPathComponent(path_in_directive, ignore_case_);
   VLOG(2) << "top=" << top;
 
   size_t search_start_index = *include_dir_index;
@@ -189,7 +189,7 @@ bool IncludeFileFinder::Lookup(
       continue;
     }
 
-    string join_path;
+    std::string join_path;
     {
       auto iter = hmap_map_.find(std::make_pair(i, path_in_directive));
       if (iter != hmap_map_.end()) {
@@ -198,13 +198,13 @@ bool IncludeFileFinder::Lookup(
         join_path = file::JoinPath((*include_dirs_)[i], path_in_directive);
       }
     }
-    string try_path;
+    std::string try_path;
     PathResolver::PlatformConvertToString(join_path, &try_path);
     try_path = RemoveDuplicateSlash(try_path);
     VLOG(2) << "try_path=" << try_path;
 
     if (gch_hack_enabled()) {
-      const string& gch_path = try_path + GOMA_GCH_SUFFIX;
+      const std::string& gch_path = try_path + GOMA_GCH_SUFFIX;
       FileStat filestat =
           file_stat_cache_->Get(file::JoinPathRespectAbsolute(cwd_, gch_path));
       if (!filestat.is_directory && filestat.IsValid()) {
@@ -214,7 +214,8 @@ bool IncludeFileFinder::Lookup(
       }
     }
 
-    const string full_try_path = file::JoinPathRespectAbsolute(cwd_, try_path);
+    const std::string full_try_path =
+        file::JoinPathRespectAbsolute(cwd_, try_path);
     FileStat filestat = file_stat_cache_->Get(full_try_path);
     if (filestat.is_directory || !filestat.IsValid()) {
       VLOG(2) << "filestat error:" << full_try_path
@@ -234,20 +235,20 @@ bool IncludeFileFinder::Lookup(
   return LookupFramework(path_in_directive, filepath);
 }
 
-bool IncludeFileFinder::LookupFramework(const string& path_in_directive,
-                                        string* filepath) {
+bool IncludeFileFinder::LookupFramework(const std::string& path_in_directive,
+                                        std::string* filepath) {
   auto sep_pos = path_in_directive.find('/');
-  if (sep_pos == string::npos) {
+  if (sep_pos == std::string::npos) {
     return false;
   }
 
-  const string framework_name =
+  const std::string framework_name =
       path_in_directive.substr(0, sep_pos) + ".framework";
-  const string base_name = path_in_directive.substr(sep_pos + 1);
+  const std::string base_name = path_in_directive.substr(sep_pos + 1);
 
   for (const auto& framework_dir : *framework_dirs_) {
     for (const auto& header_dir : {"Headers", "PrivateHeaders"}) {
-      const string filename =
+      const std::string filename =
           file::JoinPath(framework_dir, framework_name, header_dir, base_name);
       const FileStat filestat =
           file_stat_cache_->Get(file::JoinPathRespectAbsolute(cwd_, filename));
@@ -260,10 +261,10 @@ bool IncludeFileFinder::LookupFramework(const string& path_in_directive,
   return false;
 }
 
-bool IncludeFileFinder::LookupSubframework(const string& path_in_directive,
-                                           const string& current_directory,
-                                           string* filepath) {
-  const string& abs_current =
+bool IncludeFileFinder::LookupSubframework(const std::string& path_in_directive,
+                                           const std::string& current_directory,
+                                           std::string* filepath) {
+  const std::string& abs_current =
       file::JoinPathRespectAbsolute(cwd_, current_directory);
   for (const auto& fwdir : *framework_dirs_) {
     if (CreateSubframeworkIncludeFilename(

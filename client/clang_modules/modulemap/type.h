@@ -9,8 +9,6 @@
 #include <string>
 #include <vector>
 
-using std::string;
-
 namespace devtools_goma {
 namespace modulemap {
 
@@ -19,21 +17,21 @@ namespace modulemap {
 class Feature {
  public:
   Feature() = default;
-  Feature(string name, bool is_positive)
+  Feature(std::string name, bool is_positive)
       : name_(std::move(name)), is_positive_(is_positive) {}
 
   bool is_positive() const { return is_positive_; }
-  const string& name() const { return name_; }
+  const std::string& name() const { return name_; }
 
   void set_is_positive(bool b) { is_positive_ = b; }
-  string* mutable_name() { return &name_; }
+  std::string* mutable_name() { return &name_; }
 
   friend bool operator==(const Feature& lhs, const Feature& rhs) {
     return lhs.name_ == rhs.name_ && lhs.is_positive_ == rhs.is_positive_;
   }
 
  private:
-  string name_;
+  std::string name_;
   bool is_positive_ = true;
 };
 
@@ -51,14 +49,14 @@ class Header {
   bool is_textual() const { return is_textual_; }
   void set_is_textual(bool b) { is_textual_ = b; }
 
-  const string& name() const { return name_; }
-  string* mutable_name() { return &name_; }
+  const std::string& name() const { return name_; }
+  std::string* mutable_name() { return &name_; }
 
-  const string& size() const { return size_; }
-  string* mutable_size() { return &size_; }
+  const std::string& size() const { return size_; }
+  std::string* mutable_size() { return &size_; }
 
-  const string& mtime() const { return mtime_; }
-  string* mutable_mtime() { return &mtime_; }
+  const std::string& mtime() const { return mtime_; }
+  std::string* mutable_mtime() { return &mtime_; }
 
  private:
   bool is_umbrella_ = false;
@@ -66,36 +64,36 @@ class Header {
   bool is_private_ = false;
   bool is_textual_ = false;
 
-  string name_;
-  string size_;   // TODO: should be int64_t?
-  string mtime_;  // TODO: should be int64_t?
+  std::string name_;
+  std::string size_;   // TODO: should be int64_t?
+  std::string mtime_;  // TODO: should be int64_t?
 };
 
 struct ConfigMacro {
-  const std::vector<string>& attributes() const { return attributes_; }
-  std::vector<string>* mutable_attributes() { return &attributes_; }
+  const std::vector<std::string>& attributes() const { return attributes_; }
+  std::vector<std::string>* mutable_attributes() { return &attributes_; }
 
-  const std::vector<string>& macros() const { return macros_; }
-  std::vector<string>* mutable_macros() { return &macros_; }
+  const std::vector<std::string>& macros() const { return macros_; }
+  std::vector<std::string>* mutable_macros() { return &macros_; }
 
-  std::vector<string> attributes_;
-  std::vector<string> macros_;
+  std::vector<std::string> attributes_;
+  std::vector<std::string> macros_;
 };
 
 struct Link {
-  const string& name() const { return name_; }
+  const std::string& name() const { return name_; }
   bool is_framework() const { return is_framework_; }
 
-  string name_;
+  std::string name_;
   bool is_framework_;
 };
 
 struct Conflict {
-  const string& module_id() const { return module_id_; }
-  const string& reason() const { return reason_; }
+  const std::string& module_id() const { return module_id_; }
+  const std::string& reason() const { return reason_; }
 
-  string module_id_;
-  string reason_;
+  std::string module_id_;
+  std::string reason_;
 };
 
 class Module {
@@ -108,19 +106,21 @@ class Module {
     has_inferred_submodule_member_ = b;
   }
 
-  const string& module_id() const { return module_id_; }
-  void set_module_id(string module_id) { module_id_ = std::move(module_id); }
-  string* mutable_module_id() { return &module_id_; }
+  const std::string& module_id() const { return module_id_; }
+  void set_module_id(std::string module_id) {
+    module_id_ = std::move(module_id);
+  }
+  std::string* mutable_module_id() { return &module_id_; }
 
   // For extern modules
   // extern module <module-id> <string-literal>
-  const string& extern_filename() const { return extern_filename_; }
-  string* mutable_extern_filename() { return &extern_filename_; }
+  const std::string& extern_filename() const { return extern_filename_; }
+  std::string* mutable_extern_filename() { return &extern_filename_; }
 
-  const std::vector<string>& attributes() const { return attributes_; }
-  std::vector<string>* mutable_attributes() { return &attributes_; }
+  const std::vector<std::string>& attributes() const { return attributes_; }
+  std::vector<std::string>* mutable_attributes() { return &attributes_; }
   // Returns true if |attr| exists in attributes.
-  bool HasAttribute(const string& attr) const {
+  bool HasAttribute(const std::string& attr) const {
     for (const auto& x : attributes()) {
       if (attr == x) {
         return true;
@@ -140,19 +140,23 @@ class Module {
   const std::vector<Header>& headers() const { return headers_; }
   void add_header(Header header) { headers_.push_back(std::move(header)); }
 
-  const std::vector<string>& umbrella_dirs() const { return umbrella_dirs_; }
-  void add_umbrella_dir(string name) {
+  const std::vector<std::string>& umbrella_dirs() const {
+    return umbrella_dirs_;
+  }
+  void add_umbrella_dir(std::string name) {
     umbrella_dirs_.push_back(std::move(name));
   }
 
-  const std::vector<string>& exports() const { return exports_; }
-  void add_export(string name) { exports_.push_back(std::move(name)); }
+  const std::vector<std::string>& exports() const { return exports_; }
+  void add_export(std::string name) { exports_.push_back(std::move(name)); }
 
-  const std::vector<string>& export_as() const { return export_as_; }
-  void add_export_as(string name) { export_as_.push_back(std::move(name)); }
+  const std::vector<std::string>& export_as() const { return export_as_; }
+  void add_export_as(std::string name) {
+    export_as_.push_back(std::move(name));
+  }
 
-  const std::vector<string>& uses() const { return uses_; }
-  void add_use(string name) { uses_.push_back(std::move(name)); }
+  const std::vector<std::string>& uses() const { return uses_; }
+  void add_use(std::string name) { uses_.push_back(std::move(name)); }
 
   const std::vector<Link>& links() const { return links_; }
   void add_link(Link link) { links_.push_back(std::move(link)); }
@@ -178,18 +182,18 @@ class Module {
 
  private:
   // Common attributes.
-  string module_id_;
-  std::vector<string> attributes_;
+  std::string module_id_;
+  std::vector<std::string> attributes_;
 
   // For usual module.
   bool is_explicit_ = false;
   bool is_framework_ = false;
   std::vector<Feature> requires_;
   std::vector<Header> headers_;
-  std::vector<string> umbrella_dirs_;
-  std::vector<string> exports_;
-  std::vector<string> export_as_;
-  std::vector<string> uses_;
+  std::vector<std::string> umbrella_dirs_;
+  std::vector<std::string> exports_;
+  std::vector<std::string> export_as_;
+  std::vector<std::string> uses_;
   std::vector<Module> submodules_;
   std::vector<Link> links_;
   std::vector<ConfigMacro> config_macros_;
@@ -197,7 +201,7 @@ class Module {
 
   // For extern module.
   bool is_extern_ = false;
-  string extern_filename_;
+  std::string extern_filename_;
 
   // For inferred submodule
   bool is_inferred_submodule_ = false;

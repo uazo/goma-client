@@ -19,8 +19,6 @@
 #include "goma_hash.h"
 #include "linked_unordered_map.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 struct FileStat;
@@ -42,13 +40,14 @@ class IncludeCache {
 
   // Get IncludeItem from cache or file.
   // If it does not exist in the cache, reat it from file and parse it.
-  IncludeItem GetIncludeItem(const string& filepath, const FileStat& file_stat);
+  IncludeItem GetIncludeItem(const std::string& filepath,
+                             const FileStat& file_stat);
 
   // Get directive hash. If we have a cache and its FileStat is the same as
   // |file_stat|, we return the cached one. Otherwise, we calculate the
   // directive hash, and save it. If |filepath| is not found, invalid hash value
   // is returned.
-  absl::optional<SHA256HashValue> GetDirectiveHash(const string& filepath,
+  absl::optional<SHA256HashValue> GetDirectiveHash(const std::string& filepath,
                                                    const FileStat& file_stat);
 
   void Dump(std::ostringstream* ss);
@@ -66,9 +65,9 @@ class IncludeCache {
   ~IncludeCache();
 
   const IncludeCache::Item* GetItemIfNotModifiedUnlocked(
-      const string& key,
+      const std::string& key,
       const FileStat& file_stat) const SHARED_LOCKS_REQUIRED(rwlock_);
-  void InsertUnlocked(const string& key,
+  void InsertUnlocked(const std::string& key,
                       std::unique_ptr<Item> include_item,
                       const FileStat& file_stat)
       EXCLUSIVE_LOCKS_REQUIRED(rwlock_);

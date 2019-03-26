@@ -63,7 +63,7 @@ void Watchdog::Start(ThreadpoolHttpServer* server, int count) {
 }
 
 void Watchdog::SetTarget(CompileService* service,
-                         const std::vector<string>& goma_ipc_env) {
+                         const std::vector<std::string>& goma_ipc_env) {
   service_ = service;
   goma_ipc_env_ = goma_ipc_env;
   LOG(INFO) << "watchdog target:" << goma_ipc_env;
@@ -91,13 +91,13 @@ void Watchdog::Check() {
     return;
   }
 
-  std::vector<string> argv;
+  std::vector<std::string> argv;
   argv.push_back(gomacc_path_);
   argv.push_back("port");
-  std::vector<string> env(goma_ipc_env_);
+  std::vector<std::string> env(goma_ipc_env_);
   int32_t status = 0;
-  const string out = ReadCommandOutput(gomacc_path_, argv, env, dir_,
-                                       MERGE_STDOUT_STDERR, &status);
+  const std::string out = ReadCommandOutput(gomacc_path_, argv, env, dir_,
+                                            MERGE_STDOUT_STDERR, &status);
   if (status != 0) {
     LOG(ERROR) << "ReadCommandOutput gets non-zero exit code. Going to quit."
                << " gomacc_path=" << gomacc_path_

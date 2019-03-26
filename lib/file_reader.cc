@@ -16,7 +16,7 @@ void FileReaderFactory::Register(CreateFunction create) {
 }
 
 std::unique_ptr<FileReader> FileReaderFactory::NewFileReader(
-    const string& filename) {
+    const std::string& filename) {
   for (std::vector<CreateFunction>::const_iterator iter = creators_.begin();
        iter != creators_.end();
        ++iter) {
@@ -47,7 +47,9 @@ void FileReaderFactory::DeleteInstance() {
 FileReaderFactory* FileReaderFactory::factory_ = nullptr;
 
 /* static */
-size_t FileReader::FlushDataInBuffer(string* buf, void** ptr, size_t* len) {
+size_t FileReader::FlushDataInBuffer(std::string* buf,
+                                     void** ptr,
+                                     size_t* len) {
   size_t moved = 0;
   if (!buf->empty()) {
     if (*len < buf->size()) {

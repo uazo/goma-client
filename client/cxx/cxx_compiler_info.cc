@@ -66,7 +66,7 @@ CxxCompilerInfo::CxxCompilerInfo(std::unique_ptr<CompilerInfoData> data)
       predefined_macros(), "<compiler info output>");
 }
 
-bool CxxCompilerInfo::IsSystemInclude(const string& filepath) const {
+bool CxxCompilerInfo::IsSystemInclude(const std::string& filepath) const {
   for (const auto& path : cxx_system_include_paths_) {
     if (HasPrefixDir(filepath, path))
       return true;
@@ -82,7 +82,7 @@ bool CxxCompilerInfo::IsSystemInclude(const string& filepath) const {
   return false;
 }
 
-bool CxxCompilerInfo::DependsOnCwd(const string& cwd) const {
+bool CxxCompilerInfo::DependsOnCwd(const std::string& cwd) const {
   if (CompilerInfo::DependsOnCwd(cwd)) {
     return true;
   }
@@ -122,7 +122,7 @@ bool CxxCompilerInfo::DependsOnCwd(const string& cwd) const {
       return true;
     }
   }
-  if (data_->cxx().predefined_macros().find(cwd) != string::npos) {
+  if (data_->cxx().predefined_macros().find(cwd) != std::string::npos) {
     VLOG(1) << "predefined macros contains cwd " << cwd;
     return true;
   }

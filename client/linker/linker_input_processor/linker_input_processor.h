@@ -13,8 +13,6 @@
 
 #include "basictypes.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class CommandSpec;
@@ -35,8 +33,8 @@ class LinkerInputProcessor {
     MACHO_FAT_FILE,
     MACHO_OBJECT_FILE,
   };
-  LinkerInputProcessor(const std::vector<string>& args,
-                       const string& current_directory);
+  LinkerInputProcessor(const std::vector<std::string>& args,
+                       const std::string& current_directory);
   ~LinkerInputProcessor();
 
   // Gets input files for command specified by args and library paths.
@@ -52,43 +50,43 @@ class LinkerInputProcessor {
   // command line to library_paths.
   bool GetInputFilesAndLibraryPath(const CompilerInfo& compiler_info,
                                    const CommandSpec& command_spec,
-                                   std::set<string>* input_files,
-                                   std::vector<string>* library_paths);
+                                   std::set<std::string>* input_files,
+                                   std::vector<std::string>* library_paths);
 
  private:
   friend class LinkerInputProcessorTest;
   // Provided for test.
-  explicit LinkerInputProcessor(const string& current_directory);
+  explicit LinkerInputProcessor(const std::string& current_directory);
   bool CaptureDriverCommandLine(const CommandSpec& command_spec,
-                                std::vector<string>* driver_args,
-                                std::vector<string>* driver_envs);
+                                std::vector<std::string>* driver_args,
+                                std::vector<std::string>* driver_envs);
 
   // Parses outputs of "gcc -### ..."
-  static bool ParseDumpOutput(const string& dump_output,
-                              std::vector<string>* driver_args,
-                              std::vector<string>* driver_envs);
+  static bool ParseDumpOutput(const std::string& dump_output,
+                              std::vector<std::string>* driver_args,
+                              std::vector<std::string>* driver_envs);
 
-  void ParseDriverCommandLine(const std::vector<string>& driver_args,
-                              std::vector<string>* input_paths);
-  void GetLibraryPath(const std::vector<string>& driver_envs,
-                      std::vector<string>* library_paths);
-  static FileType CheckFileType(const string& path);
-  static void ParseThinArchive(const string& filename,
-                               std::set<string>* input_files);
-  void TryParseLinkerScript(const string& filename,
-                            std::vector<string>* input_paths);
-  void TryParseElfNeeded(const string& filename,
-                         std::vector<string>* input_paths);
+  void ParseDriverCommandLine(const std::vector<std::string>& driver_args,
+                              std::vector<std::string>* input_paths);
+  void GetLibraryPath(const std::vector<std::string>& driver_envs,
+                      std::vector<std::string>* library_paths);
+  static FileType CheckFileType(const std::string& path);
+  static void ParseThinArchive(const std::string& filename,
+                               std::set<std::string>* input_files);
+  void TryParseLinkerScript(const std::string& filename,
+                            std::vector<std::string>* input_paths);
+  void TryParseElfNeeded(const std::string& filename,
+                         std::vector<std::string>* input_paths);
 #ifdef __MACH__
-  void TryParseMachONeeded(const string& filename,
+  void TryParseMachONeeded(const std::string& filename,
                            const int max_recursion,
-                           std::set<string>* input_files);
+                           std::set<std::string>* input_files);
 #endif
 
   std::unique_ptr<CompilerFlags> flags_;
   std::unique_ptr<LibraryPathResolver> library_path_resolver_;
   std::unique_ptr<FrameworkPathResolver> framework_path_resolver_;
-  string arch_;
+  std::string arch_;
 
   DISALLOW_COPY_AND_ASSIGN(LinkerInputProcessor);
 };

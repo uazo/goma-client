@@ -74,7 +74,7 @@ class DummyHttpServerRequest : public ThreadpoolHttpServer::HttpServerRequest {
 
   bool IsTrusted() override { return true; }
 
-  void SendReply(const string& response) override {}
+  void SendReply(const std::string& response) override {}
 
   void NotifyWhenClosed(OneshotClosure* callback) override { delete callback; }
 
@@ -349,13 +349,11 @@ TEST_F(CompileTaskTest, UpdateStatsAborted) {
 
 TEST(CompileTask, OmitDurationFromUserError) {
   // input, expected.
-  std::vector<std::pair<string, string>> testcases = {
-    {
-      "compiler_proxy [173.736822ms]: reached max number of active fail "
-          "fallbacks",
-      "compiler_proxy <duration omitted>: reached max number of active fail "
-          "fallbacks"
-    },
+  std::vector<std::pair<std::string, std::string>> testcases = {
+      {"compiler_proxy [173.736822ms]: reached max number of active fail "
+       "fallbacks",
+       "compiler_proxy <duration omitted>: reached max number of active fail "
+       "fallbacks"},
   };
 
   for (const auto& tc : testcases) {

@@ -25,7 +25,7 @@ class JarFileNormalizer {
                 << "not exist or not a valid jar file." << std::endl;
       return false;
     }
-    ScopedFd out(devtools_goma::ScopedFd::CreateExclusive(output_, 0644));
+    ScopedFd out(ScopedFd::CreateExclusive(output_, 0644));
     if (!out.valid()) {
       std::cerr << "output file: " << output_ << " cannot be opened."
                 << " file exists or permission denied." << std::endl;

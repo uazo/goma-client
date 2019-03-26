@@ -80,7 +80,7 @@ class CompileTask {
 
   // Task ID, a serial number.
   int id() const { return id_; }
-  const string& trace_id() const { return trace_id_; }
+  const std::string& trace_id() const { return trace_id_; }
 
   // Inits CompileTask.
   // It takes ownership of rpc, req, resp and done.
@@ -111,7 +111,7 @@ class CompileTask {
 
   // DumpRequest is called on finished task.
   // A return value contains a message to show on a browser.
-  string DumpRequest() const;
+  std::string DumpRequest() const;
 
   void SetFrozenTimestamp(absl::Time frozen_timestamp) {
     frozen_timestamp_ = frozen_timestamp;
@@ -206,7 +206,7 @@ class CompileTask {
   // state_: -> FINISHED or abort_. (ready to send response)
   // finished_ becomes true.
   // joins in FinishSubProcess if subproc_ is active.
-  void ProcessFinished(const string& msg);
+  void ProcessFinished(const std::string& msg);
 
   // Replies with goma result.
   // state_: FINISHED && !abort_ && subprocess has been finished.
@@ -223,16 +223,18 @@ class CompileTask {
   // after calling closure, err->empty() means success, otherwise failure.
   // On Windows, it will retry several times, so closure must be permanent
   // callback.
-  void DoOutput(const string& opname, const string& filename,
-                PermanentClosure* closure, string* err);
-  void RenameCallback(RenameParam* param, string* err);
-  void ContentOutputCallback(ContentOutputParam* param, string* err);
+  void DoOutput(const std::string& opname,
+                const std::string& filename,
+                PermanentClosure* closure,
+                std::string* err);
+  void RenameCallback(RenameParam* param, std::string* err);
+  void ContentOutputCallback(ContentOutputParam* param, std::string* err);
 
   // If file is coff file, rewrite timestamp to the current time.
-  void RewriteCoffTimestamp(const string& filename);
+  void RewriteCoffTimestamp(const std::string& filename);
 
   // state_: FINISHED/LOCAL_FINISHED or abort_.
-  void ReplyResponse(const string& msg);
+  void ReplyResponse(const std::string& msg);
 
   void ProcessLocalFileOutput();
   void ProcessLocalFileOutputDone();
@@ -277,17 +279,17 @@ class CompileTask {
 
   // Methods used in state_: CALL_EXEC
   void CheckCommandSpec();
-  void CheckNoMatchingCommandSpec(const string& retry_reason);
+  void CheckNoMatchingCommandSpec(const std::string& retry_reason);
   void StoreEmbeddedUploadInformationIfNeeded();
 
   // Methods used in state_: FILE_RESP
   void SetOutputFileCallback();
-  void CheckOutputFilename(const string& filename);
+  void CheckOutputFilename(const std::string& filename);
   void StartOutputFileTask();
   void OutputFileTaskFinished(std::unique_ptr<OutputFileTask> output_file_task);
   void MaybeRunOutputFileCallback(int index, bool task_finished);
-  bool VerifyOutput(const string& local_output_path,
-                    const string& goma_output_path);
+  bool VerifyOutput(const std::string& local_output_path,
+                    const std::string& goma_output_path);
   void ClearOutputFile();
 
   // Methods used in state_: fail_fallback_, LOCAL_FINISHED or abort_
@@ -307,7 +309,7 @@ class CompileTask {
   void SetupSubProcess();
 
   // Runs subprocess in high priority with reason.
-  void RunSubProcess(const string& reason);
+  void RunSubProcess(const std::string& reason);
 
   // Kills subprocess.  FinishSubProcess will be called later.
   void KillSubProcess();
@@ -317,8 +319,9 @@ class CompileTask {
 
   // ----------------------------------------------------------------
   // Add error message to response and sets error exit status.
-  void AddErrorToResponse(
-      ErrDest dest, const string& error_message, bool set_error);
+  void AddErrorToResponse(ErrDest dest,
+                          const std::string& error_message,
+                          bool set_error);
 
   // Convert a log line with duration to without duration.
   //
@@ -328,13 +331,13 @@ class CompileTask {
   // e.g.
   // input: compiler_proxy [173.736822ms]: this is error
   // output: compiler_proxy: this is error
-  static string OmitDurationFromUserError(absl::string_view str);
+  static std::string OmitDurationFromUserError(absl::string_view str);
 
   static void InitializeStaticOnce();
 
   CompileService* service_;
   const int id_;  // A serial number.
-  string trace_id_;
+  std::string trace_id_;
 
   // RPC between gomacc and compiler proxy.
   // These are vaild until ReplyResponse().
@@ -354,7 +357,7 @@ class CompileTask {
   std::unique_ptr<ExecReq> req_;
   CommandSpec command_spec_;
   ScopedCompilerInfoState compiler_info_state_;
-  string local_compiler_path_;
+  std::string local_compiler_path_;
   RequesterInfo requester_info_;
   RequesterEnv requester_env_;
 
@@ -368,9 +371,9 @@ class CompileTask {
   // true if a connection to gomacc is lost, and the task is canceled.
   bool canceled_ = false;
 
-  string orig_flag_dump_;
-  string flag_dump_;
-  std::set<string> required_files_;
+  std::string orig_flag_dump_;
+  std::string flag_dump_;
+  std::set<std::string> required_files_;
   int sum_of_required_file_size_ = 0;
 
   // Caches all FileStat in this compilation unit, since creating FileStat is
@@ -381,22 +384,22 @@ class CompileTask {
   std::unique_ptr<FileStatCache> output_file_stat_cache_;
 
   // |system_library_paths_| is used only when flags_->is_linking() == true.
-  std::vector<string> system_library_paths_;
+  std::vector<std::string> system_library_paths_;
   // list of interleave uploaded files_to confirm the mechanism works fine.
-  absl::flat_hash_set<string> interleave_uploaded_files_;
+  absl::flat_hash_set<std::string> interleave_uploaded_files_;
 
   std::unique_ptr<ExecResp> resp_;
   std::unique_ptr<ExecResp> exec_resp_;
 
-  std::vector<string> exec_output_files_;
-  std::vector<string> exec_error_message_;
+  std::vector<std::string> exec_output_files_;
+  std::vector<std::string> exec_error_message_;
   // exit_status_ is an exit status of remote goma compilation.
   // if this is 0, remote goma compilation might have finished successfully,
   // or might not be executed.
   // in other words, if this is not 0, remote goma compilation failed.
   int exit_status_ = 0;
-  string stdout_;
-  string stderr_;
+  std::string stdout_;
+  std::string stderr_;
 
   // Protects subproc_ and http_rpc_status_.
   mutable Lock mu_;
@@ -406,9 +409,9 @@ class CompileTask {
 
   WorkerThread::CancelableClosure* delayed_setup_subproc_ = nullptr;
   // local subprocess
-  string local_path_;
+  std::string local_path_;
   // PATHEXT environment variable in ExecReq for Windows.
-  string pathext_;
+  std::string pathext_;
   // subproc_ == NULL; subprocess is not ready to run or already finished.
   // subproc_ != NULL; subprocess is ready to run or running.
   SubProcessTask* subproc_ = nullptr;
@@ -421,8 +424,8 @@ class CompileTask {
   // if goma failed to setup env, cwd to run local compiler.
   // TODO: can we detect this kind of error?
   int subproc_exit_status_ = 0;
-  string subproc_stdout_;
-  string subproc_stderr_;
+  std::string subproc_stdout_;
+  std::string subproc_stderr_;
   // request fallback when exec call failed. initialized with
   // requester_env_.fallback(), but might be changed for hermetic fallback.
   bool want_fallback_ = false;
@@ -446,7 +449,7 @@ class CompileTask {
   SimpleTimer file_request_timer_;
 
   // trace info.
-  string resp_cache_key_;
+  std::string resp_cache_key_;
 
   // Input file process.
   OneshotClosure* input_file_callback_ = nullptr;

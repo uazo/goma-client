@@ -13,15 +13,15 @@ namespace devtools_goma {
 std::unique_ptr<CompilerInfoData>
 FakeCompilerTypeSpecific::BuildCompilerInfoData(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const std::vector<string>& compiler_info_envs) {
+    const std::string& local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs) {
   return compiler_info_builder_.FillFromCompilerOutputs(
       flags, local_compiler_path, compiler_info_envs);
 }
 
 CompilerTypeSpecific::IncludeProcessorResult
 FakeCompilerTypeSpecific::RunIncludeProcessor(
-    const string& trace_id,
+    const std::string& trace_id,
     const CompilerFlags& compiler_flags,
     const CompilerInfo& compiler_info,
     const CommandSpec& command_spec,
@@ -29,7 +29,7 @@ FakeCompilerTypeSpecific::RunIncludeProcessor(
   DCHECK_EQ(CompilerFlagType::Fake, compiler_flags.type());
 
   FakeIncludeProcessor include_processor;
-  std::set<string> required_files;
+  std::set<std::string> required_files;
   if (!include_processor.Run(
           trace_id, static_cast<const FakeFlags&>(compiler_flags),
           ToFakeCompilerInfo(compiler_info), &required_files)) {

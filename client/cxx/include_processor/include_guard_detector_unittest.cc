@@ -11,7 +11,7 @@ namespace devtools_goma {
 
 namespace {
 
-string Detect(const string& content) {
+std::string Detect(const std::string& content) {
   return IncludeGuardDetector::Detect(
       *CppDirectiveParser::ParseFromString(content, "<string>"));
 }

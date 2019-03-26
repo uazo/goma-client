@@ -29,11 +29,11 @@ constexpr absl::string_view kRootDir("/");
 #endif
 
 #ifdef _WIN32
-string LocateExecutable(const char* cwd_in,
-                        const char* path_in,
-                        const char* pathext_in,
-                        const char* cmd_in) {
-  string path;
+std::string LocateExecutable(const char* cwd_in,
+                             const char* path_in,
+                             const char* pathext_in,
+                             const char* cmd_in) {
+  std::string path;
   if (path_in == nullptr) {
     path = devtools_goma::GetEnv("PATH");
     CHECK(!path.empty());
@@ -41,7 +41,7 @@ string LocateExecutable(const char* cwd_in,
     path.assign(path_in);
   }
 
-  string pathext;
+  std::string pathext;
   if (pathext_in == nullptr) {
     pathext = devtools_goma::GetEnv("PATHEXT");
     CHECK(!pathext.empty());
@@ -49,7 +49,7 @@ string LocateExecutable(const char* cwd_in,
     pathext.assign(pathext_in);
   }
 
-  string exec_path;
+  std::string exec_path;
   if (devtools_goma::GetRealExecutablePath(nullptr, cmd_in, cwd_in, path,
                                            pathext, &exec_path, nullptr,
                                            nullptr)) {
@@ -64,7 +64,7 @@ string LocateExecutable(const char* cwd_in,
 TEST(FilePathUtil, GetRealExecutablePath) {
 // TODO: write test for POSIX.
 #ifdef _WIN32
-  string located = LocateExecutable("", nullptr, nullptr, "cmd");
+  std::string located = LocateExecutable("", nullptr, nullptr, "cmd");
   EXPECT_GT(located.size(), 3UL);
 
   // Shouls accept command with an extension.
@@ -112,8 +112,8 @@ TEST(FilePathUtil, GetRealExecutablePath) {
   EXPECT_GT(located.size(), 3UL);
 
   // Expected PATHEXT should be automatically added even if full-path given.
-  string expected = located;
-  string input = located.substr(0, located.length() - 4);
+  std::string expected = located;
+  std::string input = located.substr(0, located.length() - 4);
   EXPECT_FALSE(input.empty());
   located = LocateExecutable("", "", nullptr, input.c_str());
   EXPECT_EQ(expected, located);
@@ -129,7 +129,7 @@ TEST(FilePathUtilTest, IsLocalCompilerPathValidWithEmptyLocalCompilerPath) {
   req.mutable_command_spec()->set_binary_hash("deadbeef");
   req.set_cwd("/tmp");
 
-  std::vector<string> args = {"gcc", "-c", "dummy.cc"};
+  std::vector<std::string> args = {"gcc", "-c", "dummy.cc"};
   std::unique_ptr<CompilerFlags> flag(CompilerFlagsParser::MustNew(args, "."));
 
   EXPECT_TRUE(IsLocalCompilerPathValid("dummy", req, flag->compiler_name()));
@@ -144,7 +144,7 @@ TEST(FilePathUtilTest, IsLocalCompilerPathValidWithSameCommandSpec) {
   req.set_cwd("/tmp");
   req.mutable_command_spec()->set_local_compiler_path("/usr/bin/gcc");
 
-  std::vector<string> args = {"gcc", "-c", "dummy.cc"};
+  std::vector<std::string> args = {"gcc", "-c", "dummy.cc"};
   std::unique_ptr<CompilerFlags> flag(CompilerFlagsParser::MustNew(args, "."));
 
   EXPECT_TRUE(IsLocalCompilerPathValid("dummy", req, flag->compiler_name()));
@@ -159,7 +159,7 @@ TEST(FilePathUtilTest, IsLocalCompilerPathValidWithUnknownName) {
   req.set_cwd("/tmp");
   req.mutable_command_spec()->set_local_compiler_path("/usr/bin/id");
 
-  std::vector<string> args = {"gcc", "-c", "dummy.cc"};
+  std::vector<std::string> args = {"gcc", "-c", "dummy.cc"};
   std::unique_ptr<CompilerFlags> flag(CompilerFlagsParser::MustNew(args, "."));
 
   EXPECT_FALSE(IsLocalCompilerPathValid("dummy", req, flag->compiler_name()));
@@ -174,7 +174,7 @@ TEST(FilePathUtilTest, IsLocalCompilerPathValidWithCommandSpecMismatch) {
   req.set_cwd("/tmp");
   req.mutable_command_spec()->set_local_compiler_path("/usr/bin/gcc");
 
-  std::vector<string> args = {"gcc", "-c", "dummy.cc"};
+  std::vector<std::string> args = {"gcc", "-c", "dummy.cc"};
   std::unique_ptr<CompilerFlags> flag(CompilerFlagsParser::MustNew(args, "."));
 
   EXPECT_FALSE(IsLocalCompilerPathValid("dummy", req, flag->compiler_name()));
@@ -189,7 +189,7 @@ TEST(FilePathUtilTest, IsLocalCompilerPathValidWithArgsMismatch) {
   req.set_cwd("/tmp");
   req.mutable_command_spec()->set_local_compiler_path("/usr/bin/gcc");
 
-  std::vector<string> args = {"clang", "-c", "dummy.cc"};
+  std::vector<std::string> args = {"clang", "-c", "dummy.cc"};
   std::unique_ptr<CompilerFlags> flag(CompilerFlagsParser::MustNew(args, "."));
 
   EXPECT_FALSE(IsLocalCompilerPathValid("dummy", req, flag->compiler_name()));
@@ -204,7 +204,7 @@ TEST(FilePathUtilTest, IsLocalCompilerPathValidWithSameCommandSpecClExe) {
   req.set_cwd("/tmp");
   req.mutable_command_spec()->set_local_compiler_path("c:\\dummy\\cl.exe");
 
-  std::vector<string> args = {"c:\\dummy\\cl.exe", "/c", "dummy.cc"};
+  std::vector<std::string> args = {"c:\\dummy\\cl.exe", "/c", "dummy.cc"};
   std::unique_ptr<CompilerFlags> flag(CompilerFlagsParser::MustNew(args, "."));
 
   EXPECT_TRUE(IsLocalCompilerPathValid("dummy", req, flag->compiler_name()));
@@ -219,7 +219,7 @@ TEST(FilePathUtilTest, IsLocalCompilerPathValidWithOmittingExtension) {
   req.set_cwd("/tmp");
   req.mutable_command_spec()->set_local_compiler_path("c:\\dummy\\cl");
 
-  std::vector<string> args = {"cl", "/c", "dummy.cc"};
+  std::vector<std::string> args = {"cl", "/c", "dummy.cc"};
   std::unique_ptr<CompilerFlags> flag(CompilerFlagsParser::MustNew(args, "."));
 
   EXPECT_TRUE(IsLocalCompilerPathValid("dummy", req, flag->compiler_name()));
@@ -235,7 +235,7 @@ TEST(FilePathUtilTest, IsLocalCompilerPathValidWithUnknownNameClExe) {
   req.mutable_command_spec()->set_local_compiler_path(
       "c:\\dummy\\shutdown.exe");
 
-  std::vector<string> args = {"c:\\dummy\\cl.exe", "/c", "dummy.cc"};
+  std::vector<std::string> args = {"c:\\dummy\\cl.exe", "/c", "dummy.cc"};
   std::unique_ptr<CompilerFlags> flag(CompilerFlagsParser::MustNew(args, "."));
 
   EXPECT_FALSE(IsLocalCompilerPathValid("dummy", req, flag->compiler_name()));
@@ -250,7 +250,7 @@ TEST(FilePathUtilTest, IsLocalCompilerPathValidWithCommandSpecMismatchClExe) {
   req.set_cwd("/tmp");
   req.mutable_command_spec()->set_local_compiler_path("c:\\dummy\\cl.exe");
 
-  std::vector<string> args = {"c:\\dummy\\cl.exe", "/c", "dummy.cc"};
+  std::vector<std::string> args = {"c:\\dummy\\cl.exe", "/c", "dummy.cc"};
   std::unique_ptr<CompilerFlags> flag(CompilerFlagsParser::MustNew(args, "."));
 
   EXPECT_FALSE(IsLocalCompilerPathValid("dummy", req, flag->compiler_name()));
@@ -265,7 +265,7 @@ TEST(FilePathUtilTest, IsLocalCompilerPathValidWithArgsMismatchClExe) {
   req.set_cwd("/tmp");
   req.mutable_command_spec()->set_local_compiler_path("c:\\dummy\\cl.exe");
 
-  std::vector<string> args = {"c:\\dummy\\clang-cl.exe", "/c", "dummy.cc"};
+  std::vector<std::string> args = {"c:\\dummy\\clang-cl.exe", "/c", "dummy.cc"};
   std::unique_ptr<CompilerFlags> flag(CompilerFlagsParser::MustNew(args, "."));
 
   EXPECT_FALSE(IsLocalCompilerPathValid("dummy", req, flag->compiler_name()));

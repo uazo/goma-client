@@ -18,8 +18,6 @@
 #include "file_stat.h"
 #include "lockhelper.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class FileHashCache {
@@ -45,10 +43,10 @@ class FileHashCache {
   // If |missed_timestamp_ms| is 0, this check won't be performed.
   // Returns false and *cache_key is empty if it doesn't know cache key of the
   // file at all.
-  bool GetFileCacheKey(const string& filename,
+  bool GetFileCacheKey(const std::string& filename,
                        absl::optional<absl::Time> missed_timestamp,
                        const FileStat& file_stat,
-                       string* cache_key);
+                       std::string* cache_key);
 
   // Stores hash code (cache key) of |filename|.
   // |upload_timestamp_ms| is upload time or download time of the file
@@ -60,18 +58,18 @@ class FileHashCache {
   // and returns false.
   // Returns true if the cache_key is the first used in FileCacheKey.
   // Returns false if the cache_key was used before or |file_stat| is invalid.
-  bool StoreFileCacheKey(const string& filename,
-                         const string& cache_key,
+  bool StoreFileCacheKey(const std::string& filename,
+                         const std::string& cache_key,
                          absl::optional<absl::Time> upload_timestamp,
                          const FileStat& file_stat);
 
-  bool IsKnownCacheKey(const string& cache_key);
+  bool IsKnownCacheKey(const std::string& cache_key);
 
-  string DebugString();
+  std::string DebugString();
 
  private:
   struct FileInfo {
-    string cache_key;
+    std::string cache_key;
     FileStat file_stat;
     // time when hash key was stored in cache.
     // FileInfo represents valid hash key of local file if mtime < last_checked.
@@ -87,13 +85,13 @@ class FileHashCache {
 
   // A map from filename to file cache info.
   ReadWriteLock file_cache_mutex_;
-  std::unordered_map<string, struct FileInfo> file_cache_
+  std::unordered_map<std::string, struct FileInfo> file_cache_
       GUARDED_BY(file_cache_mutex_);
 
   // A set of cache keys that have been stored, so we could believe a cache_key
   // in this set is in goma cache.
   ReadWriteLock known_cache_keys_mutex_;
-  std::unordered_set<string> known_cache_keys_
+  std::unordered_set<std::string> known_cache_keys_
       GUARDED_BY(known_cache_keys_mutex_);
 
   StatsCounter num_cache_hit_;

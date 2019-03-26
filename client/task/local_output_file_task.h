@@ -13,8 +13,6 @@
 #include "goma_blob.h"
 #include "simple_timer.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class CompileTask;
@@ -29,13 +27,13 @@ class LocalOutputFileTask {
                       FileHashCache* file_hash_cache,
                       const FileStat& file_stat,
                       CompileTask* task,
-                      string filename);
+                      std::string filename);
   ~LocalOutputFileTask();
 
   void Run(OneshotClosure* closure);
 
   CompileTask* task() const { return task_; }
-  const string& filename() const { return filename_; }
+  const std::string& filename() const { return filename_; }
   const SimpleTimer& timer() const { return timer_; }
   const FileStat& file_stat() const { return file_stat_; }
   bool success() const { return success_; }
@@ -47,7 +45,7 @@ class LocalOutputFileTask {
   FileHashCache* file_hash_cache_;
   const FileStat file_stat_;
   CompileTask* task_;
-  const string filename_;
+  const std::string filename_;
   SimpleTimer timer_;
   bool success_;
 

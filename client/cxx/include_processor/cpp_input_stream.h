@@ -16,7 +16,7 @@ namespace devtools_goma {
 class CppInputStream {
  public:
   // |content| must alive while CppinputStream is alive.
-  CppInputStream(const Content* content, string filename)
+  CppInputStream(const Content* content, std::string filename)
       : content_(content),
         cur_(content_->buf()),
         line_(1),
@@ -31,7 +31,7 @@ class CppInputStream {
   const char* end() const { return content_->buf_end(); }
   size_t pos() const { return cur_ - content_->buf(); }
 
-  const string& filename() const { return filename_; }
+  const std::string& filename() const { return filename_; }
 
   void ConsumeChar();
   size_t GetLengthToCurrentFrom(const char* from, int lastchar) const;
@@ -47,7 +47,7 @@ class CppInputStream {
   const Content* content_;
   const char* cur_;
   int line_;
-  const string filename_;
+  const std::string filename_;
 };
 
 // Utility functions

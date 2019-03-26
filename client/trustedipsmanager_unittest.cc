@@ -16,13 +16,11 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-using std::string;
-
 namespace {
 
 class TrustedipsmanagerTest : public ::testing::Test {
  protected:
-  bool IsTrustedClient(const string& ip) {
+  bool IsTrustedClient(const std::string& ip) {
     struct in_addr in;
     inet_aton(ip.c_str(), &in);
     return trusted_.IsTrustedClient(in);

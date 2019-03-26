@@ -10,19 +10,18 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-using std::string;
 
 namespace devtools_goma {
 
 // Parsing Command-Line Arguments (on posix for gcc, javac)
 // Note: parsed |cmdline| will be appended to argv.
 bool ParsePosixCommandLineToArgv(absl::string_view cmdline,
-                                 std::vector<string>* argv);
+                                 std::vector<std::string>* argv);
 
 // Parsing Command-Line Arguments (on Windows)
 // Note: parsed |cmdline| will be appended to argv.
 bool ParseWinCommandLineToArgv(absl::string_view cmdline,
-                               std::vector<string>* argv);
+                               std::vector<std::string>* argv);
 
 }  // namespace devtools_goma
 

@@ -27,7 +27,6 @@ using google::protobuf::io::ArrayInputStream;
 using google::protobuf::io::ConcatenatingInputStream;
 using google::protobuf::io::ZeroCopyInputStream;
 using google::protobuf::io::ZeroCopyOutputStream;
-using std::string;
 
 enum class EncodingType {
   NO_ENCODING,

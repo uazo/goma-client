@@ -37,25 +37,23 @@ class CppErrorObserver : public CppParser::ErrorObserver {
   CppErrorObserver(const CppErrorObserver&) = delete;
   void operator=(const CppErrorObserver&) = delete;
 
-  void HandleError(const string& error) override {
+  void HandleError(const std::string& error) override {
     errors_.push_back(error);
   }
-  const std::vector<string>& errors() const {
-    return errors_;
-  }
+  const std::vector<std::string>& errors() const { return errors_; }
 
   void ClearError() {
     errors_.clear();
   }
 
  private:
-  std::vector<string> errors_;
+  std::vector<std::string> errors_;
 };
 
 void CheckExpandInternal(CheckFlag check_flag,
-                         const string& defines,
-                         const string& expand,
-                         const string& expected,
+                         const std::string& defines,
+                         const std::string& expand,
+                         const std::string& expected,
                          SpaceHandling space_handling) {
   CppErrorObserver error_observer;
   CppParser cpp_parser;
@@ -119,17 +117,17 @@ void CheckExpandInternal(CheckFlag check_flag,
 }
 
 void CheckExpand(CheckFlag check_flag,
-                 const string& defines,
-                 const string& expand,
-                 const string& expected) {
+                 const std::string& defines,
+                 const std::string& expand,
+                 const std::string& expected) {
   CheckExpandInternal(check_flag, defines, expand, expected,
                       SpaceHandling::kSkip);
 }
 
 void CheckExpandKeepSpaces(CheckFlag check_flag,
-                           const string& defines,
-                           const string& expand,
-                           const string& expected) {
+                           const std::string& defines,
+                           const std::string& expand,
+                           const std::string& expected) {
   CheckExpandInternal(check_flag, defines, expand, expected,
                       SpaceHandling::kKeep);
 }

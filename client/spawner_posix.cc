@@ -79,8 +79,10 @@ SpawnerPosix::~SpawnerPosix() {
 
 const int Spawner::kInvalidPid = -1;
 
-int SpawnerPosix::Run(const string& cmd, const std::vector<string>& args,
-                      const std::vector<string>& envs, const string& cwd) {
+int SpawnerPosix::Run(const std::string& cmd,
+                      const std::vector<std::string>& args,
+                      const std::vector<std::string>& envs,
+                      const std::string& cwd) {
   if (console_output_) {
     std::ostringstream filenamebuf;
     filenamebuf << "goma_tmp." << rand() << "."
@@ -437,7 +439,7 @@ SpawnerPosix::ProcessStatus SpawnerPosix::Wait(WaitPolicy wait_policy) {
     }
   }
 
-  string sig_source;
+  std::string sig_source;
   if (exit_fd_.valid()) {
     SubprocExit se;
     int r = read(exit_fd_.fd(), &se, sizeof(se));

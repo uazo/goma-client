@@ -10,8 +10,6 @@
 
 #include "compiler_info_builder.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class JavacCompilerInfoBuilder : public CompilerInfoBuilder {
@@ -22,19 +20,21 @@ class JavacCompilerInfoBuilder : public CompilerInfoBuilder {
 
   void SetTypeSpecificCompilerInfo(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const string& abs_local_compiler_path,
-      const std::vector<string>& compiler_info_envs,
+      const std::string& local_compiler_path,
+      const std::string& abs_local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs,
       CompilerInfoData* data) const override;
 
   // Parses output of "javac", and extracts |version|.
-  static bool ParseJavacVersion(const string& vc_logo, string* version);
+  static bool ParseJavacVersion(const std::string& vc_logo,
+                                std::string* version);
 
   // Execute javac and get the string output for javac version
-  static bool GetJavacVersion(const string& javac,
-                              const std::vector<string>& compiler_info_envs,
-                              const string& cwd,
-                              string* version);
+  static bool GetJavacVersion(
+      const std::string& javac,
+      const std::vector<std::string>& compiler_info_envs,
+      const std::string& cwd,
+      std::string* version);
 };
 
 class JavaCompilerInfoBuilder : public CompilerInfoBuilder {
@@ -45,9 +45,9 @@ class JavaCompilerInfoBuilder : public CompilerInfoBuilder {
 
   void SetTypeSpecificCompilerInfo(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const string& abs_local_compiler_path,
-      const std::vector<string>& compiler_info_envs,
+      const std::string& local_compiler_path,
+      const std::string& abs_local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs,
       CompilerInfoData* data) const override;
 };
 

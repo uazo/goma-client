@@ -18,8 +18,6 @@
 #include "glog/logging.h"
 #include "path.h"
 
-using std::string;
-
 namespace file {
 
 #ifdef _WIN32
@@ -29,7 +27,7 @@ namespace file {
 
 ::util::Status RecursivelyDelete(absl::string_view path,
                                  const file::Options& options) {
-  string name(path);
+  std::string name(path);
 
   // TODO: rewrite non recursive like devtools/goma/server/dirutil.cc?
   std::vector<devtools_goma::DirEntry> entries;
@@ -45,7 +43,7 @@ namespace file {
     if (ent.name == "." || ent.name == "..") {
       continue;
     }
-    const string& filename = file::JoinPath(name, ent.name);
+    const std::string& filename = file::JoinPath(name, ent.name);
     if (ent.is_dir) {
       ::util::Status status = RecursivelyDelete(filename, options);
       if (!status.ok()) {
@@ -64,7 +62,7 @@ namespace file {
 }
 
 ::util::Status IsDirectory(absl::string_view path, const file::Options&) {
-  string str = string(path);
+  std::string str = std::string(path);
 #ifndef _WIN32
   struct stat st;
   if (stat(str.c_str(), &st) == 0) {
@@ -81,7 +79,7 @@ namespace file {
 }
 
 ::util::Status CreateDir(absl::string_view path, const file::Options& options) {
-  string cpath(path);
+  std::string cpath(path);
 #ifndef _WIN32
   int r = mkdir(cpath.c_str(), options.creation_mode());
   if (r < 0) {
@@ -103,8 +101,8 @@ namespace file {
 ::util::Status Copy(absl::string_view from,
                     absl::string_view to,
                     const Options& options) {
-  string cfrom(from);
-  string cto(to);
+  std::string cfrom(from);
+  std::string cto(to);
 
 #ifdef _WIN32
   if (!CopyFileA(cfrom.c_str(), cto.c_str(), !options.overwrite())) {

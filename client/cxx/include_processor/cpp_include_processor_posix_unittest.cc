@@ -58,8 +58,8 @@ class CppIncludeProcessorPosixTest : public testing::Test {
 
   std::unique_ptr<CompilerInfoData> CreateCompilerInfoWithArgs(
       const CompilerFlags& flags,
-      const string& bare_gcc,
-      const std::vector<string>& compiler_envs) {
+      const std::string& bare_gcc,
+      const std::vector<std::string>& compiler_envs) {
     return CompilerTypeSpecificCollection()
         .Get(flags.type())
         ->BuildCompilerInfoData(flags, bare_gcc, compiler_envs);
@@ -67,8 +67,8 @@ class CppIncludeProcessorPosixTest : public testing::Test {
 
   ScopedCompilerInfoState GetCompilerInfoFromCacheOrCreate(
       const CompilerFlags& flags,
-      const string& bare_gcc,
-      const std::vector<string>& compiler_envs) {
+      const std::string& bare_gcc,
+      const std::vector<std::string>& compiler_envs) {
     auto key = CompilerInfoCache::CreateKey(flags, bare_gcc, compiler_envs);
     ScopedCompilerInfoState cis(CompilerInfoCache::instance()->Lookup(key));
     if (cis.get() != nullptr) {
@@ -79,8 +79,9 @@ class CppIncludeProcessorPosixTest : public testing::Test {
         key, CreateCompilerInfoWithArgs(flags, bare_gcc, compiler_envs)));
   };
 
-  std::set<string> RunCppIncludeProcessor(const string& source_file,
-                                          const std::vector<string>& args) {
+  std::set<std::string> RunCppIncludeProcessor(
+      const std::string& source_file,
+      const std::vector<std::string>& args) {
     std::unique_ptr<CompilerFlags> flags(
         CompilerFlagsParser::MustNew(args, tmpdir_util_->tmpdir()));
     std::unique_ptr<CompilerInfoData> data(new CompilerInfoData);
@@ -89,7 +90,7 @@ class CppIncludeProcessorPosixTest : public testing::Test {
     CxxCompilerInfo compiler_info(std::move(data));
 
     CppIncludeProcessor processor;
-    std::set<string> files;
+    std::set<std::string> files;
     FileStatCache file_stat_cache;
     // ASSERT_TRUE cannot be used here, I don't know why.
     EXPECT_TRUE(processor.GetIncludeFiles(source_file, tmpdir_util_->tmpdir(),
@@ -98,11 +99,11 @@ class CppIncludeProcessorPosixTest : public testing::Test {
     return files;
   }
 
-  void RunCppIncludeProcessorToEmptySource(const string& compiler,
-                                           std::set<string>* files) {
-    const string& source_file = CreateTmpFile("", "for_stdcpredef.cc");
+  void RunCppIncludeProcessorToEmptySource(const std::string& compiler,
+                                           std::set<std::string>* files) {
+    const std::string& source_file = CreateTmpFile("", "for_stdcpredef.cc");
 
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(compiler);
     args.push_back("-c");
     args.push_back(source_file);
@@ -119,9 +120,9 @@ class CppIncludeProcessorPosixTest : public testing::Test {
         ToCxxCompilerInfo(cis.get()->info()), files, &file_stat_cache));
   }
 
-  void RemoveAndCheckEmptySourceIncludeHeaders(const string& compiler,
-                                               std::set<string>* files) {
-    std::set<string> emptysource_files;
+  void RemoveAndCheckEmptySourceIncludeHeaders(const std::string& compiler,
+                                               std::set<std::string>* files) {
+    std::set<std::string> emptysource_files;
     RunCppIncludeProcessorToEmptySource(compiler, &emptysource_files);
     for (const auto& it : emptysource_files) {
       EXPECT_GT(files->count(it), 0U);
@@ -131,18 +132,18 @@ class CppIncludeProcessorPosixTest : public testing::Test {
 
   // Runs test by comparing include_processor with cpp's output.
   struct GccLikeCompiler {
-    GccLikeCompiler(string path, std::vector<string> additional_args)
+    GccLikeCompiler(std::string path, std::vector<std::string> additional_args)
         : path(std::move(path)), additional_args(std::move(additional_args)) {}
 
-    string path;
-    std::vector<string> additional_args;
+    std::string path;
+    std::vector<std::string> additional_args;
   };
 
   std::vector<GccLikeCompiler> GccLikeCompilers() const {
     std::vector<GccLikeCompiler> compilers;
 
-    std::vector<string> c_args;
-    std::vector<string> cpp_args;
+    std::vector<std::string> c_args;
+    std::vector<std::string> cpp_args;
     cpp_args.push_back("-x");
     cpp_args.push_back("c++");
 
@@ -160,10 +161,10 @@ class CppIncludeProcessorPosixTest : public testing::Test {
     return compilers;
   }
 
-  std::set<string> GetExpectedFiles(std::vector<string> args) {
+  std::set<std::string> GetExpectedFiles(std::vector<std::string> args) {
     args.push_back("-M");
 
-    std::vector<string> env(env_);
+    std::vector<std::string> env(env_);
     env.push_back("LC_ALL=C");
 
     // The output format of -M will be
@@ -172,14 +173,14 @@ class CppIncludeProcessorPosixTest : public testing::Test {
     //   /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h \\\n
     //   ...
     int exit_status;
-    string command_output = ReadCommandOutputByPopen(
+    std::string command_output = ReadCommandOutputByPopen(
         args[0], args, env, tmpdir_util_->tmpdir(), STDOUT_ONLY, &exit_status);
-    std::vector<string> files = ToVector(absl::StrSplit(
+    std::vector<std::string> files = ToVector(absl::StrSplit(
         command_output, absl::ByAnyChar(" \n\r\\"), absl::SkipEmpty()));
     LOG_IF(INFO, exit_status != 0)
         << "non-zero exit status."
         << " args=" << args << " exit_status=" << exit_status;
-    std::set<string> expected_files;
+    std::set<std::string> expected_files;
     PathResolver pr;
     // Skip the first element as it's the make target.
     for (size_t i = 1; i < files.size(); i++) {
@@ -188,7 +189,7 @@ class CppIncludeProcessorPosixTest : public testing::Test {
 
       // For the include files in the current directory, gcc or clang returns
       // it with relative path. we need to normalize it to absolute path.
-      string file =
+      std::string file =
           file::JoinPathRespectAbsolute(tmpdir_util_->tmpdir(), files[i]);
       // Need normalization as GCC may output a same file in different way.
       // TODO: don't use ResolvePath.
@@ -198,16 +199,16 @@ class CppIncludeProcessorPosixTest : public testing::Test {
     return expected_files;
   }
 
-  void RunTestInternal(const string& bare_gcc,
-                       const string& include_file,
-                       const std::vector<string>& additional_args,
-                       const std::set<string>& allowed_extra_files) {
-    std::vector<string> args;
+  void RunTestInternal(const std::string& bare_gcc,
+                       const std::string& include_file,
+                       const std::vector<std::string>& additional_args,
+                       const std::set<std::string>& allowed_extra_files) {
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     copy(additional_args.begin(), additional_args.end(), back_inserter(args));
     args.push_back(include_file);
 
-    std::set<string> expected_files(GetExpectedFiles(args));
+    std::set<std::string> expected_files(GetExpectedFiles(args));
     ASSERT_FALSE(expected_files.empty());
     std::unique_ptr<CompilerFlags> flags(
         CompilerFlagsParser::MustNew(args, tmpdir_util_->tmpdir()));
@@ -217,7 +218,7 @@ class CppIncludeProcessorPosixTest : public testing::Test {
     VLOG(1) << cis.get()->info().DebugString();
 
     CppIncludeProcessor processor;
-    std::set<string> files;
+    std::set<std::string> files;
     FileStatCache file_stat_cache;
     ASSERT_TRUE(processor.GetIncludeFiles(
         include_file, tmpdir_util_->tmpdir(), *flags,
@@ -227,7 +228,7 @@ class CppIncludeProcessorPosixTest : public testing::Test {
     //    recursive: /dir/../dir/foo.c not found, /dir/./foo.c not found
     //    include_twice_with_macro: dir/./tmp.h not found
     PathResolver pr;
-    std::set<string> actual_files;
+    std::set<std::string> actual_files;
     for (const auto& iter : files) {
       actual_files.insert(pr.ResolvePath(
           file::JoinPathRespectAbsolute(tmpdir_util_->tmpdir(), iter)));
@@ -240,35 +241,36 @@ class CppIncludeProcessorPosixTest : public testing::Test {
     CompareFiles(expected_files, actual_files, allowed_extra_files);
   }
 
-  void RunTest(const string& bare_gcc,
-               const string& include_file,
-               const std::vector<string>& additional_args) {
+  void RunTest(const std::string& bare_gcc,
+               const std::string& include_file,
+               const std::vector<std::string>& additional_args) {
     RunTestInternal(bare_gcc, include_file, additional_args,
-                    std::set<string>());
+                    std::set<std::string>());
   }
 
-  void RunTestAllowExtra(const string& bare_gcc,
-                         const string& include_file,
-                         const std::vector<string>& additional_args,
-                         const std::set<string>& allowed_extra_files) {
+  void RunTestAllowExtra(const std::string& bare_gcc,
+                         const std::string& include_file,
+                         const std::vector<std::string>& additional_args,
+                         const std::set<std::string>& allowed_extra_files) {
     RunTestInternal(bare_gcc, include_file, additional_args,
                     allowed_extra_files);
   }
 
-  string CreateTmpFile(const string& content, const string& name) {
+  std::string CreateTmpFile(const std::string& content,
+                            const std::string& name) {
     tmpdir_util_->CreateTmpFile(name, content);
     return tmpdir_util_->FullPath(name);
   }
 
-  string CreateTmpDir(const string& dirname) {
+  std::string CreateTmpDir(const std::string& dirname) {
     tmpdir_util_->MkdirForPath(dirname, true);
     return tmpdir_util_->FullPath(dirname);
   }
 
-  string CreateTmpHmapWithOneEntry(const string& key,
-                                   const string& prefix,
-                                   const string& suffix,
-                                   const string& name) {
+  std::string CreateTmpHmapWithOneEntry(const std::string& key,
+                                        const std::string& prefix,
+                                        const std::string& suffix,
+                                        const std::string& name) {
     struct HeaderMapWithOneEntry {
       char magic[4];
       uint16_t version;
@@ -308,7 +310,7 @@ class CppIncludeProcessorPosixTest : public testing::Test {
     strcpy(hmap->strings + hmap->prefix, prefix.c_str());
     strcpy(hmap->strings + hmap->suffix, suffix.c_str());
 
-    return CreateTmpFile(string(hmap_entity.get(), hmap_len), name);
+    return CreateTmpFile(std::string(hmap_entity.get(), hmap_len), name);
   }
 
  protected:
@@ -324,41 +326,41 @@ class CppIncludeProcessorPosixTest : public testing::Test {
   };
 
   std::unique_ptr<TmpdirUtil> tmpdir_util_;
-  std::vector<string> env_;
-  string clang_path_;
+  std::vector<std::string> env_;
+  std::string clang_path_;
 };
 
 TEST_F(CppIncludeProcessorPosixTest, stdio) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/gcc", CreateTmpFile("#include <stdio.h>", "foo.c"), args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, iostream) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++", CreateTmpFile("#include <iostream>", "foo.cc"), args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, iostream_with_gcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/gcc", CreateTmpFile("#include <iostream>", "foo.cpp"),
           args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, macro) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#define ios <iostream>\n#include ios\n", "foo.cc"),
           args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, commandline_macro) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("-Dios=<iostream>");
   RunTest("/usr/bin/g++", CreateTmpFile("#include ios\n", "foo.cc"), args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, commandline_macro_undef) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   // Undefnie predefined macro.
   args.push_back("-U__ELF__");
   args.push_back("-D__ELF__=<stdio.h>");
@@ -366,13 +368,13 @@ TEST_F(CppIncludeProcessorPosixTest, commandline_macro_undef) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, unclosed_macro) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++", CreateTmpFile("#define wrong_macro \"foo", "foo.cc"),
           args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, opt_include_in_system_path) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("-include");
   args.push_back("stdio.h");
   RunTest("/usr/bin/gcc", CreateTmpFile("", "foo.cc"), args);
@@ -380,8 +382,11 @@ TEST_F(CppIncludeProcessorPosixTest, opt_include_in_system_path) {
 
 // See b/74321868
 TEST_F(CppIncludeProcessorPosixTest, opt_include_evil) {
-  const std::vector<string> args{
-      "-IA", "-IB", "-include", "foo.h",
+  const std::vector<std::string> args{
+      "-IA",
+      "-IB",
+      "-include",
+      "foo.h",
   };
 
   CreateTmpFile(
@@ -394,8 +399,11 @@ TEST_F(CppIncludeProcessorPosixTest, opt_include_evil) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_twice) {
-  const std::vector<string> args{
-      "-include", "foo.h", "-include", "foo.h",
+  const std::vector<std::string> args{
+      "-include",
+      "foo.h",
+      "-include",
+      "foo.h",
   };
 
   CreateTmpFile(
@@ -412,11 +420,11 @@ TEST_F(CppIncludeProcessorPosixTest, include_twice) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, stdcpredef) {
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& source_file = CreateTmpFile("", "foo.cc");
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& source_file = CreateTmpFile("", "foo.cc");
   CreateTmpFile("", "stdc-predef.h");
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
   args.push_back("-I.");
   args.push_back("-c");
@@ -436,7 +444,7 @@ TEST_F(CppIncludeProcessorPosixTest, stdcpredef) {
   CxxCompilerInfo compiler_info(std::move(data));
 
   CppIncludeProcessor processor;
-  std::set<string> files;
+  std::set<std::string> files;
   FileStatCache file_stat_cache;
   ASSERT_TRUE(processor.GetIncludeFiles(source_file, tmpdir_util_->tmpdir(),
                                         *flags, compiler_info, &files,
@@ -447,10 +455,10 @@ TEST_F(CppIncludeProcessorPosixTest, stdcpredef) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, stdcpredef_missing) {
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& source_file = CreateTmpFile("", "foo.cc");
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& source_file = CreateTmpFile("", "foo.cc");
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
   args.push_back("-I.");
   args.push_back("-c");
@@ -477,7 +485,7 @@ TEST_F(CppIncludeProcessorPosixTest, stdcpredef_missing) {
   CxxCompilerInfo compiler_info(std::move(data));
 
   CppIncludeProcessor processor;
-  std::set<string> files;
+  std::set<std::string> files;
   FileStatCache file_stat_cache;
 
   // Don't fail even if stdc-predef.h is missing.
@@ -490,10 +498,10 @@ TEST_F(CppIncludeProcessorPosixTest, stdcpredef_missing) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, ffreestanding) {
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& source_file = CreateTmpFile("", "foo.cc");
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& source_file = CreateTmpFile("", "foo.cc");
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
   args.push_back("-ffreestanding");
   args.push_back("-c");
@@ -505,7 +513,7 @@ TEST_F(CppIncludeProcessorPosixTest, ffreestanding) {
       CreateCompilerInfoWithArgs(*flags, bare_gcc, env_));
 
   CppIncludeProcessor processor;
-  std::set<string> files;
+  std::set<std::string> files;
   FileStatCache file_stat_cache;
   ASSERT_TRUE(processor.GetIncludeFiles(source_file, tmpdir_util_->tmpdir(),
                                         *flags, compiler_info, &files,
@@ -526,10 +534,10 @@ TEST_F(CppIncludeProcessorPosixTest, fnohosted) {
   // cc1plus: warning: command line option '-fno-hosted' is valid for
   // C/ObjC but not for C++ [enabled by default]
 
-  const string& bare_gcc = "/usr/bin/gcc";
-  const string& source_file = CreateTmpFile("", "foo.c");
+  const std::string& bare_gcc = "/usr/bin/gcc";
+  const std::string& source_file = CreateTmpFile("", "foo.c");
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
   args.push_back("-fno-hosted");
   args.push_back("-c");
@@ -542,7 +550,7 @@ TEST_F(CppIncludeProcessorPosixTest, fnohosted) {
   ASSERT_FALSE(compiler_info.HasError());
 
   CppIncludeProcessor processor;
-  std::set<string> files;
+  std::set<std::string> files;
   FileStatCache file_stat_cache;
   ASSERT_TRUE(processor.GetIncludeFiles(source_file, tmpdir_util_->tmpdir(),
                                         *flags, compiler_info, &files,
@@ -567,21 +575,21 @@ TEST_F(CppIncludeProcessorPosixTest, recursive) {
          << "#include \"./foo.c\"\n"
          << "#endif\n";
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/gcc", CreateTmpFile(source.str(), "foo.c"), args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, opt_include_gch) {
-  const string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_gcc = "/usr/bin/g++";
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
-  const string& orig_header = CreateTmpFile(
+  const std::string& orig_header = CreateTmpFile(
       "#include <stdio.h> // This file must not be parsed", "foo.h");
-  const string& gch_header = CreateTmpFile(
+  const std::string& gch_header = CreateTmpFile(
       "#include <stdio.h> // This file must not be parsed", "foo.h.gch.goma");
 
-  const string& source_file = CreateTmpFile("", "foo.cc");
+  const std::string& source_file = CreateTmpFile("", "foo.cc");
   args.push_back("-c");
   args.push_back(source_file);
   args.push_back("-include");
@@ -593,7 +601,7 @@ TEST_F(CppIncludeProcessorPosixTest, opt_include_gch) {
       CreateCompilerInfoWithArgs(*flags, bare_gcc, env_));
 
   CppIncludeProcessor processor;
-  std::set<string> files;
+  std::set<std::string> files;
   FileStatCache file_stat_cache;
   ASSERT_TRUE(processor.GetIncludeFiles(source_file, tmpdir_util_->tmpdir(),
                                         *flags, compiler_info, &files,
@@ -605,13 +613,14 @@ TEST_F(CppIncludeProcessorPosixTest, opt_include_gch) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, gch) {
-  const string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_gcc = "/usr/bin/g++";
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
   // We have foo.h, foo.h.gch.goma, a/foo.h, and a/foo.h.gch.goma in this test.
   CreateTmpDir("a");
-  const string& content = "#include <stdio.h> // This file must not be parsed";
+  const std::string& content =
+      "#include <stdio.h> // This file must not be parsed";
   // The order of creating of these files are important to ensure the
   // converage as readdir tends to return new files later.
   // We want to check both of the following cases:
@@ -627,7 +636,7 @@ TEST_F(CppIncludeProcessorPosixTest, gch) {
   CreateTmpFile("#include <stdio.h> // This file must not be parsed",
                 "foo.h.gch.goma");
 
-  string source_file = CreateTmpFile("#include \"foo.h\"", "foo.cc");
+  std::string source_file = CreateTmpFile("#include \"foo.h\"", "foo.cc");
 
   args.push_back("-c");
   args.push_back(source_file);
@@ -639,7 +648,7 @@ TEST_F(CppIncludeProcessorPosixTest, gch) {
 
   std::unique_ptr<CppIncludeProcessor> processor(new CppIncludeProcessor());
 
-  std::set<string> files;
+  std::set<std::string> files;
   FileStatCache file_stat_cache;
   ASSERT_TRUE(processor->GetIncludeFiles(source_file, tmpdir_util_->tmpdir(),
                                          *flags, compiler_info, &files,
@@ -756,14 +765,14 @@ TEST_F(CppIncludeProcessorPosixTest, gch) {
 
   RemoveAndCheckEmptySourceIncludeHeaders(bare_gcc, &files);
   ASSERT_EQ(2, static_cast<int>(files.size()));
-  std::set<string>::const_iterator iter = files.begin();
+  std::set<std::string>::const_iterator iter = files.begin();
   EXPECT_EQ("./a/foo.h.gch.goma", *iter);
   ++iter;
   EXPECT_EQ("./foo.h.gch.goma", *iter);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, dir_cache) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("-I" + tmpdir_util_->tmpdir());
 
   CreateTmpFile("", "bar.h");
@@ -776,7 +785,7 @@ TEST_F(CppIncludeProcessorPosixTest, dir_cache) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, I_system_path) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   // Though /usr/include is specified before tmpdir_util_->tmpdir(),
   // we don't use this because system path has this path.
   args.emplace_back("-I/usr/include");
@@ -795,8 +804,9 @@ TEST_F(CppIncludeProcessorPosixTest, I_system_path) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, iquote) {
-  std::vector<string> args{
-      "-iquote", "include",
+  std::vector<std::string> args{
+      "-iquote",
+      "include",
   };
   CreateTmpFile("", "include/foo.h");
   RunTest("/usr/bin/g++", CreateTmpFile("#include \"foo.h\"\n", "foo.cc"),
@@ -804,13 +814,13 @@ TEST_F(CppIncludeProcessorPosixTest, iquote) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, hmap) {
-  const string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_gcc = "/usr/bin/g++";
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
-  const string& include_foo = CreateTmpFile("#include <foo.h>", "foo.cc");
-  const string& bar_header = CreateTmpFile("", "bar.h");
-  const string& hmap_file = "hmap.hmap";
+  const std::string& include_foo = CreateTmpFile("#include <foo.h>", "foo.cc");
+  const std::string& bar_header = CreateTmpFile("", "bar.h");
+  const std::string& hmap_file = "hmap.hmap";
   CreateTmpHmapWithOneEntry("foo.h", "", bar_header, hmap_file);
 
   args.push_back("-Ihmap.hmap");
@@ -822,7 +832,7 @@ TEST_F(CppIncludeProcessorPosixTest, hmap) {
       CreateCompilerInfoWithArgs(*flags, bare_gcc, env_));
 
   std::unique_ptr<CppIncludeProcessor> processor(new CppIncludeProcessor());
-  std::set<string> files;
+  std::set<std::string> files;
   FileStatCache file_stat_cache;
   ASSERT_TRUE(processor->GetIncludeFiles(include_foo, tmpdir_util_->tmpdir(),
                                          *flags, compiler_info, &files,
@@ -833,7 +843,7 @@ TEST_F(CppIncludeProcessorPosixTest, hmap) {
   EXPECT_EQ(1, static_cast<int>(files.count(hmap_file)));
   EXPECT_EQ(1, static_cast<int>(files.count(bar_header)));
 
-  const string& baz_header = CreateTmpFile("", "baz.h");
+  const std::string& baz_header = CreateTmpFile("", "baz.h");
   // Now we should fetch baz.h for #include <foo.h>.
   CreateTmpHmapWithOneEntry("foo.h", "", baz_header, hmap_file);
   flags = CompilerFlagsParser::MustNew(args, tmpdir_util_->tmpdir());
@@ -851,15 +861,15 @@ TEST_F(CppIncludeProcessorPosixTest, hmap) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, hmap_with_dir) {
-  const string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_gcc = "/usr/bin/g++";
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
-  const string& include_foo = CreateTmpFile(
+  const std::string& include_foo = CreateTmpFile(
       "#include <dir1/foo.h>\n"
       "#include <dir1/dir2/bar.h>\n",
       "foo.cc");
-  const string& foo_header = CreateTmpFile("", "foo.h");
+  const std::string& foo_header = CreateTmpFile("", "foo.h");
   CreateTmpFile("", "bar.h");
   CreateTmpHmapWithOneEntry("dir1/foo.h", "", foo_header, "foo.hmap");
   CreateTmpHmapWithOneEntry("dir1/dir2/bar.h", "", "bar.h", "bar.hmap");
@@ -874,7 +884,7 @@ TEST_F(CppIncludeProcessorPosixTest, hmap_with_dir) {
       CreateCompilerInfoWithArgs(*flags, bare_gcc, env_));
 
   std::unique_ptr<CppIncludeProcessor> processor(new CppIncludeProcessor());
-  std::set<string> files;
+  std::set<std::string> files;
   FileStatCache file_stat_cache;
   ASSERT_TRUE(processor->GetIncludeFiles(include_foo, tmpdir_util_->tmpdir(),
                                          *flags, compiler_info, &files,
@@ -889,7 +899,7 @@ TEST_F(CppIncludeProcessorPosixTest, hmap_with_dir) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, cpp_and_isystem) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   CreateTmpFile("", "typeinfo");
   args.push_back("-isystem");
   args.push_back(tmpdir_util_->tmpdir());
@@ -898,7 +908,7 @@ TEST_F(CppIncludeProcessorPosixTest, cpp_and_isystem) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, funclike_macro1) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#define s(x) #x\n"
                         "#include s(stdio.h)\n",
@@ -907,7 +917,7 @@ TEST_F(CppIncludeProcessorPosixTest, funclike_macro1) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, funclike_macro2) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/gcc",
           CreateTmpFile("#define X(name) <std##name.h>\n"
                         "#include X(io)\n",
@@ -916,7 +926,7 @@ TEST_F(CppIncludeProcessorPosixTest, funclike_macro2) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, funclike_macro3) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/gcc",
           CreateTmpFile("#define XY \"stdio.h\"\n"
                         "#define C(x, y) x ## y\n"
@@ -926,7 +936,7 @@ TEST_F(CppIncludeProcessorPosixTest, funclike_macro3) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_nested_macros) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   CreateTmpFile("#include <stdio.h>\n", "foo1.h");
   RunTest("/usr/bin/gcc",
           CreateTmpFile("#define S(a) #a\n"
@@ -937,14 +947,14 @@ TEST_F(CppIncludeProcessorPosixTest, include_nested_macros) {
           args);
 }
 TEST_F(CppIncludeProcessorPosixTest, commandline_funclike_macro) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("-DS(a)=#a");
   RunTest("/usr/bin/g++", CreateTmpFile("#include S(iostream)\n", "foo.cc"),
           args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, escaped_newline) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#include <io\\\nstream>\n"
                         "#inc\\\nlude <string>\n",
@@ -955,7 +965,7 @@ TEST_F(CppIncludeProcessorPosixTest, escaped_newline) {
 TEST_F(CppIncludeProcessorPosixTest, macro_false_recursion) {
   CreateTmpFile("#include <string>\n", "99");
   CreateTmpFile("#include <vector>\n", "X(99)");
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#define X(x) x\n"
                         "#define Y99(x) x(99)\n"
@@ -975,7 +985,7 @@ TEST_F(CppIncludeProcessorPosixTest, macro_nested_args) {
       "#define C(x, y) _C(x, y)\n",
       "util.h");
   CreateTmpFile("#include <vector>\n", "2.h");
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#include \"util.h\"\n"
                         "#define E1(a, b) a\n"
@@ -987,7 +997,7 @@ TEST_F(CppIncludeProcessorPosixTest, macro_nested_args) {
 
 TEST_F(CppIncludeProcessorPosixTest, macro_varargs) {
   CreateTmpFile("#include <vector>\n", "c");
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#define X(a, b, c, ...) c\n"
                         "#include X(\"a\", \"b\", \"c\", \"d\", \"e\")\n",
@@ -998,7 +1008,7 @@ TEST_F(CppIncludeProcessorPosixTest, macro_varargs) {
 TEST_F(CppIncludeProcessorPosixTest, macro_with_defined) {
   CreateTmpFile("#include <map>\n", "x.h");
   CreateTmpFile("#include <set>\n", "y.h");
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#define USE(a) (defined(USE_ ## a) && USE_ ## a)\n"
                         "#define USE_X 1\n"
@@ -1014,7 +1024,7 @@ TEST_F(CppIncludeProcessorPosixTest, macro_with_defined) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_in_comment) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#include <string> /* \n"
                         "#include <iostream> */\n",
@@ -1023,7 +1033,7 @@ TEST_F(CppIncludeProcessorPosixTest, include_in_comment) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_in_linecomment) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#include <string> // comment \\\n"
                         "#include <iostream>\n",
@@ -1032,27 +1042,28 @@ TEST_F(CppIncludeProcessorPosixTest, include_in_linecomment) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_with_predefined) {
-  const string bare_gcc = "/usr/bin/gcc";
+  const std::string bare_gcc = "/usr/bin/gcc";
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(
-      std::vector<string>{bare_gcc, "-c", "foo.c"}, tmpdir_util_->tmpdir()));
+      std::vector<std::string>{bare_gcc, "-c", "foo.c"},
+      tmpdir_util_->tmpdir()));
   ScopedCompilerInfoState cis(
       GetCompilerInfoFromCacheOrCreate(*flags, bare_gcc, env_));
 
   const char kDefineGnuc[] = "#define __GNUC__ ";
 
   // Taking __GNUC__ value from predefined macros.
-  const string& macros =
+  const std::string& macros =
       ToCxxCompilerInfo(cis.get()->info()).predefined_macros();
   auto begin_pos = macros.find(kDefineGnuc);
-  ASSERT_NE(begin_pos, string::npos);
+  ASSERT_NE(begin_pos, std::string::npos);
   ASSERT_LT(begin_pos + strlen(kDefineGnuc), macros.length());
   begin_pos += strlen(kDefineGnuc);  // skip #define __GNUC__
 
   // __GNUC__ is 4, 5, 6, ... (it depends on gcc version)
   auto end_pos = macros.find('\n', begin_pos);
-  ASSERT_NE(end_pos, string::npos);
+  ASSERT_NE(end_pos, std::string::npos);
 
-  const string gnuc = macros.substr(begin_pos, end_pos - begin_pos);
+  const std::string gnuc = macros.substr(begin_pos, end_pos - begin_pos);
   CreateTmpFile("#include <stdio.h>\n", "foo" + gnuc + ".h");
   RunTest(bare_gcc,
           CreateTmpFile("#define S(x) #x\n"
@@ -1060,12 +1071,12 @@ TEST_F(CppIncludeProcessorPosixTest, include_with_predefined) {
                         "#define X(x) _X(x)\n"
                         "#include X(__GNUC__)\n",
                         "foo.c"),
-          std::vector<string>());
+          std::vector<std::string>());
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_with_cpp_predefined) {
   CreateTmpFile("#include <stdio.h>\n", "foo4.h");
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#define S(x) #x\n"
                         "#define _X(x) S(foo##x.h)\n"
@@ -1085,7 +1096,7 @@ TEST_F(CppIncludeProcessorPosixTest, include_with_pragma_once) {
       "#define ONCE\n"
       "#endif\n",
       "once.h");
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/gcc",
           CreateTmpFile("#include \"once.h\"\n"
                         "#include \"once.h\"\n",
@@ -1098,7 +1109,7 @@ TEST_F(CppIncludeProcessorPosixTest, include_with_ifdefs) {
   CreateTmpFile("#include <vector>\n", "dummy1.h");
   CreateTmpFile("#include <set>\n", "dummy2.h");
   CreateTmpFile("#include <map>\n", "dummy3.h");
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#define T 1\n"
                         "#ifndef T\n"
@@ -1115,7 +1126,7 @@ TEST_F(CppIncludeProcessorPosixTest, include_with_ifdefs) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_with_if_elif_else) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#define A 1\n"
                         "#define B 0\n"
@@ -1142,7 +1153,7 @@ TEST_F(CppIncludeProcessorPosixTest, include_with_cond_expr_1) {
       "#define C(x) -(x)\n",
       "util.h");
   CreateTmpFile("#include <string>\n", "foo.h");
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/g++",
           CreateTmpFile("#include \"util.h\"\n"
                         "#if A(1, 2) * B() == 9\n"
@@ -1190,7 +1201,7 @@ TEST_F(CppIncludeProcessorPosixTest, include_with_cond_expr_1) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_nested) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   CreateTmpFile(
       "#ifdef A\n"
       "# include <stdio.h>\n"
@@ -1203,9 +1214,9 @@ TEST_F(CppIncludeProcessorPosixTest, include_nested) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_with_macro) {
-  const string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_gcc = "/usr/bin/g++";
 
-  const string& source_file = CreateTmpFile(
+  const std::string& source_file = CreateTmpFile(
       "#define INCLUDE <a.h>\n"
       "#include INCLUDE\n",
       "a.cc");
@@ -1213,22 +1224,22 @@ TEST_F(CppIncludeProcessorPosixTest, include_with_macro) {
   CreateTmpFile("#define FOO 100\n", "a.h");
   CreateTmpFile("#define FOO 200\n", file::JoinPath("a", "a.h"));
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
   args.push_back("-Ia");
   args.push_back("-c");
   args.push_back(source_file);
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(file::JoinPath("a", "a.h"));
 
-  std::set<string> files = RunCppIncludeProcessor(source_file, args);
+  std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_twice_with_macro) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   CreateTmpFile("#include A\n", "foo.h");
   CreateTmpFile("#include <string>\n", "tmp.h");
   RunTest("/usr/bin/g++",
@@ -1242,7 +1253,7 @@ TEST_F(CppIncludeProcessorPosixTest, include_twice_with_macro) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, include_time_h) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/gcc",
           CreateTmpFile("#include <sys/types.h>\n"
                         "#include <time.h>\n",
@@ -1251,7 +1262,7 @@ TEST_F(CppIncludeProcessorPosixTest, include_time_h) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, base_file) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/gcc",
           CreateTmpFile("#ifdef X\n"
                         "# include <stdio.h>\n"
@@ -1264,13 +1275,13 @@ TEST_F(CppIncludeProcessorPosixTest, base_file) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, has_include) {
-  const string define_has_include =
+  const std::string define_has_include =
       "#ifndef __has_include\n"
       "# define __has_include(x) 0\n"
       "#endif\n";
 
   for (const auto& compiler : GccLikeCompilers()) {
-    std::vector<string> args(compiler.additional_args);
+    std::vector<std::string> args(compiler.additional_args);
 
     // Check __has_include is defined.
     RunTest(compiler.path,
@@ -1386,7 +1397,7 @@ TEST_F(CppIncludeProcessorPosixTest, has_include_relative) {
   // Use clang here, because gcc in trusty does not support __has_include.
   const std::string& clang_path = GetClangPath();
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(
-      std::vector<string>{clang_path, "-c", "foo.cc", "-I."},
+      std::vector<std::string>{clang_path, "-c", "foo.cc", "-I."},
       tmpdir_util_->tmpdir()));
   ScopedCompilerInfoState cis(
       GetCompilerInfoFromCacheOrCreate(*flags, clang_path, env_));
@@ -1399,7 +1410,7 @@ TEST_F(CppIncludeProcessorPosixTest, has_include_relative) {
   CreateTmpFile("", "a.h");
 
   CppIncludeProcessor processor;
-  std::set<string> files;
+  std::set<std::string> files;
   FileStatCache file_stat_cache;
   ASSERT_TRUE(processor.GetIncludeFiles(
       "foo.cc", tmpdir_util_->tmpdir(), *flags,
@@ -1408,13 +1419,13 @@ TEST_F(CppIncludeProcessorPosixTest, has_include_relative) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, has_include_next) {
-  const string define_has_include_next =
+  const std::string define_has_include_next =
       "#ifndef __has_include_next\n"
       "# define __has_include_next(x) 0\n"
       "#endif\n";
 
   for (const auto& compiler : GccLikeCompilers()) {
-    std::vector<string> args(compiler.additional_args);
+    std::vector<std::string> args(compiler.additional_args);
 
     // Check __has_include_next existence.
     RunTest(compiler.path,
@@ -1457,7 +1468,7 @@ TEST_F(CppIncludeProcessorPosixTest, has_include_next) {
 
     RunTest(compiler.path, CreateTmpFile("#include <a.h>\n", "foo.c"), args);
 
-    const string& ah =
+    const std::string& ah =
         CreateTmpFile("#define FOOBAR 100\n", file::JoinPath("a", "a.h"));
     RunTest(compiler.path, CreateTmpFile("#include <a.h>\n", "foo.c"), args);
 
@@ -1467,13 +1478,13 @@ TEST_F(CppIncludeProcessorPosixTest, has_include_next) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, has_feature) {
-  const string define_has_feature =
+  const std::string define_has_feature =
       "#ifndef __has_feature\n"
       "# define __has_feature(x) 0\n"
       "#endif\n";
 
   for (const auto& compiler : GccLikeCompilers()) {
-    std::vector<string> args(compiler.additional_args);
+    std::vector<std::string> args(compiler.additional_args);
 
     // Check the pre-defined macro itself.
     RunTest(compiler.path,
@@ -1545,13 +1556,13 @@ TEST_F(CppIncludeProcessorPosixTest, has_feature) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, has_extension) {
-  const string define_has_extension =
+  const std::string define_has_extension =
       "#ifndef __has_extension\n"
       "# define __has_extension(x) 0\n"
       "#endif\n";
 
   for (const auto& compiler : GccLikeCompilers()) {
-    std::vector<string> args(compiler.additional_args);
+    std::vector<std::string> args(compiler.additional_args);
 
     // Check the pre-defined macro itself.
     RunTest(compiler.path,
@@ -1576,13 +1587,13 @@ TEST_F(CppIncludeProcessorPosixTest, has_extension) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, has_cpp_attribute) {
-  const string define_has_cpp_attribute =
+  const std::string define_has_cpp_attribute =
       "#ifndef __has_cpp_attribute\n"
       "# define __has_cpp_attribute(x) 0\n"
       "#endif\n";
 
   for (const auto& compiler : GccLikeCompilers()) {
-    std::vector<string> args(compiler.additional_args);
+    std::vector<std::string> args(compiler.additional_args);
 
     // Check __has_cpp_attribute existence.
     // Don't add define_has_cpp_attribute.
@@ -1626,13 +1637,13 @@ TEST_F(CppIncludeProcessorPosixTest, has_cpp_attribute) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, has_declspec_attribute) {
-  const string define_has_declspec_attribute =
+  const std::string define_has_declspec_attribute =
       "#ifndef __has_declspec_attribute\n"
       "# define __has_declspec_attribute(x) 0\n"
       "#endif\n";
 
   for (const auto& compiler : GccLikeCompilers()) {
-    std::vector<string> args(compiler.additional_args);
+    std::vector<std::string> args(compiler.additional_args);
 
     // Check __has_declspec_attribute existence.
     // Don't add define_has_declspec_attribute.
@@ -1658,13 +1669,13 @@ TEST_F(CppIncludeProcessorPosixTest, has_declspec_attribute) {
 }
 
 TEST_F(CppIncludeProcessorPosixTest, has_builtin) {
-  const string define_has_builtin =
+  const std::string define_has_builtin =
       "#ifndef __has_builtin\n"
       "# define __has_builtin(x) 0\n"
       "#endif\n";
 
   for (const auto& compiler : GccLikeCompilers()) {
-    std::vector<string> args(compiler.additional_args);
+    std::vector<std::string> args(compiler.additional_args);
 
     // Check __has_builtin existence.
     // Don't add define_has_builtin.
@@ -1702,15 +1713,15 @@ TEST_F(CppIncludeProcessorPosixTest, has_builtin) {
 TEST_F(CppIncludeProcessorPosixTest, dont_include_directory) {
   CreateTmpDir("iostream");
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("-I" + tmpdir_util_->tmpdir());
   RunTest("/usr/bin/gcc", CreateTmpFile("#include <iostream>", "foo.cpp"),
           args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, fmodules) {
-  const std::vector<string> args{"-fmodules"};
-  const string a_cc = CreateTmpFile("#include \"a.h\"", "a.cc");
+  const std::vector<std::string> args{"-fmodules"};
+  const std::string a_cc = CreateTmpFile("#include \"a.h\"", "a.cc");
 
   CreateTmpFile("#define A 100\n", "a.h");
   CreateTmpFile(
@@ -1725,7 +1736,7 @@ TEST_F(CppIncludeProcessorPosixTest, fmodules) {
 TEST_F(CppIncludeProcessorPosixTest, fmodule_map_file) {
   // -fmodule-map-file is considered as input.
   // Needs to pass -fmodule-name=foo otherwise module-map-file won't be used.
-  const string a_cc = CreateTmpFile("#include \"a.h\"", "a.cc");
+  const std::string a_cc = CreateTmpFile("#include \"a.h\"", "a.cc");
   CreateTmpFile("#define A 100\n", "a.h");
   CreateTmpFile(
       "module foo {\n"
@@ -1733,13 +1744,13 @@ TEST_F(CppIncludeProcessorPosixTest, fmodule_map_file) {
       "}\n",
       "tmp.modulemap");
 
-  const std::vector<string> args{"-fmodules", "-fmodule-map-file=tmp.modulemap",
-                                 "-fmodule-name=foo"};
+  const std::vector<std::string> args{
+      "-fmodules", "-fmodule-map-file=tmp.modulemap", "-fmodule-name=foo"};
   RunTest(clang_path_, a_cc, args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, fmodule_map_file_extern) {
-  const string a_cc = CreateTmpFile("", "a.cc");
+  const std::string a_cc = CreateTmpFile("", "a.cc");
   CreateTmpFile(R"(
 module foo {
   extern module bar "bar/bar.modulemap"
@@ -1756,8 +1767,8 @@ module baz {
 })",
                 "bar/baz/baz.modulemap");
 
-  const std::vector<string> args{"-fmodules", "-fmodule-map-file=foo.modulemap",
-                                 "-fmodule-name=foo"};
+  const std::vector<std::string> args{
+      "-fmodules", "-fmodule-map-file=foo.modulemap", "-fmodule-name=foo"};
   RunTest(clang_path_, a_cc, args);
 }
 
@@ -1765,7 +1776,7 @@ TEST_F(CppIncludeProcessorPosixTest, fmodule_map_file_extern_dup) {
   // "foo.modulemap" includes "bar.modulemap" and "baz.modulemap".
   // Both "bar.modulemap" and "baz.modulemap" includes "qux.modulemap".
 
-  const string a_cc = CreateTmpFile("", "a.cc");
+  const std::string a_cc = CreateTmpFile("", "a.cc");
   CreateTmpFile(R"(
 module foo {
   extern module bar "bar.modulemap"
@@ -1788,14 +1799,14 @@ module qux {
 })",
                 "qux.modulemap");
 
-  const std::vector<string> args{"-fmodules", "-fmodule-map-file=foo.modulemap",
-                                 "-fmodule-name=foo"};
+  const std::vector<std::string> args{
+      "-fmodules", "-fmodule-map-file=foo.modulemap", "-fmodule-name=foo"};
   RunTest(clang_path_, a_cc, args);
 }
 
 TEST_F(CppIncludeProcessorPosixTest, fmodule_file) {
-  const string a_cc = CreateTmpFile("#include \"a.h\"", "a.cc");
-  const string a_h = CreateTmpFile("#define A 100\n", "a.h");
+  const std::string a_cc = CreateTmpFile("#include \"a.h\"", "a.cc");
+  const std::string a_h = CreateTmpFile("#define A 100\n", "a.h");
   CreateTmpFile(
       "module foo {\n"
       "  header \"a.h\"\n"
@@ -1804,20 +1815,20 @@ TEST_F(CppIncludeProcessorPosixTest, fmodule_file) {
 
   // First, make "module.pcm".
   {
-    const std::vector<string> args{clang_path_,
-                                   "-x",
-                                   "c++",
-                                   "-fmodules",
-                                   "-fmodule-name=foo",
-                                   "-Xclang",
-                                   "-emit-module",
-                                   "-Xclang",
-                                   "-fmodule-map-file-home-is-cwd",
-                                   "-c",
-                                   "module.modulemap",
-                                   "-o",
-                                   "module.pcm"};
-    const std::vector<string> envs{
+    const std::vector<std::string> args{clang_path_,
+                                        "-x",
+                                        "c++",
+                                        "-fmodules",
+                                        "-fmodule-name=foo",
+                                        "-Xclang",
+                                        "-emit-module",
+                                        "-Xclang",
+                                        "-fmodule-map-file-home-is-cwd",
+                                        "-c",
+                                        "module.modulemap",
+                                        "-o",
+                                        "module.pcm"};
+    const std::vector<std::string> envs{
         "LC_ALL=C",
     };
     int exit_status = -1;
@@ -1827,7 +1838,7 @@ TEST_F(CppIncludeProcessorPosixTest, fmodule_file) {
   }
 
   // Set it as module-file.
-  const std::vector<string> args{"-fmodules", "-fmodule-file=module.pcm"};
+  const std::vector<std::string> args{"-fmodules", "-fmodule-file=module.pcm"};
 
   // TODO: If there is a precompiled module, clang does not read "a.h",
   // since it's already compiled into module.pcm.
@@ -1835,7 +1846,7 @@ TEST_F(CppIncludeProcessorPosixTest, fmodule_file) {
   // binary file.
   //
   // "a.h" will be extra.
-  const std::set<string> allowed_extra_files{a_h};
+  const std::set<std::string> allowed_extra_files{a_h};
   RunTestAllowExtra(clang_path_, a_cc, args, allowed_extra_files);
 }
 
@@ -1846,7 +1857,7 @@ TEST_F(CppIncludeProcessorPosixTest, curdir_framework) {
   CreateTmpDir("EarlGrey.framework/Headers");
   CreateTmpFile("", "EarlGrey.framework/Headers/EarlGrey.h");
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("-F");
   args.push_back(".");
   RunTest("/usr/bin/gcc",
@@ -1855,7 +1866,7 @@ TEST_F(CppIncludeProcessorPosixTest, curdir_framework) {
 
 TEST_F(CppIncludeProcessorPosixTest, sub_framework) {
   // b/23128924
-  std::vector<string> args;
+  std::vector<std::string> args;
   RunTest("/usr/bin/gcc",
           CreateTmpFile("#include <Accelerate/Accelerate.h>", "foo.cc"), args);
 }

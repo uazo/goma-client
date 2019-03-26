@@ -21,8 +21,6 @@
 #include "autolock_timer.h"
 #include "tls_engine.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class HttpRequest;
@@ -46,11 +44,11 @@ class OpenSSLContext {
   // It will be deleted after running.
   // |invalidate_closure| MUST NOT call any OpenSSLContext methods
   // to avoid dead lock.
-  void Init(const string& hostname,
+  void Init(const std::string& hostname,
             absl::optional<absl::Duration> crl_max_valid_duration,
             OneshotClosure* invalidate_closure);
   // Set proxy to be used to download CRLs.
-  void SetProxy(const string& proxy_host, const int proxy_port);
+  void SetProxy(const std::string& proxy_host, const int proxy_port);
 
   // Returns true if server's identity is valid.
   bool IsValidServerIdentity(X509* cert);
@@ -58,7 +56,7 @@ class OpenSSLContext {
   // Returns true if one of X509 certificates have revoked.
   bool IsRevoked(STACK_OF(X509)* x509s);
 
-  string GetCertsInfo() const {
+  std::string GetCertsInfo() const {
     AUTOLOCK(lock, &mu_);
     return certs_info_;
   }
@@ -66,7 +64,7 @@ class OpenSSLContext {
     AUTOLOCK(lock, &mu_);
     return is_crl_ready_;
   }
-  const string GetLastErrorMessage() const {
+  const std::string GetLastErrorMessage() const {
     AUTOLOCK(lock, &mu_);
     return last_error_;
   }
@@ -84,10 +82,11 @@ class OpenSSLContext {
   static bool IsHostnameMatched(absl::string_view hostname,
                                 absl::string_view pattern);
 
-  const string& hostname() { return hostname_; }
+  const std::string& hostname() { return hostname_; }
 
  private:
-  ScopedX509CRL GetX509CrlsFromUrl(const string& url, string* crl_str);
+  ScopedX509CRL GetX509CrlsFromUrl(const std::string& url,
+                                   std::string* crl_str);
 
   // Loads CRLs based on X509v3 CRL distribution point.
   bool SetupCrlsUnlocked(STACK_OF(X509) * x509s) EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -99,12 +98,12 @@ class OpenSSLContext {
   // Since we do not know good way to get CRLs from SSL_CTX, we will use crls_
   // to check revoked certificate.
   std::vector<ScopedX509CRL> crls_;
-  string proxy_host_;
+  std::string proxy_host_;
   int proxy_port_;
-  string certs_info_;
-  string hostname_;
+  std::string certs_info_;
+  std::string hostname_;
   bool is_crl_ready_;
-  string last_error_;
+  std::string last_error_;
   absl::optional<absl::Time> last_error_time_;
   absl::optional<absl::Duration> crl_max_valid_duration_;
 
@@ -129,14 +128,14 @@ class OpenSSLEngine : public TLSEngine {
   bool IsIOPending() const override;
   bool IsReady() const override;
 
-  int GetDataToSendTransport(string* data) override;
+  int GetDataToSendTransport(std::string* data) override;
   size_t GetBufSizeFromTransport() override;
   int SetDataFromTransport(const absl::string_view& data) override;
 
   int Read(void* data, int size) override;
   int Write(const void* data, int size) override;
 
-  string GetLastErrorMessage() const override;
+  std::string GetLastErrorMessage() const override;
 
   // Shows this engine has already used before.
   bool IsRecycled() const override { return recycled_; }
@@ -164,7 +163,7 @@ class OpenSSLEngine : public TLSEngine {
   // Otherwise, returns TLSEngine::TLSErrorReason to make a caller know
   // error reason.
   int Connect();
-  string GetErrorString() const;
+  std::string GetErrorString() const;
 
   SSL* ssl_;
   BIO* network_bio_;
@@ -185,16 +184,14 @@ class OpenSSLEngineCache : public TLSEngineFactory {
   ~OpenSSLEngineCache() override;
   TLSEngine* NewTLSEngine(int sock) override;
   void WillCloseSocket(int sock) override;
-  void AddCertificateFromFile(const string& ssl_cert_filename);
-  void AddCertificateFromString(const string& ssl_cert);
-  string GetCertsInfo() override {
-    return ctx_->GetCertsInfo();
-  }
-  void SetHostname(const string& hostname) override {
+  void AddCertificateFromFile(const std::string& ssl_cert_filename);
+  void AddCertificateFromString(const std::string& ssl_cert);
+  std::string GetCertsInfo() override { return ctx_->GetCertsInfo(); }
+  void SetHostname(const std::string& hostname) override {
     AUTOLOCK(lock, &mu_);
     hostname_ = hostname;
   }
-  void SetProxy(const string& proxy_host, const int proxy_port) {
+  void SetProxy(const std::string& proxy_host, const int proxy_port) {
     AUTOLOCK(lock, &mu_);
     proxy_host_ = proxy_host;
     proxy_port_ = proxy_port;
@@ -214,8 +211,8 @@ class OpenSSLEngineCache : public TLSEngineFactory {
   std::vector<std::unique_ptr<OpenSSLContext>> contexts_to_delete_;
   std::unordered_map<int, std::unique_ptr<OpenSSLEngine>> ssl_map_;
   // Proxy configs to download CRLs.
-  string hostname_;
-  string proxy_host_;
+  std::string hostname_;
+  std::string proxy_host_;
   int proxy_port_;
   absl::optional<absl::Duration> crl_max_valid_duration_;
 

@@ -42,7 +42,7 @@ TEST(CppTokenizerTest, IsAfterEndOfLine) {
   EXPECT_FALSE(CppTokenizer::IsAfterEndOfLine(strchr(src10, '#'), src10));
 }
 
-bool ReadCharLiteral(const string& s, CppToken* token, bool check_end) {
+bool ReadCharLiteral(const std::string& s, CppToken* token, bool check_end) {
   std::unique_ptr<Content> c(Content::CreateFromString(s));
 
   CppInputStream stream(c.get(), "<content>");
@@ -122,7 +122,7 @@ TEST(CppTokenizerTest, ReadCharLiteral) {
 
 TEST(CppTokenizerTest, TokenizeDefineString) {
   CppToken t;
-  string error;
+  std::string error;
 
   std::unique_ptr<Content> content(Content::CreateFromString(
       "#define KOTORI \"piyo\\\"piyo\""));
@@ -153,7 +153,7 @@ TEST(CppTokenizerTest, TokenizeDefineString) {
 }
 
 TEST(CppTokenizerTest, TokenizeIdentifier) {
-  const string content = "A B $X X$ $X$ __$X";
+  const std::string content = "A B $X X$ $X$ __$X";
 
   ArrayTokenList tokens;
   EXPECT_TRUE(
@@ -170,7 +170,7 @@ TEST(CppTokenizerTest, TokenizeIdentifier) {
 }
 
 TEST(CppTokenizerTest, TokenizeAll) {
-  const string content = "A B 1+2";
+  const std::string content = "A B 1+2";
 
   ArrayTokenList tokens_wos;
   EXPECT_TRUE(

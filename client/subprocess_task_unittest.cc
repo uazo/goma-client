@@ -33,8 +33,6 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-using std::string;
-
 GOMA_DECLARE_bool(COMPILER_PROXY_ENABLE_CRASH_DUMP);
 
 namespace devtools_goma {
@@ -46,10 +44,10 @@ class SubProcessTaskTest : public ::testing::Test {
  protected:
   class SubProcessContext {
    public:
-    SubProcessContext(string trace_id,
+    SubProcessContext(std::string trace_id,
                       const char* prog,
                       const char* const* argv,
-                      const std::vector<string>* env)
+                      const std::vector<std::string>* env)
         : trace_id_(std::move(trace_id)),
           prog_(prog),
           argv_(argv),
@@ -59,10 +57,10 @@ class SubProcessTaskTest : public ::testing::Test {
           done_(false) {}
     ~SubProcessContext() {}
 
-    const string trace_id_;
+    const std::string trace_id_;
     const char* prog_;
     const char* const* argv_;
-    const std::vector<string>* env_;
+    const std::vector<std::string>* env_;
     SubProcessTask* s_;
     absl::Notification started_;
     int status_;
@@ -126,14 +124,14 @@ class SubProcessTaskTest : public ::testing::Test {
 
   void TestReadCommandOutput(bool* done) {
     EXPECT_FALSE(*done);
-    std::vector<string> argv;
+    std::vector<std::string> argv;
 #ifdef _WIN32
     argv.push_back("cmd");
     argv.push_back("/c");
 #endif
     argv.push_back("echo");
     argv.push_back("hello");
-    std::vector<string> env;
+    std::vector<std::string> env;
 #ifdef _WIN32
     // TODO: remove env after I revise redirector_win.cc.
     env.push_back("PATHEXT=" + GetEnv("PATHEXT"));
@@ -164,7 +162,7 @@ class SubProcessTaskTest : public ::testing::Test {
         "cmd";
 #endif
 
-    std::vector<string> env;
+    std::vector<std::string> env;
     SubProcessContext c("true", kTruePath, argv, &env);
     EXPECT_NE(0, c.status_);
     wm_->RunClosure(FROM_HERE,
@@ -189,7 +187,7 @@ class SubProcessTaskTest : public ::testing::Test {
         "cmd";
 #endif
 
-    std::vector<string> env;
+    std::vector<std::string> env;
     SubProcessContext c("false", kFalsePath, argv, &env);
     EXPECT_NE(0, c.status_);
     wm_->RunClosure(FROM_HERE,
@@ -200,7 +198,7 @@ class SubProcessTaskTest : public ::testing::Test {
   }
 
   void RunTestSubProcessKillSleep() {
-    std::vector<string> env;
+    std::vector<std::string> env;
 #ifdef _WIN32
     const char* const argv[] = {"cmd", "/c", "timeout", "/t", "1", "/nobreak",
                                 ">NUL", nullptr};
@@ -265,9 +263,9 @@ class SubProcessTaskTest : public ::testing::Test {
     ASSERT_EQ(file_content.size(), written);
     tmp_source_file.Close();
 
-    string clang_path = GetClangPath();
+    std::string clang_path = GetClangPath();
     ASSERT_TRUE(!clang_path.empty());
-    string clang_name = string(file::Basename(clang_path));
+    std::string clang_name = std::string(file::Basename(clang_path));
     const char* const argv[] = {clang_name.c_str(), "-c",
                                 tmp_source_file.filename().c_str(), nullptr};
 
@@ -278,10 +276,10 @@ class SubProcessTaskTest : public ::testing::Test {
     // temporary directory to use for dumping debug files: $TMPDIR, $TMP,
     // $TEMP, $TEMPDIR.
     ScopedTmpDir tmp_clang_dump_dir("clang_dump_dir");
-    std::vector<string> env = {"TMPDIR=" + tmp_clang_dump_dir.dirname(),
-                               "TMP=" + tmp_clang_dump_dir.dirname(),
-                               "TEMP=" + tmp_clang_dump_dir.dirname(),
-                               "TEMPDIR=" + tmp_clang_dump_dir.dirname()};
+    std::vector<std::string> env = {"TMPDIR=" + tmp_clang_dump_dir.dirname(),
+                                    "TMP=" + tmp_clang_dump_dir.dirname(),
+                                    "TEMP=" + tmp_clang_dump_dir.dirname(),
+                                    "TEMPDIR=" + tmp_clang_dump_dir.dirname()};
 
     SubProcessContext c("clang", clang_path.c_str(), argv, &env);
     EXPECT_NE(0, c.status_);

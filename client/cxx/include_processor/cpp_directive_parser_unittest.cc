@@ -82,7 +82,7 @@ TEST_F(CppDirectiveParserTest, Parse) {
 
   // By multiple line (LF case)
   {
-    string s;
+    std::string s;
     for (const auto& tc : testcases) {
       s += tc.text;
       s += "\n";
@@ -98,7 +98,7 @@ TEST_F(CppDirectiveParserTest, Parse) {
 
   // By multiple line (CRLF case)
   {
-    string s;
+    std::string s;
     for (const auto& tc : testcases) {
       s += tc.text;
       s += "\r\n";

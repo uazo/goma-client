@@ -14,14 +14,12 @@
 #include "mypath.h"
 #include "ioutil.h"
 
-using std::string;
-
 namespace {
 
 void ProtobufLogHandler(google::protobuf::LogLevel level,
                         const char* filename,
                         int line,
-                        const string& message) {
+                        const std::string& message) {
   // Convert protobuf log level to glog log severity.
   int severity = google::GLOG_ERROR;
   switch (level) {
@@ -64,7 +62,7 @@ void Init(int argc, char* argv[], const char* envp[]) {
     g_auto_lock_stats = new AutoLockStats;
 #endif
 
-  const string username = GetUsernameNoEnv();
+  const std::string username = GetUsernameNoEnv();
   if (username != GetUsernameEnv()) {
     LOG(ERROR) << "username mismatch: " << username
                << " env:" << GetUsernameEnv();

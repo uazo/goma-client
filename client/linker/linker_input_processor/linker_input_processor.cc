@@ -85,18 +85,15 @@ const int kMaxRecursion = 10;
 
 namespace devtools_goma {
 
-LinkerInputProcessor::LinkerInputProcessor(const std::vector<string>& args,
-                                           const string& current_directory)
+LinkerInputProcessor::LinkerInputProcessor(const std::vector<std::string>& args,
+                                           const std::string& current_directory)
     : flags_(CompilerFlagsParser::New(args, current_directory)),
       library_path_resolver_(new LibraryPathResolver(current_directory)),
       framework_path_resolver_(new FrameworkPathResolver(current_directory)) {}
 
-LinkerInputProcessor::LinkerInputProcessor(
-    const string& current_directory)
+LinkerInputProcessor::LinkerInputProcessor(const std::string& current_directory)
     : library_path_resolver_(new LibraryPathResolver(current_directory)),
-      framework_path_resolver_(new FrameworkPathResolver(current_directory)) {
-}
-
+      framework_path_resolver_(new FrameworkPathResolver(current_directory)) {}
 
 LinkerInputProcessor::~LinkerInputProcessor() {
 }
@@ -104,18 +101,18 @@ LinkerInputProcessor::~LinkerInputProcessor() {
 bool LinkerInputProcessor::GetInputFilesAndLibraryPath(
     const CompilerInfo& /* compiler_info */,
     const CommandSpec& command_spec,
-    std::set<string>* input_files,
-    std::vector<string>* library_paths) {
+    std::set<std::string>* input_files,
+    std::vector<std::string>* library_paths) {
   if (flags_.get() == nullptr) {
     return false;
   }
-  std::vector<string> driver_args;
-  std::vector<string> driver_envs;
+  std::vector<std::string> driver_args;
+  std::vector<std::string> driver_envs;
   if (!CaptureDriverCommandLine(command_spec, &driver_args, &driver_envs)) {
     return false;
   }
   VLOG(1) << "driver command line:" << driver_args;
-  std::vector<string> input_paths;
+  std::vector<std::string> input_paths;
   ParseDriverCommandLine(driver_args, &input_paths);
   VLOG(2) << "input paths:" << input_paths;
   VLOG(1) << "driver environment:" << driver_envs;
@@ -128,7 +125,7 @@ bool LinkerInputProcessor::GetInputFilesAndLibraryPath(
   for (size_t i = 0; i < input_paths.size(); ++i) {
     if (input_paths[i].empty())
       continue;
-    const string filename =
+    const std::string filename =
         file::JoinPathRespectAbsolute(flags_->cwd(), input_paths[i]);
     VLOG(1) << "Input: " << filename;
     if (!input_files->insert(filename).second) {
@@ -164,19 +161,19 @@ bool LinkerInputProcessor::GetInputFilesAndLibraryPath(
 
 bool LinkerInputProcessor::CaptureDriverCommandLine(
     const CommandSpec& command_spec,
-    std::vector<string>* driver_args,
-    std::vector<string>* driver_envs) {
+    std::vector<std::string>* driver_args,
+    std::vector<std::string>* driver_envs) {
   CHECK(flags_.get());
-  std::vector<string> dump_args;
+  std::vector<std::string> dump_args;
   dump_args.push_back(command_spec.local_compiler_path());
   dump_args.push_back("-###");
   for (size_t i = 1; i < flags_->args().size(); ++i) {
     dump_args.push_back(flags_->args()[i]);
   }
-  std::vector<string> env;
+  std::vector<std::string> env;
   env.push_back("LC_ALL=C");
   int32_t status = -1;
-  const string dump_output =
+  const std::string dump_output =
       ReadCommandOutput(dump_args[0], dump_args, env, flags_->cwd(),
                         MERGE_STDOUT_STDERR, &status);
   if (status != 0) {
@@ -192,16 +189,16 @@ bool LinkerInputProcessor::CaptureDriverCommandLine(
 
 /* static */
 bool LinkerInputProcessor::ParseDumpOutput(
-    const string& dump_output,
-    std::vector<string>* driver_args,
-    std::vector<string>* driver_envs) {
+    const std::string& dump_output,
+    std::vector<std::string>* driver_args,
+    std::vector<std::string>* driver_envs) {
   // dump_output (gcc -### output) will be
   // gcc's specs, important envs (COMPILER_PATH, LIBRARY_PATH, etc) and
   // command to be executed, starting SPACE, following command arguments
   // in double quotes.
   absl::string_view buf(dump_output);
   size_t pos;
-  std::vector<string> envs;
+  std::vector<std::string> envs;
 
   do {
     pos = buf.find_first_of("\n");
@@ -211,7 +208,7 @@ bool LinkerInputProcessor::ParseDumpOutput(
 
     if (absl::StartsWith(line, "LIBRARY_PATH=") ||
         absl::StartsWith(line, "COMPILER_PATH=")) {
-      driver_envs->push_back(string(line));
+      driver_envs->push_back(std::string(line));
     }
     if (line[0] == ' ') {
       driver_args->clear();
@@ -226,8 +223,8 @@ bool LinkerInputProcessor::ParseDumpOutput(
 }
 
 void LinkerInputProcessor::ParseDriverCommandLine(
-    const std::vector<string>& args,
-    std::vector<string>* input_paths) {
+    const std::vector<std::string>& args,
+    std::vector<std::string>* input_paths) {
   // TODO: make sure that changing file order is acceptable.
   // Before: as-is except -l options resolved by latter -L options.
   // Now: files without flags -> files with flags -> -l options ->
@@ -251,11 +248,11 @@ void LinkerInputProcessor::ParseDriverCommandLine(
   // For input files.
   bool static_link = false;
   bool no_default_searchpath = false;
-  std::vector<string> searchdirs;
-  std::vector<string> lvalues;
-  std::vector<string> frameworkpaths;
-  std::vector<string> frameworks;
-  std::vector<string> files_to_find;
+  std::vector<std::string> searchdirs;
+  std::vector<std::string> lvalues;
+  std::vector<std::string> frameworkpaths;
+  std::vector<std::string> frameworks;
+  std::vector<std::string> files_to_find;
   driver_flag.AddBoolFlag("static")->SetSeenOutput(&static_link);
   driver_flag.AddFlag("L")->SetValueOutputWithCallback(nullptr, &searchdirs);
   driver_flag.AddFlag("l")->SetValueOutputWithCallback(nullptr, &lvalues);
@@ -291,7 +288,7 @@ void LinkerInputProcessor::ParseDriverCommandLine(
     library_path_resolver_->PreventSharedLibrary();
 
   for (const auto& file : files_to_find) {
-    string path = library_path_resolver_->FindByFullname(file);
+    std::string path = library_path_resolver_->FindByFullname(file);
     if (path.empty()) {
       LOG(WARNING) << "file not found:" << file;
       continue;
@@ -300,7 +297,7 @@ void LinkerInputProcessor::ParseDriverCommandLine(
   }
 
   for (const auto& lvalue : lvalues) {
-    string path = library_path_resolver_->ExpandLibraryPath(lvalue);
+    std::string path = library_path_resolver_->ExpandLibraryPath(lvalue);
     if (path.empty()) {
       LOG(WARNING) << "library not found -l" << lvalue;
       continue;
@@ -308,7 +305,7 @@ void LinkerInputProcessor::ParseDriverCommandLine(
     input_paths->push_back(path);
   }
   for (const auto& framework : frameworks) {
-    string path = framework_path_resolver_->ExpandFrameworkPath(framework);
+    std::string path = framework_path_resolver_->ExpandFrameworkPath(framework);
     if (path.empty()) {
       LOG(WARNING) << "framework not found -framework " << framework;
       continue;
@@ -318,8 +315,8 @@ void LinkerInputProcessor::ParseDriverCommandLine(
 }
 
 void LinkerInputProcessor::GetLibraryPath(
-    const std::vector<string>& envs,
-    std::vector<string>* library_paths) {
+    const std::vector<std::string>& envs,
+    std::vector<std::string>* library_paths) {
   absl::string_view libpath_string;
   static const char* kPathPrefix = "LIBRARY_PATH=";
   for (const auto& env : envs) {
@@ -332,7 +329,7 @@ void LinkerInputProcessor::GetLibraryPath(
 
   // Use -L if LIBRARY_PATH env. not found. (for clang)
   if (libpath_string.empty()) {
-    const std::vector<string>& searchdirs =
+    const std::vector<std::string>& searchdirs =
         library_path_resolver_->searchdirs();
     library_paths->assign(searchdirs.begin(), searchdirs.end());
     return;
@@ -340,7 +337,7 @@ void LinkerInputProcessor::GetLibraryPath(
 
   // Normalize LIBRARY_PATH and append to |library_paths|.
   size_t pos;
-  const string& cwd = library_path_resolver_->cwd();
+  const std::string& cwd = library_path_resolver_->cwd();
   do {
     pos = libpath_string.find_first_of(":");
     absl::string_view entry = libpath_string.substr(0, pos);
@@ -350,14 +347,14 @@ void LinkerInputProcessor::GetLibraryPath(
     }
     // Consider relative path, which might not be needed.
     library_paths->push_back(
-        file::JoinPathRespectAbsolute(cwd, string(entry)));
+        file::JoinPathRespectAbsolute(cwd, std::string(entry)));
     libpath_string.remove_prefix(pos + 1);
   } while (pos != absl::string_view::npos);
 }
 
 /* static */
 LinkerInputProcessor::FileType LinkerInputProcessor::CheckFileType(
-    const string& path) {
+    const std::string& path) {
   ScopedFd fd(ScopedFd::OpenForRead(path));
   if (!fd.valid())
     return BAD_FILE;
@@ -396,19 +393,20 @@ LinkerInputProcessor::FileType LinkerInputProcessor::CheckFileType(
 
 /* static */
 void LinkerInputProcessor::ParseThinArchive(
-    const string& filename, std::set<string>* input_files) {
+    const std::string& filename,
+    std::set<std::string>* input_files) {
   VLOG(1) << "thin archive:" << filename;
   ArFile ar(filename);
   DCHECK(ar.Exists()) << filename;
   DCHECK(ar.IsThinArchive()) << filename;
   size_t pos = filename.rfind(SEP);
-  DCHECK_NE(string::npos, pos) << filename;
-  const string ar_dir = filename.substr(0, pos);
+  DCHECK_NE(std::string::npos, pos) << filename;
+  const std::string ar_dir = filename.substr(0, pos);
   VLOG(1) << "ar_dir:" << ar_dir;
   std::vector<ArFile::EntryHeader> entries;
   ar.GetEntries(&entries);
   for (size_t i = 0; i < entries.size(); ++i) {
-    const string entry_name = file::JoinPath(ar_dir, entries[i].ar_name);
+    const std::string entry_name = file::JoinPath(ar_dir, entries[i].ar_name);
     VLOG(1) << "entry[" << i << "] " << entries[i].ar_name
             << " " << entry_name;
     input_files->insert(entry_name);
@@ -416,7 +414,8 @@ void LinkerInputProcessor::ParseThinArchive(
 }
 
 void LinkerInputProcessor::TryParseLinkerScript(
-    const string& filename, std::vector<string>* input_paths) {
+    const std::string& filename,
+    std::vector<std::string>* input_paths) {
   VLOG(1) << "Try linker script:" << filename;
   LinkerScriptParser parser(
       Content::CreateFromFile(filename),
@@ -439,17 +438,17 @@ void LinkerInputProcessor::TryParseLinkerScript(
 }
 
 void LinkerInputProcessor::TryParseElfNeeded(
-    const string& filename,
-    std::vector<string>* input_paths) {
+    const std::string& filename,
+    std::vector<std::string>* input_paths) {
 #ifdef __linux__
   std::unique_ptr<ElfParser> elf(ElfParser::NewElfParser(filename));
   if (elf == nullptr || !elf->valid())
     return;
-  std::vector<string> needed;
+  std::vector<std::string> needed;
   if (!elf->ReadDynamicNeeded(&needed))
     return;
   for (const auto& path : needed) {
-    string pathname = library_path_resolver_->FindBySoname(path);
+    std::string pathname = library_path_resolver_->FindBySoname(path);
     if (pathname.empty()) {
       LOG(WARNING) << "so not found:" << path << " needed by " << filename;
       continue;
@@ -467,9 +466,9 @@ void LinkerInputProcessor::TryParseElfNeeded(
 // I think two shared object types has significant difference.
 // Elf does not need to be investigated recursively, but MachO dylib does.
 void LinkerInputProcessor::TryParseMachONeeded(
-    const string& filename,
+    const std::string& filename,
     const int max_recursion,
-    std::set<string>* input_files) {
+    std::set<std::string>* input_files) {
   MachO macho(filename);
   if (!macho.valid())
     return;
@@ -479,7 +478,7 @@ void LinkerInputProcessor::TryParseMachONeeded(
     return;
 
   for (size_t i = 0; i < needed.size(); ++i) {
-    string dylib_name = needed[i].name;
+    std::string dylib_name = needed[i].name;
 
     if (dylib_name[0] == '/')
       dylib_name = file::JoinPath(library_path_resolver_->syslibroot(),
@@ -487,8 +486,8 @@ void LinkerInputProcessor::TryParseMachONeeded(
 
     // If not found with the absolute path, should be searched. (unlikely)
     if (dylib_name[0] != '/' || (access(dylib_name.c_str(), R_OK) != 0)) {
-      const string path_name = library_path_resolver_->FindBySoname(
-          string(file::Basename(dylib_name)));
+      const std::string path_name = library_path_resolver_->FindBySoname(
+          std::string(file::Basename(dylib_name)));
       if (path_name.empty()) {
         LOG(WARNING) << "dylib not found:" << dylib_name
                      << " needed by " << filename;

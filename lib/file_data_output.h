@@ -14,8 +14,6 @@
 
 namespace devtools_goma {
 
-using std::string;
-
 // TODO: provide Input too.
 // An abstract interface of output destination for receiving output file data.
 class FileDataOutput {
@@ -25,15 +23,16 @@ class FileDataOutput {
   // IsValid returns true if this output is valid to use.
   virtual bool IsValid() const = 0;
   // WriteAt writes content at offset in output.
-  virtual bool WriteAt(off_t offset, const string& content) = 0;
+  virtual bool WriteAt(off_t offset, const std::string& content) = 0;
   // Close closes the output.
   virtual bool Close() = 0;
   // ToString returns string representation of this output. e.g. filename.
-  virtual string ToString() const = 0;
+  virtual std::string ToString() const = 0;
 
   // NewFileOutput returns Output for filename.
-  static std::unique_ptr<FileDataOutput> NewFileOutput(const string& filename,
-                                                       int mode);
+  static std::unique_ptr<FileDataOutput> NewFileOutput(
+      const std::string& filename,
+      int mode);
 
   // NewStringOutput returns Output into buf.
   // It doesn't take ownership of buf.
@@ -43,8 +42,9 @@ class FileDataOutput {
   // need to worry about this.
   // If you care, pass empty buf (StringOutput will
   // allocate enough space), or zero-cleared preallocated buf.
-  static std::unique_ptr<FileDataOutput> NewStringOutput(const string& name,
-                                                         string* buf);
+  static std::unique_ptr<FileDataOutput> NewStringOutput(
+      const std::string& name,
+      std::string* buf);
 
  private:
   DISALLOW_COPY_AND_ASSIGN(FileDataOutput);

@@ -13,8 +13,6 @@
 #include "basictypes.h"
 #include "content_cursor.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // Linker script parser for Goma.
@@ -29,33 +27,25 @@ class LinkerScriptParser {
  public:
   // Constructs a parser to read content.
   LinkerScriptParser(std::unique_ptr<Content> content,
-                     string current_directory,
-                     std::vector<string> searchdirs,
-                     string sysroot);
+                     std::string current_directory,
+                     std::vector<std::string> searchdirs,
+                     std::string sysroot);
   ~LinkerScriptParser();
 
-  const std::vector<string>& searchdirs() const {
-    return searchdirs_;
-  }
+  const std::vector<std::string>& searchdirs() const { return searchdirs_; }
 
   bool Parse();
 
-  const string& startup() const {
-    return startup_;
-  }
-  const std::vector<string>& inputs() const {
-    return inputs_;
-  }
-  const string& output() const {
-    return output_;
-  }
+  const std::string& startup() const { return startup_; }
+  const std::vector<std::string>& inputs() const { return inputs_; }
+  const std::string& output() const { return output_; }
 
  private:
-  bool ParseUntil(const string& term_token);
-  bool NextToken(string* token);
-  bool GetToken(const string& token);
+  bool ParseUntil(const std::string& term_token);
+  bool NextToken(std::string* token);
+  bool GetToken(const std::string& token);
   bool ProcessFileList(bool accept_as_needed);
-  bool ProcessFile(string* filename);
+  bool ProcessFile(std::string* filename);
   bool ProcessInclude();
   bool ProcessInput();
   bool ProcessGroup();
@@ -63,16 +53,16 @@ class LinkerScriptParser {
   bool ProcessOutput();
   bool ProcessSearchDir();
   bool ProcessStartup();
-  bool FindFile(const string& filename, string* include_file);
+  bool FindFile(const std::string& filename, std::string* include_file);
 
   std::unique_ptr<ContentCursor> content_;
-  const string current_directory_;
-  std::vector<string> searchdirs_;
-  const string sysroot_;
+  const std::string current_directory_;
+  std::vector<std::string> searchdirs_;
+  const std::string sysroot_;
 
-  string startup_;
-  std::vector<string> inputs_;
-  string output_;
+  std::string startup_;
+  std::vector<std::string> inputs_;
+  std::string output_;
 
   // provided for testing.
   static const char* fakeroot_;

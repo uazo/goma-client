@@ -13,10 +13,8 @@
 #include "absl/strings/strip.h"
 #include "base/filesystem.h"
 
-using std::string;
-
 // convert foo.fake -> foo.out
-bool ToOutputName(absl::string_view input_path, string* output_path) {
+bool ToOutputName(absl::string_view input_path, std::string* output_path) {
   if (!absl::ConsumeSuffix(&input_path, ".fake")) {
     return false;
   }
@@ -34,7 +32,7 @@ int main(int argc, char* argv[]) {
 
   // converts *.fake to *.out.
   for (int i = 1; i < argc; ++i) {
-    string output_path;
+    std::string output_path;
     if (!ToOutputName(argv[i], &output_path)) {
       std::cerr << "failed to convert *.fake to *.out." << std::endl
                 << "input filename must have extension 'fake'." << std::endl

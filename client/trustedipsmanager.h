@@ -17,8 +17,6 @@
 
 #include "basictypes.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class TrustedIpsManager {
@@ -29,21 +27,21 @@ class TrustedIpsManager {
   // Adds "netspec" as trusted network.
   // "netspec" is dotted-decimal IPv4 address with or without netmask length.
   // e.g. "127.0.0.1", "192.168.1.1/24".
-  void AddAllow(const string& netspec);
+  void AddAllow(const std::string& netspec);
 
   bool IsTrustedClient(const struct in_addr& addr) const;
 
-  string DebugString() const;
+  std::string DebugString() const;
 
  private:
   class NetSpec {
    public:
-    explicit NetSpec(const string& netspec);
+    explicit NetSpec(const std::string& netspec);
     ~NetSpec();
 
     bool Match(const struct in_addr& addr) const;
 
-    string DebugString() const;
+    std::string DebugString() const;
 
    private:
     struct in_addr in_addr_;

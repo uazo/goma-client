@@ -19,21 +19,20 @@
 #endif  // _WIN32
 
 using google::GetExistingTempDirectories;
-using std::string;
 
 namespace devtools_goma {
 
 class JavacFlagsTest : public testing::Test {
  public:
   void SetUp() override {
-    std::vector<string> tmp_dirs;
+    std::vector<std::string> tmp_dirs;
     GetExistingTempDirectories(&tmp_dirs);
     ASSERT_GT(tmp_dirs.size(), 0);
 
 #ifndef _WIN32
-    string pid = std::to_string(getpid());
+    std::string pid = std::to_string(getpid());
 #else
-    string pid = std::to_string(GetCurrentProcessId());
+    std::string pid = std::to_string(GetCurrentProcessId());
 #endif
     tmp_dir_ = file::JoinPath(
         tmp_dirs[0], absl::StrCat("compiler_flags_unittest_", pid));
@@ -49,11 +48,11 @@ class JavacFlagsTest : public testing::Test {
   }
 
  protected:
-  string tmp_dir_;
+  std::string tmp_dir_;
 };
 
 TEST_F(JavacFlagsTest, Basic) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("javac");
   args.push_back("-J-Xmx512M");
   args.push_back("-target");
@@ -78,12 +77,8 @@ TEST_F(JavacFlagsTest, Basic) {
   ASSERT_EQ(2U, flags->input_filenames().size());
   EXPECT_EQ("Hello.java", flags->input_filenames()[0]);
   EXPECT_EQ("World.java", flags->input_filenames()[1]);
-  std::vector<string> expected_jar_files = {
-    "boot1.jar",
-    "boot2.jar",
-    "a.jar",
-    "b.jar",
-    "c.jar",
+  std::vector<std::string> expected_jar_files = {
+      "boot1.jar", "boot2.jar", "a.jar", "b.jar", "c.jar",
   };
   EXPECT_EQ(expected_jar_files, javac_flags->jar_files());
   EXPECT_EQ(0U, flags->output_files().size());
@@ -93,9 +88,9 @@ TEST_F(JavacFlagsTest, Basic) {
 }
 
 TEST_F(JavacFlagsTest, AtFile) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("javac");
-  const string& at_file = file::JoinPath(tmp_dir_, "at_file");
+  const std::string& at_file = file::JoinPath(tmp_dir_, "at_file");
   args.push_back("@" + at_file);
 
   // The at-file doesn't exist.
@@ -130,7 +125,7 @@ TEST_F(JavacFlagsTest, AtFile) {
 }
 
 TEST_F(JavacFlagsTest, NoDestination) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("javac");
   args.push_back("Hello.java");
   args.push_back("World.java");
@@ -147,13 +142,15 @@ TEST_F(JavacFlagsTest, NoDestination) {
 }
 
 TEST_F(JavacFlagsTest, Processor) {
-  const std::vector<string> args {
-    "javac", "-processorpath", "classes.jar",
-    "-processor", "dagger.internal.codegen.ComponentProcessor",
-    "All.java"
-  };
-  const std::vector<string> expected_processors {
-    "dagger.internal.codegen.ComponentProcessor",
+  const std::vector<std::string> args{
+      "javac",
+      "-processorpath",
+      "classes.jar",
+      "-processor",
+      "dagger.internal.codegen.ComponentProcessor",
+      "All.java"};
+  const std::vector<std::string> expected_processors{
+      "dagger.internal.codegen.ComponentProcessor",
   };
 
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(args, "."));
@@ -165,15 +162,18 @@ TEST_F(JavacFlagsTest, Processor) {
 }
 
 TEST_F(JavacFlagsTest, MultipleProcessorArgs) {
-  const std::vector<string> args {
-    "javac", "-processorpath", "classes.jar",
-    "-processor", "dagger.internal.codegen.ComponentProcessor",
-    "-processor", "com.google.auto.value.processor.AutoValueProcessor",
-    "All.java"
-  };
-  const std::vector<string> expected_processors {
-    "dagger.internal.codegen.ComponentProcessor",
-    "com.google.auto.value.processor.AutoValueProcessor",
+  const std::vector<std::string> args{
+      "javac",
+      "-processorpath",
+      "classes.jar",
+      "-processor",
+      "dagger.internal.codegen.ComponentProcessor",
+      "-processor",
+      "com.google.auto.value.processor.AutoValueProcessor",
+      "All.java"};
+  const std::vector<std::string> expected_processors{
+      "dagger.internal.codegen.ComponentProcessor",
+      "com.google.auto.value.processor.AutoValueProcessor",
   };
 
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(args, "."));
@@ -185,16 +185,17 @@ TEST_F(JavacFlagsTest, MultipleProcessorArgs) {
 }
 
 TEST_F(JavacFlagsTest, MultipleProcessorsInArg) {
-  const std::vector<string> args {
-    "javac", "-processorpath", "classes.jar",
-    "-processor",
-    "dagger.internal.codegen.ComponentProcessor,"
-        "com.google.auto.value.processor.AutoValueProcessor",
-    "All.java"
-  };
-  const std::vector<string> expected_processors {
-    "dagger.internal.codegen.ComponentProcessor",
-    "com.google.auto.value.processor.AutoValueProcessor",
+  const std::vector<std::string> args{
+      "javac",
+      "-processorpath",
+      "classes.jar",
+      "-processor",
+      "dagger.internal.codegen.ComponentProcessor,"
+      "com.google.auto.value.processor.AutoValueProcessor",
+      "All.java"};
+  const std::vector<std::string> expected_processors{
+      "dagger.internal.codegen.ComponentProcessor",
+      "com.google.auto.value.processor.AutoValueProcessor",
   };
 
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(args, "."));
@@ -206,26 +207,27 @@ TEST_F(JavacFlagsTest, MultipleProcessorsInArg) {
 }
 
 TEST_F(JavacFlagsTest, ParseJavaClassPaths) {
-  std::vector<string> input = {
-    "a.jar:b.zip:c.class",
-    "d.jar",
-    "e",
+  std::vector<std::string> input = {
+      "a.jar:b.zip:c.class",
+      "d.jar",
+      "e",
   };
-  std::vector<string> output;
+  std::vector<std::string> output;
   ParseJavaClassPaths(input, &output);
-  std::vector<string> expected = {
-    "a.jar", "b.zip", "d.jar",
+  std::vector<std::string> expected = {
+      "a.jar",
+      "b.zip",
+      "d.jar",
   };
   EXPECT_EQ(expected, output);
 }
 
 TEST_F(JavacFlagsTest, UnknownFlags) {
-  const std::vector<string> args {
-    "javac", "-unknown1", "--unknown2",
-    "All.java"
-  };
-  const std::vector<string> expected {
-    "-unknown1", "--unknown2",
+  const std::vector<std::string> args{"javac", "-unknown1", "--unknown2",
+                                      "All.java"};
+  const std::vector<std::string> expected{
+      "-unknown1",
+      "--unknown2",
   };
 
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(args, "."));
@@ -235,14 +237,14 @@ TEST_F(JavacFlagsTest, UnknownFlags) {
 class JavaFlagsTest : public testing::Test {
  public:
   void SetUp() override {
-    std::vector<string> tmp_dirs;
+    std::vector<std::string> tmp_dirs;
     GetExistingTempDirectories(&tmp_dirs);
     CHECK_GT(tmp_dirs.size(), 0);
 
 #ifndef _WIN32
-    string pid = std::to_string(getpid());
+    std::string pid = std::to_string(getpid());
 #else
-    string pid = std::to_string(GetCurrentProcessId());
+    std::string pid = std::to_string(GetCurrentProcessId());
 #endif
     tmp_dir_ = file::JoinPath(
         tmp_dirs[0], absl::StrCat("compiler_flags_unittest_", pid));
@@ -258,29 +260,31 @@ class JavaFlagsTest : public testing::Test {
   }
 
  protected:
-  string tmp_dir_;
+  std::string tmp_dir_;
 };
 
 TEST_F(JavaFlagsTest, Basic) {
-  std::vector<string> args = {
-    "prebuilts/jdk/jdk8/linux-x86/bin/java",
-    "-Djdk.internal.lambda.dumpProxyClasses="
-        "JAVA_LIBRARIES/apache-xml_intermediates/desugar_dumped_classes",
-    "-jar",
-    "out/host/linux-x86/framework/desugar.jar",
-    "--classpath_entry",
-    "JAVA_LIBRARIES/core-libart_intermediates/classes-header.jar",
-    "--classpath_entry",
-    "JAVA_LIBRARIES/core-oj_intermediates/classes-header.jar",
-    "--min_sdk_version",
-    "10000",
-    "--allow_empty_bootclasspath",
-    "-i",
-    "JAVA_LIBRARIES/apache-xml_intermediates/classes.jar",
-    "-o",
-    "JAVA_LIBRARIES/apache-xml_intermediates/classes-desugar.jar.tmp",
-    "-cp","/tmp:a.jar:b.jar",
-    "-classpath", "c.jar",
+  std::vector<std::string> args = {
+      "prebuilts/jdk/jdk8/linux-x86/bin/java",
+      "-Djdk.internal.lambda.dumpProxyClasses="
+      "JAVA_LIBRARIES/apache-xml_intermediates/desugar_dumped_classes",
+      "-jar",
+      "out/host/linux-x86/framework/desugar.jar",
+      "--classpath_entry",
+      "JAVA_LIBRARIES/core-libart_intermediates/classes-header.jar",
+      "--classpath_entry",
+      "JAVA_LIBRARIES/core-oj_intermediates/classes-header.jar",
+      "--min_sdk_version",
+      "10000",
+      "--allow_empty_bootclasspath",
+      "-i",
+      "JAVA_LIBRARIES/apache-xml_intermediates/classes.jar",
+      "-o",
+      "JAVA_LIBRARIES/apache-xml_intermediates/classes-desugar.jar.tmp",
+      "-cp",
+      "/tmp:a.jar:b.jar",
+      "-classpath",
+      "c.jar",
   };
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(args, "."));
   EXPECT_TRUE(flags->is_successful());
@@ -292,10 +296,10 @@ TEST_F(JavaFlagsTest, Basic) {
   EXPECT_EQ(0U, flags->output_files().size());
 
   JavaFlags* java_flags = static_cast<JavaFlags*>(flags.get());
-  std::vector<string> expected_jar_files = {
-    "a.jar",
-    "b.jar",
-    "c.jar",
+  std::vector<std::string> expected_jar_files = {
+      "a.jar",
+      "b.jar",
+      "c.jar",
   };
   EXPECT_EQ(expected_jar_files, java_flags->jar_files());
 }

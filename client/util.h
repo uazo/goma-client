@@ -27,8 +27,6 @@
 #include "absl/types/optional.h"
 #include "google/protobuf/repeated_field.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // Options to be used with ReadCommandOutput to specify which command output
@@ -38,12 +36,13 @@ enum CommandOutputOption {
   STDOUT_ONLY,
 };
 
-typedef string (*ReadCommandOutputFunc)(const string& prog,
-                                        const std::vector<string>& argv,
-                                        const std::vector<string>& env,
-                                        const string& cwd,
-                                        CommandOutputOption option,
-                                        int32_t* status);
+typedef std::string (*ReadCommandOutputFunc)(
+    const std::string& prog,
+    const std::vector<std::string>& argv,
+    const std::vector<std::string>& env,
+    const std::string& cwd,
+    CommandOutputOption option,
+    int32_t* status);
 
 // Installs new ReadCommandOutput function.
 // ReadCommandOutput function should be installed before calling it.
@@ -53,29 +52,33 @@ void InstallReadCommandOutputFunc(ReadCommandOutputFunc func);
 // If exit status of the command is not zero and |status| == NULL,
 // then fatal error.
 // Note: You MUST call InstallReadCommandOuptutFunc beforehand.
-string ReadCommandOutput(
-    const string& prog, const std::vector<string>& argv,
-    const std::vector<string>& env,
-    const string& cwd, CommandOutputOption option, int32_t* status);
+std::string ReadCommandOutput(const std::string& prog,
+                              const std::vector<std::string>& argv,
+                              const std::vector<std::string>& env,
+                              const std::string& cwd,
+                              CommandOutputOption option,
+                              int32_t* status);
 
 // Platform independent getenv.
 // Note: in chromium/win, gomacc can only get environments that was
 // extracted by build/toolchain/win/setup_toolchain.py.
-string GetEnv(const string& name);
+std::string GetEnv(const std::string& name);
 
 // Platform independent setenv.
-void SetEnv(const string& name, const string& value);
+void SetEnv(const std::string& name, const std::string& value);
 
 // Gets iterator to the environment variable entry.
 template <typename Iter>
-Iter GetEnvIterFromEnvIter(Iter env_begin, Iter env_end,
-                           const string& name, bool ignore_case) {
-  string key = name + "=";
+Iter GetEnvIterFromEnvIter(Iter env_begin,
+                           Iter env_end,
+                           const std::string& name,
+                           bool ignore_case) {
+  std::string key = name + "=";
   if (ignore_case)
     absl::AsciiStrToLower(&key);
 
   for (Iter i = env_begin; i != env_end; ++i) {
-    string token = i->substr(0, key.length());
+    std::string token = i->substr(0, key.length());
     if (ignore_case)
       absl::AsciiStrToLower(&token);
     if (token == key) {
@@ -88,8 +91,10 @@ Iter GetEnvIterFromEnvIter(Iter env_begin, Iter env_end,
 // Gets an environment variable between |envs_begin| and |envs_end|.
 // Do not care |name| case if |ignore_case| is true.
 template <typename Iter>
-string GetEnvFromEnvIter(Iter env_begin, Iter env_end,
-                         const string& name, bool ignore_case) {
+std::string GetEnvFromEnvIter(Iter env_begin,
+                              Iter env_end,
+                              const std::string& name,
+                              bool ignore_case) {
   Iter found = GetEnvIterFromEnvIter(env_begin, env_end, name, ignore_case);
   if (found == env_end)
     return "";
@@ -99,7 +104,9 @@ string GetEnvFromEnvIter(Iter env_begin, Iter env_end,
 // Gets an environment variable between |envs_begin| and |envs_end|.
 // It automatically ignores case according to the platform.
 template <typename Iter>
-string GetEnvFromEnvIter(Iter env_begin, Iter env_end, const string& name) {
+std::string GetEnvFromEnvIter(Iter env_begin,
+                              Iter env_end,
+                              const std::string& name) {
 #ifdef _WIN32
   return GetEnvFromEnvIter(env_begin, env_end, name, true);
 #else
@@ -111,8 +118,10 @@ string GetEnvFromEnvIter(Iter env_begin, Iter env_end, const string& name) {
 // between |envs_begin| and |envs_end|.
 // It automatically ignores case according to the platform.
 template <typename Iter>
-bool ReplaceEnvInEnvIter(Iter env_begin, Iter env_end,
-                         const string& name, const string& to_replace) {
+bool ReplaceEnvInEnvIter(Iter env_begin,
+                         Iter env_end,
+                         const std::string& name,
+                         const std::string& to_replace) {
 #ifdef _WIN32
   Iter found = GetEnvIterFromEnvIter(env_begin, env_end, name, true);
 #else
@@ -151,11 +160,11 @@ int64_t SumRepeatedInt32(
 // This function provides an wrapper to avoid this bug.
 // After clang-cl.exe or absl has been fixed, this function be removed.
 // See b/73514249 for more detail.
-template<typename SplitResult>
-std::vector<string> ToVector(SplitResult split_result) {
-  std::vector<string> result;
+template <typename SplitResult>
+std::vector<std::string> ToVector(SplitResult split_result) {
+  std::vector<std::string> result;
   for (auto&& s : split_result) {
-    result.push_back(string(s));
+    result.push_back(std::string(s));
   }
   return result;
 }

@@ -14,13 +14,13 @@
 
 namespace devtools_goma {
 
-void CompareFiles(const std::set<string>& expected_files,
-                  const std::set<string>& actual_files,
-                  const std::set<string>& allowed_extra_files) {
-  std::vector<string> matched_files;
-  std::vector<string> missing_files;
-  std::vector<string> extra_files;
-  std::vector<string> nonallowed_extra_files;
+void CompareFiles(const std::set<std::string>& expected_files,
+                  const std::set<std::string>& actual_files,
+                  const std::set<std::string>& allowed_extra_files) {
+  std::vector<std::string> matched_files;
+  std::vector<std::string> missing_files;
+  std::vector<std::string> extra_files;
+  std::vector<std::string> nonallowed_extra_files;
 
   std::set_intersection(expected_files.begin(), expected_files.end(),
                         actual_files.begin(), actual_files.end(),

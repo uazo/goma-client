@@ -17,12 +17,12 @@ class CxxCompilerInfoBuilderTest : public testing::Test {
  protected:
   void SetUp() override { CheckTempDirectory(GetGomaTmpDir()); }
 
-  void AppendPredefinedMacros(const string& macro, CompilerInfoData* cid) {
+  void AppendPredefinedMacros(const std::string& macro, CompilerInfoData* cid) {
     cid->mutable_cxx()->set_predefined_macros(cid->cxx().predefined_macros() +
                                               macro);
   }
 
-  string TestDir() {
+  std::string TestDir() {
     // This module is in out\Release.
     const std::string parent_dir = file::JoinPath(GetMyDirectory(), "..");
     const std::string top_dir = file::JoinPath(parent_dir, "..");
@@ -113,8 +113,8 @@ TEST_F(CxxCompilerInfoBuilderTest, ParseGetSubprogramsOutput) {
       "/bin/as\" \"-mfloat-abi=hard\" \"-o\" \"/dev/null\" "
       "\"/tmp/null-6cb82c.s\"\n";
 
-  std::vector<string> subprograms;
-  std::vector<string> expected = {
+  std::vector<std::string> subprograms;
+  std::vector<std::string> expected = {
       "/usr/lib/gcc/arm-linux-gnueabi/4.6/../../../../arm-linux-gnueabi/bin/as",
   };
   CxxCompilerInfoBuilder::ParseGetSubprogramsOutput(kClangOutput, &subprograms);
@@ -174,8 +174,8 @@ TEST_F(CxxCompilerInfoBuilderTest, ParseGetSubprogramsOutputWithAsSuffix) {
       "softfp\" \"-march=armv7-a\" \"-mfpu=neon\" \"-o\" \"/dev/null\" \"/tmp/"
       "null-c11ea4.s\"\n";
 
-  std::vector<string> subprograms;
-  std::vector<string> expected = {
+  std::vector<std::string> subprograms;
+  std::vector<std::string> expected = {
       "/mnt/scratch0/b_used/build/slave/android_clang_dbg_recipe/build/src/"
       "third_party/android_tools/ndk//toolchains/arm-linux-androideabi-4.8/"
       "prebuilt/linux-x86_64/bin/arm-linux-androideabi-as",
@@ -221,7 +221,7 @@ TEST_F(CxxCompilerInfoBuilderTest, ParseGetSubprogramsOutputShouldFailIfNoAs) {
       "\"-fcxx-exceptions\" \"-fexceptions\" \"-fdiagnostics-show-option\" "
       "\"-o\" \"/dev/null\" \"-x\" \"c++\" \"/dev/null\"\n";
 
-  std::vector<string> subprograms;
+  std::vector<std::string> subprograms;
   CxxCompilerInfoBuilder::ParseGetSubprogramsOutput(kClangOutput, &subprograms);
   EXPECT_TRUE(subprograms.empty());
 }
@@ -232,10 +232,10 @@ TEST_F(CxxCompilerInfoBuilderTest,
       " third_party/android_tools/ndk/toolchains/arm-linux-androideabi-4.9/"
       "prebuilt/linux-x86_64/bin/arm-linux-androideabi-objcopy "
       "--extract-dwo <file.o> <file.dwo>\n";
-  std::vector<string> subprograms;
+  std::vector<std::string> subprograms;
   CxxCompilerInfoBuilder::ParseGetSubprogramsOutput(kDummyClangOutput,
                                                     &subprograms);
-  std::vector<string> expected = {
+  std::vector<std::string> expected = {
       "third_party/android_tools/ndk/toolchains/arm-linux-androideabi-4.9/"
       "prebuilt/linux-x86_64/bin/arm-linux-androideabi-objcopy"};
   EXPECT_EQ(expected, subprograms);
@@ -249,10 +249,10 @@ TEST_F(CxxCompilerInfoBuilderTest, ParseGetSubprogramsOutputShouldDedupe) {
       " third_party/android_tools/ndk/toolchains/arm-linux-androideabi-4.9/"
       "prebuilt/linux-x86_64/bin/arm-linux-androideabi-objcopy "
       "/usr/bin/objcopy --strip-dwo <file.o>\n";
-  std::vector<string> subprograms;
+  std::vector<std::string> subprograms;
   CxxCompilerInfoBuilder::ParseGetSubprogramsOutput(kDummyClangOutput,
                                                     &subprograms);
-  std::vector<string> expected = {
+  std::vector<std::string> expected = {
       "third_party/android_tools/ndk/toolchains/arm-linux-androideabi-4.9/"
       "prebuilt/linux-x86_64/bin/arm-linux-androideabi-objcopy"};
   EXPECT_EQ(expected, subprograms);

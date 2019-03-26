@@ -30,28 +30,27 @@
 #endif  // _WIN32
 
 using google::GetExistingTempDirectories;
-using std::string;
 using absl::StrCat;
 
 namespace devtools_goma {
 
 class VCFlagsTest : public testing::Test {
  protected:
-  string ComposeOutputFilePath(const string& input,
-                               const string& output,
-                               const string& ext) {
+  std::string ComposeOutputFilePath(const std::string& input,
+                                    const std::string& output,
+                                    const std::string& ext) {
     return VCFlags::ComposeOutputFilePath(input, output, ext);
   }
 
   void SetUp() override {
-    std::vector<string> tmp_dirs;
+    std::vector<std::string> tmp_dirs;
     GetExistingTempDirectories(&tmp_dirs);
     CHECK_GT(tmp_dirs.size(), 0);
 
 #ifndef _WIN32
-    string pid = std::to_string(getpid());
+    std::string pid = std::to_string(getpid());
 #else
-    string pid = std::to_string(GetCurrentProcessId());
+    std::string pid = std::to_string(GetCurrentProcessId());
 #endif
     tmp_dir_ =
         file::JoinPath(tmp_dirs[0], StrCat("compiler_flags_unittest_", pid));
@@ -67,11 +66,11 @@ class VCFlagsTest : public testing::Test {
   }
 
  protected:
-  string tmp_dir_;
+  std::string tmp_dir_;
 };
 
 TEST_F(VCFlagsTest, Basic) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("/X");
   args.push_back("/c");
@@ -124,7 +123,7 @@ TEST_F(VCFlagsTest, Basic) {
   EXPECT_EQ("cl.exe", flags.compiler_name());
 
   ASSERT_EQ(5, static_cast<int>(flags.compiler_info_flags().size()));
-  const std::vector<string> expected_compiler_info_flags{
+  const std::vector<std::string> expected_compiler_info_flags{
       "/O1", "/MTd", "/permissive-", "/std:c++14", "/X",
   };
   EXPECT_EQ(expected_compiler_info_flags, flags.compiler_info_flags());
@@ -147,13 +146,13 @@ TEST_F(VCFlagsTest, Basic) {
   EXPECT_EQ("create_preprocess.h", flags.creating_pch());
   EXPECT_EQ("use_preprocess.h", flags.using_pch());
 
-  const std::vector<string>& output_files = flags.output_files();
+  const std::vector<std::string>& output_files = flags.output_files();
   ASSERT_EQ(1, static_cast<int>(output_files.size()));
   EXPECT_EQ("foobar.obj", output_files[0]);
 }
 
 TEST_F(VCFlagsTest, BasicMixedDash) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("/X");
   args.push_back("/c");
@@ -211,15 +210,15 @@ TEST_F(VCFlagsTest, BasicMixedDash) {
   EXPECT_FALSE(flags.require_mspdbserv());
   EXPECT_EQ(CompilerFlagType::Clexe, flags.type());
 
-  const std::vector<string>& output_files = flags.output_files();
+  const std::vector<std::string>& output_files = flags.output_files();
   ASSERT_EQ(1, static_cast<int>(output_files.size()));
   EXPECT_EQ("foobar.obj", output_files[0]);
 }
 
 TEST_F(VCFlagsTest, AtFile) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
-  const string& at_file = file::JoinPath(tmp_dir_, "at_file");
+  const std::string& at_file = file::JoinPath(tmp_dir_, "at_file");
   args.push_back(
       "@" + PathResolver::PlatformConvert(at_file, PathResolver::kWin32PathSep,
                                           PathResolver::kPreserveCase));
@@ -259,15 +258,15 @@ TEST_F(VCFlagsTest, AtFile) {
   VCFlags* vc_flags = static_cast<VCFlags*>(flags.get());
   EXPECT_FALSE(vc_flags->require_mspdbserv());
 
-  const std::vector<string>& output_files = flags->output_files();
+  const std::vector<std::string>& output_files = flags->output_files();
   ASSERT_EQ(1U, output_files.size());
   EXPECT_EQ("foobar.obj", output_files[0]);
 }
 
 TEST_F(VCFlagsTest, AtFileQuote) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
-  const string& at_file = file::JoinPath(tmp_dir_, "at_file");
+  const std::string& at_file = file::JoinPath(tmp_dir_, "at_file");
   args.push_back(
       "@" + PathResolver::PlatformConvert(at_file, PathResolver::kWin32PathSep,
                                           PathResolver::kPreserveCase));
@@ -314,7 +313,7 @@ TEST_F(VCFlagsTest, AtFileQuote) {
   VCFlags* vc_flags = static_cast<VCFlags*>(flags.get());
   EXPECT_FALSE(vc_flags->require_mspdbserv());
 
-  const std::vector<string>& output_files = flags->output_files();
+  const std::vector<std::string>& output_files = flags->output_files();
   ASSERT_EQ(7U, output_files.size());
   EXPECT_EQ(
       "C:\\goma work\\client\\build\\Release\\obj\\gtest\\"
@@ -347,9 +346,9 @@ TEST_F(VCFlagsTest, AtFileQuote) {
 }
 
 TEST_F(VCFlagsTest, WCAtFile) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
-  const string& at_file = file::JoinPath(tmp_dir_, "at_file");
+  const std::string& at_file = file::JoinPath(tmp_dir_, "at_file");
   args.push_back(
       "@" + PathResolver::PlatformConvert(at_file, PathResolver::kWin32PathSep,
                                           PathResolver::kPreserveCase));
@@ -360,7 +359,7 @@ TEST_F(VCFlagsTest, WCAtFile) {
 
   static const char kCmdLine[] =
       "\xff\xfe/\0X\0 \0/\0c\0 \0f\0o\0o\0b\0a\0r\0.\0c\0";
-  const string kWCCmdLine(kCmdLine, sizeof kCmdLine - 1);
+  const std::string kWCCmdLine(kCmdLine, sizeof kCmdLine - 1);
   ASSERT_TRUE(WriteStringToFile(kWCCmdLine, at_file));
 
   flags = CompilerFlagsParser::MustNew(args, "D:\\foobar");
@@ -383,13 +382,13 @@ TEST_F(VCFlagsTest, WCAtFile) {
   VCFlags* vc_flags = static_cast<VCFlags*>(flags.get());
   EXPECT_FALSE(vc_flags->require_mspdbserv());
 
-  const std::vector<string>& output_files = flags->output_files();
+  const std::vector<std::string>& output_files = flags->output_files();
   ASSERT_EQ(1U, output_files.size());
   EXPECT_EQ("foobar.obj", output_files[0]);
 }
 
 TEST_F(VCFlagsTest, Optimize) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl");
   args.push_back("/O1");
   args.push_back("/c");
@@ -411,7 +410,7 @@ TEST_F(VCFlagsTest, Optimize) {
   EXPECT_EQ("hello.c", flags.input_filenames()[0]);
   EXPECT_EQ("hello2.cc", flags.input_filenames()[1]);
 
-  const std::vector<string>& output_files = flags.output_files();
+  const std::vector<std::string>& output_files = flags.output_files();
   ASSERT_EQ(2, static_cast<int>(output_files.size()));
   EXPECT_EQ("hello.obj", output_files[0]);
   EXPECT_EQ("hello2.obj", output_files[1]);
@@ -425,7 +424,7 @@ TEST_F(VCFlagsTest, Optimize) {
 // For cl.exe, unknown flags are treated as input.
 // So nothing will be treated as unknown.
 TEST_F(VCFlagsTest, UnknownFlags) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "cl", "/c", "hello.c", "/UNKNOWN", "/UNKNOWN2",
   };
   VCFlags flags(args, "C:\\");
@@ -435,8 +434,11 @@ TEST_F(VCFlagsTest, UnknownFlags) {
 }
 
 TEST_F(VCFlagsTest, BreproWithClExe) {
-  const std::vector<string> args{
-      "cl", "/Brepro", "/c", "hello.c",
+  const std::vector<std::string> args{
+      "cl",
+      "/Brepro",
+      "/c",
+      "hello.c",
   };
   VCFlags flags(args, "C:\\");
 
@@ -445,8 +447,11 @@ TEST_F(VCFlagsTest, BreproWithClExe) {
 }
 
 TEST_F(VCFlagsTest, BreproWithClangCl) {
-  const std::vector<string> args{
-      "clang-cl.exe", "/Brepro", "/c", "hello.c",
+  const std::vector<std::string> args{
+      "clang-cl.exe",
+      "/Brepro",
+      "/c",
+      "hello.c",
   };
   VCFlags flags(args, "C:\\");
 
@@ -455,7 +460,7 @@ TEST_F(VCFlagsTest, BreproWithClangCl) {
 }
 
 TEST_F(VCFlagsTest, LastBreproShouldBeUsed) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "clang-cl.exe", "/Brepro", "/Brepro-", "/c", "hello.c",
   };
   VCFlags flags(args, "C:\\");
@@ -465,8 +470,11 @@ TEST_F(VCFlagsTest, LastBreproShouldBeUsed) {
 }
 
 TEST_F(VCFlagsTest, ClangClShouldSupportNoIncrementalLinkerCompatible) {
-  const std::vector<string> args{
-      "clang-cl.exe", "-mno-incremental-linker-compatible", "/c", "hello.c",
+  const std::vector<std::string> args{
+      "clang-cl.exe",
+      "-mno-incremental-linker-compatible",
+      "/c",
+      "hello.c",
   };
   VCFlags flags(args, "C:\\");
 
@@ -475,7 +483,7 @@ TEST_F(VCFlagsTest, ClangClShouldSupportNoIncrementalLinkerCompatible) {
 }
 
 TEST_F(VCFlagsTest, ClangClShouldUseNoIncrementalLinkerCompatible) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "clang-cl.exe",
       "/Brepro-",
       "/Brepro",
@@ -491,8 +499,11 @@ TEST_F(VCFlagsTest, ClangClShouldUseNoIncrementalLinkerCompatible) {
 }
 
 TEST_F(VCFlagsTest, ClShouldNotSupportNoIncrementalLinkerCompatible) {
-  const std::vector<string> args{
-      "cl", "-mno-incremental-linker-compatible", "/c", "hello.c",
+  const std::vector<std::string> args{
+      "cl",
+      "-mno-incremental-linker-compatible",
+      "/c",
+      "hello.c",
   };
   VCFlags flags(args, "C:\\");
 
@@ -518,7 +529,7 @@ TEST_F(VCFlagsTest, ComposeOutputPath) {
 }
 
 TEST_F(VCFlagsTest, VCFlags) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl");
   args.push_back("/c");
   args.push_back("hello.cc");
@@ -554,7 +565,7 @@ TEST_F(VCFlagsTest, VCFlags) {
                   "v7.1\\");
   env[8] = nullptr;
 
-  std::vector<string> important_env;
+  std::vector<std::string> important_env;
   flags->GetClientImportantEnvs(env, &important_env);
   EXPECT_EQ(5U, important_env.size()) << important_env;
 
@@ -567,7 +578,7 @@ TEST_F(VCFlagsTest, VCFlags) {
 
   devtools_goma::VCFlags* vc_flags = static_cast<devtools_goma::VCFlags*>(
       flags.get());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   EXPECT_EQ(compiler_info_flags, vc_flags->compiler_info_flags());
   EXPECT_TRUE(vc_flags->is_cplusplus());
   EXPECT_FALSE(vc_flags->ignore_stdinc());
@@ -594,8 +605,10 @@ TEST_F(VCFlagsTest, IsImportantEnvVC) {
     { "ld_preload=foo.so", false, false },
   };
 
-  std::vector<string> args {
-    "cl", "/c", "hello.cc",
+  std::vector<std::string> args{
+      "cl",
+      "/c",
+      "hello.cc",
   };
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "d:\\tmp"));
@@ -611,7 +624,7 @@ TEST_F(VCFlagsTest, IsImportantEnvVC) {
 
 TEST_F(VCFlagsTest, ChromeWindowsCompileFlag) {
   // The ridiculously long cl parameters
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl");
   args.push_back("/Od");
   args.push_back("/I");
@@ -779,7 +792,7 @@ TEST_F(VCFlagsTest, ChromeWindowsCompileFlag) {
 
   devtools_goma::VCFlags* vc_flags = static_cast<devtools_goma::VCFlags*>(
       flags.get());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   compiler_info_flags.push_back("/Od");
   compiler_info_flags.push_back("/MDd");
   EXPECT_EQ(compiler_info_flags, vc_flags->compiler_info_flags());
@@ -795,7 +808,7 @@ TEST_F(VCFlagsTest, ChromeWindowsCompileFlag) {
 }
 
 TEST_F(VCFlagsTest, SfntlyWindowsCompileFlag) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl");
   args.push_back("/nologo");
   args.push_back("/DWIN32");
@@ -819,6 +832,7 @@ TEST_F(VCFlagsTest, SfntlyWindowsCompileFlag) {
   args.push_back("/constexpr:depth1024");
   args.push_back("/guard:cf");
   args.push_back("/guard:cf-");
+  args.push_back("/guard:cf,nochecks");
   args.push_back("/ZH:SHA_256");
   args.push_back("/GR-");
   args.push_back("/MD");
@@ -860,7 +874,7 @@ TEST_F(VCFlagsTest, SfntlyWindowsCompileFlag) {
 
   devtools_goma::VCFlags* vc_flags = static_cast<devtools_goma::VCFlags*>(
       flags.get());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   compiler_info_flags.push_back("/O2");
   compiler_info_flags.push_back("/Ob2");
   compiler_info_flags.push_back("/Oy");
@@ -879,7 +893,7 @@ TEST_F(VCFlagsTest, SfntlyWindowsCompileFlag) {
 }
 
 TEST_F(VCFlagsTest, VCImplicitMacros) {
-  std::vector<string> args;
+  std::vector<std::string> args;
 
   // Simple C++ file
   args.push_back("cl");
@@ -920,12 +934,12 @@ TEST_F(VCFlagsTest, VCImplicitMacros) {
   std::unique_ptr<CompilerFlags> flags3(
       CompilerFlagsParser::MustNew(args, "C:\\src\\sfntly\\cpp\\build"));
   EXPECT_EQ(args, flags3->args());
-  string macro = static_cast<const VCFlags&>(*flags3).implicit_macros();
-  EXPECT_TRUE(macro.find("__cplusplus") != string::npos);
-  EXPECT_TRUE(macro.find("_VC_NODEFAULTLIB") != string::npos);
-  EXPECT_TRUE(macro.find("__MSVC_RUNTIME_CHECKS") != string::npos);
-  EXPECT_TRUE(macro.find("_NATIVE_WCHAR_T_DEFINED") != string::npos);
-  EXPECT_TRUE(macro.find("_WCHAR_T_DEFINED") != string::npos);
+  std::string macro = static_cast<const VCFlags&>(*flags3).implicit_macros();
+  EXPECT_TRUE(macro.find("__cplusplus") != std::string::npos);
+  EXPECT_TRUE(macro.find("_VC_NODEFAULTLIB") != std::string::npos);
+  EXPECT_TRUE(macro.find("__MSVC_RUNTIME_CHECKS") != std::string::npos);
+  EXPECT_TRUE(macro.find("_NATIVE_WCHAR_T_DEFINED") != std::string::npos);
+  EXPECT_TRUE(macro.find("_WCHAR_T_DEFINED") != std::string::npos);
 
   EXPECT_EQ(CompilerFlagType::Clexe, flags3->type());
   VCFlags* vc_flags = static_cast<VCFlags*>(flags3.get());
@@ -933,7 +947,7 @@ TEST_F(VCFlagsTest, VCImplicitMacros) {
 }
 
 TEST_F(VCFlagsTest, ClangCl) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("/c");
   args.push_back("hello.cc");
@@ -952,7 +966,7 @@ TEST_F(VCFlagsTest, ClangCl) {
 }
 
 TEST_F(VCFlagsTest, ClangClWithMflag) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("-m64");
   args.push_back("/c");
@@ -970,13 +984,13 @@ TEST_F(VCFlagsTest, ClangClWithMflag) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   expected_compiler_info_flags.push_back("-m64");
   EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
 }
 
 TEST_F(VCFlagsTest, ClangClWithTarget) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "clang-cl.exe",
       "--target=arm64-windows",
       "/c",
@@ -985,7 +999,7 @@ TEST_F(VCFlagsTest, ClangClWithTarget) {
 
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "C:\\tmp"));
-  const std::vector<string> expected_compiler_info_flags{
+  const std::vector<std::string> expected_compiler_info_flags{
       "--target=arm64-windows",
   };
   EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
@@ -993,14 +1007,16 @@ TEST_F(VCFlagsTest, ClangClWithTarget) {
 
 TEST_F(VCFlagsTest, ClangClKnownFlags) {
   // These -f and -g are known.
-  std::vector<string> args {
-    "clang-cl", "/c", "hello.cc",
-    "-fcolor-diagnostics",
-    "-fno-standalone-debug",
-    "-fstandalone-debug",
-    "-gcolumn-info",
-    "-gline-tables-only",
-    "--analyze",
+  std::vector<std::string> args{
+      "clang-cl",
+      "/c",
+      "hello.cc",
+      "-fcolor-diagnostics",
+      "-fno-standalone-debug",
+      "-fstandalone-debug",
+      "-gcolumn-info",
+      "-gline-tables-only",
+      "--analyze",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -1011,7 +1027,7 @@ TEST_F(VCFlagsTest, ClangClKnownFlags) {
 }
 
 TEST_F(VCFlagsTest, ClShouldNotRecognizeMflag) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("-m64");
   args.push_back("/c");
@@ -1029,41 +1045,39 @@ TEST_F(VCFlagsTest, ClShouldNotRecognizeMflag) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
 }
 
 TEST_F(VCFlagsTest, ClangClWithHyphenFlagsForCompilerInfo) {
-  const std::vector<string> args {
-    "clang-cl.exe",
-    "-fmsc-version=1800",
-    "-fms-compatibility-version=18",
-    "-std=c11",
-    "/c",
-    "hello.cc",
+  const std::vector<std::string> args{
+      "clang-cl.exe",
+      "-fmsc-version=1800",
+      "-fms-compatibility-version=18",
+      "-std=c11",
+      "/c",
+      "hello.cc",
   };
 
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "d:\\tmp"));
   EXPECT_EQ(args, flags->args());
-  EXPECT_EQ(std::vector<string> { "hello.obj" },
-            flags->output_files());
-  EXPECT_EQ(std::vector<string> { "hello.cc" },
-            flags->input_filenames());
+  EXPECT_EQ(std::vector<std::string>{"hello.obj"}, flags->output_files());
+  EXPECT_EQ(std::vector<std::string>{"hello.cc"}, flags->input_filenames());
   EXPECT_TRUE(flags->is_successful());
   EXPECT_EQ("", flags->fail_message());
   EXPECT_EQ("clang-cl", flags->compiler_name());
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  EXPECT_EQ((std::vector<string> { "-fmsc-version=1800",
-                                   "-fms-compatibility-version=18",
-                                   "-std=c11" }),
-            flags->compiler_info_flags());
+  EXPECT_EQ(
+      (std::vector<std::string>{"-fmsc-version=1800",
+                                "-fms-compatibility-version=18", "-std=c11"}),
+      flags->compiler_info_flags());
 }
 
 TEST_F(VCFlagsTest, ClangClWithZi) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("/Zi");
   args.push_back("/c");
@@ -1108,7 +1122,7 @@ TEST_F(VCFlagsTest, ClangClWithZi) {
 }
 
 TEST_F(VCFlagsTest, ClangClISystem) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("-isystem=c:\\clang-cl\\include");
   args.push_back("/c");
@@ -1131,7 +1145,7 @@ TEST_F(VCFlagsTest, ClangClISystem) {
 }
 
 TEST_F(VCFlagsTest, ClShouldNotRecognizeISystem) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("-isystem=c:\\clang-cl\\include");
   args.push_back("/c");
@@ -1153,7 +1167,7 @@ TEST_F(VCFlagsTest, ClShouldNotRecognizeISystem) {
 }
 
 TEST_F(VCFlagsTest, ClangClImsvc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("-imsvcc:\\clang-cl\\include");
   args.push_back("/c");
@@ -1192,7 +1206,7 @@ TEST_F(VCFlagsTest, ClangClImsvc) {
 }
 
 TEST_F(VCFlagsTest, ClangClImsvcWithValueArg) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("-imsvc");
   args.push_back("c:\\clang-cl\\include");
@@ -1234,7 +1248,7 @@ TEST_F(VCFlagsTest, ClangClImsvcWithValueArg) {
 }
 
 TEST_F(VCFlagsTest, ClShouldNotRecognizeImsvc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("-imsvcc:\\clang-cl\\include");
   args.push_back("/c");
@@ -1271,7 +1285,7 @@ TEST_F(VCFlagsTest, ClShouldNotRecognizeImsvc) {
 }
 
 TEST_F(VCFlagsTest, ClShouldNotRecognizeImsvcWithValueArg) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("-imsvc");
   args.push_back("c:\\clang-cl\\include");
@@ -1309,22 +1323,20 @@ TEST_F(VCFlagsTest, ClShouldNotRecognizeImsvcWithValueArg) {
 }
 
 TEST_F(VCFlagsTest, ClShouldNotRecognizeClangClOnlyFlags) {
-  const std::vector<string> args {
-    "cl.exe",
-    "-fmsc-version=1800",
-    "-fms-compatibility-version=18",
-    "-std=c11",
-    "/c",
-    "hello.cc",
+  const std::vector<std::string> args{
+      "cl.exe",
+      "-fmsc-version=1800",
+      "-fms-compatibility-version=18",
+      "-std=c11",
+      "/c",
+      "hello.cc",
   };
 
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "d:\\tmp"));
   EXPECT_EQ(args, flags->args());
-  EXPECT_EQ(std::vector<string> { "hello.obj" },
-            flags->output_files());
-  EXPECT_EQ(std::vector<string> { "hello.cc" },
-            flags->input_filenames());
+  EXPECT_EQ(std::vector<std::string>{"hello.obj"}, flags->output_files());
+  EXPECT_EQ(std::vector<std::string>{"hello.cc"}, flags->input_filenames());
   EXPECT_TRUE(flags->is_successful());
   EXPECT_EQ("", flags->fail_message());
   EXPECT_EQ("cl.exe", flags->compiler_name());
@@ -1335,12 +1347,8 @@ TEST_F(VCFlagsTest, ClShouldNotRecognizeClangClOnlyFlags) {
 }
 
 TEST_F(VCFlagsTest, ClangClWithResourceDir) {
-  std::vector<string> args = {
-    "clang-cl.exe",
-    "-resource-dir",
-    "this\\is\\resource",
-    "/c",
-    "hello.cc",
+  std::vector<std::string> args = {
+      "clang-cl.exe", "-resource-dir", "this\\is\\resource", "/c", "hello.cc",
   };
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "d:\\tmp"));
@@ -1355,9 +1363,9 @@ TEST_F(VCFlagsTest, ClangClWithResourceDir) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags = {
-    "-resource-dir",
-    "this\\is\\resource",
+  std::vector<std::string> expected_compiler_info_flags = {
+      "-resource-dir",
+      "this\\is\\resource",
   };
   EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
 
@@ -1366,19 +1374,14 @@ TEST_F(VCFlagsTest, ClangClWithResourceDir) {
 }
 
 TEST_F(VCFlagsTest, ClExeWithResourceDir) {
-  std::vector<string> args {
-    "cl.exe",
-    "-resource-dir",
-    "this\\is\\resource",
-    "/c",
-    "hello.cc",
+  std::vector<std::string> args{
+      "cl.exe", "-resource-dir", "this\\is\\resource", "/c", "hello.cc",
   };
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "d:\\tmp"));
   EXPECT_EQ(args, flags->args());
 
-  std::vector<string> expected_compiler_info_flags = {
-  };
+  std::vector<std::string> expected_compiler_info_flags = {};
   EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
 
   VCFlags* vc_flags = static_cast<VCFlags*>(flags.get());
@@ -1386,7 +1389,7 @@ TEST_F(VCFlagsTest, ClExeWithResourceDir) {
 }
 
 TEST_F(VCFlagsTest, ClangClWithFsanitize) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("-fsanitize=address");
   args.push_back("-fsanitize=thread");
@@ -1406,7 +1409,7 @@ TEST_F(VCFlagsTest, ClangClWithFsanitize) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   expected_compiler_info_flags.push_back("-fsanitize=address");
   expected_compiler_info_flags.push_back("-fsanitize=thread");
   expected_compiler_info_flags.push_back("-fsanitize=memory");
@@ -1414,7 +1417,7 @@ TEST_F(VCFlagsTest, ClangClWithFsanitize) {
 }
 
 TEST_F(VCFlagsTest, ClangClWithFsanitizeBlacklist) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("-fsanitize-blacklist=blacklist.txt");
   args.push_back("-fsanitize-blacklist=blacklist2.txt");
@@ -1433,9 +1436,9 @@ TEST_F(VCFlagsTest, ClangClWithFsanitizeBlacklist) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
-  std::vector<string> expected_optional_input_filenames;
+  std::vector<std::string> expected_optional_input_filenames;
   expected_optional_input_filenames.push_back("blacklist.txt");
   expected_optional_input_filenames.push_back("blacklist2.txt");
   EXPECT_EQ(expected_optional_input_filenames,
@@ -1443,7 +1446,7 @@ TEST_F(VCFlagsTest, ClangClWithFsanitizeBlacklist) {
 }
 
 TEST_F(VCFlagsTest, ClangClWithFsanitizeAndBlacklist) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("-fsanitize=address");
   args.push_back("-fsanitize-blacklist=blacklist.txt");
@@ -1462,17 +1465,17 @@ TEST_F(VCFlagsTest, ClangClWithFsanitizeAndBlacklist) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   expected_compiler_info_flags.push_back("-fsanitize=address");
   EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
-  std::vector<string> expected_optional_input_filenames;
+  std::vector<std::string> expected_optional_input_filenames;
   expected_optional_input_filenames.push_back("blacklist.txt");
   EXPECT_EQ(expected_optional_input_filenames,
             flags->optional_input_filenames());
 }
 
 TEST_F(VCFlagsTest, ClangClWithFNoSanitizeBlacklist) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("-fno-sanitize-blacklist");
   args.push_back("-fsanitize-blacklist=blacklist.txt");
@@ -1491,13 +1494,13 @@ TEST_F(VCFlagsTest, ClangClWithFNoSanitizeBlacklist) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_optional_input_filenames;
+  std::vector<std::string> expected_optional_input_filenames;
   EXPECT_EQ(expected_optional_input_filenames,
             flags->optional_input_filenames());
 }
 
 TEST_F(VCFlagsTest, ClShouldNotRecognizeAnyFsanitize) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("-fsanitize=address");
   args.push_back("-fsanitize-blacklist=blacklist.txt");
@@ -1516,15 +1519,15 @@ TEST_F(VCFlagsTest, ClShouldNotRecognizeAnyFsanitize) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
-  std::vector<string> expected_optional_input_filenames;
+  std::vector<std::string> expected_optional_input_filenames;
   EXPECT_EQ(expected_optional_input_filenames,
             flags->optional_input_filenames());
 }
 
 TEST_F(VCFlagsTest, ClangClWithMllvm) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("-mllvm");
   args.push_back("-regalloc=pbqp");
@@ -1543,7 +1546,7 @@ TEST_F(VCFlagsTest, ClangClWithMllvm) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   expected_compiler_info_flags.push_back("-mllvm");
   expected_compiler_info_flags.push_back("-regalloc=pbqp");
   EXPECT_EQ(expected_compiler_info_flags,
@@ -1551,7 +1554,7 @@ TEST_F(VCFlagsTest, ClangClWithMllvm) {
 }
 
 TEST_F(VCFlagsTest, ClShouldNotRecognizeMllvm) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("-mllvm");
   args.push_back("-regalloc=pbqp");
@@ -1570,18 +1573,18 @@ TEST_F(VCFlagsTest, ClShouldNotRecognizeMllvm) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
 }
 
 TEST_F(VCFlagsTest, ArchShouldBeRecognizedByClAndClangCl) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("/arch:AVX2");
   args.push_back("/c");
   args.push_back("hello.cc");
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   expected_compiler_info_flags.push_back("/arch:AVX2");
 
   // check cl.exe.
@@ -1601,7 +1604,7 @@ TEST_F(VCFlagsTest, ArchShouldBeRecognizedByClAndClangCl) {
 }
 
 TEST_F(VCFlagsTest, ClangClWithXclang) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("-Xclang");
   args.push_back("-add-plugin");
@@ -1622,7 +1625,7 @@ TEST_F(VCFlagsTest, ClangClWithXclang) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   expected_compiler_info_flags.push_back("-Xclang");
   expected_compiler_info_flags.push_back("-add-plugin");
   expected_compiler_info_flags.push_back("-Xclang");
@@ -1632,7 +1635,7 @@ TEST_F(VCFlagsTest, ClangClWithXclang) {
 }
 
 TEST_F(VCFlagsTest, ClShouldNotRecognizeXclang) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("-Xclang");
   args.push_back("-add-plugin");
@@ -1653,13 +1656,13 @@ TEST_F(VCFlagsTest, ClShouldNotRecognizeXclang) {
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
 }
 
 TEST_F(VCFlagsTest, CrWinClangCompileFlag) {
   // b/18742923
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl.exe");
   args.push_back("/FC");
   args.push_back("-DV8_DEPRECATION_WARNINGS");

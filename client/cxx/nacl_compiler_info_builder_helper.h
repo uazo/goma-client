@@ -8,8 +8,6 @@
 #include <string>
 #include <vector>
 
-using std::string;
-
 namespace devtools_goma {
 
 class NaClCompilerInfoBuilderHelper {
@@ -17,18 +15,21 @@ class NaClCompilerInfoBuilderHelper {
 #ifdef _WIN32
   // GetNaClToolchainRoot is a part of hack needed for
   // the (build: Windows, target: NaCl) compile.
-  static string GetNaClToolchainRoot(const string& normal_nacl_gcc_path);
+  static std::string GetNaClToolchainRoot(
+      const std::string& normal_nacl_gcc_path);
 #endif
 
-  static void CollectPNaClClangResources(const string& locla_compiler_path,
-                                         const string& cwd,
-                                         std::vector<string>* resource_paths);
-  static void CollectNaClGccResources(const string& local_compiler_path,
-                                      const string& cwd,
-                                      std::vector<string>* resource_paths);
-  static void CollectNaClClangResources(const string& local_compiler_path,
-                                        const string& cwd,
-                                        std::vector<string>* resource_paths);
+  static void CollectPNaClClangResources(
+      const std::string& locla_compiler_path,
+      const std::string& cwd,
+      std::vector<std::string>* resource_paths);
+  static void CollectNaClGccResources(const std::string& local_compiler_path,
+                                      const std::string& cwd,
+                                      std::vector<std::string>* resource_paths);
+  static void CollectNaClClangResources(
+      const std::string& local_compiler_path,
+      const std::string& cwd,
+      std::vector<std::string>* resource_paths);
 };
 
 }  // namespace devtools_goma

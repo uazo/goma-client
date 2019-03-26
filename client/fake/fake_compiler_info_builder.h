@@ -10,8 +10,6 @@
 
 #include "compiler_info_builder.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class FakeCompilerInfoBuilder : public CompilerInfoBuilder {
@@ -22,9 +20,9 @@ class FakeCompilerInfoBuilder : public CompilerInfoBuilder {
 
   void SetTypeSpecificCompilerInfo(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const string& abs_local_compiler_path,
-      const std::vector<string>& compiler_info_envs,
+      const std::string& local_compiler_path,
+      const std::string& abs_local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs,
       CompilerInfoData* data) const override;
 };
 

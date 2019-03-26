@@ -22,7 +22,7 @@ class SHA256HashCache {
   // Otherwise, calculate sha256 hash from |path|, and put the result
   // to |sha256_cache| with filestat.
   // Returns false if calculating sha256 hash from |path| failed.
-  bool GetHashFromCacheOrFile(const string& path, string* hash);
+  bool GetHashFromCacheOrFile(const std::string& path, std::string* hash);
 
   int64_t total() const { return total_.value(); }
   int64_t hit() const { return hit_.value(); }

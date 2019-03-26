@@ -45,6 +45,8 @@
 GOMA_DECLARE_string(CACHE_DIR);
 GOMA_DECLARE_string(TMP_DIR);
 
+namespace devtools_goma {
+
 namespace {
 
 #ifndef _WIN32
@@ -55,13 +57,13 @@ const char kGomaTmpDir[] = "goma";
 const char kGomaCrashDumpDir[] = "goma_crash";
 const char kGomaCacheDir[] = "goma_cache";
 
-template<typename UnaryFunction>
-static string GetEnvMatchedCondition(
+template <typename UnaryFunction>
+static std::string GetEnvMatchedCondition(
     const std::vector<const char*>& candidates,
     UnaryFunction condition,
     const char* default_value) {
   for (const auto* candidate : candidates) {
-    const string value = devtools_goma::GetEnv(candidate);
+    const std::string value = GetEnv(candidate);
     if (!value.empty() && condition(value)) {
       return value;
     }
@@ -71,9 +73,7 @@ static string GetEnvMatchedCondition(
 
 }  // anonymous namespace
 
-namespace devtools_goma {
-
-string GetUsernameEnv() {
+std::string GetUsernameEnv() {
   static const char* kRoot = "root";
   static const char* kUserEnvs[] = {
     "SUDO_USER",
@@ -85,10 +85,10 @@ string GetUsernameEnv() {
   return GetEnvMatchedCondition(
       std::vector<const char*>(&kUserEnvs[0],
                                &kUserEnvs[ABSL_ARRAYSIZE(kUserEnvs)]),
-      [](const string& user) { return user != kRoot; }, "");
+      [](const std::string& user) { return user != kRoot; }, "");
 }
 
-string GetUsernameNoEnv() {
+std::string GetUsernameNoEnv() {
 #ifndef _WIN32
   uid_t uid = getuid();
   struct passwd* pw = getpwuid(uid);
@@ -105,8 +105,8 @@ string GetUsernameNoEnv() {
 #endif
 }
 
-string GetUsername() {
-  string username = GetUsernameEnv();
+std::string GetUsername() {
+  std::string username = GetUsernameEnv();
   if (!username.empty()) {
     return username;
   }
@@ -118,7 +118,7 @@ string GetUsername() {
   return "unknown";
 }
 
-string GetNodename() {
+std::string GetNodename() {
 #ifndef _WIN32
   // Gets nodename, which is a good enough approximation to a
   // hostname, for debugging purposes, for now.
@@ -132,7 +132,7 @@ string GetNodename() {
   char buffer[MAX_COMPUTERNAME_LENGTH + 1] = {0};
   DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
   if (GetComputerNameA(buffer, &len) && len) {
-    string nodename(buffer, len);
+    std::string nodename(buffer, len);
     return nodename;
   }
   LOG(ERROR) << "GetComputerName " << GetLastError();
@@ -140,8 +140,8 @@ string GetNodename() {
   return "localhost";
 }
 
-string GetMyPathname() {
-  string myself_fullpath;
+std::string GetMyPathname() {
+  std::string myself_fullpath;
 #ifdef _WIN32
   char path[PATH_MAX] = {0};
   HANDLE process = GetCurrentProcess();
@@ -169,26 +169,26 @@ string GetMyPathname() {
   return PathResolver::ResolvePath(myself_fullpath);
 }
 
-string GetMyDirectory() {
+std::string GetMyDirectory() {
 #ifndef _WIN32
   const char SEP = '/';
 #else
   const char SEP = '\\';
 #endif
-  string myself_fullpath = GetMyPathname();
+  std::string myself_fullpath = GetMyPathname();
   size_t last_slash = myself_fullpath.rfind(SEP);
-  CHECK(last_slash != string::npos);
+  CHECK(last_slash != std::string::npos);
   return myself_fullpath.substr(0, last_slash);
 }
 
 // NOTE: When updating this, you also need to update get_temp_directory() in
 // client/goma-wrapper and GetGomaTmpDir in goma_ctl.py.
-string GetGomaTmpDir() {
+std::string GetGomaTmpDir() {
   if (FLAGS_TMP_DIR != "") {
     return FLAGS_TMP_DIR;
   }
 
-  string tmpdir = GetPlatformSpecificTempDirectory();
+  std::string tmpdir = GetPlatformSpecificTempDirectory();
 #ifndef _WIN32
   if (tmpdir.empty()) {
     tmpdir = "/tmp";
@@ -198,20 +198,20 @@ string GetGomaTmpDir() {
 
   // Assume goma_ctl.py creates /tmp/goma_<user> or %TEMP%\goma.
 #ifndef _WIN32
-  string private_name(kGomaTmpDirPrefix);
-  const string username = GetUsername();
+  std::string private_name(kGomaTmpDirPrefix);
+  const std::string username = GetUsername();
   if (username == "" || username == "unknown") {
     LOG(ERROR) << "bad username:" << username;
   }
   private_name.append(username);
 #else
-  string private_name(kGomaTmpDir);
+  std::string private_name(kGomaTmpDir);
 #endif
-  string private_tmpdir = file::JoinPath(tmpdir, private_name);
+  std::string private_tmpdir = file::JoinPath(tmpdir, private_name);
   return private_tmpdir;
 }
 
-void CheckTempDirectory(const string& tmpdir) {
+void CheckTempDirectory(const std::string& tmpdir) {
   if (!EnsureDirectory(tmpdir, 0700)) {
     LOG(FATAL) << "failed to create goma tmp dir or "
                << "private goma tmp dir is not dir: " << tmpdir;
@@ -230,11 +230,11 @@ void CheckTempDirectory(const string& tmpdir) {
 #endif
 }
 
-string GetCrashDumpDirectory() {
+std::string GetCrashDumpDirectory() {
   return file::JoinPath(GetGomaTmpDir(), kGomaCrashDumpDir);
 }
 
-string GetCacheDirectory() {
+std::string GetCacheDirectory() {
   if (FLAGS_CACHE_DIR != "") {
     return FLAGS_CACHE_DIR;
   }
@@ -264,7 +264,7 @@ static bool checkPWD(const char* pwd) {
 }
 #endif
 
-string GetCurrentDirNameOrDie(void) {
+std::string GetCurrentDirNameOrDie(void) {
 #ifndef _WIN32
   // get_cwd() returns the current resolved directory. However, a compiler is
   // taking PWD as current working directory. PWD might contain unresolved
@@ -283,14 +283,14 @@ string GetCurrentDirNameOrDie(void) {
 
   char *dir = getcwd(nullptr, 0);
   CHECK(dir) << "GOMA: Cannot find current directory ";
-  string dir_str(dir);
+  std::string dir_str(dir);
   free(dir);
   return dir_str;
 #else
   char dir[PATH_MAX];
   CHECK_NE(GetCurrentDirectoryA(PATH_MAX, dir), (DWORD)0) <<
       "GOMA: Cannot find current directory: " << GetLastError();
-  string dir_str(dir);
+  std::string dir_str(dir);
   return dir_str;
 #endif
 }

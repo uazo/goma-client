@@ -14,8 +14,6 @@
 #include "goma_ipc.h"
 #include "scoped_fd.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class CompilerFlags;
@@ -42,7 +40,7 @@ class GomaClient {
   GomaClient(int pid,
              std::unique_ptr<CompilerFlags> flags,
              const char** envp,
-             string local_compiler_path);
+             std::string local_compiler_path);
   ~GomaClient();
   void OutputResp();
 
@@ -57,7 +55,7 @@ class GomaClient {
   // called after CallIPCAsync().
   Result WaitIPC();
 
-  string CreateStdinFile();
+  std::string CreateStdinFile();
 
   // Blocking version of IPC call which calls CallIPCAsync and WaitIPC
   // internally.
@@ -65,11 +63,11 @@ class GomaClient {
 
   // Sets overriding gomacc_path.
   // The caller's executable path will be used by default when it is not set.
-  void set_gomacc_path(const string& path) { gomacc_path_ = path; }
+  void set_gomacc_path(const std::string& path) { gomacc_path_ = path; }
 
-  void set_cwd(const string& cwd) { cwd_ = cwd; }
+  void set_cwd(const std::string& cwd) { cwd_ = cwd; }
 
-  void set_local_compiler_path(const string& local_compiler_path) {
+  void set_local_compiler_path(const std::string& local_compiler_path) {
     local_compiler_path_ = local_compiler_path;
   }
 
@@ -91,19 +89,19 @@ class GomaClient {
 
   int id_;
   std::unique_ptr<CompilerFlags> flags_;
-  string name_;
-  std::vector<string> envs_;
+  std::string name_;
+  std::vector<std::string> envs_;
 #ifdef _WIN32
   std::vector<ScopedFd*> optional_files_;
   std::unique_ptr<MultiExecResp> multi_exec_resp_;
-  std::vector<std::pair<string, ScopedFd*>> rsp_files_;
+  std::vector<std::pair<std::string, ScopedFd*>> rsp_files_;
 #endif
   std::unique_ptr<ExecResp> exec_resp_;
   ScopedFd stdin_file_;
-  string stdin_filename_;
-  string gomacc_path_;
-  string cwd_;
-  string local_compiler_path_;
+  std::string stdin_filename_;
+  std::string gomacc_path_;
+  std::string cwd_;
+  std::string local_compiler_path_;
 
   DISALLOW_COPY_AND_ASSIGN(GomaClient);
 };

@@ -17,8 +17,6 @@
 #include "glog/logging.h"
 #include "ioutil.h"
 
-using std::string;
-
 // Handling chunked content transfer encoding.
 //
 //  RFC 2616 3.6.1 Chunked Transfer Coding
@@ -268,9 +266,9 @@ bool FindContentLengthAndBodyOffset(
   if (content_length_value.empty()) {
     // Content-Length does not exist for GET requests. This might be
     // such request. If so, assume the header is short and return here.
-    *content_length = string::npos;
+    *content_length = std::string::npos;
   } else {
-    *content_length = atoi(string(content_length_value).c_str());
+    *content_length = atoi(std::string(content_length_value).c_str());
   }
 
   if (is_chunked != nullptr) {
@@ -299,7 +297,7 @@ bool ParseHttpResponse(absl::string_view response,
                        bool* is_chunked) {
   *http_status_code = 0;
   *offset = 0;
-  *content_length = string::npos;
+  *content_length = std::string::npos;
   if (is_chunked != nullptr)
     *is_chunked = false;
 
@@ -321,7 +319,7 @@ bool ParseHttpResponse(absl::string_view response,
     return true;
   }
   absl::string_view codestr = response.substr(kHttpHeader.size() + 2);
-  *http_status_code = atoi(string(codestr).c_str());
+  *http_status_code = atoi(std::string(codestr).c_str());
   if (*http_status_code != 200 && *http_status_code != 204)
     return true;
 
@@ -334,32 +332,33 @@ bool ParseHttpResponse(absl::string_view response,
   return true;
 }
 
-std::map<string, string> ParseQuery(const string& query) {
-  std::map<string, string> params;
+std::map<std::string, std::string> ParseQuery(const std::string& query) {
+  std::map<std::string, std::string> params;
   if (query.empty()) {
     return params;
   }
-  string query_str = query;
+  std::string query_str = query;
   size_t pos = query_str.find('#');
-  if (pos != string::npos) {
+  if (pos != std::string::npos) {
     query_str = query.substr(0, pos);
   }
 
   for (auto&& p : absl::StrSplit(query_str, '&', absl::SkipEmpty())) {
     size_t i = p.find('=');
-    if (i == string::npos) {
-      params.insert(make_pair(string(p), ""));
+    if (i == std::string::npos) {
+      params.insert(make_pair(std::string(p), ""));
       continue;
     }
-    string k(p.substr(0, i));
-    string v(p.substr(i + 1));
+    std::string k(p.substr(0, i));
+    std::string v(p.substr(i + 1));
     // TODO: url decode?
     params.insert(make_pair(k, v));
   }
   return params;
 }
 
-string SimpleEncodeChartData(const std::vector<double>& value, double max) {
+std::string SimpleEncodeChartData(const std::vector<double>& value,
+                                  double max) {
   std::ostringstream ss;
   for (const auto& iter : value) {
     int v = static_cast<int>(62 * iter / max);
@@ -470,10 +469,10 @@ bool ParseURL(absl::string_view url, URL* out) {
   DCHECK(out != nullptr);
   size_t pos = url.find("://");
   absl::string_view hostport = url;
-  if (pos == string::npos) {
+  if (pos == std::string::npos) {
     out->scheme = "http";
   } else {
-    out->scheme = string(url.substr(0, pos));
+    out->scheme = std::string(url.substr(0, pos));
     hostport = url.substr(pos + 3);
   }
   // set default port number.
@@ -485,20 +484,20 @@ bool ParseURL(absl::string_view url, URL* out) {
     return false;
   }
   pos = hostport.find('/');
-  if (pos != string::npos) {
-    out->path = string(hostport.substr(pos));
+  if (pos != std::string::npos) {
+    out->path = std::string(hostport.substr(pos));
     hostport = hostport.substr(0, pos);
   } else {
     out->path = "/";
   }
   pos = hostport.find(':');
-  if (pos != string::npos) {
-    out->hostname = string(hostport.substr(0, pos));
+  if (pos != std::string::npos) {
+    out->hostname = std::string(hostport.substr(0, pos));
     if (!absl::SimpleAtoi(hostport.substr(pos+1), &out->port)) {
       return false;
     }
   } else {
-    out->hostname = string(hostport);
+    out->hostname = std::string(hostport);
   }
   return true;
 }

@@ -26,7 +26,7 @@
 namespace devtools_goma {
 
 // static
-std::unique_ptr<Content> Content::CreateFromFile(const string& filepath) {
+std::unique_ptr<Content> Content::CreateFromFile(const std::string& filepath) {
   ScopedFd fd(ScopedFd::OpenForRead(filepath));
   if (!fd.valid())
     return nullptr;
@@ -41,7 +41,9 @@ std::unique_ptr<Content> Content::CreateFromFile(const string& filepath) {
 
 // static
 std::unique_ptr<Content> Content::CreateFromFileDescriptor(
-    const string& filepath, const ScopedFd& fd, size_t filesize) {
+    const std::string& filepath,
+    const ScopedFd& fd,
+    size_t filesize) {
   DCHECK(fd.valid());
 
   std::unique_ptr<char[]> buf(new char[filesize + 1]);
@@ -71,7 +73,7 @@ std::unique_ptr<Content> Content::CreateFromFileDescriptor(
 }
 
 // static
-std::unique_ptr<Content> Content::CreateFromString(const string& str) {
+std::unique_ptr<Content> Content::CreateFromString(const std::string& str) {
   std::unique_ptr<char[]> buf(new char[str.length() + 1]);
   CHECK(buf != nullptr);
   memcpy(static_cast<void*>(buf.get()),

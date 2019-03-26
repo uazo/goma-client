@@ -23,7 +23,7 @@
 namespace devtools_goma {
 
 #ifndef _WIN32
-bool ListDirectory(const string& dirname, std::vector<DirEntry>* entries) {
+bool ListDirectory(const std::string& dirname, std::vector<DirEntry>* entries) {
   DIR* dir = opendir(dirname.c_str());
   if (dir == nullptr) {
     struct stat st;
@@ -50,19 +50,19 @@ bool ListDirectory(const string& dirname, std::vector<DirEntry>* entries) {
   return true;
 }
 
-bool DeleteDirectory(const string& dirname) {
+bool DeleteDirectory(const std::string& dirname) {
   return rmdir(dirname.c_str()) == 0;
 }
 
 #else
-bool ListDirectory(const string& dirname, std::vector<DirEntry>* entries) {
+bool ListDirectory(const std::string& dirname, std::vector<DirEntry>* entries) {
   DWORD attr = GetFileAttributesA(dirname.c_str());
   if (attr == INVALID_FILE_ATTRIBUTES)
     return false;
   if (!(attr & FILE_ATTRIBUTE_DIRECTORY))
     return true;
 
-  const string pattern = dirname + "\\*";
+  const std::string pattern = dirname + "\\*";
   WIN32_FIND_DATAA find_data = {};
   HANDLE find_handle = FindFirstFileA(pattern.c_str(), &find_data);
   if (find_handle == INVALID_HANDLE_VALUE)
@@ -79,12 +79,12 @@ bool ListDirectory(const string& dirname, std::vector<DirEntry>* entries) {
   return true;
 }
 
-bool DeleteDirectory(const string& dirname) {
+bool DeleteDirectory(const std::string& dirname) {
   return RemoveDirectoryA(dirname.c_str()) != 0;
 }
 #endif
 
-bool EnsureDirectory(const string& dirname, int mode) {
+bool EnsureDirectory(const std::string& dirname, int mode) {
   if (file::IsDirectory(dirname, file::Defaults()).ok()) {
     return true;
   }

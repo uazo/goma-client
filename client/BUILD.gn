@@ -1457,6 +1457,7 @@ executable("goma_blob_unittest") {
     ":common",
     ":compiler_proxy_lib",
     ":goma_test_lib",
+    ":scoped_tmp_file_lib",
     "//build/config:exe_and_shlib_deps",
   ]
 }

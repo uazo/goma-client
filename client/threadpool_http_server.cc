@@ -62,7 +62,7 @@ namespace devtools_goma {
 // TODO: make it flag?
 constexpr absl::Duration kDefaultTimeout = absl::Minutes(15);
 
-ThreadpoolHttpServer::ThreadpoolHttpServer(string listen_addr,
+ThreadpoolHttpServer::ThreadpoolHttpServer(std::string listen_addr,
                                            int port,
                                            int num_find_ports,
                                            WorkerThreadManager* wm,
@@ -123,9 +123,9 @@ class ThreadpoolHttpServer::PipeHandler : public NamedPipeServer::Handler {
 };
 #endif
 
-void ThreadpoolHttpServer::StartIPC(
-    const string& addr, int num_threads,
-    int max_overcommit_incoming_sockets) {
+void ThreadpoolHttpServer::StartIPC(const std::string& addr,
+                                    int num_threads,
+                                    int max_overcommit_incoming_sockets) {
 #ifdef _WIN32
   pipe_handler_.reset(new PipeHandler(this));
   pipe_server_.reset(new NamedPipeServer(wm_, pipe_handler_.get()));
@@ -180,7 +180,7 @@ void ThreadpoolHttpServer::StopIPC() {
 }
 
 #ifndef _WIN32
-bool ThreadpoolHttpServer::OpenUnixDomainSocket(const string& path) {
+bool ThreadpoolHttpServer::OpenUnixDomainSocket(const std::string& path) {
   GomaIPCAddr addr;
   socklen_t addr_len = InitializeGomaIPCAddress(path, &addr);
   remove(path.c_str());
@@ -236,25 +236,26 @@ void ThreadpoolHttpServer::SetAcceptLimit(int n, SocketType socket_type) {
 }
 
 /* static */
-bool ThreadpoolHttpServer::ParseRequestLine(
-    absl::string_view request, string* method,
-    string* req_path, string* query) {
+bool ThreadpoolHttpServer::ParseRequestLine(absl::string_view request,
+                                            std::string* method,
+                                            std::string* req_path,
+                                            std::string* query) {
   // Find the first request string which would look like
   // 'GET / HTTP/1.1\r\n'
   absl::string_view::size_type pos = request.find("\r\n");
   if (pos == absl::string_view::npos) {
     return false;
   }
-  const string firstline = string(request.substr(0, pos));
-  std::vector<string> method_path_protocol = ToVector(
-      absl::StrSplit(firstline, ' ', absl::SkipEmpty()));
+  const std::string firstline = std::string(request.substr(0, pos));
+  std::vector<std::string> method_path_protocol =
+      ToVector(absl::StrSplit(firstline, ' ', absl::SkipEmpty()));
   if (method_path_protocol.size() != 3) {
     return false;
   }
   *method = method_path_protocol[0];
-  const string &request_uri(method_path_protocol[1]);
+  const std::string& request_uri(method_path_protocol[1]);
   size_t question_mark;
-  if ((question_mark = request_uri.find("?")) != string::npos) {
+  if ((question_mark = request_uri.find("?")) != std::string::npos) {
     *req_path = request_uri.substr(0, question_mark);
     *query =
         request_uri.substr(question_mark + 1,
@@ -303,7 +304,7 @@ class ThreadpoolHttpServer::RequestFromNamedPipe : public HttpServerRequest {
   bool CheckCredential() override;
 
   void Start();
-  void SendReply(const string& response) override;
+  void SendReply(const std::string& response) override;
   void NotifyWhenClosed(OneshotClosure* callback) override;
 
  private:
@@ -322,7 +323,7 @@ void ThreadpoolHttpServer::RequestFromNamedPipe::Start() {
   stat_.timer.Start();
   thread_id_ = wm_->GetCurrentThreadId();
 
-  request_ = string(req_->request_message());
+  request_ = std::string(req_->request_message());
   request_len_ = request_.size();
   bool request_is_chunked = false;
   if (!FindContentLengthAndBodyOffset(
@@ -364,7 +365,7 @@ void ThreadpoolHttpServer::RequestFromNamedPipe::Start() {
 }
 
 void ThreadpoolHttpServer::RequestFromNamedPipe::SendReply(
-    const string& response) {
+    const std::string& response) {
   stat_.handler_time = stat_.timer.GetDuration();
   stat_.resp_size = response.size();
   stat_.timer.Start();
@@ -373,7 +374,6 @@ void ThreadpoolHttpServer::RequestFromNamedPipe::SendReply(
     monitor_->FinishHandle(stat_);
   delete this;
 }
-
 
 void ThreadpoolHttpServer::RequestFromNamedPipe::NotifyWhenClosed(
     OneshotClosure* callback) {
@@ -397,7 +397,7 @@ class ThreadpoolHttpServer::RequestFromSocket : public HttpServerRequest {
   bool IsTrusted() override;
 
   void Start();
-  void SendReply(const string& response) override;
+  void SendReply(const std::string& response) override;
   void NotifyWhenClosed(OneshotClosure* callback) override;
 
  private:
@@ -749,7 +749,7 @@ void ThreadpoolHttpServer::RequestFromSocket::DoReadEOF() {
     // EOF
     VLOG(1) << socket_descriptor_->fd() << " EOF";
   } else if (read_size < 0) {
-    const string err = socket_descriptor_->GetLastErrorMessage();
+    const std::string err = socket_descriptor_->GetLastErrorMessage();
     // client may have closed once it had received all response message,
     // before server ack EOF.
     VLOG(1) << "shutdown error? fd=" << socket_descriptor_->fd() << ":" << err;
@@ -772,7 +772,7 @@ void ThreadpoolHttpServer::RequestFromSocket::Finish() {
 }
 
 void ThreadpoolHttpServer::RequestFromSocket::SendReply(
-    const string& response) {
+    const std::string& response) {
   if (closed_) {  // No need to reply response for the closed socket.
     wm_->RunClosureInThread(
         FROM_HERE, thread_id_,

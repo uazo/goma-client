@@ -10,8 +10,6 @@
 #include "glog/logging.h"
 #include "prototmp/deps_cache_data.pb.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 const FilenameIdTable::Id FilenameIdTable::kInvalidId = -1;
@@ -65,7 +63,7 @@ void FilenameIdTable::SaveTo(const std::set<FilenameIdTable::Id>& ids,
 
   for (const auto& entry : map_to_filename_) {
     FilenameIdTable::Id id = entry.first;
-    const string& filename = entry.second;
+    const std::string& filename = entry.second;
 
     if (!ids.count(id))
       continue;
@@ -76,8 +74,8 @@ void FilenameIdTable::SaveTo(const std::set<FilenameIdTable::Id>& ids,
   }
 }
 
-bool FilenameIdTable::InsertEntryUnlocked(const string& filename,
-                                           FilenameIdTable::Id id) {
+bool FilenameIdTable::InsertEntryUnlocked(const std::string& filename,
+                                          FilenameIdTable::Id id) {
   if (id < 0 || filename.empty())
     return false;
 
@@ -97,7 +95,8 @@ bool FilenameIdTable::InsertEntryUnlocked(const string& filename,
   return true;
 }
 
-FilenameIdTable::Id FilenameIdTable::InsertFilename(const string& filename) {
+FilenameIdTable::Id FilenameIdTable::InsertFilename(
+    const std::string& filename) {
   if (filename.empty())
     return kInvalidId;
 
@@ -121,22 +120,22 @@ FilenameIdTable::Id FilenameIdTable::InsertFilename(const string& filename) {
 }
 
 FilenameIdTable::Id FilenameIdTable::LookupIdUnlocked(
-    const string& filename) const {
+    const std::string& filename) const {
   auto it = map_to_id_.find(filename);
   if (it == map_to_id_.end())
     return kInvalidId;
   return it->second;
 }
 
-string FilenameIdTable::ToFilename(FilenameIdTable::Id id) const {
+std::string FilenameIdTable::ToFilename(FilenameIdTable::Id id) const {
   AUTO_SHARED_LOCK(lock, &mu_);
   auto it = map_to_filename_.find(id);
   if (it == map_to_filename_.end())
-    return string();
+    return std::string();
   return it->second;
 }
 
-FilenameIdTable::Id FilenameIdTable::ToId(const string& filename) const {
+FilenameIdTable::Id FilenameIdTable::ToId(const std::string& filename) const {
   AUTO_SHARED_LOCK(lock, &mu_);
   return LookupIdUnlocked(filename);
 }

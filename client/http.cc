@@ -64,8 +64,6 @@ MSVC_POP_WARNING()
 #include "worker_thread.h"
 #include "zero_copy_stream_impl.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 namespace {
@@ -185,7 +183,7 @@ bool HttpClient::Options::InitFromURL(absl::string_view url) {
   return true;
 }
 
-string HttpClient::Options::SocketHost() const {
+std::string HttpClient::Options::SocketHost() const {
   if (!proxy_host_name.empty()) {
     return proxy_host_name;
   }
@@ -199,7 +197,7 @@ int HttpClient::Options::SocketPort() const {
   return dest_port;
 }
 
-string HttpClient::Options::RequestURL(absl::string_view path) const {
+std::string HttpClient::Options::RequestURL(absl::string_view path) const {
   std::ostringstream url;
   if (!use_ssl && UseProxy()) {
     // Without SSL (i.e. without CONNECT) and with proxy, we must send request
@@ -213,13 +211,13 @@ string HttpClient::Options::RequestURL(absl::string_view path) const {
   return url.str();
 }
 
-string HttpClient::Options::Host() const {
+std::string HttpClient::Options::Host() const {
   // See: RFC 7230 5.4 Host.
   //      https://tools.ietf.org/html/rfc7230#section-5.4
   return dest_host_name;
 }
 
-string HttpClient::Options::DebugString() const {
+std::string HttpClient::Options::DebugString() const {
   std::ostringstream ss;
   ss << "dest=" << dest_host_name << ":" << dest_port;
   if (!url_path_prefix.empty())
@@ -303,7 +301,7 @@ class HttpClient::Task {
     // Refreshing OAuth2 access token is a bit complex operation, and
     // difficult to track the behavior.  Refactoring must be needed.
     if (auth_status_ == NEED_REFRESH) {
-      const string& authorization = client_->GetOAuth2Authorization();
+      const std::string& authorization = client_->GetOAuth2Authorization();
       if (authorization.empty()) {
         RunCallback(FAIL, "authorization not available");
         return;
@@ -618,7 +616,7 @@ class HttpClient::Task {
         WorkerThread::PRIORITY_MED);
   }
 
-  void RunCallback(int err, const string& err_message) {
+  void RunCallback(int err, const std::string& err_message) {
     VLOG(2) << status_->trace_id
             << " RunCallback"
             << " err=" << err
@@ -698,7 +696,7 @@ class HttpClient::Task {
   void CaptureResponseHeader() {
     if (!status_->response_header.empty())
       return;
-    status_->response_header = string(resp_->Header());
+    status_->response_header = std::string(resp_->Header());
   }
 
   HttpClient* client_;
@@ -763,7 +761,7 @@ HttpClient::Status::Status()
       num_connect_failed(0) {
 }
 
-string HttpClient::Status::DebugString() const {
+std::string HttpClient::Status::DebugString() const {
   std::ostringstream ss;
   ss << "state=" << state
      << " timeout_should_be_http_error=" << timeout_should_be_http_error
@@ -835,6 +833,8 @@ HttpClient::HttpClient(std::unique_ptr<SocketFactory> socket_factory,
       peak_pending_(0),
       num_pending_(0),
       num_http_retry_(0),
+      num_http_throttled_(0),
+      num_http_connect_failed_(0),
       num_http_timeout_(0),
       num_http_error_(0),
       total_write_byte_(0),
@@ -856,11 +856,11 @@ HttpClient::HttpClient(std::unique_ptr<SocketFactory> socket_factory,
   read_size_->SetName("read size distribution");
   write_size_->SetName("write size distribution");
   if (!options_.authorization.empty()) {
-    CHECK(options_.authorization.find_first_of("\r\n") == string::npos)
+    CHECK(options_.authorization.find_first_of("\r\n") == std::string::npos)
         << "authorization must not contain CR LF:" << options_.authorization;
   }
   if (!options_.cookie.empty()) {
-    CHECK(options_.cookie.find_first_of("\r\n") == string::npos)
+    CHECK(options_.cookie.find_first_of("\r\n") == std::string::npos)
         << "cookie must not contain CR LF:" << options_.cookie;
   }
   LOG_IF(ERROR, !socket_pool_->IsInitialized())
@@ -906,10 +906,11 @@ HttpClient::~HttpClient() {
   LOG(INFO) << "HttpClient terminated.";
 }
 
-void HttpClient::InitHttpRequest(
-    Request* req, const string& method, const string& path) const {
+void HttpClient::InitHttpRequest(Request* req,
+                                 const std::string& method,
+                                 const std::string& path) const {
   req->Init(method, path, options_);
-  const string& auth = GetOAuth2Authorization();
+  const std::string& auth = GetOAuth2Authorization();
   if (!auth.empty()) {
     req->SetAuthorization(auth);
     LOG_IF(WARNING, !options_.authorization.empty())
@@ -1054,7 +1055,7 @@ int HttpClient::ramp_up() const {
   return std::min<int>(100, (now - *enabled_from_) * 100 / kRampUpDuration);
 }
 
-string HttpClient::GetHealthStatusMessage() const {
+std::string HttpClient::GetHealthStatusMessage() const {
   AUTOLOCK(lock, &mu_);
   return health_status_;
 }
@@ -1096,7 +1097,7 @@ bool HttpClient::IsHealthy() const {
   return health_status_ == "ok";
 }
 
-string HttpClient::GetAccount() {
+std::string HttpClient::GetAccount() {
   if (oauth_refresh_task_.get() == nullptr) {
     return "";
   }
@@ -1110,7 +1111,7 @@ bool HttpClient::GetOAuth2Config(OAuth2Config* config) const {
   return oauth_refresh_task_->GetOAuth2Config(config);
 }
 
-string HttpClient::DebugString() const {
+std::string HttpClient::DebugString() const {
   AUTOLOCK(lock, &mu_);
 
   std::ostringstream ss;
@@ -1155,6 +1156,14 @@ string HttpClient::DebugString() const {
   ss << " Retry: " << num_http_retry_;
   if (num_query_ > 0)
     ss << " (" << (num_http_retry_ * 100.0 / num_query_) << "%)";
+  ss << std::endl;
+  ss << " Throttled: " << num_http_throttled_;
+  if (num_query_ > 0)
+    ss << " (" << (num_http_throttled_ * 100.0 / num_query_) << "%)";
+  ss << std::endl;
+  ss << " Connect Failed: " << num_http_connect_failed_;
+  if (num_query_ > 0)
+    ss << " (" << (num_http_connect_failed_ * 100.0 / num_query_) << "%)";
   ss << std::endl;
   ss << " Timeout: " << num_http_timeout_;
   if (num_query_ > 0)
@@ -1233,6 +1242,8 @@ void HttpClient::DumpToJson(Json::Value* json) const {
   (*json)["num_query"] = num_query_;
   (*json)["num_active"] = num_active_;
   (*json)["num_http_retry"] = num_http_retry_;
+  (*json)["num_http_throttled"] = num_http_throttled_;
+  (*json)["num_http_connect_failed"] = num_http_connect_failed_;
   (*json)["num_http_timeout"] = num_http_timeout_;
   (*json)["num_http_error"] = num_http_error_;
   (*json)["write_byte"] = Json::Int64(total_write_byte_);
@@ -1296,6 +1307,8 @@ void HttpClient::DumpStatsToProto(HttpRPCStats* stats) const {
   stats->set_query(num_query_);
   stats->set_active(num_active_);
   stats->set_retry(num_http_retry_);
+  stats->set_throttled(num_http_throttled_);
+  stats->set_connect_failed(num_http_connect_failed_);
   stats->set_timeout(num_http_timeout_);
   stats->set_error(num_http_error_);
   stats->set_network_error(num_network_error_);
@@ -1312,7 +1325,7 @@ void HttpClient::DumpStatsToProto(HttpRPCStats* stats) const {
 
 int HttpClient::UpdateHealthStatusMessageForPing(
     const Status& status, absl::optional<absl::Duration> round_trip_time) {
-  const string running = options_.fail_fast ? "error:" : "running:";
+  const std::string running = options_.fail_fast ? "error:" : "running:";
   LOG(INFO) << "Ping status:"
             << " http_return_code=" << status.http_return_code
             << " throttle_time=" << status.throttle_time
@@ -1432,7 +1445,7 @@ void HttpClient::UpdateBackoffUnlocked(bool in_error) {
   }
 }
 
-string HttpClient::GetOAuth2Authorization() const {
+std::string HttpClient::GetOAuth2Authorization() const {
   if (!oauth_refresh_task_.get()) {
     return "";
   }
@@ -1552,6 +1565,8 @@ void HttpClient::UpdateStats(const Status& status) {
     NetworkErrorDetectedUnlocked();
   }
   num_http_retry_ += status.num_retry;
+  num_http_throttled_ += status.num_throttled;
+  num_http_connect_failed_ += status.num_connect_failed;
   total_resp_byte_ += status.resp_size;
   total_resp_time_ += status.resp_recv_time;
 
@@ -1572,7 +1587,7 @@ void HttpClient::UpdateTrafficHistory() {
         }
         health_status_ = "ok";
       } else {
-        const string running = options_.fail_fast ? "error:" : "running:";
+        const std::string running = options_.fail_fast ? "error:" : "running:";
         if (health_status_ == "ok") {
           LOG(WARNING) << "Update health status: ok to "
                        << running
@@ -1652,9 +1667,9 @@ HttpClient::Request::Request()
 HttpClient::Request::~Request() {
 }
 
-void HttpClient::Request::Init(
-    const string& method, const string& path,
-    const HttpClient::Options& options) {
+void HttpClient::Request::Init(const std::string& method,
+                               const std::string& path,
+                               const HttpClient::Options& options) {
   SetMethod(method);
   SetRequestPath(options.RequestURL(path));
   SetHost(options.Host());
@@ -1666,44 +1681,45 @@ void HttpClient::Request::Init(
   }
 }
 
-void HttpClient::Request::SetMethod(const string& method) {
+void HttpClient::Request::SetMethod(const std::string& method) {
   method_ = method;
 }
 
-void HttpClient::Request::SetRequestPath(const string& path) {
+void HttpClient::Request::SetRequestPath(const std::string& path) {
   request_path_ = path;
 }
 
-void HttpClient::Request::SetHost(const string& host) {
+void HttpClient::Request::SetHost(const std::string& host) {
   host_ = host;
 }
 
-void HttpClient::Request::SetContentType(const string& content_type) {
+void HttpClient::Request::SetContentType(const std::string& content_type) {
   content_type_ = content_type;
 }
 
-void HttpClient::Request::SetAuthorization(const string& authorization) {
+void HttpClient::Request::SetAuthorization(const std::string& authorization) {
   authorization_ = authorization;
 }
 
-void HttpClient::Request::SetCookie(const string& cookie) {
+void HttpClient::Request::SetCookie(const std::string& cookie) {
   cookie_ = cookie;
 }
 
-void HttpClient::Request::AddHeader(const string& key, const string& value) {
+void HttpClient::Request::AddHeader(const std::string& key,
+                                    const std::string& value) {
   headers_.push_back(CreateHeader(key, value));
 }
 
 /* static */
-string HttpClient::Request::CreateHeader(
-    absl::string_view key, absl::string_view value) {
+std::string HttpClient::Request::CreateHeader(absl::string_view key,
+                                              absl::string_view value) {
   std::ostringstream line;
   line << key << ": " << value;
   return line.str();
 }
 
-string HttpClient::Request::BuildHeader(
-    const std::vector<string>& headers,
+std::string HttpClient::Request::BuildHeader(
+    const std::vector<std::string>& headers,
     int content_length) const {
   std::ostringstream msg;
   msg << method_ << " " << request_path_ << " HTTP/1.1\r\n";
@@ -1751,7 +1767,7 @@ HttpRequest::HttpRequest() {
 HttpRequest::~HttpRequest() {
 }
 
-void HttpRequest::SetBody(const string& body) {
+void HttpRequest::SetBody(const std::string& body) {
   body_ = body;
 }
 
@@ -1760,7 +1776,7 @@ HttpRequest::NewStream() const {
   std::vector<std::unique_ptr<google::protobuf::io::ZeroCopyInputStream>> s;
   s.reserve(2);
   s.push_back(absl::make_unique<StringInputStream>(
-      BuildHeader(std::vector<string>(), body_.size())));
+      BuildHeader(std::vector<std::string>(), body_.size())));
   s.push_back(absl::make_unique<google::protobuf::io::ArrayInputStream>(
       body_.data(), body_.size()));
   return absl::make_unique<ChainedInputStream>(std::move(s));
@@ -1776,7 +1792,7 @@ HttpFileUploadRequest::NewStream() const {
   s.reserve(2);
   // TODO: use chunked encoding for body and no require size_ ?
   s.push_back(absl::make_unique<StringInputStream>(
-      BuildHeader(std::vector<string>(), size_)));
+      BuildHeader(std::vector<std::string>(), size_)));
 
   // pass ownership of fd to body.
   std::unique_ptr<ScopedFdInputStream> body(
@@ -1806,11 +1822,11 @@ HttpClient::Response::Response()
 HttpClient::Response::~Response() {
 }
 
-void HttpClient::Response::SetRequestPath(const string& path) {
+void HttpClient::Response::SetRequestPath(const std::string& path) {
   request_path_ = path;
 }
 
-void HttpClient::Response::SetTraceId(const string& trace_id) {
+void HttpClient::Response::SetTraceId(const std::string& trace_id) {
   trace_id_ = trace_id;
 }
 
@@ -1868,7 +1884,7 @@ bool HttpClient::Response::Recv(int r) {
     return true;
   }
   absl::string_view resp = buffer_.Contents();
-  size_t content_length = string::npos;
+  size_t content_length = std::string::npos;
   bool is_chunked = false;
   if (!ParseHttpResponse(resp, &status_code_, &body_offset_,
                          &content_length,
@@ -1881,7 +1897,7 @@ bool HttpClient::Response::Recv(int r) {
           << " offset=" << body_offset_ << " content_length=" << content_length
           << " is_chunked=" << is_chunked
           << " total_recv_len=" << total_recv_len_;
-  if (content_length != string::npos) {
+  if (content_length != std::string::npos) {
     content_length_ = content_length;
   }
   if (status_code_ == 204 && body_offset_ == resp.size()) {
@@ -1976,7 +1992,7 @@ bool HttpClient::Response::HasConnectionClose() const {
   return ExtractHeaderField(Header(), kConnection) == "close";
 }
 
-string HttpClient::Response::TotalResponseSize() const {
+std::string HttpClient::Response::TotalResponseSize() const {
   if (body_offset_ > 0 && content_length_.has_value()) {
     return absl::StrCat(body_offset_ + *content_length_);
   }
@@ -2025,7 +2041,7 @@ void HttpClient::Response::Buffer::Reset() {
   memset(&buffer_[0], 0, buffer_.size());
 }
 
-string HttpClient::Response::Buffer::DebugString() const {
+std::string HttpClient::Response::Buffer::DebugString() const {
   return absl::StrCat("buffer_size=", buffer_.size(),
                       " len=", len_);
 }
@@ -2065,7 +2081,7 @@ HttpResponse::Body::Process(int data_size) {
   }
   if (data_size == 0) {  // EOF
     if (!chunk_parser_) {
-      if (content_length_ == string::npos) {
+      if (content_length_ == std::string::npos) {
         VLOG(3) << "content finished with EOF";
         return State::Ok;
       }
@@ -2096,7 +2112,7 @@ HttpResponse::Body::Process(int data_size) {
     return State::Ok;
   }
   chunks_.emplace_back(data);
-  if (content_length_ == string::npos) {
+  if (content_length_ == std::string::npos) {
     // read until EOF.
     return State::Incomplete;
   }
@@ -2204,7 +2220,7 @@ HttpFileDownloadResponse::Body::Process(int data_size) {
   }
   if (data_size == 0) {  // EOF
     if (!chunk_parser_) {
-      if (content_length_ == string::npos) {
+      if (content_length_ == std::string::npos) {
         VLOG(3) << "content finished with EOF";
         return Close();
       }
@@ -2241,7 +2257,7 @@ HttpFileDownloadResponse::Body::Process(int data_size) {
   if (!Write(data)) {
     return State::Error;
   }
-  if (content_length_ == string::npos) {
+  if (content_length_ == std::string::npos) {
     // read until EOF.
     return State::Incomplete;
   }

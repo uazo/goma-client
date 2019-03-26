@@ -172,13 +172,13 @@ class HttpClientTest : public ::testing::Test {
     pool_ = -1;
   }
 
-  void ServerReceive(absl::string_view req, string* req_buf) {
+  void ServerReceive(absl::string_view req, std::string* req_buf) {
     req_buf->resize(req.size());
     mock_server_->ServerRead(socks_[0], req_buf);
   }
 
   void ServerResponse(absl::string_view resp) {
-    mock_server_->ServerWrite(socks_[0], string(resp));
+    mock_server_->ServerWrite(socks_[0], std::string(resp));
   }
 
   void ServerClose() {
@@ -213,7 +213,7 @@ class HttpClientTest : public ::testing::Test {
     std::unique_ptr<MockSocketFactory> socket_factory(
         absl::make_unique<MockSocketFactory>(socks_[1], &socket_status_));
     socket_factory->set_dest(absl::StrCat(host, ":", port));
-    socket_factory->set_host_name(string(host));
+    socket_factory->set_host_name(std::string(host));
     socket_factory->set_port(port);
 
     HttpClient::Options options;
@@ -294,8 +294,8 @@ class HttpClientTest : public ::testing::Test {
 };
 
 TEST_F(HttpClientTest, GetNoContentLengthConnectionClose) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -347,8 +347,8 @@ TEST_F(HttpClientTest, GetNoContentLengthConnectionClose) {
 }
 
 TEST_F(HttpClientTest, GetNoContentLengthConnectionCloseSlowBody) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -401,8 +401,8 @@ TEST_F(HttpClientTest, GetNoContentLengthConnectionCloseSlowBody) {
 }
 
 TEST_F(HttpClientTest, GetNoContentLengthConnectionCloseEmptyBody) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -453,8 +453,8 @@ TEST_F(HttpClientTest, GetNoContentLengthConnectionCloseEmptyBody) {
 }
 
 TEST_F(HttpClientTest, GetEmptyBody) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -504,8 +504,8 @@ TEST_F(HttpClientTest, GetEmptyBody) {
 }
 
 TEST_F(HttpClientTest, GetResponse) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -556,8 +556,8 @@ TEST_F(HttpClientTest, GetResponse) {
 }
 
 TEST_F(HttpClientTest, GetConnectionClose) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -608,8 +608,8 @@ TEST_F(HttpClientTest, GetConnectionClose) {
 }
 
 TEST_F(HttpClientTest, GetTimedOut) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -665,8 +665,8 @@ TEST_F(HttpClientTest, GetTimedOut) {
 }
 
 TEST_F(HttpClientTest, Get204) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -715,8 +715,8 @@ TEST_F(HttpClientTest, Get204) {
 }
 
 TEST_F(HttpClientTest, Get302) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -770,8 +770,8 @@ TEST_F(HttpClientTest, Get302) {
 }
 
 TEST_F(HttpClientTest, Get401) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -824,8 +824,8 @@ TEST_F(HttpClientTest, Get401) {
 }
 
 TEST_F(HttpClientTest, Get502) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -878,8 +878,8 @@ TEST_F(HttpClientTest, Get502) {
 }
 
 TEST_F(HttpClientTest, GetFileDownload) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -892,7 +892,7 @@ TEST_F(HttpClientTest, GetFileDownload) {
 
   ScopedTmpDir tmpdir("http_unittest_get_filedownload");
   EXPECT_TRUE(tmpdir.valid());
-  string resp_file = file::JoinPath(tmpdir.dirname(), "resp");
+  std::string resp_file = file::JoinPath(tmpdir.dirname(), "resp");
   LOG(INFO) << "download to " << resp_file;
   HttpFileDownloadResponse resp(resp_file, 0644);
   TestContext tc(client.get(), &req, &resp, NewDoneCallback(&done));
@@ -929,7 +929,7 @@ TEST_F(HttpClientTest, GetFileDownload) {
     EXPECT_EQ("", tc.status_.err_message);
     EXPECT_EQ(200, tc.status_.http_return_code);
 
-    string resp_data;
+    std::string resp_data;
     EXPECT_TRUE(ReadFileToString(resp_file, &resp_data));
     EXPECT_EQ("ok", resp_data);
   }
@@ -938,8 +938,8 @@ TEST_F(HttpClientTest, GetFileDownload) {
 }
 
 TEST_F(HttpClientTest, GetFileDownloadFail) {
-  const string req_expected = ExpectedRequest("GET", "example.com");
-  string req_buf;
+  const std::string req_expected = ExpectedRequest("GET", "example.com");
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -952,7 +952,7 @@ TEST_F(HttpClientTest, GetFileDownloadFail) {
 
   ScopedTmpDir tmpdir("http_unittest_get_filedownload");
   EXPECT_TRUE(tmpdir.valid());
-  string resp_file = file::JoinPath(tmpdir.dirname(), "resp");
+  std::string resp_file = file::JoinPath(tmpdir.dirname(), "resp");
   LOG(INFO) << "download to " << resp_file;
   HttpFileDownloadResponse resp(resp_file, 0644);
   TestContext tc(client.get(), &req, &resp, NewDoneCallback(&done));
@@ -989,7 +989,7 @@ TEST_F(HttpClientTest, GetFileDownloadFail) {
     EXPECT_NE("", tc.status_.err_message);
     EXPECT_EQ(404, tc.status_.http_return_code);
 
-    string resp_data;
+    std::string resp_data;
     EXPECT_FALSE(ReadFileToString(resp_file, &resp_data));
   }
   client->WaitNoActive();
@@ -998,9 +998,9 @@ TEST_F(HttpClientTest, GetFileDownloadFail) {
 
 TEST_F(HttpClientTest, Post) {
   constexpr absl::string_view kBody = "request body data";
-  const string req_expected =
+  const std::string req_expected =
       ExpectedRequestWithBody("POST", "example.com", kBody);
-  string req_buf;
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -1010,7 +1010,7 @@ TEST_F(HttpClientTest, Post) {
   client->InitHttpRequest(&req, "POST", "");
   req.SetContentType("text/plain");
   req.AddHeader("Connection", "close");
-  req.SetBody(string(kBody));
+  req.SetBody(std::string(kBody));
   HttpResponse resp;
   TestContext tc(client.get(), &req, &resp, NewDoneCallback(&done));
   RunTest(&tc);
@@ -1053,9 +1053,9 @@ TEST_F(HttpClientTest, Post) {
 
 TEST_F(HttpClientTest, PostUpload) {
   constexpr absl::string_view kBody = "request body data";
-  const string req_expected =
+  const std::string req_expected =
       ExpectedRequestWithBody("POST", "example.com", kBody);
-  string req_buf;
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -1064,7 +1064,7 @@ TEST_F(HttpClientTest, PostUpload) {
 
   ScopedTmpDir tmpdir("http_unittest_post_upload");
   EXPECT_TRUE(tmpdir.valid());
-  string req_file = file::JoinPath(tmpdir.dirname(), "req");
+  std::string req_file = file::JoinPath(tmpdir.dirname(), "req");
   ASSERT_TRUE(WriteStringToFile(kBody, req_file));
   LOG(INFO) << "upload from " << req_file;
 
@@ -1115,9 +1115,9 @@ TEST_F(HttpClientTest, PostUpload) {
 
 TEST_F(HttpClientTest, PostUploadFailFileNotFound) {
   constexpr absl::string_view kBody = "request body data";
-  const string req_expected =
+  const std::string req_expected =
       ExpectedRequestWithBody("POST", "example.com", kBody);
-  string req_buf;
+  std::string req_buf;
   ServerReceive(req_expected, &req_buf);
 
   std::unique_ptr<HttpClient> client(NewHttpClient("example.com", 80));
@@ -1126,7 +1126,7 @@ TEST_F(HttpClientTest, PostUploadFailFileNotFound) {
 
   ScopedTmpDir tmpdir("http_unittest_post_upload");
   EXPECT_TRUE(tmpdir.valid());
-  string req_file = file::JoinPath(tmpdir.dirname(), "req");
+  std::string req_file = file::JoinPath(tmpdir.dirname(), "req");
   LOG(INFO) << "upload from " << req_file;
 
   HttpFileUploadRequest req;
@@ -1241,8 +1241,8 @@ class HttpResponseBodyTest : public testing::Test {
 TEST_F(HttpResponseBodyTest, NoContentLength) {
   static constexpr absl::string_view kBody = "response body";
   std::string parsed_body;
-  EXPECT_TRUE(ParsedBody(string::npos, false, EncodingType::NO_ENCODING, kBody,
-                         &parsed_body));
+  EXPECT_TRUE(ParsedBody(std::string::npos, false, EncodingType::NO_ENCODING,
+                         kBody, &parsed_body));
   EXPECT_EQ(kBody, parsed_body);
 }
 
@@ -1263,11 +1263,10 @@ TEST_F(HttpResponseBodyTest, Chunked) {
                                              "a\r\nqrstuvwxyz\r\n"
                                              "0\r\n\r\n";
   std::string parsed_body;
-  EXPECT_FALSE(ParsedBody(string::npos, true, EncodingType::NO_ENCODING,
-                         kBody.substr(0, kBody.size()-1),
-                         &parsed_body));
+  EXPECT_FALSE(ParsedBody(std::string::npos, true, EncodingType::NO_ENCODING,
+                          kBody.substr(0, kBody.size() - 1), &parsed_body));
 
-  EXPECT_TRUE(ParsedBody(string::npos, true, EncodingType::NO_ENCODING,
+  EXPECT_TRUE(ParsedBody(std::string::npos, true, EncodingType::NO_ENCODING,
                          kBody, &parsed_body));
 
   EXPECT_EQ("abcdefghijklmnopqrstuvwxyz", parsed_body);
@@ -1288,7 +1287,7 @@ class HttpFileDownloadBodyTest : public testing::Test {
       LOG(ERROR) << "failed to create tmpdir";
       return false;
     }
-    string tempfile = file::JoinPath(tmpdir.dirname(), "out");
+    std::string tempfile = file::JoinPath(tmpdir.dirname(), "out");
     ScopedFd fd(ScopedFd::Create(tempfile, 0644));
     auto body = absl::make_unique<HttpFileDownloadResponse::Body>(
             std::move(fd), content_length, is_chunked, encoding_type);
@@ -1313,8 +1312,8 @@ class HttpFileDownloadBodyTest : public testing::Test {
 TEST_F(HttpFileDownloadBodyTest, NoContentLength) {
   static constexpr absl::string_view kBody = "response body";
   std::string parsed_body;
-  EXPECT_TRUE(ParsedBody(string::npos, false, EncodingType::NO_ENCODING, kBody,
-                         &parsed_body));
+  EXPECT_TRUE(ParsedBody(std::string::npos, false, EncodingType::NO_ENCODING,
+                         kBody, &parsed_body));
   EXPECT_EQ(kBody, parsed_body);
 }
 
@@ -1347,11 +1346,10 @@ TEST_F(HttpFileDownloadBodyTest, Chunked) {
                                              "a\r\nqrstuvwxyz\r\n"
                                              "0\r\n\r\n";
   std::string parsed_body;
-  EXPECT_FALSE(ParsedBody(string::npos, true, EncodingType::NO_ENCODING,
-                         kBody.substr(0, kBody.size()-1),
-                         &parsed_body));
+  EXPECT_FALSE(ParsedBody(std::string::npos, true, EncodingType::NO_ENCODING,
+                          kBody.substr(0, kBody.size() - 1), &parsed_body));
 
-  EXPECT_TRUE(ParsedBody(string::npos, true, EncodingType::NO_ENCODING,
+  EXPECT_TRUE(ParsedBody(std::string::npos, true, EncodingType::NO_ENCODING,
                          kBody, &parsed_body));
 
   EXPECT_EQ("abcdefghijklmnopqrstuvwxyz", parsed_body);

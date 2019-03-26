@@ -100,7 +100,7 @@ namespace {
 
 constexpr int kMaxExecRetry = 4;
 
-string GetLastErrorMessage() {
+std::string GetLastErrorMessage() {
   char error_message[1024];
 #ifndef _WIN32
   // Meaning of returned value of strerror_r is different between
@@ -128,7 +128,8 @@ void DumpSubprograms(
   }
 }
 
-void LogCompilerOutput(const string& trace_id, const string& name,
+void LogCompilerOutput(const std::string& trace_id,
+                       const std::string& name,
                        absl::string_view out) {
   LOG(INFO) << trace_id << " " << name << ": size=" << out.size();
   static const int kMaxLines = 32;
@@ -143,7 +144,7 @@ void LogCompilerOutput(const string& trace_id, const string& name,
   for (int i = 0; out.size() > 0 && i < kMaxLines;) {
     size_t end = out.find_first_of("\r\n");
     absl::string_view line;
-    if (end == string::npos) {
+    if (end == std::string::npos) {
       line = out;
       out = absl::string_view();
     } else if (end == 0) {
@@ -158,9 +159,9 @@ void LogCompilerOutput(const string& trace_id, const string& name,
     if (absl::StartsWith(line, kClExeShowIncludePrefix))
       continue;
     size_t found = line.find("error");
-    if (found == string::npos)
+    if (found == std::string::npos)
       found = line.find("warning");
-    if (found != string::npos) {
+    if (found != std::string::npos) {
       ++i;
       if (line.size() > kMaxCols) {
         LOG(INFO) << trace_id << " " << name << ":"
@@ -179,11 +180,11 @@ void ReleaseMemoryForExecReqInput(ExecReq* req) {
   *req = new_req;
 }
 
-string CreateCommandVersionString(const CommandSpec& spec) {
+std::string CreateCommandVersionString(const CommandSpec& spec) {
   return spec.name() + ' ' + spec.version() + " (" + spec.binary_hash() + ")";
 }
 
-string StateName(CompileTask::State state) {
+std::string StateName(CompileTask::State state) {
   static const char* names[] = {
     "INIT",
     "SETUP",
@@ -206,8 +207,10 @@ string StateName(CompileTask::State state) {
 }
 
 template <typename Iter>
-void NormalizeSystemIncludePaths(const string& home, const string& cwd,
-                                 Iter path_begin, Iter path_end) {
+void NormalizeSystemIncludePaths(const std::string& home,
+                                 const std::string& cwd,
+                                 Iter path_begin,
+                                 Iter path_end) {
   if (home.empty())
     return;
 
@@ -414,10 +417,9 @@ void CompileTask::Start() {
               << " gomacc_pid=" << gomacc_pid_;
     if (!flags_->input_filenames().empty() && !flags_->output_files().empty()) {
       DCHECK_EQ(1U, flags_->input_filenames().size()) << trace_id_;
-      const string& input_filename =
-          file::JoinPathRespectAbsolute(flags_->cwd(),
-                                        flags_->input_filenames()[0]);
-      string output_filename;
+      const std::string& input_filename = file::JoinPathRespectAbsolute(
+          flags_->cwd(), flags_->input_filenames()[0]);
+      std::string output_filename;
       for (const auto& output_file : flags_->output_files()) {
         if (absl::EndsWith(output_file, ".gch")) {
           int output_filelen = output_file.size();
@@ -689,7 +691,7 @@ void CompileTask::ProcessFileRequest() {
           << " start processing of input files "
           << required_files_.size();
 
-  absl::flat_hash_set<string> missed_content_files;
+  absl::flat_hash_set<std::string> missed_content_files;
   for (const auto& filename : resp_->missing_input()) {
     missed_content_files.insert(filename);
     VLOG(2) << trace_id_ << " missed content: " << filename;
@@ -700,7 +702,7 @@ void CompileTask::ProcessFileRequest() {
   }
 
   // InputFileTask assumes that filename is unique in single compile task.
-  std::vector<string> removed_files;
+  std::vector<std::string> removed_files;
   RemoveDuplicateFiles(flags_->cwd(), &required_files_, &removed_files);
   LOG_IF(INFO, !removed_files.empty())
       << trace_id_ << " de-duplicated:" << removed_files;
@@ -714,14 +716,14 @@ void CompileTask::ProcessFileRequest() {
   stats_->set_num_total_input_file(required_files_.size());
   stats_->set_total_input_file_size(sum_of_required_file_size_);
 
-  for (const string& filename : required_files_) {
+  for (const std::string& filename : required_files_) {
     ExecReq_Input* input = req_->add_input();
     input->set_filename(filename);
     const std::string abs_filename =
         file::JoinPathRespectAbsolute(flags_->cwd(), filename);
     bool missed_content = missed_content_files.contains(filename);
     absl::optional<absl::Time> mtime;
-    string hash_key;
+    std::string hash_key;
     bool hash_key_is_ok = false;
     absl::optional<absl::Time> missed_timestamp;
     if (missed_content) {
@@ -1046,7 +1048,7 @@ void CompileTask::ProcessCallExecDone() {
   exit_status_ = exec_resp_->result().exit_status();
   resp_->Swap(exec_resp_.get());
   exec_resp_.reset();
-  string retry_reason;
+  std::string retry_reason;
   for (const auto& msg : resp_->error_message()) {
     exec_error_message_.push_back(msg);
     if (!retry_reason.empty()) {
@@ -1176,7 +1178,8 @@ void CompileTask::ProcessCallExecDone() {
               ExecResp::UNSUPPORTED_COMPILER_FLAGS) {
         // TODO: Make a simple test for this after goma server has
         // started returning bad request reason code.
-        string msg = "compile request was rejected by goma server. "
+        std::string msg =
+            "compile request was rejected by goma server. "
             "The request might contain unsupported compiler flag.\n"
             "If you want to continue compile with local fallback, set "
             "environment variable "
@@ -1297,7 +1300,7 @@ void CompileTask::ProcessFileResponse() {
   // Decide if it could use in-memory output or not and should write output
   // in tmp file or not.
   bool want_in_memory_output = true;
-  string need_rename_reason;
+  std::string need_rename_reason;
   if (verify_output_) {
     VLOG(1) << trace_id_ << " output need_rename for verify_output";
     want_in_memory_output = false;
@@ -1337,12 +1340,12 @@ void CompileTask::ProcessFileResponse() {
   SetOutputFileCallback();
   std::vector<OneshotClosure*> closures;
   for (int i = 0; i < resp_->result().output_size(); ++i) {
-    const string& output_filename = resp_->result().output(i).filename();
+    const std::string& output_filename = resp_->result().output(i).filename();
     CheckOutputFilename(output_filename);
 
     exec_output_files_.push_back(output_filename);
-    string filename = file::JoinPathRespectAbsolute(
-        stats_->cwd(), output_filename);
+    std::string filename =
+        file::JoinPathRespectAbsolute(stats_->cwd(), output_filename);
     // TODO: check output paths matches with flag's output filenames?
     if (service_->enable_gch_hack() && absl::EndsWith(filename, ".gch"))
       filename += ".goma";
@@ -1511,8 +1514,8 @@ void CompileTask::ProcessFileResponseDone() {
     CHECK(subproc_ == nullptr);
     CHECK(delayed_setup_subproc_ == nullptr);
     for (const auto& info : output_file_infos_) {
-      const string& filename = info.filename;
-      const string& tmp_filename = info.tmp_filename;
+      const std::string& filename = info.filename;
+      const std::string& tmp_filename = info.tmp_filename;
       if (!VerifyOutput(filename, tmp_filename)) {
         output_file_success_ = false;
       }
@@ -1529,7 +1532,7 @@ void CompileTask::ProcessFileResponseDone() {
   }
 }
 
-void CompileTask::ProcessFinished(const string& msg) {
+void CompileTask::ProcessFinished(const std::string& msg) {
   if (abort_ || canceled_ || !msg.empty()) {
     LOG(INFO) << trace_id_ << " finished " << msg
               << " state=" << StateName(state_)
@@ -1660,7 +1663,7 @@ void CompileTask::ProcessReply() {
   CHECK(subproc_ == nullptr);
   CHECK(delayed_setup_subproc_ == nullptr);
   CHECK(!abort_);
-  string msg;
+  std::string msg;
   if (IsGomaccRunning()) {
     VLOG(2) << trace_id_ << " goma result:" << resp_->DebugString();
     if (local_run_ && service_->dont_kill_subprocess()) {
@@ -1703,11 +1706,11 @@ void CompileTask::ProcessReply() {
 }
 
 struct CompileTask::RenameParam {
-  string oldpath;
-  string newpath;
+  std::string oldpath;
+  std::string newpath;
 };
 
-void CompileTask::RenameCallback(RenameParam* param, string* err) {
+void CompileTask::RenameCallback(RenameParam* param, std::string* err) {
   err->clear();
   int r = rename(param->oldpath.c_str(), param->newpath.c_str());
   if (r == 0) {
@@ -1723,12 +1726,12 @@ void CompileTask::RenameCallback(RenameParam* param, string* err) {
 }
 
 struct CompileTask::ContentOutputParam {
-  string filename;
+  std::string filename;
   OutputFileInfo* info = nullptr;
 };
 
-void CompileTask::ContentOutputCallback(
-    ContentOutputParam* param, string* err) {
+void CompileTask::ContentOutputCallback(ContentOutputParam* param,
+                                        std::string* err) {
   err->clear();
   remove(param->filename.c_str());
   std::unique_ptr<FileDataOutput> fout(
@@ -1748,8 +1751,10 @@ void CompileTask::ContentOutputCallback(
 }
 
 #ifdef _WIN32
-void CompileTask::DoOutput(const string& opname, const string& filename,
-                           PermanentClosure* closure, string* err) {
+void CompileTask::DoOutput(const std::string& opname,
+                           const std::string& filename,
+                           PermanentClosure* closure,
+                           std::string* err) {
   static const int kMaxDeleteRetryForDoOutput = 5;
   // Large sleep time will not harm a normal user.
   // Followings are executed after termination of the child process,
@@ -1821,10 +1826,10 @@ void CompileTask::DoOutput(const string& opname, const string& filename,
   AddErrorToResponse(TO_USER, *err, true);
 }
 #else
-void CompileTask::DoOutput(const string& opname,
-                           const string& filename,
+void CompileTask::DoOutput(const std::string& opname,
+                           const std::string& filename,
                            PermanentClosure* closure,
-                           string* err) {
+                           std::string* err) {
   closure->Run();
   if (!err->empty()) {
     PLOG(ERROR) << trace_id_ << " DoOutput operation failed."
@@ -1836,7 +1841,7 @@ void CompileTask::DoOutput(const string& opname,
 }
 #endif
 
-void CompileTask::RewriteCoffTimestamp(const string& filename) {
+void CompileTask::RewriteCoffTimestamp(const std::string& filename) {
   absl::string_view ext = file::Extension(filename);
   if (ext != "obj")
     return;
@@ -1924,15 +1929,15 @@ void CompileTask::CommitOutput(bool use_remote) {
   CHECK(subproc_ == nullptr);
   CHECK(delayed_setup_subproc_ == nullptr);
 
-  std::vector<string> output_bases;
+  std::vector<std::string> output_bases;
   bool has_obj = false;
 
   for (auto& info : output_file_infos_) {
     SimpleTimer timer;
-    const string& filename = info.filename;
-    const string& tmp_filename = info.tmp_filename;
+    const std::string& filename = info.filename;
+    const std::string& tmp_filename = info.tmp_filename;
     // TODO: fix to support cas digest.
-    const string& hash_key = info.hash_key;
+    const std::string& hash_key = info.hash_key;
     DCHECK(!use_remote || !hash_key.empty())
         << trace_id_ << " if remote is used, hash_key must be set."
         << " filename=" << filename;
@@ -1966,7 +1971,7 @@ void CompileTask::CommitOutput(bool use_remote) {
       ContentOutputParam param;
       param.filename = filename;
       param.info = &info;
-      string err;
+      std::string err;
       std::unique_ptr<PermanentClosure> callback(
           NewPermanentCallback(
               this,
@@ -1985,7 +1990,7 @@ void CompileTask::CommitOutput(bool use_remote) {
       RenameParam param;
       param.oldpath = tmp_filename;
       param.newpath = filename;
-      string err;
+      std::string err;
       std::unique_ptr<PermanentClosure> callback(
           NewPermanentCallback(
              this, &CompileTask::RenameCallback, &param, &err));
@@ -2032,7 +2037,7 @@ void CompileTask::CommitOutput(bool use_remote) {
           << " size=" << info.size
           << " filename=" << info.filename;
     absl::string_view output_base = file::Basename(info.filename);
-    output_bases.push_back(string(output_base));
+    output_bases.push_back(std::string(output_base));
     absl::string_view ext = file::Extension(output_base);
     if (flags_->type() == CompilerFlagType::Gcc && ext == "o") {
       has_obj = true;
@@ -2059,17 +2064,17 @@ void CompileTask::CommitOutput(bool use_remote) {
 }
 
 // static
-string CompileTask::OmitDurationFromUserError(absl::string_view str) {
+std::string CompileTask::OmitDurationFromUserError(absl::string_view str) {
   absl::string_view::size_type colon_pos = str.find(':');
   if (colon_pos == absl::string_view::npos) {
-    return string(str);
+    return std::string(str);
   }
 
   return absl::StrCat("compiler_proxy <duration omitted>",
                       str.substr(colon_pos));
 }
 
-void CompileTask::ReplyResponse(const string& msg) {
+void CompileTask::ReplyResponse(const std::string& msg) {
   LOG(INFO) << trace_id_ << " ReplyResponse: " << msg;
   DCHECK(BelongsToCurrentThread());
   CHECK(state_ == FINISHED || state_ == LOCAL_FINISHED || abort_);
@@ -2101,8 +2106,8 @@ void CompileTask::ReplyResponse(const string& msg) {
                                 stats_->exec_exit_status() == 0);
   }
   if (resp_->error_message_size() != 0) {
-    std::vector<string> errs(resp_->error_message().begin(),
-                             resp_->error_message().end());
+    std::vector<std::string> errs(resp_->error_message().begin(),
+                                  resp_->error_message().end());
     LOG_IF(ERROR, resp_->result().exit_status() == 0)
         << trace_id_ << " should not have error message on exit_status=0."
         << " errs=" << errs;
@@ -2187,12 +2192,12 @@ void CompileTask::ProcessLocalFileOutput() {
   SetLocalOutputFileCallback();
   std::vector<OneshotClosure*> closures;
   for (const auto& output_file : flags_->output_files()) {
-    const string& filename =
+    const std::string& filename =
         file::JoinPathRespectAbsolute(flags_->cwd(), output_file);
     // only uploads *.o
     if (!absl::EndsWith(filename, ".o"))
       continue;
-    string hash_key;
+    std::string hash_key;
     const FileStat& output_file_stat = output_file_stat_cache_->Get(filename);
     bool found_in_cache = service_->file_hash_cache()->GetFileCacheKey(
         filename, absl::nullopt, output_file_stat, &hash_key);
@@ -2399,7 +2404,7 @@ void CompileTask::CopyEnvFromRequest() {
 
 void CompileTask::InitCompilerFlags() {
   CHECK_EQ(INIT, state_);
-  std::vector<string> args(req_->arg().begin(), req_->arg().end());
+  std::vector<std::string> args(req_->arg().begin(), req_->arg().end());
   VLOG(1) << trace_id_ << " " << args;
   flags_ = CompilerFlagsParser::New(args, req_->cwd());
   if (flags_.get() == nullptr) {
@@ -2424,23 +2429,19 @@ bool CompileTask::FindLocalCompilerPath() {
 
   // If gomacc sets local_compiler_path, just use it.
   if (!req_->command_spec().local_compiler_path().empty()) {
-    string local_compiler = PathResolver::PlatformConvert(
+    std::string local_compiler = PathResolver::PlatformConvert(
         req_->command_spec().local_compiler_path());
 
     // TODO: confirm why local_compiler_path should not be
     //                    basename, and remove the code if possible.
     // local_compiler_path should not be basename only.
-    if (local_compiler.find(PathResolver::kPathSep) == string::npos) {
+    if (local_compiler.find(PathResolver::kPathSep) == std::string::npos) {
       LOG(ERROR) << trace_id_ << " local_compiler_path should not be basename:"
                  << local_compiler;
     } else if (service_->FindLocalCompilerPath(
-        requester_env_.gomacc_path(),
-        local_compiler,
-        stats_->cwd(),
-        requester_env_.local_path(),
-        pathext_,
-        &local_compiler,
-        &local_path_)) {
+                   requester_env_.gomacc_path(), local_compiler, stats_->cwd(),
+                   requester_env_.local_path(), pathext_, &local_compiler,
+                   &local_path_)) {
       // Since compiler_info resolves relative path to absolute path,
       // we do not need to make local_comiler_path to absolute path
       // any more. (b/6340137, b/28088682)
@@ -2471,7 +2472,7 @@ bool CompileTask::FindLocalCompilerPath() {
     return false;
   }
 
-  string local_compiler_path;
+  std::string local_compiler_path;
   if (service_->FindLocalCompilerPath(
           requester_env_.gomacc_path(),
           flags_->compiler_base_name(),
@@ -2517,8 +2518,8 @@ bool CompileTask::ShouldFallback() const {
 #ifndef _WIN32
   // TODO: check "NUL", "CON", "AUX" on windows?
   for (const auto & input_filename : flags_->input_filenames()) {
-    const string input = file::JoinPathRespectAbsolute(
-        flags_->cwd(), input_filename);
+    const std::string input =
+        file::JoinPathRespectAbsolute(flags_->cwd(), input_filename);
     struct stat st;
     if (stat(input.c_str(), &st) != 0) {
       PLOG(INFO) << trace_id_ << " " << input << ": stat error";
@@ -2539,7 +2540,7 @@ bool CompileTask::ShouldFallback() const {
   if (requester_env_.fallback_input_file_size() == 0)
     return false;
 
-  std::vector<string> fallback_input_files(
+  std::vector<std::string> fallback_input_files(
       requester_env_.fallback_input_file().begin(),
       requester_env_.fallback_input_file().end());
   std::sort(fallback_input_files.begin(), fallback_input_files.end());
@@ -2609,8 +2610,8 @@ void CompileTask::FillCompilerInfo() {
 
   compiler_info_timer_.Start();
 
-  std::vector<string> key_envs(stats_->env().begin(), stats_->env().end());
-  std::vector<string> run_envs(key_envs);
+  std::vector<std::string> key_envs(stats_->env().begin(), stats_->env().end());
+  std::vector<std::string> run_envs(key_envs);
   if (!local_path_.empty())
     run_envs.push_back("PATH=" + local_path_);
 #ifdef _WIN32
@@ -2627,9 +2628,11 @@ void CompileTask::FillCompilerInfo() {
   param->trace_id = trace_id_;
   DCHECK_NE(
       req_->command_spec().local_compiler_path().find(PathResolver::kPathSep),
-      string::npos)
-      << trace_id_ << " expect local_compiler_path is relative path"
-      " or absolute path but " << req_->command_spec().local_compiler_path();
+      std::string::npos)
+      << trace_id_
+      << " expect local_compiler_path is relative path"
+         " or absolute path but "
+      << req_->command_spec().local_compiler_path();
   param->key = CompilerInfoCache::CreateKey(
       *flags_,
       req_->command_spec().local_compiler_path(),
@@ -2758,8 +2761,8 @@ void CompileTask::UpdateRequiredFilesDone(bool ok) {
     required_files_.insert(input_filename);
   }
   for (const auto& opt_input_filename: flags_->optional_input_filenames()) {
-    const string& abs_filename = file::JoinPathRespectAbsolute(
-        stats_->cwd(), opt_input_filename);
+    const std::string& abs_filename =
+        file::JoinPathRespectAbsolute(stats_->cwd(), opt_input_filename);
     if (access(abs_filename.c_str(), R_OK) == 0) {
       required_files_.insert(opt_input_filename);
     } else {
@@ -2778,7 +2781,8 @@ void CompileTask::UpdateRequiredFilesDone(bool ok) {
   req_->clear_input();
 
   for (const auto& input : required_files_) {
-    const string& path = file::JoinPathRespectAbsolute(flags_->cwd(), input);
+    const std::string& path =
+        file::JoinPathRespectAbsolute(flags_->cwd(), input);
     const auto stat = input_file_stat_cache_->Get(path);
     if (stat.IsValid()) {
       sum_of_required_file_size_ += stat.size;
@@ -2858,9 +2862,10 @@ bool CompileTask::MakeWeakRelativeInArgv() {
   }
   bool changed = false;
   std::ostringstream ss;
-  const std::vector<string>& parsed_args = CompilerFlagsUtil::MakeWeakRelative(
-      flags_->args(), req_->cwd(),
-      ToCxxCompilerInfo(compiler_info_state_.get()->info()));
+  const std::vector<std::string>& parsed_args =
+      CompilerFlagsUtil::MakeWeakRelative(
+          flags_->args(), req_->cwd(),
+          ToCxxCompilerInfo(compiler_info_state_.get()->info()));
   for (size_t i = 0; i < parsed_args.size(); ++i) {
     if (req_->arg(i) != parsed_args[i]) {
       VLOG(1) << trace_id_ << " Arg[" << i << "]: " << req_->arg(i) << " => "
@@ -2931,7 +2936,7 @@ static void FixCommandSpec(const CompilerInfo& compiler_info,
   }
 }
 
-static void FixSystemLibraryPath(const std::vector<string>& library_paths,
+static void FixSystemLibraryPath(const std::vector<std::string>& library_paths,
                                  CommandSpec* command_spec) {
   for (const auto& path : library_paths)
     command_spec->add_system_library_path(path);
@@ -2962,7 +2967,7 @@ void CompileTask::ModifyRequestArgs() {
       found_executable_binary = true;
       continue;
     }
-    const string& path = r.name;
+    const std::string& path = r.name;
     req_->add_input()->set_filename(path);
     LOG(INFO) << trace_id_ << " input automatically added: " << path;
   }
@@ -3016,7 +3021,8 @@ void CompileTask::ModifyRequestArgs() {
     // If /Yu is specified, we add /Y- to tell the backend compiler not
     // to try using PCH. We add this here because we don't want to show
     // this flag in compiler_proxy's console.
-    const string& using_pch = static_cast<const VCFlags&>(*flags_).using_pch();
+    const std::string& using_pch =
+        static_cast<const VCFlags&>(*flags_).using_pch();
     if (!using_pch.empty()) {
       req_->add_arg("/Y-");
       if (use_expanded_args) {
@@ -3031,7 +3037,7 @@ void CompileTask::ModifyRequestArgs() {
 }
 
 void CompileTask::ModifyRequestEnvs() {
-  std::vector<string> envs;
+  std::vector<std::string> envs;
   for (const auto& env : req_->env()) {
     if (flags_->IsServerImportantEnv(env.c_str())) {
       envs.push_back(env);
@@ -3061,7 +3067,7 @@ void CompileTask::UpdateCommandSpec() {
 void CompileTask::MayFixSubprogramSpec(
     google::protobuf::RepeatedPtrField<SubprogramSpec>* subprogram_specs)
         const {
-  std::set<string> used_subprogram_name;
+  std::set<std::string> used_subprogram_name;
   subprogram_specs->Clear();
   if (compiler_info_state_.get() == nullptr) {
     return;
@@ -3120,8 +3126,8 @@ void CompileTask::StartIncludeProcessor() {
   if (DepsCache::IsEnabled() &&
       compiler_type_specific_->SupportsDepsCache(*flags_) &&
       flags_->input_filenames().size() == 1U) {
-    const string& input_filename = flags_->input_filenames()[0];
-    const string& abs_input_filename =
+    const std::string& input_filename = flags_->input_filenames()[0];
+    const std::string& abs_input_filename =
         file::JoinPathRespectAbsolute(flags_->cwd(), input_filename);
 
     DepsCache* dc = DepsCache::instance();
@@ -3238,7 +3244,7 @@ void CompileTask::RunIncludeProcessorDone(
   }
 
   if (!response_param->result.ok) {
-    LOG(WARNING) << trace_id_ << "include processor failed"
+    LOG(WARNING) << trace_id_ << " include processor failed"
                  << " error=" << response_param->result.error_reason
                  << " flags=" << flags_->DebugString();
     if (response_param->result.error_to_user) {
@@ -3252,8 +3258,8 @@ void CompileTask::RunIncludeProcessorDone(
       compiler_type_specific_->SupportsDepsCache(*flags_) &&
       response_param->result.ok && deps_identifier_.has_value() &&
       flags_->input_filenames().size() == 1U) {
-    const string& input_filename = flags_->input_filenames()[0];
-    const string& abs_input_filename =
+    const std::string& input_filename = flags_->input_filenames()[0];
+    const std::string& abs_input_filename =
         file::JoinPathRespectAbsolute(flags_->cwd(), input_filename);
 
     DepsCache* dc = DepsCache::instance();
@@ -3296,8 +3302,8 @@ void CompileTask::InputFileTaskFinished(InputFileTask* input_file_task) {
     return;
   }
 
-  const string& filename = input_file_task->filename();
-  const string& hash_key = input_file_task->hash_key();
+  const std::string& filename = input_file_task->filename();
+  const std::string& hash_key = input_file_task->hash_key();
   const ssize_t file_size = input_file_task->file_size();
   const absl::optional<absl::Time>& mtime = input_file_task->mtime();
   VLOG(1) << trace_id_ << " input done:" << filename;
@@ -3364,10 +3370,9 @@ void CompileTask::CheckCommandSpec() {
   bool is_subprograms_mismatch = false;
   const CommandSpec& req_command_spec = req_->command_spec();
   const CommandSpec& resp_command_spec = resp_->result().command_spec();
-  const string message_on_mismatch(
+  const std::string message_on_mismatch(
       "local:" + CreateCommandVersionString(req_command_spec) +
-      " but remote:" +
-      CreateCommandVersionString(resp_command_spec));
+      " but remote:" + CreateCommandVersionString(resp_command_spec));
   if (req_command_spec.name() != resp_command_spec.name()) {
     is_name_mismatch = true;
     std::ostringstream ss;
@@ -3448,7 +3453,7 @@ void CompileTask::CheckCommandSpec() {
             req_->command_spec().local_compiler_path() + " is disabled.",
             true);
       }
-      want_fallback_ = service_->hermetic_fallback();
+      want_fallback_ &= service_->hermetic_fallback();
       if (want_fallback_ != requester_env_.fallback()) {
         LOG(INFO) << trace_id_ << " hermetic mismatch: fallback changed from "
                   << requester_env_.fallback()
@@ -3472,7 +3477,7 @@ void CompileTask::CheckCommandSpec() {
   // TODO: drop command_check_level support in the future.
   //                    GOMA_HERMETIC should be recommended.
   if (is_binary_hash_mismatch) {
-    string error_message;
+    std::string error_message;
     bool set_error = false;
     if (service_->RecordCommandSpecBinaryHashMismatch(
             stats_->exec_command_binary_hash_mismatch())) {
@@ -3499,7 +3504,7 @@ void CompileTask::CheckCommandSpec() {
     }
   }
   if (is_version_mismatch) {
-    string error_message;
+    std::string error_message;
     bool set_error = false;
     if (service_->RecordCommandSpecVersionMismatch(
             stats_->exec_command_version_mismatch())) {
@@ -3529,7 +3534,7 @@ void CompileTask::CheckCommandSpec() {
     std::ostringstream error_message;
     bool set_error = false;
 
-    absl::flat_hash_set<string> remote_hashes;
+    absl::flat_hash_set<std::string> remote_hashes;
     for (const auto& subprog : resp_->result().subprogram()) {
       remote_hashes.insert(subprog.binary_hash());
     }
@@ -3569,7 +3574,7 @@ void CompileTask::CheckCommandSpec() {
   }
 }
 
-void CompileTask::CheckNoMatchingCommandSpec(const string& retry_reason) {
+void CompileTask::CheckNoMatchingCommandSpec(const std::string& retry_reason) {
   CHECK_EQ(CALL_EXEC, state_);
 
   // If ExecResult does not have CommandSpec, goma backend did not try
@@ -3646,7 +3651,7 @@ void CompileTask::CheckNoMatchingCommandSpec(const string& retry_reason) {
             true);
     }
 
-    want_fallback_ = service_->hermetic_fallback();
+    want_fallback_ &= service_->hermetic_fallback();
     if (want_fallback_ != requester_env_.fallback()) {
       LOG(INFO) << trace_id_
                 << " hermetic miss "
@@ -3706,7 +3711,7 @@ void CompileTask::SetOutputFileCallback() {
   output_file_success_ = true;
 }
 
-void CompileTask::CheckOutputFilename(const string& filename) {
+void CompileTask::CheckOutputFilename(const std::string& filename) {
   CHECK_EQ(FILE_RESP, state_);
   if (filename[0] == '/') {
     if (HasPrefixDir(filename, service_->tmp_dir()) ||
@@ -3737,7 +3742,7 @@ void CompileTask::OutputFileTaskFinished(
 
   DCHECK_EQ(this, output_file_task->task());
   const ExecResult_Output& output = output_file_task->output();
-  const string& filename = output.filename();
+  const std::string& filename = output.filename();
 
   if (abort_) {
     output_file_success_ = false;
@@ -3803,9 +3808,8 @@ void CompileTask::MaybeRunOutputFileCallback(int index, bool task_finished) {
     closure->Run();
 }
 
-bool CompileTask::VerifyOutput(
-    const string& local_output_path,
-    const string& goma_output_path) {
+bool CompileTask::VerifyOutput(const std::string& local_output_path,
+                               const std::string& goma_output_path) {
   CHECK_EQ(FILE_RESP, state_);
   LOG(INFO) << trace_id_ << " Verify Output: "
             << " local:" << local_output_path << " goma:" << goma_output_path;
@@ -3877,8 +3881,8 @@ void CompileTask::ClearOutputFile() {
     // Remove if we wrote tmp file for the output.
     // Don't remove filename, which is the actual output filename,
     // and local run might have output to the file.
-    const string& filename = info.filename;
-    const string& tmp_filename = info.tmp_filename;
+    const std::string& filename = info.filename;
+    const std::string& tmp_filename = info.tmp_filename;
     if (!tmp_filename.empty() && tmp_filename != filename) {
       remove(tmp_filename.c_str());
     }
@@ -3906,7 +3910,7 @@ void CompileTask::LocalOutputFileTaskFinished(
   CHECK(BelongsToCurrentThread());
 
   DCHECK_EQ(this, local_output_file_task->task());
-  const string& filename = local_output_file_task->filename();
+  const std::string& filename = local_output_file_task->filename();
   if (!local_output_file_task->success()) {
     LOG(WARNING) << trace_id_
                  << " Create file blob failed for local output:" << filename;
@@ -4075,7 +4079,7 @@ void CompileTask::SetupSubProcess() {
           &CompileTask::FinishSubProcess));
 }
 
-void CompileTask::RunSubProcess(const string& reason) {
+void CompileTask::RunSubProcess(const std::string& reason) {
   VLOG(1) << trace_id_ << " RunSubProcess " << reason;
   CHECK(!abort_);
   if (subproc_ == nullptr) {
@@ -4192,8 +4196,8 @@ void CompileTask::FinishSubProcess() {
   // - fallback only (state_ == LOCAL_RUN)
   // - idle fallback (state_ < FINISHED, goma service was slower than local).
   //   - might be killed because gomacc closed the ipc.
-  string orig_stdout = resp_->result().stdout_buffer();
-  string orig_stderr = resp_->result().stderr_buffer();
+  std::string orig_stdout = resp_->result().stdout_buffer();
+  std::string orig_stderr = resp_->result().stderr_buffer();
 
   CHECK(resp_.get() != nullptr) << trace_id_ << " state=" << state_;
   ExecResult* result = resp_->mutable_result();
@@ -4215,12 +4219,12 @@ void CompileTask::FinishSubProcess() {
         << ss.str();
   }
 
-  string stdout_buffer;
+  std::string stdout_buffer;
   CHECK(!subproc_stdout_.empty()) << trace_id_ << " state=" << state_;
   ReadFileToString(subproc_stdout_.c_str(), &stdout_buffer);
   remove(subproc_stdout_.c_str());
 
-  string stderr_buffer;
+  std::string stderr_buffer;
   CHECK(!subproc_stderr_.empty()) << trace_id_ << " state=" << state_;
   ReadFileToString(subproc_stderr_.c_str(), &stderr_buffer);
   remove(subproc_stderr_.c_str());
@@ -4332,8 +4336,9 @@ bool CompileTask::local_cache_hit() const {
   return stats_->LocalCacheHit();
 }
 
-void CompileTask::AddErrorToResponse(
-    ErrDest dest, const string& error_message, bool set_error) {
+void CompileTask::AddErrorToResponse(ErrDest dest,
+                                     const std::string& error_message,
+                                     bool set_error) {
   if (!error_message.empty()) {
     if (set_error)
       LOG(ERROR) << trace_id_ << " " << error_message;
@@ -4360,21 +4365,21 @@ void CompileTask::AddErrorToResponse(
   }
 }
 
-string CompileTask::DumpRequest() const {
+std::string CompileTask::DumpRequest() const {
   if (!frozen_timestamp_.has_value()) {
     LOG(ERROR) << trace_id_ << " cannot dump an active task request";
     return "cannot dump an active task request\n";
   }
-  string message;
+  std::string message;
   LOG(INFO) << trace_id_ << " DumpRequest";
-  string filename = "exec_req.data";
+  std::string filename = "exec_req.data";
   ExecReq req;
   CommandSpec* command_spec = req.mutable_command_spec();
   *command_spec = command_spec_;
   command_spec->set_local_compiler_path(local_compiler_path_);
   if (compiler_info_state_.get() != nullptr) {
     const CompilerInfo& compiler_info = compiler_info_state_.get()->info();
-    std::vector<string> args(stats_->arg().begin(), stats_->arg().end());
+    std::vector<std::string> args(stats_->arg().begin(), stats_->arg().end());
     std::unique_ptr<CompilerFlags> flags(
         CompilerFlagsParser::New(args, stats_->cwd()));
     FixCommandSpec(compiler_info, *flags, command_spec);
@@ -4398,7 +4403,8 @@ string CompileTask::DumpRequest() const {
 
   std::ostringstream ss;
   ss << "task_request_" << id_;
-  const string task_request_dir = file::JoinPath(service_->tmp_dir(), ss.str());
+  const std::string task_request_dir =
+      file::JoinPath(service_->tmp_dir(), ss.str());
   file::RecursivelyDelete(task_request_dir, file::Defaults());
 #ifndef _WIN32
   PCHECK(mkdir(task_request_dir.c_str(), 0755) == 0);
@@ -4414,8 +4420,8 @@ string CompileTask::DumpRequest() const {
     ExecReq_Input* input = req.add_input();
     input->set_filename(input_filename);
     FileServiceDumpClient fs;
-    const string abs_input_filename = file::JoinPathRespectAbsolute(
-        req.cwd(), input_filename);
+    const std::string abs_input_filename =
+        file::JoinPathRespectAbsolute(req.cwd(), input_filename);
     if (!fs.CreateFileBlob(abs_input_filename, true,
                            input->mutable_content())) {
       LOG(ERROR) << trace_id_ << " DumpRequest failed to create fileblob:"
@@ -4434,7 +4440,7 @@ string CompileTask::DumpRequest() const {
       }
     }
   }
-  string r;
+  std::string r;
   req.SerializeToString(&r);
   filename = file::JoinPath(task_request_dir, filename);
   if (!WriteStringToFile(r, filename)) {
@@ -4454,7 +4460,7 @@ string CompileTask::DumpRequest() const {
     input.clear_content();
   }
 
-  string text_req;
+  std::string text_req;
   google::protobuf::TextFormat::PrintToString(req, &text_req);
   filename += ".txt";
   if (!WriteStringToFile(text_req, filename)) {

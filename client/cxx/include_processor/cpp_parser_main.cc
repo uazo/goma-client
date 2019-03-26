@@ -24,12 +24,11 @@ using devtools_goma::SharedCppDirectives;
 
 class TestIncludeObserver : public CppParser::IncludeObserver {
  public:
-  bool HandleInclude(
-      const string& path,
-      const string& current_directory ALLOW_UNUSED,
-      const string& current_filepath ALLOW_UNUSED,
-      char quote_char ALLOW_UNUSED,  // '"' or '<'
-      int include_dir_index ALLOW_UNUSED) override {
+  bool HandleInclude(const std::string& path,
+                     const std::string& current_directory ALLOW_UNUSED,
+                     const std::string& current_filepath ALLOW_UNUSED,
+                     char quote_char ALLOW_UNUSED,  // '"' or '<'
+                     int include_dir_index ALLOW_UNUSED) override {
     if (quote_char == '<' &&
         include_dir_index > CppParser::kIncludeDirIndexStarting) {
       std::cout << "#INCLUDE_NEXT ";
@@ -45,12 +44,11 @@ class TestIncludeObserver : public CppParser::IncludeObserver {
     return true;
   }
 
-  bool HasInclude(
-      const string& path ALLOW_UNUSED,
-      const string& current_directory ALLOW_UNUSED,
-      const string& current_filepath ALLOW_UNUSED,
-      char quote_char ALLOW_UNUSED,  // '"' or '<'
-      int include_dir_index ALLOW_UNUSED) override {
+  bool HasInclude(const std::string& path ALLOW_UNUSED,
+                  const std::string& current_directory ALLOW_UNUSED,
+                  const std::string& current_filepath ALLOW_UNUSED,
+                  char quote_char ALLOW_UNUSED,  // '"' or '<'
+                  int include_dir_index ALLOW_UNUSED) override {
 #ifdef _WIN32
     UNREFERENCED_PARAMETER(path);
     UNREFERENCED_PARAMETER(current_directory);
@@ -64,12 +62,11 @@ class TestIncludeObserver : public CppParser::IncludeObserver {
 
 class TestErrorObserver : public CppParser::ErrorObserver {
  public:
-  void HandleError(const string& error) override {
-    LOG(WARNING) << error;
-  }
+  void HandleError(const std::string& error) override { LOG(WARNING) << error; }
 };
 
-static bool TryAddFileInput(CppParser* parser, const string& filepath,
+static bool TryAddFileInput(CppParser* parser,
+                            const std::string& filepath,
                             int include_dir_index) {
   std::unique_ptr<Content> content(Content::CreateFromFile(filepath));
   if (!content) {
@@ -82,26 +79,27 @@ static bool TryAddFileInput(CppParser* parser, const string& filepath,
     return false;
   }
 
-  string directory = string(file::Dirname(filepath));
+  std::string directory = std::string(file::Dirname(filepath));
   parser->AddFileInput(IncludeItem(directives, ""), filepath, directory,
                        include_dir_index);
   return true;
 }
 
-static std::pair<string, string> GetMacroArg(const char* arg) {
-  string macro(arg);
+static std::pair<std::string, std::string> GetMacroArg(const char* arg) {
+  std::string macro(arg);
   size_t found = macro.find('=');
-  if (found == string::npos) {
+  if (found == std::string::npos) {
     return std::make_pair(macro, "");
   }
-  const string& key = macro.substr(0, found);
-  const string& value = macro.substr(found + 1, macro.size() - (found + 1));
+  const std::string& key = macro.substr(0, found);
+  const std::string& value =
+      macro.substr(found + 1, macro.size() - (found + 1));
   return std::make_pair(key, value);
 }
 
 int main(int argc, char *argv[]) {
   int ac = 1;
-  std::vector<std::pair<string, string>> arg_macros;
+  std::vector<std::pair<std::string, std::string>> arg_macros;
   for (; ac < argc; ++ac) {
     if (strncmp(argv[ac], "-D", 2) == 0) {
       if (strlen(argv[ac]) > 2) {
@@ -121,11 +119,11 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  const string cwd = GetCurrentDirNameOrDie();
+  const std::string cwd = GetCurrentDirNameOrDie();
 
   PathResolver path_resolver;
 
-  string path = file::JoinPathRespectAbsolute(cwd, argv[ac]);
+  std::string path = file::JoinPathRespectAbsolute(cwd, argv[ac]);
   path = path_resolver.ResolvePath(path);
 
   std::cout << std::endl << "===== Directives =====" << std::endl;

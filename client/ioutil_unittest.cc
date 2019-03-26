@@ -15,20 +15,18 @@
 #include "scoped_fd.h"
 #include "unittest_util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 TEST(IoutilTest, GzipInflateWriter) {
   TmpdirUtil tmpdir("ioutil_test_gzip_inflate_writer");
-  string filename = file::JoinPath(tmpdir.tmpdir(), "output");
+  std::string filename = file::JoinPath(tmpdir.tmpdir(), "output");
   ScopedFd fd(ScopedFd::Create(filename, 0644));
 
   std::unique_ptr<WriteCloser> wr(WriteCloser::NewFromScopedFd(std::move(fd)));
   std::unique_ptr<WriteCloser> gwr(WriteCloser::NewGzipInflate(std::move(wr)));
 
   constexpr absl::string_view kData = "gzip inflate test data";
-  string compressed;
+  std::string compressed;
   google::protobuf::io::StringOutputStream out(&compressed);
   google::protobuf::io::GzipOutputStream::Options options;
   options.format = google::protobuf::io::GzipOutputStream::GZIP;
@@ -51,7 +49,7 @@ TEST(IoutilTest, GzipInflateWriter) {
   }
   EXPECT_TRUE(gwr->Close());
 
-  string uncompressed;
+  std::string uncompressed;
   EXPECT_TRUE(ReadFileToString(filename, &uncompressed));
   EXPECT_EQ(kData, uncompressed);
 }

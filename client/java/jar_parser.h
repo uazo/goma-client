@@ -10,8 +10,6 @@
 #include <string>
 #include <vector>
 
-using std::string;
-
 namespace devtools_goma {
 
 class JarParser {
@@ -22,9 +20,9 @@ class JarParser {
   // Note that we will not add non-existing .jar files to |jar_files| even
   // if they are listed in class path of MANIFEST files.
   // TODO: We may want to return additional class pathes as well.
-  void GetJarFiles(const std::vector<string>& input_jar_files,
-                   const string& cwd,
-                   std::set<string>* jar_files);
+  void GetJarFiles(const std::vector<std::string>& input_jar_files,
+                   const std::string& cwd,
+                   std::set<std::string>* jar_files);
 };
 
 }  // namespace devtools_goma

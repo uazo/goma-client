@@ -359,7 +359,7 @@ bool WorkerThread::IsIdle() const {
   return !current_closure_data_ && descriptors_.size() == 0;
 }
 
-string WorkerThread::DebugString() const {
+std::string WorkerThread::DebugString() const {
   AUTOLOCK(lock, &mu_);
   std::ostringstream s;
   s << "thread[" << id_ << "/" << name_ << "] ";
@@ -386,7 +386,7 @@ string WorkerThread::DebugString() const {
 }
 
 /* static */
-string WorkerThread::Priority_Name(Priority priority) {
+std::string WorkerThread::Priority_Name(Priority priority) {
   switch (priority) {
     case PRIORITY_LOW: return "PriLow";
     case PRIORITY_MED: return "PriMed";

@@ -27,14 +27,14 @@ JarParser::JarParser() {}
 
 static void AddJarFile(absl::string_view jar_file,
                        absl::string_view cwd,
-                       std::set<string>* checked_files,
-                       std::set<string>* jar_files);
+                       std::set<std::string>* checked_files,
+                       std::set<std::string>* jar_files);
 
 static void ReadManifest(absl::string_view source_file,
                          char* content,
                          absl::string_view cwd,
-                         std::set<string>* checked_files,
-                         std::set<string>* jar_files) {
+                         std::set<std::string>* checked_files,
+                         std::set<std::string>* jar_files) {
   // The format of manifest files is similar to HTTP header
   // (i.e., "key1: value1<CRLF>key2: value2<CRLF>")
   // We need only the value of Class-Path.
@@ -127,7 +127,7 @@ class ScopedUnzFile {
   }
 
  private:
-  const string path_;
+  const std::string path_;
   unzFile unz_file_;
   bool open_current_;
   DISALLOW_COPY_AND_ASSIGN(ScopedUnzFile);
@@ -135,9 +135,9 @@ class ScopedUnzFile {
 
 static void AddJarFile(absl::string_view jar_file,
                        absl::string_view cwd,
-                       std::set<string>* checked_files,
-                       std::set<string>* jar_files) {
-  const string& jar_path = file::JoinPathRespectAbsolute(cwd, jar_file);
+                       std::set<std::string>* checked_files,
+                       std::set<std::string>* jar_files) {
+  const std::string& jar_path = file::JoinPathRespectAbsolute(cwd, jar_file);
   if (!checked_files->insert(jar_path).second) {
     return;
   }
@@ -219,10 +219,10 @@ static void AddJarFile(absl::string_view jar_file,
   }
 }
 
-void JarParser::GetJarFiles(const std::vector<string>& input_jar_files,
-                            const string& cwd,
-                            std::set<string>* jar_files) {
-  std::set<string> checked_files;
+void JarParser::GetJarFiles(const std::vector<std::string>& input_jar_files,
+                            const std::string& cwd,
+                            std::set<std::string>* jar_files) {
+  std::set<std::string> checked_files;
   for (const auto& input_jar_file : input_jar_files) {
     AddJarFile(input_jar_file, cwd, &checked_files, jar_files);
   }

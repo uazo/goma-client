@@ -33,18 +33,19 @@ const char* CppDirectiveTypeToString(CppDirectiveType type) {
 }
 
 // static
-std::unique_ptr<CppDirective> CppDirective::Error(string reason) {
+std::unique_ptr<CppDirective> CppDirective::Error(std::string reason) {
   return std::unique_ptr<CppDirective>(
       new CppDirectiveError(std::move(reason)));
 }
 
 // static
-std::unique_ptr<CppDirective> CppDirective::Error(string reason, string arg) {
+std::unique_ptr<CppDirective> CppDirective::Error(std::string reason,
+                                                  std::string arg) {
   return std::unique_ptr<CppDirective>(
       new CppDirectiveError(std::move(reason), std::move(arg)));
 }
 
-string CppDirectiveIncludeBase::DebugString() const {
+std::string CppDirectiveIncludeBase::DebugString() const {
   std::ostringstream os;
   os << '#' << DirectiveTypeName();
   switch (delimiter()) {
@@ -63,7 +64,7 @@ string CppDirectiveIncludeBase::DebugString() const {
   return os.str();
 }
 
-string CppDirectiveDefine::DebugString() const {
+std::string CppDirectiveDefine::DebugString() const {
   std::ostringstream os;
   os << "#define " << name();
   if (is_function_macro()) {
@@ -95,7 +96,7 @@ string CppDirectiveDefine::DebugString() const {
   return os.str();
 }
 
-string CppDirectiveIf::DebugString() const {
+std::string CppDirectiveIf::DebugString() const {
   std::ostringstream os;
   os << "#if ";
   for (const auto& t : tokens()) {
@@ -104,7 +105,7 @@ string CppDirectiveIf::DebugString() const {
   return os.str();
 }
 
-string CppDirectiveElif::DebugString() const {
+std::string CppDirectiveElif::DebugString() const {
   std::ostringstream os;
   os << "#elif ";
   for (const auto& t : tokens()) {

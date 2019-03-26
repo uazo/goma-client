@@ -30,27 +30,26 @@
 #endif  // _WIN32
 
 using google::GetExistingTempDirectories;
-using std::string;
 using absl::StrCat;
 
 namespace devtools_goma {
 
-static void ExpectHasElement(const std::vector<string>& v,
-                             const string& elem) {
+static void ExpectHasElement(const std::vector<std::string>& v,
+                             const std::string& elem) {
   EXPECT_TRUE(std::find(v.begin(), v.end(), elem) != v.end()) << elem;
 }
 
 class GCCFlagsTest : public testing::Test {
  protected:
   void SetUp() override {
-    std::vector<string> tmp_dirs;
+    std::vector<std::string> tmp_dirs;
     GetExistingTempDirectories(&tmp_dirs);
     CHECK_GT(tmp_dirs.size(), 0);
 
 #ifndef _WIN32
-    string pid = std::to_string(getpid());
+    std::string pid = std::to_string(getpid());
 #else
-    string pid = std::to_string(GetCurrentProcessId());
+    std::string pid = std::to_string(GetCurrentProcessId());
 #endif
     tmp_dir_ =
         file::JoinPath(tmp_dirs[0], StrCat("compiler_flags_unittest_", pid));
@@ -63,12 +62,12 @@ class GCCFlagsTest : public testing::Test {
       LOG(ERROR) << "delete " << tmp_dir_;
     }
   }
-  string GetLanguage(const string& compiler_name,
-                     const string& input_filename) {
+  std::string GetLanguage(const std::string& compiler_name,
+                          const std::string& input_filename) {
     return GCCFlags::GetLanguage(compiler_name, input_filename);
   }
 
-  string tmp_dir_;
+  std::string tmp_dir_;
 };
 
 TEST_F(GCCFlagsTest, GetLanguage) {
@@ -121,7 +120,7 @@ TEST_F(GCCFlagsTest, IsNaClClangCommand) {
 }
 
 TEST_F(GCCFlagsTest, Basic) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/x86_64-pc-linux-gnu-gcc-4.3");
   args.push_back("-c");
   args.push_back("-m32");
@@ -182,13 +181,31 @@ TEST_F(GCCFlagsTest, Basic) {
   EXPECT_EQ("x86_64-pc-linux-gnu-gcc-4.3", flags.compiler_base_name());
   EXPECT_EQ("gcc", flags.compiler_name());
 
-  const std::vector<string> expected_compiler_info_flags{
+  const std::vector<std::string> expected_compiler_info_flags{
       "-m32",
       // TODO: This doesn't change include directory actually.
-      "-mtune=generic", "-isystem", "/usr", "-arch", "ppc", "-nostdinc++",
-      "-nostdlibinc", "-b", "i386", "-V", "4.0", "-specs", "foo.spec", "-std",
-      "c99", "-target", "arm-linux-androideabi", "-x", "c++", "-nostdinc",
-      "-isysroot", "/tmp",
+      "-mtune=generic",
+      "-isystem",
+      "/usr",
+      "-arch",
+      "ppc",
+      "-nostdinc++",
+      "-nostdlibinc",
+      "-b",
+      "i386",
+      "-V",
+      "4.0",
+      "-specs",
+      "foo.spec",
+      "-std",
+      "c99",
+      "-target",
+      "arm-linux-androideabi",
+      "-x",
+      "c++",
+      "-nostdinc",
+      "-isysroot",
+      "/tmp",
   };
   EXPECT_EQ(expected_compiler_info_flags, flags.compiler_info_flags());
 
@@ -215,11 +232,11 @@ TEST_F(GCCFlagsTest, Basic) {
   EXPECT_FALSE(flags.commandline_macros()[1].second);
 
   // output file order is not important.
-  const std::set<string> expected_output_files{"out/foobar.o", "deps/foobar.d",
-                                               "deps/foobar2.d"};
+  const std::set<std::string> expected_output_files{
+      "out/foobar.o", "deps/foobar.d", "deps/foobar2.d"};
   EXPECT_EQ(expected_output_files,
-            std::set<string>(flags.output_files().begin(),
-                             flags.output_files().end()));
+            std::set<std::string>(flags.output_files().begin(),
+                                  flags.output_files().end()));
 
   EXPECT_TRUE(flags.is_cplusplus());
   EXPECT_TRUE(flags.has_nostdinc());
@@ -230,7 +247,7 @@ TEST_F(GCCFlagsTest, Basic) {
 }
 
 TEST_F(GCCFlagsTest, Optimize) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-O");
   args.push_back("-o");
@@ -253,7 +270,7 @@ TEST_F(GCCFlagsTest, Optimize) {
   ASSERT_EQ(1, static_cast<int>(flags.input_filenames().size()));
   EXPECT_EQ("hello.c", flags.input_filenames()[0]);
 
-  const std::vector<string>& output_files = flags.output_files();
+  const std::vector<std::string>& output_files = flags.output_files();
   ASSERT_EQ(1, static_cast<int>(output_files.size()));
   EXPECT_EQ("hello.o", output_files[0]);
 
@@ -265,7 +282,7 @@ TEST_F(GCCFlagsTest, Optimize) {
 }
 
 TEST_F(GCCFlagsTest, GxxBaseName) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/x86_64-pc-linux-gnu-g++-4.3");
   GCCFlags flags(args, "/");
   EXPECT_EQ("x86_64-pc-linux-gnu-g++-4.3", flags.compiler_base_name());
@@ -276,7 +293,7 @@ TEST_F(GCCFlagsTest, GxxBaseName) {
 }
 
 TEST_F(GCCFlagsTest, Fission) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-gsplit-dwarf");
   args.push_back("-o");
@@ -293,7 +310,7 @@ TEST_F(GCCFlagsTest, Fission) {
   EXPECT_EQ("gcc", flags.compiler_base_name());
   EXPECT_EQ("gcc", flags.compiler_name());
 
-  const std::vector<string>& output_files = flags.output_files();
+  const std::vector<std::string>& output_files = flags.output_files();
   ASSERT_EQ(2U, output_files.size());
   EXPECT_EQ("hello.o", output_files[0]);
   EXPECT_EQ("hello.dwo", output_files[1]);
@@ -306,7 +323,7 @@ TEST_F(GCCFlagsTest, Fission) {
 }
 
 TEST_F(GCCFlagsTest, FissionNoO) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-gsplit-dwarf");
   args.push_back("-c");
@@ -321,7 +338,7 @@ TEST_F(GCCFlagsTest, FissionNoO) {
   EXPECT_EQ("gcc", flags.compiler_base_name());
   EXPECT_EQ("gcc", flags.compiler_name());
 
-  const std::vector<string>& output_files = flags.output_files();
+  const std::vector<std::string>& output_files = flags.output_files();
   ASSERT_EQ(2U, output_files.size());
   EXPECT_EQ("hello.o", output_files[0]);
   EXPECT_EQ("hello.dwo", output_files[1]);
@@ -334,7 +351,7 @@ TEST_F(GCCFlagsTest, FissionNoO) {
 }
 
 TEST_F(GCCFlagsTest, FissionDifferentOutput) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-gsplit-dwarf");
   args.push_back("-o");
@@ -351,7 +368,7 @@ TEST_F(GCCFlagsTest, FissionDifferentOutput) {
   EXPECT_EQ("gcc", flags.compiler_base_name());
   EXPECT_EQ("gcc", flags.compiler_name());
 
-  const std::vector<string>& output_files = flags.output_files();
+  const std::vector<std::string>& output_files = flags.output_files();
   ASSERT_EQ(2U, output_files.size());
   EXPECT_EQ("world.o", output_files[0]);
   EXPECT_EQ("world.dwo", output_files[1]);
@@ -364,7 +381,7 @@ TEST_F(GCCFlagsTest, FissionDifferentOutput) {
 }
 
 TEST_F(GCCFlagsTest, FissionCompileAndLink) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-gsplit-dwarf");
   args.push_back("-o");
@@ -380,7 +397,7 @@ TEST_F(GCCFlagsTest, FissionCompileAndLink) {
   EXPECT_EQ("gcc", flags.compiler_base_name());
   EXPECT_EQ("gcc", flags.compiler_name());
 
-  const std::vector<string>& output_files = flags.output_files();
+  const std::vector<std::string>& output_files = flags.output_files();
   ASSERT_EQ(2U, output_files.size());
   EXPECT_EQ("world", output_files[0]);
   EXPECT_EQ("hello.dwo", output_files[1]);
@@ -393,7 +410,7 @@ TEST_F(GCCFlagsTest, FissionCompileAndLink) {
 }
 
 TEST_F(GCCFlagsTest, FissionJustLink) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-gsplit-dwarf");
   args.push_back("-o");
@@ -409,7 +426,7 @@ TEST_F(GCCFlagsTest, FissionJustLink) {
   EXPECT_EQ("gcc", flags.compiler_base_name());
   EXPECT_EQ("gcc", flags.compiler_name());
 
-  const std::vector<string>& output_files = flags.output_files();
+  const std::vector<std::string>& output_files = flags.output_files();
   ASSERT_EQ(1U, output_files.size());
   EXPECT_EQ("world", output_files[0]);
 
@@ -421,7 +438,7 @@ TEST_F(GCCFlagsTest, FissionJustLink) {
 }
 
 TEST_F(GCCFlagsTest, ClangBaseName) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(
       "/usr/src/chromium/src/"
       "third_party/llvm-build/Release+Assets/bin/clang");
@@ -434,7 +451,7 @@ TEST_F(GCCFlagsTest, ClangBaseName) {
 }
 
 TEST_F(GCCFlagsTest, ClangxxBaseName) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(
       "/usr/src/chromium/src/"
       "third_party/llvm-build/Release+Assets/bin/clang++");
@@ -447,7 +464,7 @@ TEST_F(GCCFlagsTest, ClangxxBaseName) {
 }
 
 TEST_F(GCCFlagsTest, PnaclClangBaseName) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("toolchain/linux_x86_pnacl/newlib/bin/pnacl-clang");
   GCCFlags flags(args, "/");
   EXPECT_EQ("pnacl-clang", flags.compiler_base_name());
@@ -458,7 +475,7 @@ TEST_F(GCCFlagsTest, PnaclClangBaseName) {
 }
 
 TEST_F(GCCFlagsTest, PnaclClangxxBaseName) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("toolchain/linux_x86_pnacl/newlib/bin/pnacl-clang++");
   GCCFlags flags(args, "/");
   EXPECT_EQ("pnacl-clang++", flags.compiler_base_name());
@@ -469,7 +486,7 @@ TEST_F(GCCFlagsTest, PnaclClangxxBaseName) {
 }
 
 TEST_F(GCCFlagsTest, GccPipe) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-o");
   args.push_back("hello.o");
@@ -481,7 +498,7 @@ TEST_F(GCCFlagsTest, GccPipe) {
 }
 
 TEST_F(GCCFlagsTest, GccFfreestanding) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-o");
   args.push_back("hello.o");
@@ -492,13 +509,13 @@ TEST_F(GCCFlagsTest, GccFfreestanding) {
   EXPECT_TRUE(flags.has_ffreestanding());
   EXPECT_FALSE(flags.has_fno_hosted());
   EXPECT_FALSE(flags.has_fsyntax_only());
-  std::vector<string> want_compiler_info_flags;
+  std::vector<std::string> want_compiler_info_flags;
   want_compiler_info_flags.push_back("-ffreestanding");
   EXPECT_EQ(want_compiler_info_flags, flags.compiler_info_flags());
 }
 
 TEST_F(GCCFlagsTest, GccFnohosted) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-o");
   args.push_back("hello.o");
@@ -509,7 +526,7 @@ TEST_F(GCCFlagsTest, GccFnohosted) {
   EXPECT_FALSE(flags.has_ffreestanding());
   EXPECT_TRUE(flags.has_fno_hosted());
   EXPECT_FALSE(flags.has_fsyntax_only());
-  std::vector<string> want_compiler_info_flags;
+  std::vector<std::string> want_compiler_info_flags;
   want_compiler_info_flags.push_back("-fno-hosted");
   EXPECT_EQ(want_compiler_info_flags, flags.compiler_info_flags());
 }
@@ -518,7 +535,7 @@ TEST_F(GCCFlagsTest, GccWrapper) {
   // See https://gcc.gnu.org/wiki/DebuggingGCC
   // $ gcc <parameters> -wrapper gdb,--args
   // $ gcc <parameters> -wrapper valgrind
-  std::vector<string> origs{
+  std::vector<std::string> origs{
       "gcc", "-o", "hello.o", "-c", "hello.c",
   };
 
@@ -527,7 +544,7 @@ TEST_F(GCCFlagsTest, GccWrapper) {
     EXPECT_FALSE(flags.has_wrapper());
   }
   {
-    std::vector<string> args(origs);
+    std::vector<std::string> args(origs);
     args.insert(args.end(), {"-wrapper", "valgrind"});
     GCCFlags flags(args, "/");
     EXPECT_TRUE(flags.has_wrapper());
@@ -535,7 +552,7 @@ TEST_F(GCCFlagsTest, GccWrapper) {
 }
 
 TEST_F(GCCFlagsTest, GccFplugin) {
-  std::vector<string> origs{
+  std::vector<std::string> origs{
       "gcc", "-o", "hello.o", "-c", "helloc",
   };
 
@@ -545,7 +562,7 @@ TEST_F(GCCFlagsTest, GccFplugin) {
   }
 
   {
-    std::vector<string> args(origs);
+    std::vector<std::string> args(origs);
     args.insert(args.end(), {"-fplugin=foo.so"});
     GCCFlags flags(args, "/");
     EXPECT_TRUE(flags.has_fplugin());
@@ -553,20 +570,23 @@ TEST_F(GCCFlagsTest, GccFplugin) {
 }
 
 TEST_F(GCCFlagsTest, GccUndef) {
-  std::vector<string> origs{
-      "gcc", "-undef", "-c", "hello.c",
+  std::vector<std::string> origs{
+      "gcc",
+      "-undef",
+      "-c",
+      "hello.c",
   };
 
   GCCFlags flags(origs, "/");
 
-  std::vector<string> want_compiler_info_flags{
+  std::vector<std::string> want_compiler_info_flags{
       "-undef",
   };
   EXPECT_EQ(want_compiler_info_flags, flags.compiler_info_flags());
 }
 
 TEST_F(GCCFlagsTest, ClangFSyntaxOnly) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang");
   args.push_back("-o");
   args.push_back("hello.o");
@@ -577,22 +597,22 @@ TEST_F(GCCFlagsTest, ClangFSyntaxOnly) {
   EXPECT_TRUE(flags.has_fsyntax_only());
   EXPECT_FALSE(flags.has_fno_hosted());
   EXPECT_FALSE(flags.has_ffreestanding());
-  std::vector<string> want_compiler_info_flags;
+  std::vector<std::string> want_compiler_info_flags;
   want_compiler_info_flags.push_back("-fsyntax-only");
   EXPECT_EQ(want_compiler_info_flags, flags.compiler_info_flags());
 }
 
 TEST_F(GCCFlagsTest, ClangFprofileInstrGenerate) {
-  std::vector<string> args{
+  std::vector<std::string> args{
       "clang", "-o", "hello.o", "-fprofile-instr-generate", "-c", "hello.c"};
   GCCFlags flags(args, "/");
 
-  std::vector<string> want_compiler_info_flags{"-fprofile-instr-generate"};
+  std::vector<std::string> want_compiler_info_flags{"-fprofile-instr-generate"};
   EXPECT_EQ(want_compiler_info_flags, flags.compiler_info_flags());
 }
 
 TEST_F(GCCFlagsTest, ClangXoption) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang");
   args.push_back("-o");
   args.push_back("hello.o");
@@ -619,14 +639,14 @@ TEST_F(GCCFlagsTest, ClangXoption) {
   EXPECT_EQ("clang", flags.compiler_name());
   ASSERT_EQ(1U, flags.input_filenames().size());
   EXPECT_EQ("hello.c", flags.input_filenames()[0]);
-  const std::vector<string>& output_files = flags.output_files();
+  const std::vector<std::string>& output_files = flags.output_files();
   ASSERT_EQ(1U, output_files.size());
   EXPECT_EQ("hello.o", output_files[0]);
 }
 
 TEST_F(GCCFlagsTest, ClangNoIntegratedAs) {
   // -no-integrated-as
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang");
   args.push_back("-no-integrated-as");
   GCCFlags flags(args, "/");
@@ -636,14 +656,15 @@ TEST_F(GCCFlagsTest, ClangNoIntegratedAs) {
   EXPECT_FALSE(flags.is_cplusplus());
   EXPECT_FALSE(flags.has_nostdinc());
 
-  const std::vector<string>& compiler_info_flags = flags.compiler_info_flags();
+  const std::vector<std::string>& compiler_info_flags =
+      flags.compiler_info_flags();
   ASSERT_EQ(1UL, compiler_info_flags.size());
   EXPECT_EQ("-no-integrated-as", compiler_info_flags[0]);
 }
 
 TEST_F(GCCFlagsTest, ClangFnoIntegratedAs) {
   // -fno-integrated-as
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang");
   args.push_back("-fno-integrated-as");
   GCCFlags flags(args, "/");
@@ -653,21 +674,22 @@ TEST_F(GCCFlagsTest, ClangFnoIntegratedAs) {
   EXPECT_FALSE(flags.is_cplusplus());
   EXPECT_FALSE(flags.has_nostdinc());
 
-  const std::vector<string>& compiler_info_flags = flags.compiler_info_flags();
+  const std::vector<std::string>& compiler_info_flags =
+      flags.compiler_info_flags();
   ASSERT_EQ(1UL, compiler_info_flags.size());
   EXPECT_EQ("-fno-integrated-as", compiler_info_flags[0]);
 }
 
 TEST_F(GCCFlagsTest, PnaclClangPnaclBias) {
-  std::vector<string> args;
-  const string& pnacl_command = "/tmp/pnacl-clang++";
+  std::vector<std::string> args;
+  const std::string& pnacl_command = "/tmp/pnacl-clang++";
   ASSERT_TRUE(GCCFlags::IsPNaClClangCommand(pnacl_command));
   args.push_back(pnacl_command);
   args.push_back("--pnacl-bias=x86-32-nonsfi");
   GCCFlags flags(args, "/");
   EXPECT_EQ("clang++", flags.compiler_name());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   expected_compiler_info_flags.push_back("--pnacl-bias=x86-32-nonsfi");
   EXPECT_EQ(expected_compiler_info_flags, flags.compiler_info_flags());
 
@@ -697,22 +719,22 @@ TEST_F(GCCFlagsTest, PnaclClangPnaclBias) {
 }
 
 TEST_F(GCCFlagsTest, PnaclClangPnaclBiasShouldNotBeDetectedByClang) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/tmp/clang++");
   args.push_back("--pnacl-bias=x86-32-nonsfi");
   GCCFlags flags(args, "/");
   EXPECT_EQ("clang++", flags.compiler_base_name());
   EXPECT_EQ("clang++", flags.compiler_name());
 
-  std::vector<string> expected_compiler_info_flags;
+  std::vector<std::string> expected_compiler_info_flags;
   EXPECT_EQ(expected_compiler_info_flags, flags.compiler_info_flags());
 }
 
 TEST_F(GCCFlagsTest, ModeAndOutputFiles) {
   const struct {
-    std::vector<string> opts;
+    std::vector<std::string> opts;
     GCCFlags::Mode expected_mode;
-    std::vector<string> expected_outputs;
+    std::vector<std::string> expected_outputs;
   } kTestCases[] = {
       {{"-c"}, GCCFlags::COMPILE, {"hello.o"}},
       {{"-S"}, GCCFlags::COMPILE, {"hello.s"}},
@@ -741,14 +763,14 @@ TEST_F(GCCFlagsTest, ModeAndOutputFiles) {
   };
 
   for (const auto& tc : kTestCases) {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back("gcc");
     std::copy(tc.opts.begin(), tc.opts.end(), back_inserter(args));
     args.push_back("hello.c");
 
     GCCFlags flags(args, "/");
 
-    std::vector<string> outputs = flags.output_files();
+    std::vector<std::string> outputs = flags.output_files();
     std::sort(outputs.begin(), outputs.end());
 
     EXPECT_EQ(tc.expected_mode, flags.mode()) << args;
@@ -757,7 +779,7 @@ TEST_F(GCCFlagsTest, ModeAndOutputFiles) {
 }
 
 TEST_F(GCCFlagsTest, PrintFileName) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-c");
   args.push_back("-print-file-name");
@@ -770,7 +792,7 @@ TEST_F(GCCFlagsTest, PrintFileName) {
 }
 
 TEST_F(GCCFlagsTest, Stdin) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-c");
   args.push_back("-xc++");
@@ -791,7 +813,7 @@ TEST_F(GCCFlagsTest, Stdin) {
 }
 
 TEST_F(GCCFlagsTest, Profile) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-c");
   args.push_back("hello.c");
@@ -831,7 +853,7 @@ TEST_F(GCCFlagsTest, Profile) {
 }
 
 TEST_F(GCCFlagsTest, ProfileCwd) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-c");
   args.push_back("foo/hello.c");
@@ -854,7 +876,7 @@ TEST_F(GCCFlagsTest, ProfileCwd) {
 }
 
 TEST_F(GCCFlagsTest, ProfileDir) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-c");
   args.push_back("foo/hello.c");
@@ -879,12 +901,12 @@ TEST_F(GCCFlagsTest, ProfileDir) {
 TEST_F(GCCFlagsTest, ProfileClang) {
   {
     // prof abs dir case
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back("clang");
     args.push_back("-c");
     args.push_back("foo/hello.c");
 
-    const string& prof_dir = file::JoinPath(tmp_dir_, "hello.profdata");
+    const std::string& prof_dir = file::JoinPath(tmp_dir_, "hello.profdata");
     ASSERT_TRUE(file::CreateDir(prof_dir, file::CreationMode(0777)).ok());
 
     args.push_back("-fprofile-use=" + prof_dir);
@@ -904,14 +926,14 @@ TEST_F(GCCFlagsTest, ProfileClang) {
 
   {
     // prof rel dir case
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back("clang");
     args.push_back("-c");
     args.push_back("foo/hello.c");
 
     args.push_back("-fprofile-use=foo");
 
-    const string& prof_dir = file::JoinPath(tmp_dir_, "foo");
+    const std::string& prof_dir = file::JoinPath(tmp_dir_, "foo");
     ASSERT_TRUE(file::CreateDir(prof_dir, file::CreationMode(0777)).ok());
     GCCFlags flags(args, tmp_dir_);
 
@@ -926,12 +948,12 @@ TEST_F(GCCFlagsTest, ProfileClang) {
 
   {
     // abs prof file case
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back("clang");
     args.push_back("-c");
     args.push_back("foo/hello.c");
 
-    const string& prof_file = file::JoinPath(tmp_dir_, "hello.profdata");
+    const std::string& prof_file = file::JoinPath(tmp_dir_, "hello.profdata");
     args.push_back("-fprofile-use=" + prof_file);
 
 #ifndef _WIN32
@@ -947,7 +969,7 @@ TEST_F(GCCFlagsTest, ProfileClang) {
 
   {
     // relative prof file case
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back("clang");
     args.push_back("-c");
     args.push_back("foo/hello.c");
@@ -968,9 +990,9 @@ TEST_F(GCCFlagsTest, ProfileClang) {
 }
 
 TEST_F(GCCFlagsTest, AtFile) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
-  const string& at_file = file::JoinPath(tmp_dir_, "at_file");
+  const std::string& at_file = file::JoinPath(tmp_dir_, "at_file");
   args.push_back("@" + at_file);
 
   // The at-file doesn't exist.
@@ -1014,7 +1036,7 @@ TEST_F(GCCFlagsTest, AtFile) {
 }
 
 TEST_F(GCCFlagsTest, Idirafter) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("g++");
   args.push_back("-idirafter");
   args.push_back("include");
@@ -1031,7 +1053,7 @@ TEST_F(GCCFlagsTest, Idirafter) {
 
 TEST_F(GCCFlagsTest, PreprocessFlags) {
   // Note: g++ may error on following code due to unknown flags.
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "g++",
       "-c",
       "foo.cc",
@@ -1050,26 +1072,29 @@ TEST_F(GCCFlagsTest, PreprocessFlags) {
   EXPECT_TRUE(flags.is_successful());
   EXPECT_EQ(GCCFlags::COMPILE, flags.mode());
 
-  const std::vector<std::pair<string, bool>> expected_macros{
+  const std::vector<std::pair<std::string, bool>> expected_macros{
       {"foo", false},      {"foo2=bar2", true}, {"foo3", false},
       {"foo=bar", true},   {"foo2", false},     {"foo3=bar3", true},
       {"foo4=bar4", true}, {"foo4", false},
   };
   EXPECT_EQ(expected_macros, flags.commandline_macros());
 
-  const std::vector<string> expected_output_files{
-      "foo.o", "deps/foobar.d",
+  const std::vector<std::string> expected_output_files{
+      "foo.o",
+      "deps/foobar.d",
   };
   EXPECT_EQ(expected_output_files, flags.output_files());
 
-  const std::vector<string> expected_unknown_flags{
-      "-Wp,-unknown1", "-Wp,-unknown2", "-Wp,-unknown3",
+  const std::vector<std::string> expected_unknown_flags{
+      "-Wp,-unknown1",
+      "-Wp,-unknown2",
+      "-Wp,-unknown3",
   };
   EXPECT_EQ(expected_unknown_flags, flags.unknown_flags());
 }
 
 TEST_F(GCCFlagsTest, LinkerFlags) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "g++", "-Wl,--start-group", "-Wl,--end-group", "-Wl,--threads", "foo.c",
   };
 
@@ -1077,14 +1102,16 @@ TEST_F(GCCFlagsTest, LinkerFlags) {
   EXPECT_TRUE(flags.is_successful());
 
   // all -Wl, are treated as unknown for now.
-  const std::vector<string> expected_unknown_flags{
-      "-Wl,--start-group", "-Wl,--end-group", "-Wl,--threads",
+  const std::vector<std::string> expected_unknown_flags{
+      "-Wl,--start-group",
+      "-Wl,--end-group",
+      "-Wl,--threads",
   };
   EXPECT_EQ(expected_unknown_flags, flags.unknown_flags());
 }
 
 TEST_F(GCCFlagsTest, AssemblerFlags) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "g++",
       "-Wa,--noexecstack",
       "-Wa,--defsym,STEREO_OUTPUT",
@@ -1104,14 +1131,16 @@ TEST_F(GCCFlagsTest, AssemblerFlags) {
   GCCFlags flags(args, ".");
   EXPECT_TRUE(flags.is_successful());
 
-  const std::vector<string> expected_unknown_flags{
-      "-Wa,-unknown1", "-Wa,-unknown2", "-Wa,-unknown3",
+  const std::vector<std::string> expected_unknown_flags{
+      "-Wa,-unknown1",
+      "-Wa,-unknown2",
+      "-Wa,-unknown3",
   };
   EXPECT_EQ(expected_unknown_flags, flags.unknown_flags());
 }
 
 TEST_F(GCCFlagsTest, MixW) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "g++",
       "-c",
       "foo.c",
@@ -1132,7 +1161,7 @@ TEST_F(GCCFlagsTest, MixW) {
   GCCFlags flags(args, ".");
   EXPECT_TRUE(flags.is_successful());
 
-  const std::vector<string> expected_unknown_flags{
+  const std::vector<std::string> expected_unknown_flags{
       "-Wa,-unknown1", "-Wa,-unknown2", "-Wl,--defsym,STEREO_OUTPUT",
       "-Wl,--defsym",  "-Wl,FOO",       "-Wl,-unknown3",
       "-Wunknown",
@@ -1141,7 +1170,7 @@ TEST_F(GCCFlagsTest, MixW) {
 }
 
 TEST_F(GCCFlagsTest, MD) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("g++");
   args.push_back("-MD");
   args.push_back("-c");
@@ -1151,7 +1180,7 @@ TEST_F(GCCFlagsTest, MD) {
   EXPECT_TRUE(flags.is_successful());
   EXPECT_EQ(GCCFlags::COMPILE, flags.mode());
 
-  std::vector<string> output_files = flags.output_files();
+  std::vector<std::string> output_files = flags.output_files();
   ASSERT_EQ(2U, output_files.size());
   std::sort(output_files.begin(), output_files.end());
   EXPECT_EQ("foo.d", output_files[0]);
@@ -1159,7 +1188,7 @@ TEST_F(GCCFlagsTest, MD) {
 }
 
 TEST_F(GCCFlagsTest, MMD) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("g++");
   args.push_back("-MMD");
   args.push_back("-c");
@@ -1169,7 +1198,7 @@ TEST_F(GCCFlagsTest, MMD) {
   EXPECT_TRUE(flags.is_successful());
   EXPECT_EQ(GCCFlags::COMPILE, flags.mode());
 
-  std::vector<string> output_files = flags.output_files();
+  std::vector<std::string> output_files = flags.output_files();
   ASSERT_EQ(2U, output_files.size());
   std::sort(output_files.begin(), output_files.end());
   EXPECT_EQ("foo.d", output_files[0]);
@@ -1177,7 +1206,7 @@ TEST_F(GCCFlagsTest, MMD) {
 }
 
 TEST_F(GCCFlagsTest, SystemHeaderPrefix) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "clang++",
       "-c",
       "foo.cc",
@@ -1187,7 +1216,7 @@ TEST_F(GCCFlagsTest, SystemHeaderPrefix) {
       "--no-system-header-prefix=c",
   };
 
-  const std::vector<string> expected_input_files{
+  const std::vector<std::string> expected_input_files{
       "foo.cc",
   };
 
@@ -1198,7 +1227,7 @@ TEST_F(GCCFlagsTest, SystemHeaderPrefix) {
 }
 
 TEST_F(GCCFlagsTest, DebugFlags) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "g++",
       "-c",
       "foo.cc",
@@ -1217,7 +1246,7 @@ TEST_F(GCCFlagsTest, DebugFlags) {
       "-gsplit-dwarf",
       "-gunknown",
   };
-  const std::vector<string> expected_unknown_flags{
+  const std::vector<std::string> expected_unknown_flags{
       "-gunknown",
   };
 
@@ -1228,11 +1257,12 @@ TEST_F(GCCFlagsTest, DebugFlags) {
 }
 
 TEST_F(GCCFlagsTest, UnknownFlags) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "g++", "-c", "foo.cc", "-unknown1", "--unknown2",
   };
-  const std::vector<string> expected{
-      "-unknown1", "--unknown2",
+  const std::vector<std::string> expected{
+      "-unknown1",
+      "--unknown2",
   };
 
   GCCFlags flags(args, ".");
@@ -1261,18 +1291,20 @@ TEST_F(GCCFlagsTest, KnownWarningOptions) {
   // bool-compare is.
   ASSERT_TRUE(std::binary_search(std::begin(kKnownWarningOptions),
                                  std::end(kKnownWarningOptions),
-                                 string("bool-compare")));
+                                 std::string("bool-compare")));
   ASSERT_FALSE(std::binary_search(std::begin(kKnownWarningOptions),
                                   std::end(kKnownWarningOptions),
-                                  string("no-bool-compare")));
+                                  std::string("no-bool-compare")));
   EXPECT_TRUE(GCCFlags::IsKnownWarningOption("no-bool-compare"));
 }
 
 TEST_F(GCCFlagsTest, WithoutOoption) {
-  const std::vector<string> args{
-      "g++", "-c", "/tmp/foo.cc",
+  const std::vector<std::string> args{
+      "g++",
+      "-c",
+      "/tmp/foo.cc",
   };
-  const std::vector<string> expected_output_files{
+  const std::vector<std::string> expected_output_files{
       "foo.o",
   };
 
@@ -1282,10 +1314,11 @@ TEST_F(GCCFlagsTest, WithoutOoption) {
 }
 
 TEST_F(GCCFlagsTest, WithoutOoptionLink) {
-  const std::vector<string> args{
-      "g++", "/tmp/foo.cc",
+  const std::vector<std::string> args{
+      "g++",
+      "/tmp/foo.cc",
   };
-  const std::vector<string> expected_output_files{
+  const std::vector<std::string> expected_output_files{
       "a.out",
   };
 
@@ -1295,20 +1328,27 @@ TEST_F(GCCFlagsTest, WithoutOoptionLink) {
 }
 
 TEST_F(GCCFlagsTest, ClangSanitize) {
-  const std::vector<string> args{
-      "clang++", "-c", "foo.cc", "-o", "foo.o", "-fsanitize=address",
+  const std::vector<std::string> args{
+      "clang++",
+      "-c",
+      "foo.cc",
+      "-o",
+      "foo.o",
+      "-fsanitize=address",
       "-fsanitize=thread",
       "-fsanitize-blacklist=dummy1.txt",
       "-fno-sanitize-blacklist",
       "-fsanitize-blacklist=dummy2.txt",
   };
 
-  std::set<string> expected_sanitize{
-    "address", "thread",
+  std::set<std::string> expected_sanitize{
+      "address",
+      "thread",
   };
 
-  std::vector<string> expected_optional_input_files{
-    "dummy1.txt", "dummy2.txt",
+  std::vector<std::string> expected_optional_input_files{
+      "dummy1.txt",
+      "dummy2.txt",
   };
 
   GCCFlags flags(args, ".");
@@ -1346,7 +1386,7 @@ TEST_F(GCCFlagsTest, NormalizeGccVersion) {
 }
 
 TEST_F(GCCFlagsTest, GccFlags) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-c");
   args.push_back("hello.c");
@@ -1377,10 +1417,10 @@ TEST_F(GCCFlagsTest, GccFlags) {
   env[7] = strdup("SUNPRO_DEPENDENCIES=foo.d");
   env[8] = nullptr;
 
-  std::vector<string> important_env;
+  std::vector<std::string> important_env;
   flags->GetClientImportantEnvs(env, &important_env);
 
-  std::vector<string> expected_env;
+  std::vector<std::string> expected_env;
   expected_env.push_back("LIBRARY_PATH=../libsupp");
   expected_env.push_back("CPATH=.:/special/include");
   expected_env.push_back("C_INCLUDE_PATH=.:/special/include");
@@ -1399,7 +1439,7 @@ TEST_F(GCCFlagsTest, GccFlags) {
 
   devtools_goma::GCCFlags* gcc_flags = static_cast<devtools_goma::GCCFlags*>(
       flags.get());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   EXPECT_EQ(compiler_info_flags, gcc_flags->compiler_info_flags());
   EXPECT_EQ(devtools_goma::GCCFlags::COMPILE, gcc_flags->mode());
   EXPECT_EQ("", gcc_flags->isysroot());
@@ -1410,7 +1450,7 @@ TEST_F(GCCFlagsTest, GccFlags) {
 }
 
 TEST_F(GCCFlagsTest, ClangImportantEnv) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-c");
   args.push_back("hello.c");
@@ -1429,10 +1469,10 @@ TEST_F(GCCFlagsTest, ClangImportantEnv) {
   env[6] = strdup("DEVELOPER_DIR=/tmp/path_to_developer_dir");
   env[7] = nullptr;
 
-  std::vector<string> important_env;
+  std::vector<std::string> important_env;
   flags->GetClientImportantEnvs(env, &important_env);
 
-  std::vector<string> expected_env;
+  std::vector<std::string> expected_env;
   expected_env.push_back("LIBRARY_PATH=../libsupp");
   expected_env.push_back("CPATH=.:/special/include");
   expected_env.push_back("C_INCLUDE_PATH=.:/special/include");
@@ -1478,8 +1518,10 @@ TEST_F(GCCFlagsTest, IsImportantEnvGCC) {
     { "ld_preload=foo.so", false, false },
   };
 
-  std::vector<string> args {
-    "gcc", "-c", "hello.c",
+  std::vector<std::string> args{
+      "gcc",
+      "-c",
+      "hello.c",
   };
   std::unique_ptr<CompilerFlags> flags(
       CompilerFlagsParser::MustNew(args, "/tmp"));
@@ -1494,7 +1536,7 @@ TEST_F(GCCFlagsTest, IsImportantEnvGCC) {
 }
 
 TEST_F(GCCFlagsTest, ChromeLinuxCompileFlag) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("g++");
   args.push_back("-DNO_HEAPCHECKER");
   args.push_back("-DENABLE_REMOTING=1");
@@ -1550,7 +1592,7 @@ TEST_F(GCCFlagsTest, ChromeLinuxCompileFlag) {
       flags.get());
   EXPECT_FALSE(gcc_flags->is_precompiling_header());
   EXPECT_FALSE(gcc_flags->is_stdin_input());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   compiler_info_flags.push_back("-pthread");
   compiler_info_flags.push_back("-fno-exceptions");
   compiler_info_flags.push_back("-fvisibility=hidden");
@@ -1590,7 +1632,7 @@ TEST_F(GCCFlagsTest, ChromeLinuxCompileFlag) {
 }
 
 TEST_F(GCCFlagsTest, ChromeLinuxLinkFlag) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("g++");
   args.push_back("-pthread");
   args.push_back("-Wl,-z,noexecstack");
@@ -1639,7 +1681,7 @@ TEST_F(GCCFlagsTest, ChromeLinuxLinkFlag) {
       flags.get());
   EXPECT_FALSE(gcc_flags->is_precompiling_header());
   EXPECT_FALSE(gcc_flags->is_stdin_input());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   compiler_info_flags.push_back("-pthread");
   EXPECT_EQ(compiler_info_flags, gcc_flags->compiler_info_flags());
   EXPECT_EQ(devtools_goma::GCCFlags::LINK, gcc_flags->mode());
@@ -1651,7 +1693,7 @@ TEST_F(GCCFlagsTest, ChromeLinuxLinkFlag) {
 }
 
 TEST_F(GCCFlagsTest, ChromeLinuxClangCompileFlag) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang++");
   args.push_back("-fcolor-diagnostics");
   args.push_back("-DNO_HEAPCHECKER");
@@ -1708,7 +1750,7 @@ TEST_F(GCCFlagsTest, ChromeLinuxClangCompileFlag) {
       flags.get());
   EXPECT_FALSE(gcc_flags->is_precompiling_header());
   EXPECT_FALSE(gcc_flags->is_stdin_input());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   compiler_info_flags.push_back("-fcolor-diagnostics");
   compiler_info_flags.push_back("-pthread");
   compiler_info_flags.push_back("-fno-exceptions");
@@ -1749,7 +1791,7 @@ TEST_F(GCCFlagsTest, ChromeLinuxClangCompileFlag) {
 }
 
 TEST_F(GCCFlagsTest, ChromeLinuxClangLinkFlag) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang++");
   args.push_back("-fcolor-diagnostics");
   args.push_back("-pthread");
@@ -1799,7 +1841,7 @@ TEST_F(GCCFlagsTest, ChromeLinuxClangLinkFlag) {
       flags.get());
   EXPECT_FALSE(gcc_flags->is_precompiling_header());
   EXPECT_FALSE(gcc_flags->is_stdin_input());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   compiler_info_flags.push_back("-fcolor-diagnostics");
   compiler_info_flags.push_back("-pthread");
   EXPECT_EQ(compiler_info_flags, gcc_flags->compiler_info_flags());
@@ -1813,7 +1855,7 @@ TEST_F(GCCFlagsTest, ChromeLinuxClangLinkFlag) {
 
 
 TEST_F(GCCFlagsTest, ChromeASANCompileFlag) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(
       "/usr/src/chrome/src/third_party/asan/asan_clang_Linux/bin/clang++");
   args.push_back("-fcolor-diagnostics");
@@ -1871,7 +1913,7 @@ TEST_F(GCCFlagsTest, ChromeASANCompileFlag) {
       flags.get());
   EXPECT_FALSE(gcc_flags->is_precompiling_header());
   EXPECT_FALSE(gcc_flags->is_stdin_input());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   compiler_info_flags.push_back("-fcolor-diagnostics");
   compiler_info_flags.push_back("-fasan");
   compiler_info_flags.push_back("-pthread");
@@ -1901,7 +1943,7 @@ TEST_F(GCCFlagsTest, ChromeASANCompileFlag) {
 }
 
 TEST_F(GCCFlagsTest, ChromeTSANCompileFlag) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(
       "/usr/src/chrome/src/third_party/llvm-build/Release+Asserts/bin/clang++");
   args.push_back("-fcolor-diagnostics");
@@ -1954,7 +1996,7 @@ TEST_F(GCCFlagsTest, ChromeTSANCompileFlag) {
       flags.get());
   EXPECT_FALSE(gcc_flags->is_precompiling_header());
   EXPECT_FALSE(gcc_flags->is_stdin_input());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   compiler_info_flags.push_back("-fcolor-diagnostics");
   compiler_info_flags.push_back("-pthread");
   compiler_info_flags.push_back("-fno-exceptions");
@@ -1985,7 +2027,7 @@ TEST_F(GCCFlagsTest, ChromeTSANCompileFlag) {
 }
 
 TEST_F(GCCFlagsTest, ChromeTSANCompileFlagWithSanitizeBlacklist) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(
       "/usr/src/chrome/src/third_party/llvm-build/Release+Asserts/bin/clang++");
   args.push_back("-fcolor-diagnostics");
@@ -2037,7 +2079,7 @@ TEST_F(GCCFlagsTest, ChromeTSANCompileFlagWithSanitizeBlacklist) {
       flags.get());
   EXPECT_FALSE(gcc_flags->is_precompiling_header());
   EXPECT_FALSE(gcc_flags->is_stdin_input());
-  std::vector<string> compiler_info_flags;
+  std::vector<std::string> compiler_info_flags;
   compiler_info_flags.push_back("-fcolor-diagnostics");
   compiler_info_flags.push_back("-pthread");
   compiler_info_flags.push_back("-fno-exceptions");
@@ -2064,7 +2106,7 @@ TEST_F(GCCFlagsTest, ChromeTSANCompileFlagWithSanitizeBlacklist) {
 }
 
 TEST_F(GCCFlagsTest, ChromeMacDylibLink) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang++");
   args.push_back("-shared");
   args.push_back("-Wl,-search_paths_first");
@@ -2112,7 +2154,7 @@ TEST_F(GCCFlagsTest, ChromeMacDylibLink) {
 }
 
 TEST_F(GCCFlagsTest, ChromeMacInstallName) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang++");
   args.push_back("-shared");
   args.push_back("-framework");
@@ -2139,7 +2181,7 @@ TEST_F(GCCFlagsTest, ChromeMacInstallName) {
 }
 
 TEST_F(GCCFlagsTest, ChromeMacRpath) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang++");
   args.push_back("-rpath");
   args.push_back("@executable_path/../../..");
@@ -2156,7 +2198,7 @@ TEST_F(GCCFlagsTest, ChromeMacRpath) {
 }
 
 TEST_F(GCCFlagsTest, ChromeMacLinkerRpath) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang++");
   args.push_back("-Xlinker");
   args.push_back("-rpath");
@@ -2180,7 +2222,7 @@ TEST_F(GCCFlagsTest, ChromeMacLinkerRpath) {
 }
 
 TEST_F(GCCFlagsTest, ClangFDebugPrefixMap) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang++");
   args.push_back("-fdebug-prefix-map=/foo/bar=/baz");
   args.push_back("-fdebug-prefix-map=/a=/b=/c");
@@ -2193,16 +2235,16 @@ TEST_F(GCCFlagsTest, ClangFDebugPrefixMap) {
   EXPECT_EQ(args, flags.args());
   EXPECT_TRUE(flags.is_successful());
 
-  std::map<string, string> want_fdebug_prefix_map;
+  std::map<std::string, std::string> want_fdebug_prefix_map;
   want_fdebug_prefix_map["/foo/bar"] = "/baz";
   want_fdebug_prefix_map["/a"] = "/b=/c";
   want_fdebug_prefix_map["/d"] = "";
   EXPECT_EQ(want_fdebug_prefix_map, flags.fdebug_prefix_map());
-  EXPECT_EQ(std::vector<string>(), flags.compiler_info_flags());
+  EXPECT_EQ(std::vector<std::string>(), flags.compiler_info_flags());
 }
 
 TEST_F(GCCFlagsTest, ClangShouldDetectBrokenFDebugPrefixMap) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang++");
   args.push_back("-fdebug-prefix-map=/foo");
   args.push_back("-c");
@@ -2215,7 +2257,7 @@ TEST_F(GCCFlagsTest, ClangShouldDetectBrokenFDebugPrefixMap) {
 }
 
 TEST_F(GCCFlagsTest, ClangShouldUseFirstFDebugPrefixMap) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang++");
   args.push_back("-fdebug-prefix-map=/foo=/bar");
   args.push_back("-fdebug-prefix-map=/foo=/baz");
@@ -2227,25 +2269,21 @@ TEST_F(GCCFlagsTest, ClangShouldUseFirstFDebugPrefixMap) {
   EXPECT_EQ(args, flags.args());
   EXPECT_TRUE(flags.is_successful());
 
-  std::map<string, string> want_fdebug_prefix_map;
+  std::map<std::string, std::string> want_fdebug_prefix_map;
   want_fdebug_prefix_map["/foo"] = "/bar";
   EXPECT_EQ(want_fdebug_prefix_map, flags.fdebug_prefix_map());
-  EXPECT_EQ(std::vector<string>(), flags.compiler_info_flags());
+  EXPECT_EQ(std::vector<std::string>(), flags.compiler_info_flags());
 }
 
 TEST_F(GCCFlagsTest, ClangKnownFlags) {
   // Taken from the real examples.
-  std::vector<string> args {
-    "clang++", "-c", "foo.cc",
-    "-Qunused-arguments",
-    "-Waddress",
-    "-nodefaultlibs",
-    "-pie",
-    "-rdynamic",
-    "-nostdlib",
-    "-nostdlib++",
-    "-static",
-    "-dA",
+  std::vector<std::string> args{
+      "clang++",   "-c",
+      "foo.cc",    "-Qunused-arguments",
+      "-Waddress", "-nodefaultlibs",
+      "-pie",      "-rdynamic",
+      "-nostdlib", "-nostdlib++",
+      "-static",   "-dA",
   };
 
   GCCFlags flags(args, "/");
@@ -2257,7 +2295,7 @@ TEST_F(GCCFlagsTest, ClangKnownFlags) {
 }
 
 TEST_F(GCCFlagsTest, Precompiling) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-c");
   args.push_back("hello.h");
@@ -2269,7 +2307,7 @@ TEST_F(GCCFlagsTest, Precompiling) {
 }
 
 TEST_F(GCCFlagsTest, PreprocessHeader) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-E");
   args.push_back("hello.h");
@@ -2281,27 +2319,33 @@ TEST_F(GCCFlagsTest, PreprocessHeader) {
 
 TEST_F(GCCFlagsTest, bazel) {
   // excerpt from https://plus.google.com/113459563087243716523/posts/Vu3hiHmfhE4
-  const std::vector<string> args {
-    "clang",
-    "-DCOMPILER_GCC3",
-    "-g0",
-    "-Os",
-    "-g0",
-    "-std=gnu++11",
-    "-stdlib=libc++",
-    "-MD",
-    "-MF", "bazel-out/path/to/foo.d",
-    "-frandom-seed=bazel-out/path/to/foo.o",
-    "-iquote", ".",
-    "-iquote", "bazel-out/path/to/include",
-    "-isystem", "path/to/include",
-    "-isystem", "another/path/to/include",
-    "-Ipath/to/include",
-    "-no-canonical-prefixes",
-    "-pthread",
-    "-c",
-    "path/to/foo.cc",
-    "-o", "path/to/foo.o",
+  const std::vector<std::string> args{
+      "clang",
+      "-DCOMPILER_GCC3",
+      "-g0",
+      "-Os",
+      "-g0",
+      "-std=gnu++11",
+      "-stdlib=libc++",
+      "-MD",
+      "-MF",
+      "bazel-out/path/to/foo.d",
+      "-frandom-seed=bazel-out/path/to/foo.o",
+      "-iquote",
+      ".",
+      "-iquote",
+      "bazel-out/path/to/include",
+      "-isystem",
+      "path/to/include",
+      "-isystem",
+      "another/path/to/include",
+      "-Ipath/to/include",
+      "-no-canonical-prefixes",
+      "-pthread",
+      "-c",
+      "path/to/foo.cc",
+      "-o",
+      "path/to/foo.o",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -2320,25 +2364,29 @@ TEST_F(GCCFlagsTest, bazel) {
 
   devtools_goma::GCCFlags* gcc_flags = static_cast<devtools_goma::GCCFlags*>(
       flags.get());
-  const std::vector<string> compiler_info_flags {
-    "-Os",
-    "-std=gnu++11",
-    "-stdlib=libc++",
-    "-frandom-seed=bazel-out/path/to/foo.o",
-    "-iquote", ".",
-    "-iquote", "bazel-out/path/to/include",
-    "-isystem", "path/to/include",
-    "-isystem", "another/path/to/include",
-    "-no-canonical-prefixes",
-    "-pthread",
+  const std::vector<std::string> compiler_info_flags{
+      "-Os",
+      "-std=gnu++11",
+      "-stdlib=libc++",
+      "-frandom-seed=bazel-out/path/to/foo.o",
+      "-iquote",
+      ".",
+      "-iquote",
+      "bazel-out/path/to/include",
+      "-isystem",
+      "path/to/include",
+      "-isystem",
+      "another/path/to/include",
+      "-no-canonical-prefixes",
+      "-pthread",
   };
   EXPECT_EQ(compiler_info_flags, gcc_flags->compiler_info_flags());
 }
 
 TEST_F(GCCFlagsTest, NoCanonicalPrefixes) {
-  const std::vector<string> args {
-    "clang", "-c", "-no-canonical-prefixes", "path/to/foo.cc",
-    "-o", "path/to/foo.o",
+  const std::vector<std::string> args{
+      "clang",          "-c", "-no-canonical-prefixes",
+      "path/to/foo.cc", "-o", "path/to/foo.o",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -2356,8 +2404,8 @@ TEST_F(GCCFlagsTest, NoCanonicalPrefixes) {
 
   devtools_goma::GCCFlags* gcc_flags = static_cast<devtools_goma::GCCFlags*>(
       flags.get());
-  const std::vector<string> compiler_info_flags {
-    "-no-canonical-prefixes",
+  const std::vector<std::string> compiler_info_flags{
+      "-no-canonical-prefixes",
   };
   EXPECT_EQ(compiler_info_flags, gcc_flags->compiler_info_flags());
 }
@@ -2365,10 +2413,10 @@ TEST_F(GCCFlagsTest, NoCanonicalPrefixes) {
 // <path> in -fprofile-sample-use=<path> must be considered as input.
 // Set the value as optional input.
 TEST_F(GCCFlagsTest, FProfileSampleUse) {
-  const std::vector<string> args {
-    "clang", "-fprofile-sample-use=path/to/prof.prof",
-    "-c", "path/to/foo.c",
-    "-o", "path/to/foo.o",
+  const std::vector<std::string> args{
+      "clang", "-fprofile-sample-use=path/to/prof.prof",
+      "-c",    "path/to/foo.c",
+      "-o",    "path/to/foo.o",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -2397,10 +2445,17 @@ TEST_F(GCCFlagsTest, FProfileSampleUse) {
 }
 
 TEST_F(GCCFlagsTest, FThinltoIndex) {
-  const std::vector<string> args {
-    "clang", "-flto=thin", "-O2", "-o", "file.native.o",
-    "-x", "ir", "file.o", "-c",
-    "-fthinlto-index=./dir/file.o.chrome.thinlto.bc",
+  const std::vector<std::string> args{
+      "clang",
+      "-flto=thin",
+      "-O2",
+      "-o",
+      "file.native.o",
+      "-x",
+      "ir",
+      "file.o",
+      "-c",
+      "-fthinlto-index=./dir/file.o.chrome.thinlto.bc",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -2425,16 +2480,22 @@ TEST_F(GCCFlagsTest, FThinltoIndex) {
 
   devtools_goma::GCCFlags* gcc_flags = static_cast<devtools_goma::GCCFlags*>(
       flags.get());
-  const std::vector<string> expected_compiler_info_flags {
-    "-flto=thin", "-O2", "-x", "ir",
+  const std::vector<std::string> expected_compiler_info_flags{
+      "-flto=thin",
+      "-O2",
+      "-x",
+      "ir",
   };
   EXPECT_EQ(expected_compiler_info_flags, gcc_flags->compiler_info_flags());
   EXPECT_EQ("./dir/file.o.chrome.thinlto.bc", gcc_flags->thinlto_index());
 }
 
 TEST_F(GCCFlagsTest, FModules) {
-  const std::vector<string> args{
-      "clang++", "-fmodules", "-c", "foo.cc",
+  const std::vector<std::string> args{
+      "clang++",
+      "-fmodules",
+      "-c",
+      "foo.cc",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -2461,7 +2522,7 @@ TEST_F(GCCFlagsTest, FModules) {
 }
 
 TEST_F(GCCFlagsTest, FNoImplicitModuleMaps) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "clang++", "-fmodules", "-fno-implicit-module-maps", "-c", "foo.cc",
   };
 
@@ -2491,7 +2552,7 @@ TEST_F(GCCFlagsTest, FNoImplicitModuleMaps) {
 }
 
 TEST_F(GCCFlagsTest, FModulesCachePath) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "clang++", "-fmodules", "-fmodule-map-file=foo.modulemap", "-c", "foo.cc",
   };
 
@@ -2521,9 +2582,8 @@ TEST_F(GCCFlagsTest, FModulesCachePath) {
 }
 
 TEST_F(GCCFlagsTest, FModuleFileWithName) {
-  const std::vector<string> args {
-    "clang++", "-fmodules", "-fmodule-file=foo=foo.pcm",
-    "-c", "foo.cc",
+  const std::vector<std::string> args{
+      "clang++", "-fmodules", "-fmodule-file=foo=foo.pcm", "-c", "foo.cc",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -2552,9 +2612,8 @@ TEST_F(GCCFlagsTest, FModuleFileWithName) {
 }
 
 TEST_F(GCCFlagsTest, FModuleFileWithoutName) {
-  const std::vector<string> args {
-    "clang++", "-fmodules", "-fmodule-file=foo.pcm",
-    "-c", "foo.cc",
+  const std::vector<std::string> args{
+      "clang++", "-fmodules", "-fmodule-file=foo.pcm", "-c", "foo.cc",
   };
 
   std::unique_ptr<CompilerFlags> flags(
@@ -2583,7 +2642,7 @@ TEST_F(GCCFlagsTest, FModuleFileWithoutName) {
 }
 
 TEST_F(GCCFlagsTest, FModuleFileFModuleMapFile) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "clang++",
       "-fmodules",
       "-fmodule-file=foo=foo.pcm",
@@ -2618,7 +2677,7 @@ TEST_F(GCCFlagsTest, FModuleFileFModuleMapFile) {
 }
 
 TEST_F(GCCFlagsTest, FModuleFileCornerCase) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "clang++", "-fmodules", "-fmodule-file=foo=", "-c", "foo.cc",
   };
 
@@ -2649,7 +2708,7 @@ TEST_F(GCCFlagsTest, FModuleFileCornerCase) {
 
 // b/24956317
 TEST_F(GCCFlagsTest, XClangEmitModule) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "clang++",      "-x", "c++",           "-fmodules", "-Xclang",
       "-emit-module", "-c", "foo.modulemap", "-o",        "foo.pcm",
   };
@@ -2681,7 +2740,7 @@ TEST_F(GCCFlagsTest, XClangEmitModule) {
 
 // Don't crash if -Xclang is wrongly used.
 TEST_F(GCCFlagsTest, XClangEmitModuleEvil) {
-  const std::vector<string> args{
+  const std::vector<std::string> args{
       "clang++", "-x",           "c++",          "-fmodules",
       "-Xclang", "-emit-module", "-c",           "foo.modulemap",
       "-o",      "foo.pcm",      "-Xclang=hoge", "-Xclang",

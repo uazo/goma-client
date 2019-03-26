@@ -7,12 +7,11 @@
 
 #include "glog/stl_logging.h"
 #include "gtest/gtest.h"
-using std::string;
 
 class AddFramework : public FlagParser::Callback {
  public:
-  string ParseFlagValue(
-      const FlagParser::Flag& /* flag */, const string& value) override {
+  std::string ParseFlagValue(const FlagParser::Flag& /* flag */,
+                             const std::string& value) override {
     return value + " (framework)";
   }
 };
@@ -38,20 +37,20 @@ TEST(FlagParserTest, Parse) {
   FlagParser::Flag* flag_O = parser.AddPrefixFlag("O");
 
   AddFramework add_framework;
-  std::vector<string> I;
+  std::vector<std::string> I;
   parser.AddFlag("I")->SetValueOutputWithCallback(nullptr, &I);
   parser.AddFlag("F")->SetValueOutputWithCallback(&add_framework, &I);
 
   FlagParser::Flag* flag_D = parser.AddFlag("D");
 
-  std::vector<string> include_related;
+  std::vector<std::string> include_related;
   parser.AddFlag("include")->SetOutput(&include_related);
   parser.AddFlag("isystem")->SetOutput(&include_related);
   parser.AddFlag("B")->SetOutput(&include_related);
 
   FlagParser::Flag* non_flag = parser.AddNonFlag();
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   // The name of command.
   args.push_back("/Users/goma/goma/gcc");
 
@@ -163,7 +162,7 @@ TEST(FlagParserTest, ParseBoolFlag) {
   bool c;
   parser.AddBoolFlag("c")->SetSeenOutput(&c);
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("x86_65-cros-linux-gnu-gcc");
   args.push_back("-clang-syntax");
 
@@ -180,7 +179,7 @@ TEST(FlagParserTest, AltPrefix) {
   FlagParser::Flag* flag_D = parser.AddFlag("D");
   FlagParser::Flag* non_flag = parser.AddNonFlag();
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("-DFOO=BAR");
   args.push_back("/DBAZ");
@@ -205,7 +204,7 @@ TEST(FlagParserTest, WeakAltPrefix) {
   FlagParser::Flag* flag_D = parser.AddFlag("D");
   FlagParser::Flag* non_flag = parser.AddNonFlag();
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("clang-cl");
   args.push_back("-DFOO=BAR");
   args.push_back("/DBAZ");
@@ -233,12 +232,12 @@ TEST(FlagParserTest, ClexeUnknownFlagsAltPrefix) {
 
   parser.AddFlag("D");
 
-  std::vector<string> args {
-    "clang-cl",
-    "-DFOO=BAR",
-    "/DBAZ",
-    "/UNKNOWN",  // unknown flag.
-    "/home/foo/src/foo.cc",  // unknown flag.
+  std::vector<std::string> args{
+      "clang-cl",
+      "-DFOO=BAR",
+      "/DBAZ",
+      "/UNKNOWN",              // unknown flag.
+      "/home/foo/src/foo.cc",  // unknown flag.
   };
 
   parser.Parse(args);
@@ -257,12 +256,12 @@ TEST(FlagParserTest, ClexeUnknownFlagsWeakAltPrefix) {
 
   parser.AddFlag("D");
 
-  std::vector<string> args {
-    "clang-cl",
-    "-DFOO=BAR",
-    "/DBAZ",
-    "/UNKNOWN",  // this is considered as non flag (!= unknown flag)
-    "/home/foo/src/foo.cc",  // this, too.
+  std::vector<std::string> args{
+      "clang-cl",
+      "-DFOO=BAR",
+      "/DBAZ",
+      "/UNKNOWN",  // this is considered as non flag (!= unknown flag)
+      "/home/foo/src/foo.cc",  // this, too.
   };
 
   parser.Parse(args);

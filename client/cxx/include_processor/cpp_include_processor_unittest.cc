@@ -18,8 +18,6 @@
 #include "path.h"
 #include "unittest_util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class CppIncludeProcessorTest : public testing::Test {
@@ -34,8 +32,9 @@ class CppIncludeProcessorTest : public testing::Test {
 
   void TearDown() override { ListDirCache::Quit(); }
 
-  std::set<string> RunCppIncludeProcessor(const string& source_file,
-                                          const std::vector<string>& args) {
+  std::set<std::string> RunCppIncludeProcessor(
+      const std::string& source_file,
+      const std::vector<std::string>& args) {
     std::unique_ptr<CompilerFlags> flags(
         CompilerFlagsParser::MustNew(args, tmpdir_util_->tmpdir()));
     std::unique_ptr<CompilerInfoData> data(new CompilerInfoData);
@@ -44,7 +43,7 @@ class CppIncludeProcessorTest : public testing::Test {
     CxxCompilerInfo compiler_info(std::move(data));
 
     CppIncludeProcessor processor;
-    std::set<string> files;
+    std::set<std::string> files;
     FileStatCache file_stat_cache;
     EXPECT_TRUE(processor.GetIncludeFiles(source_file, tmpdir_util_->tmpdir(),
                                           *flags, compiler_info, &files,
@@ -52,7 +51,8 @@ class CppIncludeProcessorTest : public testing::Test {
     return files;
   }
 
-  string CreateTmpFile(const string& content, const string& name) {
+  std::string CreateTmpFile(const std::string& content,
+                            const std::string& name) {
     tmpdir_util_->CreateTmpFile(name, content);
     return tmpdir_util_->FullPath(name);
   }
@@ -67,152 +67,152 @@ class CppIncludeProcessorTest : public testing::Test {
   };
 
   std::unique_ptr<TmpdirUtil> tmpdir_util_;
-  std::vector<string> env_;
+  std::vector<std::string> env_;
 };
 
 TEST_F(CppIncludeProcessorTest, define_defined_with_paren) {
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#define FOO\n"
       "#define DEFINED defined(FOO)\n"
       "#if DEFINED\n"
       "# include \"bar.h\"\n"
       "#endif\n",
       "foo.cc");
-  string included = CreateTmpFile("", "bar.h");
+  std::string included = CreateTmpFile("", "bar.h");
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-c");
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(1U, files.size());
     EXPECT_EQ(included, *files.begin());
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/c");
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     EXPECT_TRUE(files.empty());
   }
 }
 
 TEST_F(CppIncludeProcessorTest, define_defined_without_paren) {
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#define FOO\n"
       "#define DEFINED defined FOO\n"
       "#if DEFINED\n"
       "# include \"bar.h\"\n"
       "#endif\n",
       "foo.cc");
-  string included = CreateTmpFile("", "bar.h");
+  std::string included = CreateTmpFile("", "bar.h");
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(1U, files.size());
     EXPECT_EQ(included, *files.begin());
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(1U, files.size());
     EXPECT_EQ(included, *files.begin());
   }
 }
 
 TEST_F(CppIncludeProcessorTest, comment_in_macro) {
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#define BAR bar.h /**/\n"
       "#define STR_I(x) #x\n"
       "#define STR(x) STR_I(x)\n"
       "#include STR(BAR)\n",
       "foo.cc");
-  string included = CreateTmpFile("", "bar.h");
+  std::string included = CreateTmpFile("", "bar.h");
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(1U, files.size());
     EXPECT_EQ(included, *files.begin());
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(1U, files.size());
     EXPECT_EQ(included, *files.begin());
   }
 }
 
 TEST_F(CppIncludeProcessorTest, comment_in_func_macro) {
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#define BAR(x) bar.h /**/\n"
       "#define STR_I(x) #x\n"
       "#define STR(x) STR_I(x)\n"
       "#include STR(BAR(hoge))\n",
       "foo.cc");
-  string included = CreateTmpFile("", "bar.h");
+  std::string included = CreateTmpFile("", "bar.h");
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(1U, files.size());
     EXPECT_EQ(included, *files.begin());
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(1U, files.size());
     EXPECT_EQ(included, *files.begin());
   }
 }
 
 TEST_F(CppIncludeProcessorTest, opt_include) {
-  const string& header = CreateTmpFile("", "foo.h");
-  std::vector<string> args;
+  const std::string& header = CreateTmpFile("", "foo.h");
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-include");
   args.push_back(header);
 
-  std::set<string> files =
+  std::set<std::string> files =
       RunCppIncludeProcessor(CreateTmpFile("", "foo.c"), args);
   ASSERT_EQ(1U, files.size());
   EXPECT_EQ(header, *files.begin());
@@ -220,165 +220,165 @@ TEST_F(CppIncludeProcessorTest, opt_include) {
 
 TEST_F(CppIncludeProcessorTest, opt_include_in_cwd) {
   CreateTmpFile("", "foo.h");
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("gcc");
   args.push_back("-include");
   args.push_back("foo.h");
 
-  std::set<string> files =
+  std::set<std::string> files =
       RunCppIncludeProcessor(CreateTmpFile("", "foo.c"), args);
   ASSERT_EQ(1U, files.size());
   EXPECT_EQ("foo.h", *files.begin());
 }
 
 TEST_F(CppIncludeProcessorTest, vc_opt_fi) {
-  const string& header = CreateTmpFile("", "foo.h");
-  std::vector<string> args;
+  const std::string& header = CreateTmpFile("", "foo.h");
+  std::vector<std::string> args;
   args.push_back("cl.exe");
   args.push_back("/c");
   args.push_back("/FI" + header);
 
-  std::set<string> files =
+  std::set<std::string> files =
       RunCppIncludeProcessor(CreateTmpFile("", "foo.c"), args);
   ASSERT_EQ(1U, files.size());
   ASSERT_EQ(header, *files.begin());
 }
 
 TEST_F(CppIncludeProcessorTest, no_newline_at_eof) {
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#if 1\n"
       "#include \"bar.h\"\n"
       "#include \"baz.h\"\n"
       "#endif\n",
       "foo.cc");
-  string bar_h = CreateTmpFile(
+  std::string bar_h = CreateTmpFile(
       "#if 0\n"
       "#include \"hoge.h\"\n"
       "#endif",
       "bar.h");
-  string baz_h = CreateTmpFile("", "baz.h");
-  string hoge_h = CreateTmpFile("", "hoge.h");
+  std::string baz_h = CreateTmpFile("", "baz.h");
+  std::string hoge_h = CreateTmpFile("", "hoge.h");
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(bar_h);
   expected.insert(baz_h);
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(2U, files.size());
     EXPECT_EQ(expected, files);
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(2U, files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, no_newline_at_eof_identifier) {
-  const string& bare_gcc = "/usr/bin/gcc";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/gcc";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#include \"foo.h\"\n"
       "#include \"bar.h\"\n"
       "#\n",
       "foo.cc");
-  const string& foo_h = CreateTmpFile(
+  const std::string& foo_h = CreateTmpFile(
       "#define foo",  // No newline at the end after an identifier.
       "foo.h");
-  const string& bar_h = CreateTmpFile(
+  const std::string& bar_h = CreateTmpFile(
       "#ifdef foo\n"
       "#include \"baz.h\"\n"
       "#endif\n",
       "bar.h");
-  const string& baz_h = CreateTmpFile("", "baz.h");
+  const std::string& baz_h = CreateTmpFile("", "baz.h");
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(foo_h);
   expected.insert(bar_h);
   expected.insert(baz_h);
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, no_newline_at_eof_number) {
-  const string& bare_gcc = "/usr/bin/gcc";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/gcc";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#include \"foo.h\"\n"
       "#define S(a) #a\n"
       "#define X(a) S(a.h)\n"
       "#include X(FOO)\n"
       "#\n",
       "foo.cc");
-  const string& foo_h = CreateTmpFile(
+  const std::string& foo_h = CreateTmpFile(
       "#define FOO 999",  // No newline at the end after a pp-number.
       "foo.h");
-  const string& nine_h = CreateTmpFile("", "999.h");
+  const std::string& nine_h = CreateTmpFile("", "999.h");
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(foo_h);
   expected.insert(nine_h);
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, condition_lines_lf) {
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& source_file = CreateTmpFile(
       "#define A 1\n"
       "#define B 1\n"
       "#if defined(A) && \\\n"
@@ -386,26 +386,26 @@ TEST_F(CppIncludeProcessorTest, condition_lines_lf) {
       "#include \"bar.h\"\n"
       "#endif\n",
       "foo.cc");
-  string bar_h = CreateTmpFile("", "bar.h");
+  std::string bar_h = CreateTmpFile("", "bar.h");
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(bar_h);
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(1U, files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, condition_lines_crlf) {
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#define A 1\r\n"
       "#define B 1\r\n"
       "#if defined(A) && \\\r\n"
@@ -413,17 +413,17 @@ TEST_F(CppIncludeProcessorTest, condition_lines_crlf) {
       "#include \"bar.h\"\r\n"
       "#endif\\r\n",
       "foo.cc");
-  string bar_h = CreateTmpFile("", "bar.h");
+  std::string bar_h = CreateTmpFile("", "bar.h");
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(bar_h);
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(1U, files.size());
     EXPECT_EQ(expected, files);
   }
@@ -432,41 +432,41 @@ TEST_F(CppIncludeProcessorTest, condition_lines_crlf) {
 TEST_F(CppIncludeProcessorTest, include_cur_from_include_paths) {
   // b/7626343
 
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& bare_cl = "cl.exe";
-  const string& source_file =
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file =
       CreateTmpFile("#include \"primpl.h\"\n", "foo.cc");
-  const string& dir1 = "dir1";
-  const string& nspr_h = file::JoinPath(dir1, "nspr.h");
+  const std::string& dir1 = "dir1";
+  const std::string& nspr_h = file::JoinPath(dir1, "nspr.h");
   CreateTmpFile("", nspr_h);
-  const string& dir2 = "dir2";
-  const string& primpl_h = file::JoinPath(dir2, "primpl.h");
+  const std::string& dir2 = "dir2";
+  const std::string& primpl_h = file::JoinPath(dir2, "primpl.h");
   CreateTmpFile("#include \"nspr.h\"\n", primpl_h);
 
-  std::set<string> expected{nspr_h, primpl_h};
+  std::set<std::string> expected{nspr_h, primpl_h};
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-I" + dir1);
     args.push_back("-I" + dir2);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/I" + dir1);
     args.push_back("/I" + dir2);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
@@ -474,43 +474,45 @@ TEST_F(CppIncludeProcessorTest, include_cur_from_include_paths) {
 
 TEST_F(CppIncludeProcessorTest, include_next_multiple_file) {
   // b/7461986
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& source_file =
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& source_file =
       CreateTmpFile("#include \"limits.h\"\n",  // limits_h_0
                     "foo.cc");
-  const string& limits_h_0 =
+  const std::string& limits_h_0 =
       CreateTmpFile("#include_next \"limits.h\"\n",  // limits_h_1
                     "limits.h");
-  const string& dir1 = "dir1";
-  const string& limits_h_1 = file::JoinPath(dir1, "limits.h");
+  const std::string& dir1 = "dir1";
+  const std::string& limits_h_1 = file::JoinPath(dir1, "limits.h");
   CreateTmpFile(
       "#ifndef _LIBC_LIMITS_H\n"    // not defined yet
       "#include \"syslimits.h\"\n"  // so it should be included
       "#endif\n",
       limits_h_1);
-  const string& syslimits_h = file::JoinPath(dir1, "syslimits.h");
+  const std::string& syslimits_h = file::JoinPath(dir1, "syslimits.h");
   CreateTmpFile("", syslimits_h);
-  const string& dir2 = "dir2";
+  const std::string& dir2 = "dir2";
   // If limits_h_2 is included (before limits_h_1), syslimits.h would not be
   // included.
-  const string& limits_h_2 = CreateTmpFile("#define _LIBC_LIMITS_H\n",
-                                           file::JoinPath(dir2, "limits.h"));
+  const std::string& limits_h_2 = CreateTmpFile(
+      "#define _LIBC_LIMITS_H\n", file::JoinPath(dir2, "limits.h"));
 
   ASSERT_NE(limits_h_1, limits_h_2);
 
-  std::set<string> expected{
-      limits_h_0, limits_h_1, syslimits_h,
+  std::set<std::string> expected{
+      limits_h_0,
+      limits_h_1,
+      syslimits_h,
   };
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-I" + dir1);
     args.push_back("-I" + dir2);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
@@ -518,44 +520,47 @@ TEST_F(CppIncludeProcessorTest, include_next_multiple_file) {
 
 TEST_F(CppIncludeProcessorTest, include_next_from_include_current_dir) {
   // b/7461986
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& source_file =
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& source_file =
       CreateTmpFile("#include \"limits.h\"\n",  // include limits_h_0 (curdir)
                     "foo.cc");
-  const string& limits_h_0 = CreateTmpFile(
+  const std::string& limits_h_0 = CreateTmpFile(
       "#include_next <limits.h>\n",  // include limits_h_1 (first inc dir)
       "limits.h");
-  const string& dir1 = "dir1";
-  const string& limits_h_1 = file::JoinPath(dir1, "limits.h");
+  const std::string& dir1 = "dir1";
+  const std::string& limits_h_1 = file::JoinPath(dir1, "limits.h");
   CreateTmpFile(
       "#ifndef _LIBC_LIMITS_H\n"    // not defined yet
       "#include \"syslimits.h\"\n"  // so it should be included
       "#endif\n",
       limits_h_1);
-  const string& syslimits_h = file::JoinPath(dir1, "syslimits.h");
+  const std::string& syslimits_h = file::JoinPath(dir1, "syslimits.h");
   CreateTmpFile(
       "#include_next <limits.h>\n",  // include limits_h_2 (second inc dir)
       syslimits_h);
-  const string& dir2 = "dir2";
+  const std::string& dir2 = "dir2";
   // If limits_h_2 is included from syslimits.h
-  const string& limits_h_2 = file::JoinPath(dir2, "limits.h");
+  const std::string& limits_h_2 = file::JoinPath(dir2, "limits.h");
   CreateTmpFile("#define _LIBC_LIMITS_H\n", limits_h_2);
 
   ASSERT_NE(limits_h_1, limits_h_2);
 
-  std::set<string> expected{
-      limits_h_0, limits_h_1, syslimits_h, limits_h_2,
+  std::set<std::string> expected{
+      limits_h_0,
+      limits_h_1,
+      syslimits_h,
+      limits_h_2,
   };
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-I" + dir1);
     args.push_back("-I" + dir2);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
@@ -564,51 +569,52 @@ TEST_F(CppIncludeProcessorTest, include_next_from_include_current_dir) {
 TEST_F(CppIncludeProcessorTest, include_next_from_next_dir) {
   // b/7462563
 
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& source_file =
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& source_file =
       CreateTmpFile("#include <_clocale.h>\n",  // clocate_h
                     "foo.cc");
-  const string& dir1 = "dir1";
-  const string& clocale_h = file::JoinPath(dir1, "_clocale.h");
+  const std::string& dir1 = "dir1";
+  const std::string& clocale_h = file::JoinPath(dir1, "_clocale.h");
   CreateTmpFile("#include_next <clocale>\n",  // include clocale_2
                 clocale_h);
-  const string& clocale_1 = CreateTmpFile("", file::JoinPath(dir1, "clocale"));
-  const string& dir2 = "dir2";
-  const string& clocale_2 = file::JoinPath(dir2, "clocale");
+  const std::string& clocale_1 =
+      CreateTmpFile("", file::JoinPath(dir1, "clocale"));
+  const std::string& dir2 = "dir2";
+  const std::string& clocale_2 = file::JoinPath(dir2, "clocale");
   CreateTmpFile("", clocale_2);
 
   ASSERT_NE(clocale_1, clocale_2);
 
-  std::set<string> expected{clocale_h, clocale_2};
+  std::set<std::string> expected{clocale_h, clocale_2};
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-I" + dir1);
     args.push_back("-I" + dir2);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, invalidated_macro_in_offspring) {
-  const string& bare_gcc = "/usr/bin/gcc";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/gcc";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#define var1\n"
       "#include \"step1.h\"\n"
       "#include \"step1.h\"\n"
       "#\n",
       "foo.cc");
-  const string& step1_h = CreateTmpFile(
+  const std::string& step1_h = CreateTmpFile(
       "#include \"step2.h\"\n"
       "#undef var1\n",
       "step1.h");
-  const string& step2_h = CreateTmpFile(
+  const std::string& step2_h = CreateTmpFile(
       "#if !defined var1\n"
       "#define var2\n"
       "#endif\n"
@@ -617,115 +623,119 @@ TEST_F(CppIncludeProcessorTest, invalidated_macro_in_offspring) {
       "#include \"step3.h\"\n"
       "#endif\n",
       "step2.h");
-  const string& step3_h = CreateTmpFile("\n", "step3.h");
+  const std::string& step3_h = CreateTmpFile("\n", "step3.h");
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(step1_h);
   expected.insert(step2_h);
   expected.insert(step3_h);
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, include_ignore_dir) {
-  const string& bare_gcc = "/usr/bin/gcc";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile("#include \"string\"\n", "foo.cc");
-  const string& string_dir = "string";
+  const std::string& bare_gcc = "/usr/bin/gcc";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file =
+      CreateTmpFile("#include \"string\"\n", "foo.cc");
+  const std::string& string_dir = "string";
   CHECK(file::CreateDir(tmpdir_util_->FullPath(string_dir).c_str(),
                         file::CreationMode(0777))
             .ok());
-  const string& dir1 = "dir1";
-  const string& string_h = file::JoinPath(dir1, "string");
+  const std::string& dir1 = "dir1";
+  const std::string& string_h = file::JoinPath(dir1, "string");
   CreateTmpFile("", string_h);
 
-  std::set<string> expected{string_h};
+  std::set<std::string> expected{string_h};
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-I" + dir1);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/I" + dir1);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, include_next_ignore_dir) {
-  const string& bare_gcc = "/usr/bin/gcc";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile("#include <foo.h>\n", "foo.cc");
-  const string& dir1 = "dir1";
-  const string& foo_h = file::JoinPath(dir1, "foo.h");
+  const std::string& bare_gcc = "/usr/bin/gcc";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file =
+      CreateTmpFile("#include <foo.h>\n", "foo.cc");
+  const std::string& dir1 = "dir1";
+  const std::string& foo_h = file::JoinPath(dir1, "foo.h");
   CreateTmpFile("#include <string>\n", foo_h);
-  const string& string1 = file::JoinPath(dir1, "string");
+  const std::string& string1 = file::JoinPath(dir1, "string");
   CreateTmpFile("#include_next <string>\n", string1);
-  const string& dir2 = "dir2";
-  const string& dir3 = "dir3";
-  const string& string3 = file::JoinPath(dir3, "string");
+  const std::string& dir2 = "dir2";
+  const std::string& dir3 = "dir3";
+  const std::string& string3 = file::JoinPath(dir3, "string");
   CreateTmpFile("", string3);
 
-  std::set<string> expected{
-      foo_h, string1, string3,
+  std::set<std::string> expected{
+      foo_h,
+      string1,
+      string3,
   };
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-I" + dir1);
     args.push_back("-I" + dir2);
     args.push_back("-I" + dir3);
     args.push_back("-c");
     args.push_back(source_file);
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/I" + dir1);
     args.push_back("/I" + dir2);
     args.push_back("/I" + dir3);
     args.push_back("/c");
     args.push_back(source_file);
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
@@ -734,256 +744,256 @@ TEST_F(CppIncludeProcessorTest, include_next_ignore_dir) {
 TEST_F(CppIncludeProcessorTest, include_path_two_slashes_in_dir_cache) {
   // b/7618390
 
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#include \"dir2//foo.h\"\n"        // foo_h
       "#include \"dir3//dir4//bar.h\"\n"  // bar_h
       "#include \"dir3/dir4/baz.h\"\n",   // baz_h
       "foo.cc");
-  const string& dir1 = "dir1";
-  const string& dir2 = file::JoinPath(dir1, "dir2");
-  const string& foo_h = file::JoinPath(dir2, "foo.h");
+  const std::string& dir1 = "dir1";
+  const std::string& dir2 = file::JoinPath(dir1, "dir2");
+  const std::string& foo_h = file::JoinPath(dir2, "foo.h");
   CreateTmpFile("", foo_h);
-  const string& dir3 = file::JoinPath(dir1, "dir3");
-  const string& dir4 = file::JoinPath(dir3, "dir4");
-  const string& bar_h = file::JoinPath(dir4, "bar.h");
+  const std::string& dir3 = file::JoinPath(dir1, "dir3");
+  const std::string& dir4 = file::JoinPath(dir3, "dir4");
+  const std::string& bar_h = file::JoinPath(dir4, "bar.h");
   CreateTmpFile("", bar_h);
-  const string& baz_h = file::JoinPath(dir4, "baz.h");
+  const std::string& baz_h = file::JoinPath(dir4, "baz.h");
   CreateTmpFile("", baz_h);
 
-  std::set<string> expected{foo_h, bar_h, baz_h};
+  std::set<std::string> expected{foo_h, bar_h, baz_h};
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-I" + dir1);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/I" + dir1);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, include_unresolved_path) {
-  const string& bare_gcc = "/usr/bin/g++";
-  const string& bare_cl = "cl.exe";
-  const string& source_file = CreateTmpFile(
+  const std::string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_cl = "cl.exe";
+  const std::string& source_file = CreateTmpFile(
       "#include \"dir2/../foo.h\"\n"         // foo_h
       "#include \"dir2//../hoge.h\"\n"       // hoge_h
       "#include \"dir3/../dir4/bar.h\"\n"    // bar_h
       "#include \"dir3/..//dir4/baz.h\"\n",  // baz_h
       "foo.cc");
-  const string& dir1 = "dir1";
-  const string& full_dir1 = file::JoinPath(tmpdir_util_->tmpdir(), dir1);
+  const std::string& dir1 = "dir1";
+  const std::string& full_dir1 = file::JoinPath(tmpdir_util_->tmpdir(), dir1);
   CHECK(file::CreateDir(full_dir1.c_str(), file::CreationMode(0777)).ok());
-  const string& foo_h = CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
-  const string& hoge_h = CreateTmpFile("", file::JoinPath(dir1, "hoge.h"));
-  const string& dir2 = file::JoinPath(dir1, "dir2");
-  const string& full_dir2 = file::JoinPath(tmpdir_util_->tmpdir(), dir2);
+  const std::string& foo_h = CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
+  const std::string& hoge_h = CreateTmpFile("", file::JoinPath(dir1, "hoge.h"));
+  const std::string& dir2 = file::JoinPath(dir1, "dir2");
+  const std::string& full_dir2 = file::JoinPath(tmpdir_util_->tmpdir(), dir2);
   CHECK(file::CreateDir(full_dir2.c_str(), file::CreationMode(0777)).ok());
-  const string& unresolved_foo_h =
+  const std::string& unresolved_foo_h =
       file::JoinPath(file::JoinPath(dir2, ".."), "foo.h");
   ASSERT_NE(unresolved_foo_h, foo_h);
-  const string& unresolved_hoge_h =
+  const std::string& unresolved_hoge_h =
       file::JoinPath(file::JoinPath(dir2, ".."), "hoge.h");
   ASSERT_NE(unresolved_hoge_h, hoge_h);
-  const string& dir3 = file::JoinPath(dir1, "dir3");
-  const string& full_dir3 = file::JoinPath(tmpdir_util_->tmpdir(), dir3);
+  const std::string& dir3 = file::JoinPath(dir1, "dir3");
+  const std::string& full_dir3 = file::JoinPath(tmpdir_util_->tmpdir(), dir3);
   CHECK(file::CreateDir(full_dir3.c_str(), file::CreationMode(0777)).ok());
-  const string& dir4 = file::JoinPath(dir1, "dir4");
+  const std::string& dir4 = file::JoinPath(dir1, "dir4");
   CHECK(file::CreateDir(file::JoinPath(tmpdir_util_->tmpdir(), dir4).c_str(),
                         file::CreationMode(0777))
             .ok());
-  const string& bar_h = CreateTmpFile("", file::JoinPath(dir4, "bar.h"));
-  const string& baz_h = CreateTmpFile("", file::JoinPath(dir4, "baz.h"));
-  const string& unresolved_bar_h = file::JoinPath(
+  const std::string& bar_h = CreateTmpFile("", file::JoinPath(dir4, "bar.h"));
+  const std::string& baz_h = CreateTmpFile("", file::JoinPath(dir4, "baz.h"));
+  const std::string& unresolved_bar_h = file::JoinPath(
       file::JoinPath(file::JoinPath(dir3, ".."), "dir4"), "bar.h");
   ASSERT_NE(unresolved_bar_h, bar_h);
-  const string& unresolved_baz_h = file::JoinPath(
+  const std::string& unresolved_baz_h = file::JoinPath(
       file::JoinPath(file::JoinPath(dir3, ".."), "dir4"), "baz.h");
   ASSERT_NE(unresolved_baz_h, baz_h);
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(unresolved_foo_h);
   expected.insert(unresolved_hoge_h);
   expected.insert(unresolved_bar_h);
   expected.insert(unresolved_baz_h);
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_gcc);
     args.push_back("-I" + dir1);
     args.push_back("-c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back(bare_cl);
     args.push_back("/I" + dir1);
     args.push_back("/c");
     args.push_back(source_file);
 
-    std::set<string> files = RunCppIncludeProcessor(source_file, args);
+    std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, newline_before_include) {
-  const string& dir1 = "dir1";
+  const std::string& dir1 = "dir1";
 
-  const string& foo_h = CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
-  const string& foo_cc =
+  const std::string& foo_h = CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
+  const std::string& foo_cc =
       CreateTmpFile("\n#include \"foo.h\"", file::JoinPath(dir1, "foo.cc"));
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/g++");
   args.push_back("-c");
   args.push_back("-I" + dir1);
   args.push_back(foo_cc);
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(foo_h);
 
-  std::set<string> files = RunCppIncludeProcessor(foo_cc, args);
+  std::set<std::string> files = RunCppIncludeProcessor(foo_cc, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, newline_and_spaces_before_include) {
-  const string& dir1 = "dir1";
+  const std::string& dir1 = "dir1";
 
-  const string& foo_h = CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
-  const string& foo_cc = CreateTmpFile("f();   \n   #include \"foo.h\"",
-                                       file::JoinPath(dir1, "foo.cc"));
+  const std::string& foo_h = CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
+  const std::string& foo_cc = CreateTmpFile("f();   \n   #include \"foo.h\"",
+                                            file::JoinPath(dir1, "foo.cc"));
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/g++");
   args.push_back("-c");
   args.push_back("-I" + dir1);
   args.push_back(foo_cc);
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(foo_h);
 
-  std::set<string> files = RunCppIncludeProcessor(foo_cc, args);
+  std::set<std::string> files = RunCppIncludeProcessor(foo_cc, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, noncomment_token_before_include) {
-  const string& dir1 = "dir1";
+  const std::string& dir1 = "dir1";
 
   CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
-  const string& foo_cc = CreateTmpFile("f(); \t   #include \"foo.h\"",
-                                       file::JoinPath(dir1, "foo.cc"));
+  const std::string& foo_cc = CreateTmpFile("f(); \t   #include \"foo.h\"",
+                                            file::JoinPath(dir1, "foo.cc"));
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/g++");
   args.push_back("-c");
   args.push_back("-I" + dir1);
   args.push_back(foo_cc);
 
-  std::set<string> expected;
+  std::set<std::string> expected;
 
-  std::set<string> files = RunCppIncludeProcessor(foo_cc, args);
+  std::set<std::string> files = RunCppIncludeProcessor(foo_cc, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, comment_slash_followed_by_include_simple) {
-  const string& dir1 = "dir1";
+  const std::string& dir1 = "dir1";
 
-  const string& foo1_h = CreateTmpFile("", file::JoinPath(dir1, "foo1.h"));
-  const string& foo2_h = CreateTmpFile("", file::JoinPath(dir1, "foo2.h"));
-  const string& foo_cc = CreateTmpFile(
+  const std::string& foo1_h = CreateTmpFile("", file::JoinPath(dir1, "foo1.h"));
+  const std::string& foo2_h = CreateTmpFile("", file::JoinPath(dir1, "foo2.h"));
+  const std::string& foo_cc = CreateTmpFile(
       "   \\\n#include \"foo1.h\"\n  /* test */ \\\n#include \"foo2.h\"",
       file::JoinPath(dir1, "foo.cc"));
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/g++");
   args.push_back("-c");
   args.push_back("-I" + dir1);
   args.push_back(foo_cc);
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(foo1_h);
   expected.insert(foo2_h);
 
-  std::set<string> files = RunCppIncludeProcessor(foo_cc, args);
+  std::set<std::string> files = RunCppIncludeProcessor(foo_cc, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, comment_slash_followed_by_include_complex1) {
-  const string& dir1 = "dir1";
+  const std::string& dir1 = "dir1";
 
-  const string& foo_h = CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
-  const string& foo_cc = CreateTmpFile(
+  const std::string& foo_h = CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
+  const std::string& foo_cc = CreateTmpFile(
       "  /* test */ \\\r\n /* test 2 */ /* */ \\\n"
       "\\\n /* foo bar */ \\\n#include \"foo.h\"",
       file::JoinPath(dir1, "foo.cc"));
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/g++");
   args.push_back("-c");
   args.push_back("-I" + dir1);
   args.push_back(foo_cc);
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(foo_h);
 
-  std::set<string> files = RunCppIncludeProcessor(foo_cc, args);
+  std::set<std::string> files = RunCppIncludeProcessor(foo_cc, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, comment_slash_followed_by_include_complex2) {
-  const string& dir1 = "dir1";
+  const std::string& dir1 = "dir1";
 
-  const string& foo_h = CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
-  const string& foo_cc = CreateTmpFile(
+  const std::string& foo_h = CreateTmpFile("", file::JoinPath(dir1, "foo.h"));
+  const std::string& foo_cc = CreateTmpFile(
       "#define FOO \"foo.h\"\n"
       "  /* test */ \\\r\n /* test 2 */ /* */ \\\n"
       "\\\n /* foo bar */ \\\n#include FOO",
       file::JoinPath(dir1, "foo.cc"));
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/bin/g++");
   args.push_back("-c");
   args.push_back("-I" + dir1);
   args.push_back(foo_cc);
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(foo_h);
 
-  std::set<string> files = RunCppIncludeProcessor(foo_cc, args);
+  std::set<std::string> files = RunCppIncludeProcessor(foo_cc, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, include_boost_pp_iterate) {
-  const string& foo_cc = CreateTmpFile(
+  const std::string& foo_cc = CreateTmpFile(
       // simplified case for BOOST_PP_ITERATE
       // cf. b/14593802
       // <boost/preprocessor/cat.hpp>
@@ -1006,35 +1016,35 @@ TEST_F(CppIncludeProcessorTest, include_boost_pp_iterate) {
       "foo.cc");
   CreateTmpFile("", "bar1.h");
   CreateTmpFile("", "bar2.h");
-  std::set<string> expected{file::JoinPath(".", "bar1.h")};
+  std::set<std::string> expected{file::JoinPath(".", "bar1.h")};
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back("/usr/bin/g++");
     args.push_back("-c");
     args.push_back("-I.");
     args.push_back(foo_cc);
 
-    std::set<string> files = RunCppIncludeProcessor(foo_cc, args);
+    std::set<std::string> files = RunCppIncludeProcessor(foo_cc, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back("cl.exe");
     args.push_back("/c");
     args.push_back("/I.");
     args.push_back(foo_cc);
 
-    std::set<string> files = RunCppIncludeProcessor(foo_cc, args);
+    std::set<std::string> files = RunCppIncludeProcessor(foo_cc, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, include_boost_pp_iterate_va_args) {
-  const string& foo_cc = CreateTmpFile(
+  const std::string& foo_cc = CreateTmpFile(
       // simplified case for BOOST_PP_ITERATE
       // cf.
       // boost v1.49.0
@@ -1095,162 +1105,163 @@ TEST_F(CppIncludeProcessorTest, include_boost_pp_iterate_va_args) {
       "#include BOOST_PP_FILENAME_1\n",
       "foo.cc");
   CreateTmpFile("", "bar1.h");
-  std::set<string> expected{file::JoinPath(".", "bar1.h")};
+  std::set<std::string> expected{file::JoinPath(".", "bar1.h")};
   {
-    std::vector<string> args;
+    std::vector<std::string> args;
     args.push_back("/usr/bin/g++");
     args.push_back("-c");
     args.push_back("-I.");
     args.push_back(foo_cc);
 
-    std::set<string> files = RunCppIncludeProcessor(foo_cc, args);
+    std::set<std::string> files = RunCppIncludeProcessor(foo_cc, args);
     ASSERT_EQ(expected.size(), files.size());
     EXPECT_EQ(expected, files);
   }
 }
 
 TEST_F(CppIncludeProcessorTest, include_next_self) {
-  const string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_gcc = "/usr/bin/g++";
 
-  const string& source_file = CreateTmpFile("#include \"a.h\"\n", "a.cc");
-  const string& ah = CreateTmpFile("#include_next <a.h>\n", "a.h");
+  const std::string& source_file = CreateTmpFile("#include \"a.h\"\n", "a.cc");
+  const std::string& ah = CreateTmpFile("#include_next <a.h>\n", "a.h");
 
-  const string& aah = file::JoinPath("a", "a.h");
+  const std::string& aah = file::JoinPath("a", "a.h");
   CreateTmpFile("", aah);
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
   args.push_back("-I.");
   args.push_back("-Ia");
   args.push_back("-c");
   args.push_back(source_file);
 
-  std::set<string> expected{ah, file::JoinPath(".", "a.h"), aah};
+  std::set<std::string> expected{ah, file::JoinPath(".", "a.h"), aah};
 
-  std::set<string> files = RunCppIncludeProcessor(source_file, args);
+  std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, include_quote_from_current) {
-  const string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_gcc = "/usr/bin/g++";
 
-  const string& source_file =
+  const std::string& source_file =
       CreateTmpFile("#include \"a.h\"\n", file::JoinPath("a", "a.cc"));
-  const string& aah = CreateTmpFile("", file::JoinPath("a", "a.h"));
+  const std::string& aah = CreateTmpFile("", file::JoinPath("a", "a.h"));
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
   args.push_back("-c");
   args.push_back(source_file);
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(aah);
 
-  std::set<string> files = RunCppIncludeProcessor(source_file, args);
+  std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, include_sibling) {
-  const string& bare_gcc = "/usr/bin/g++";
+  const std::string& bare_gcc = "/usr/bin/g++";
 
-  const string& source_file =
+  const std::string& source_file =
       CreateTmpFile("#include \"../b/b.h\"\n", file::JoinPath("a", "a.cc"));
-  const string& bbh = CreateTmpFile("", file::JoinPath("a", "..", "b", "b.h"));
+  const std::string& bbh =
+      CreateTmpFile("", file::JoinPath("a", "..", "b", "b.h"));
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(bare_gcc);
   args.push_back("-c");
   args.push_back(source_file);
 
-  std::set<string> expected;
+  std::set<std::string> expected;
   expected.insert(bbh);
 
-  std::set<string> files = RunCppIncludeProcessor(source_file, args);
+  std::set<std::string> files = RunCppIncludeProcessor(source_file, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, include_from_dir) {
-  const string& ac = file::JoinPath("test", "a.c");
+  const std::string& ac = file::JoinPath("test", "a.c");
   CreateTmpFile("#include \"a.h\"\n", ac);
 
-  const string& ah = file::JoinPath("test", "a.h");
+  const std::string& ah = file::JoinPath("test", "a.h");
   CreateTmpFile("", ah);
 
-  std::vector<string> args{"/usr/bin/gcc", "-c", ac};
-  std::set<string> expected{ah};
+  std::vector<std::string> args{"/usr/bin/gcc", "-c", ac};
+  std::set<std::string> expected{ah};
 
-  std::set<string> files = RunCppIncludeProcessor(ac, args);
+  std::set<std::string> files = RunCppIncludeProcessor(ac, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, include_from_dir_in_include_dir) {
-  const string& ac = "a.c";
+  const std::string& ac = "a.c";
   CreateTmpFile("#include <test/a.h>\n", ac);
 
-  const string& ah = file::JoinPath(".", "test", "a.h");
+  const std::string& ah = file::JoinPath(".", "test", "a.h");
   CreateTmpFile("#include \"b.h\"", ah);
 
-  const string& bh = file::JoinPath(".", "test", "b.h");
+  const std::string& bh = file::JoinPath(".", "test", "b.h");
   CreateTmpFile("", bh);
 
-  std::vector<string> args{"/usr/bin/gcc", "-I.", "-c", ac};
-  std::set<string> expected{ah, bh};
+  std::vector<std::string> args{"/usr/bin/gcc", "-I.", "-c", ac};
+  std::set<std::string> expected{ah, bh};
 
-  std::set<string> files = RunCppIncludeProcessor(ac, args);
+  std::set<std::string> files = RunCppIncludeProcessor(ac, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, include_from_abs_rel_include_dir) {
-  const string& ac = "a.c";
+  const std::string& ac = "a.c";
   CreateTmpFile(
       "#include <abs.h>\n"
       "#include <rel.h>\n",
       ac);
 
-  const string& relh = file::JoinPath("rel", "rel.h");
+  const std::string& relh = file::JoinPath("rel", "rel.h");
   CreateTmpFile("", relh);
 
-  const string& absh = CreateTmpFile("", file::JoinPath("abs", "abs.h"));
+  const std::string& absh = CreateTmpFile("", file::JoinPath("abs", "abs.h"));
 
-  std::vector<string> args{"/usr/bin/gcc", "-Irel",
-                           "-I" + tmpdir_util_->FullPath("abs"), "-c", ac};
-  std::set<string> expected{relh, absh};
+  std::vector<std::string> args{"/usr/bin/gcc", "-Irel",
+                                "-I" + tmpdir_util_->FullPath("abs"), "-c", ac};
+  std::set<std::string> expected{relh, absh};
 
-  std::set<string> files = RunCppIncludeProcessor(ac, args);
+  std::set<std::string> files = RunCppIncludeProcessor(ac, args);
   ASSERT_EQ(expected.size(), files.size());
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, include_guard_once_alias) {
-  const string& ac = file::JoinPath("a", "a.c");
+  const std::string& ac = file::JoinPath("a", "a.c");
   CreateTmpFile("#include \"../b/b.h\"\n", ac);
 
-  const string& bh = file::JoinPath("a", "..", "b", "b.h");
+  const std::string& bh = file::JoinPath("a", "..", "b", "b.h");
   CreateTmpFile(
       "#pragma once\n"
       "#include \"../b/b.h\"\n",
       bh);
 
-  std::vector<string> args{"/usr/bin/gcc", "-c", ac};
-  std::set<string> expected{bh};
+  std::vector<std::string> args{"/usr/bin/gcc", "-c", ac};
+  std::set<std::string> expected{bh};
 
-  std::set<string> files = RunCppIncludeProcessor(ac, args);
+  std::set<std::string> files = RunCppIncludeProcessor(ac, args);
   EXPECT_EQ(expected, files);
 }
 
 TEST_F(CppIncludeProcessorTest, undef_content) {
-  const string& inc = file::JoinPath(".", "inc.h");
+  const std::string& inc = file::JoinPath(".", "inc.h");
   CreateTmpFile(
       "#define THIS FILE\n"
       "#include THIS\n"
       "#undef THIS\n",
       inc);
 
-  const string& ac = file::JoinPath(".", "a.c");
+  const std::string& ac = file::JoinPath(".", "a.c");
   CreateTmpFile(
       "#define FILE \"a.h\"\n"
       "#include \"inc.h\"\n"
@@ -1259,15 +1270,15 @@ TEST_F(CppIncludeProcessorTest, undef_content) {
       "#include \"inc.h\"\n",
       ac);
 
-  const string& ah = file::JoinPath(".", "a.h");
-  const string& bh = file::JoinPath(".", "b.h");
+  const std::string& ah = file::JoinPath(".", "a.h");
+  const std::string& bh = file::JoinPath(".", "b.h");
   CreateTmpFile("", ah);
   CreateTmpFile("", bh);
 
-  std::vector<string> args{"/usr/bin/gcc", "-c", ac};
-  std::set<string> expected{inc, ah, bh};
+  std::vector<std::string> args{"/usr/bin/gcc", "-c", ac};
+  std::set<std::string> expected{inc, ah, bh};
 
-  std::set<string> files = RunCppIncludeProcessor(ac, args);
+  std::set<std::string> files = RunCppIncludeProcessor(ac, args);
   EXPECT_EQ(expected, files);
 }
 

@@ -25,7 +25,7 @@ void FixChunk(void* buffer, int chunk_size) {
   memcpy(buffer, kChunkHeader.data(), kChunkHeader.size());
 
   CHECK_LE(chunk_size, 0xffff);
-  string size_str = absl::StrCat(absl::Hex(chunk_size, absl::kZeroPad4));
+  std::string size_str = absl::StrCat(absl::Hex(chunk_size, absl::kZeroPad4));
   CHECK_EQ(size_str.size(), 4);
   memcpy(buffer, size_str.data(), size_str.size());
 
@@ -40,7 +40,7 @@ void FixChunk(void* buffer, int chunk_size) {
 
 namespace devtools_goma {
 
-StringInputStream::StringInputStream(string data)
+StringInputStream::StringInputStream(std::string data)
     : input_data_(std::move(data)),
       array_stream_(absl::make_unique<google::protobuf::io::ArrayInputStream>(
           input_data_.data(),

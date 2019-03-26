@@ -70,7 +70,7 @@ static const char* kLongnameTableName = "//              ";
 // BSD variant support? "#1/<length>" and name will come after ar_hdr.
 // but BSD variant doesn't support thin archive?
 
-static string DumpArHdr(const struct ar_hdr& ar_hdr) {
+static std::string DumpArHdr(const struct ar_hdr& ar_hdr) {
   std::stringstream ss;
   ss << "name: " << std::hex;
   for (size_t i = 0; i < sizeof ar_hdr.ar_name; ++i) {
@@ -105,7 +105,7 @@ static string DumpArHdr(const struct ar_hdr& ar_hdr) {
   return ss.str();
 }
 
-string ArFile::EntryHeader::DebugString() const {
+std::string ArFile::EntryHeader::DebugString() const {
   std::stringstream ss;
   ss << "name:" << ar_name << " ";
   ss << "date:" << ar_date << " ";
@@ -116,7 +116,7 @@ string ArFile::EntryHeader::DebugString() const {
   return ss.str();
 }
 
-bool ArFile::EntryHeader::SerializeToString(string* output) const {
+bool ArFile::EntryHeader::SerializeToString(std::string* output) const {
   DCHECK(output);
   struct ar_hdr hdr;
   size_t len;
@@ -143,7 +143,7 @@ bool ArFile::EntryHeader::SerializeToString(string* output) const {
   return true;
 }
 
-ArFile::ArFile(string filename, off_t offset)
+ArFile::ArFile(std::string filename, off_t offset)
     : filename_(std::move(filename)),
       thin_archive_(false),
       valid_(true),
@@ -151,7 +151,7 @@ ArFile::ArFile(string filename, off_t offset)
   Init();
 }
 
-ArFile::ArFile(string filename)
+ArFile::ArFile(std::string filename)
     : filename_(std::move(filename)),
       thin_archive_(false),
       valid_(true),
@@ -198,7 +198,7 @@ bool ArFile::IsThinArchive() const {
   return thin_archive_;
 }
 
-bool ArFile::ReadHeader(string* ar_header) const {
+bool ArFile::ReadHeader(std::string* ar_header) const {
   DCHECK(ar_header);
   if (!fd_.valid() || !valid_) {
     LOG(WARNING) << "invalid file:" << filename_
@@ -219,7 +219,7 @@ bool ArFile::ReadHeader(string* ar_header) const {
   return true;
 }
 
-bool ArFile::ReadEntry(EntryHeader* header, string* body) {
+bool ArFile::ReadEntry(EntryHeader* header, std::string* body) {
   DCHECK(header);
   DCHECK(body);
   const off_t offset = fd_.Seek(0, ScopedFd::SeekRelative);
@@ -268,7 +268,7 @@ void ArFile::GetEntries(std::vector<EntryHeader>* entries) {
     PLOG(WARNING) << "seek SARMAG:" << filename_;
     return;
   }
-  string longnames;
+  std::string longnames;
   struct ar_hdr hdr;
   int i = 0;
   while (fd_.Read(&hdr, sizeof(hdr)) == sizeof(hdr)) {
@@ -313,22 +313,22 @@ bool ArFile::ConvertArHeader(const struct ar_hdr& hdr,
   DCHECK(entry_header != nullptr);
   if (memcmp(hdr.ar_fmag, ARFMAG, sizeof hdr.ar_fmag) != 0) {
     LOG(ERROR) << "BAD header name: ["
-               << string(hdr.ar_name, sizeof hdr.ar_name)
-               << "] fmag: [" << string(hdr.ar_fmag, 2) << "]";
+               << std::string(hdr.ar_name, sizeof hdr.ar_name) << "] fmag: ["
+               << std::string(hdr.ar_fmag, 2) << "]";
     return false;
   }
   entry_header->orig_ar_name = entry_header->ar_name =
-      string(hdr.ar_name, sizeof hdr.ar_name);
+      std::string(hdr.ar_name, sizeof hdr.ar_name);
   entry_header->ar_date = static_cast<time_t>(
-      atoll(string(hdr.ar_date, sizeof hdr.ar_date).c_str()));
+      atoll(std::string(hdr.ar_date, sizeof hdr.ar_date).c_str()));
   entry_header->ar_uid = static_cast<uid_t>(
-      atoi(string(hdr.ar_uid, sizeof hdr.ar_uid).c_str()));
+      atoi(std::string(hdr.ar_uid, sizeof hdr.ar_uid).c_str()));
   entry_header->ar_gid = static_cast<gid_t>(
-      atoi(string(hdr.ar_gid, sizeof hdr.ar_gid).c_str()));
+      atoi(std::string(hdr.ar_gid, sizeof hdr.ar_gid).c_str()));
   entry_header->ar_mode = static_cast<mode_t>(
-      strtol(string(hdr.ar_mode, sizeof hdr.ar_mode).c_str(), nullptr, 8));
+      strtol(std::string(hdr.ar_mode, sizeof hdr.ar_mode).c_str(), nullptr, 8));
   entry_header->ar_size = static_cast<size_t>(
-      atoi(string(hdr.ar_size, sizeof hdr.ar_size).c_str()));
+      atoi(std::string(hdr.ar_size, sizeof hdr.ar_size).c_str()));
   return true;
 }
 
@@ -340,7 +340,7 @@ bool ArFile::SkipEntryData(const EntryHeader& entry_header) {
   return true;
 }
 
-bool ArFile::ReadEntryData(const EntryHeader& entry_header, string* data) {
+bool ArFile::ReadEntryData(const EntryHeader& entry_header, std::string* data) {
   DCHECK(data != nullptr);
   data->resize(entry_header.ar_size);
   size_t nr = 0;
@@ -360,7 +360,7 @@ bool ArFile::ReadEntryData(const EntryHeader& entry_header, string* data) {
   return true;
 }
 
-bool ArFile::FixEntryName(string* name) {
+bool ArFile::FixEntryName(std::string* name) {
   if ((*name)[0] == '/') {
     /* long name */
     size_t i = static_cast<size_t>(strtoul(name->c_str() + 1, nullptr, 10));
@@ -378,7 +378,7 @@ bool ArFile::FixEntryName(string* name) {
   /* short name */
   const char* kDelimiters = " /";
   size_t pos = name->find_last_not_of(kDelimiters);
-  if (pos != string::npos)
+  if (pos != std::string::npos)
     name->erase(pos + 1);
 
   return true;
@@ -397,7 +397,7 @@ bool ArFile::IsLongnameEntry(const EntryHeader& entry_header) {
 
 #ifdef __MACH__
 /* static */
-bool ArFile::CleanIfRanlib(const EntryHeader& hdr, string* body) {
+bool ArFile::CleanIfRanlib(const EntryHeader& hdr, std::string* body) {
   // Only support ar files on Intel mac (little endian).
   // You need to convert endian if you need support of big endian such as ppc.
   //

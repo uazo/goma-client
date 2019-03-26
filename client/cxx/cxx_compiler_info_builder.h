@@ -10,8 +10,6 @@
 
 #include "compiler_info_builder.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // CxxCompilerInfoBuilder is a base class of CompilerInfoBuilder for C/C++
@@ -20,26 +18,27 @@ namespace devtools_goma {
 class CxxCompilerInfoBuilder : public CompilerInfoBuilder {
  public:
   // Parse |gcc_output| to get list of subprograms.
-  static void ParseGetSubprogramsOutput(const string& gcc_output,
-                                        std::vector<string>* paths);
+  static void ParseGetSubprogramsOutput(const std::string& gcc_output,
+                                        std::vector<std::string>* paths);
 
   // Returns true on success, and |subprograms| will have full path of
   // external subprograms or empty vector if not found.
   // Returns false on failure.
-  static bool GetSubprograms(const string& gcc_path,
-                             const string& lang,
-                             const std::vector<string>& compiler_info_flags,
-                             const std::vector<string>& compiler_info_envs,
-                             const string& cwd,
-                             bool warn_on_empty,
-                             std::vector<string>* subprograms);
+  static bool GetSubprograms(
+      const std::string& gcc_path,
+      const std::string& lang,
+      const std::vector<std::string>& compiler_info_flags,
+      const std::vector<std::string>& compiler_info_envs,
+      const std::string& cwd,
+      bool warn_on_empty,
+      std::vector<std::string>* subprograms);
 
   // Get real subprogram path.
   // See: go/ma/resources-for-developers/goma-compiler-selection-mechanism
-  static string GetRealSubprogramPath(const string& subprogram_path);
+  static std::string GetRealSubprogramPath(const std::string& subprogram_path);
 
-  static bool SubprogramInfoFromPath(const string& user_specified_path,
-                                     const string& abs_path,
+  static bool SubprogramInfoFromPath(const std::string& user_specified_path,
+                                     const std::string& abs_path,
                                      CompilerInfoData::SubprogramInfo* s);
 
   void SetLanguageExtension(CompilerInfoData* data) const override;

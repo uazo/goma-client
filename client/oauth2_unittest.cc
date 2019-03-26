@@ -11,8 +11,6 @@
 #include "absl/time/time.h"
 #include "glog/logging.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 TEST(OAuth2Test, ParseOAuth2AccessToken) {
@@ -23,8 +21,8 @@ TEST(OAuth2Test, ParseOAuth2AccessToken) {
       " \"expires_in\": 3600\r\n"
       "}\r\n";
 
-  string token_type;
-  string access_token;
+  std::string token_type;
+  std::string access_token;
   absl::Duration expires_in;
   EXPECT_TRUE(ParseOAuth2AccessToken(
       kJsonResponse, &token_type, &access_token, &expires_in));
@@ -41,8 +39,8 @@ TEST(OAuth2Test, ParseOAuth2AccessTokenNoSpaces) {
       " \"expires_in\":3920\r\n"
       "}\r\n";
 
-  string token_type;
-  string access_token;
+  std::string token_type;
+  std::string access_token;
   absl::Duration expires_in;
   EXPECT_TRUE(ParseOAuth2AccessToken(
       kJsonResponse, &token_type, &access_token, &expires_in));
@@ -56,8 +54,8 @@ TEST(OAuth2Test, ParseOAuth2AccessTokenError) {
       "{\r\n"
       " \"error\" : \"authorization_pending\""
       "}\r\n";
-  string token_type;
-  string access_token;
+  std::string token_type;
+  std::string access_token;
   absl::Duration expires_in;
   EXPECT_FALSE(ParseOAuth2AccessToken(
       kJsonResponse, &token_type, &access_token, &expires_in));
@@ -171,7 +169,7 @@ TEST(OAuth2Test, FormatOAuth2Config) {
   config.type = "authorized_user";
 
   EXPECT_TRUE(config.valid());
-  string config_str = FormatOAuth2Config(config);
+  std::string config_str = FormatOAuth2Config(config);
   LOG(INFO) << config_str;
   OAuth2Config got_config;
   EXPECT_TRUE(ParseOAuth2Config(config_str, &got_config));

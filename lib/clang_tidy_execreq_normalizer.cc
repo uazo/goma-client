@@ -4,17 +4,15 @@
 
 #include "lib/clang_tidy_execreq_normalizer.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 ConfigurableExecReqNormalizer::Config ClangTidyExecReqNormalizer::Configure(
     int id,
-    const std::vector<string>& args,
+    const std::vector<std::string>& args,
     bool normalize_include_path,
     bool is_linking,
-    const std::vector<string>& normalize_weak_relative_for_arg,
-    const std::map<string, string>& debug_prefix_map,
+    const std::vector<std::string>& normalize_weak_relative_for_arg,
+    const std::map<std::string, std::string>& debug_prefix_map,
     const ExecReq* req) const {
   return Config::AsIs();
 }

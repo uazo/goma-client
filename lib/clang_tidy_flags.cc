@@ -12,8 +12,8 @@
 
 namespace devtools_goma {
 
-ClangTidyFlags::ClangTidyFlags(const std::vector<string>& args,
-                               const string& cwd)
+ClangTidyFlags::ClangTidyFlags(const std::vector<std::string>& args,
+                               const std::string& cwd)
     : CxxFlags(args, cwd), seen_hyphen_hyphen_(false) {
   if (!CompilerFlags::ExpandPosixArgs(cwd, args, &expanded_args_,
                                       &optional_input_filenames_)) {
@@ -48,7 +48,7 @@ ClangTidyFlags::ClangTidyFlags(const std::vector<string>& args,
   // One is for clang-tidy itself, the other is for include processor,
   // which is specified in the compilation database.
   // Converting them is hard, so we'd like to use absolute path.
-  std::vector<string> source_files;
+  std::vector<std::string> source_files;
   for (size_t i = 1; i < args.size(); ++i) {
     if (seen_hyphen_hyphen_) {
       args_after_hyphen_hyphen_.push_back(args[i]);
@@ -71,35 +71,37 @@ ClangTidyFlags::ClangTidyFlags(const std::vector<string>& args,
   is_successful_ = true;
 }
 
-const string& ClangTidyFlags::cwd_for_include_processor() const {
+const std::string& ClangTidyFlags::cwd_for_include_processor() const {
   return gcc_flags_->cwd();
 }
 
-void ClangTidyFlags::SetClangArgs(const std::vector<string>& clang_args,
-                                  const string& dir) {
+void ClangTidyFlags::SetClangArgs(const std::vector<std::string>& clang_args,
+                                  const std::string& dir) {
   gcc_flags_ = absl::make_unique<GCCFlags>(clang_args, dir);
   is_successful_ = is_successful_ && gcc_flags_->is_successful();
   lang_ = gcc_flags_->lang();
 }
 
-void ClangTidyFlags::SetCompilationDatabasePath(const string& compdb_path) {
+void ClangTidyFlags::SetCompilationDatabasePath(
+    const std::string& compdb_path) {
   optional_input_filenames_.push_back(compdb_path);
 }
 
-const std::vector<string>& ClangTidyFlags::non_system_include_dirs() const {
+const std::vector<std::string>& ClangTidyFlags::non_system_include_dirs()
+    const {
   return gcc_flags_->non_system_include_dirs();
 }
 
-const std::vector<string>& ClangTidyFlags::root_includes() const {
+const std::vector<std::string>& ClangTidyFlags::root_includes() const {
   return gcc_flags_->root_includes();
 }
 
-const std::vector<string>& ClangTidyFlags::framework_dirs() const {
+const std::vector<std::string>& ClangTidyFlags::framework_dirs() const {
   return gcc_flags_->framework_dirs();
 }
 
-const std::vector<std::pair<string, bool>>& ClangTidyFlags::commandline_macros()
-    const {
+const std::vector<std::pair<std::string, bool>>&
+ClangTidyFlags::commandline_macros() const {
   return gcc_flags_->commandline_macros();
 }
 
@@ -110,7 +112,7 @@ bool ClangTidyFlags::has_nostdinc() const {
   return gcc_flags_->has_nostdinc();
 }
 
-string ClangTidyFlags::compiler_name() const {
+std::string ClangTidyFlags::compiler_name() const {
   return "clang-tidy";
 }
 
@@ -143,7 +145,7 @@ bool ClangTidyFlags::IsClangTidyCommand(absl::string_view arg) {
 }
 
 // static
-string ClangTidyFlags::GetCompilerName(absl::string_view /*arg*/) {
+std::string ClangTidyFlags::GetCompilerName(absl::string_view /*arg*/) {
   return "clang-tidy";
 }
 

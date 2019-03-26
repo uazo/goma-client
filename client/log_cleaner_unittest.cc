@@ -18,7 +18,7 @@ class LogCleanerTest : public testing::Test {
     log_cleaner_.AddLogBasename("g++");
   }
 
-  bool IsMyLogFile(const string& name) {
+  bool IsMyLogFile(const std::string& name) {
     return log_cleaner_.IsMyLogFile(name);
   }
 

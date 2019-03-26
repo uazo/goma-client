@@ -17,8 +17,6 @@
 #include "subprocess.h"
 #include "util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 namespace {
@@ -29,14 +27,14 @@ const char kFakeExe[] = "fake";
 const char kFakeExe[] = "fake.exe";
 #endif
 
-std::vector<string> DefaultCompilerInfoEnvs(const string& cwd) {
+std::vector<std::string> DefaultCompilerInfoEnvs(const std::string& cwd) {
 #ifndef _WIN32
-  return std::vector<string>();
+  return std::vector<std::string>();
 #else
   // On Windows, PATH and PATHEXT must exist in compiler_info_envs.
-  return std::vector<string> {
-    "PATH=" + cwd,
-    "PATHEXT=.exe",
+  return std::vector<std::string>{
+      "PATH=" + cwd,
+      "PATHEXT=.exe",
   };
 #endif
 }
@@ -56,12 +54,15 @@ class FakeIncludeProcessorTest : public ::testing::Test {
 
 TEST_F(FakeIncludeProcessorTest, Success) {
   // Assuming `fake` exists the same directory with this unittest.
-  const std::vector<string> args{
-      kFakeExe, "foo.fake", "bar.fake",
+  const std::vector<std::string> args{
+      kFakeExe,
+      "foo.fake",
+      "bar.fake",
   };
-  const string cwd = GetCurrentDirNameOrDie();
-  const string local_compiler_path = file::JoinPath(cwd, kFakeExe);
-  const std::vector<string> compiler_info_envs = DefaultCompilerInfoEnvs(cwd);
+  const std::string cwd = GetCurrentDirNameOrDie();
+  const std::string local_compiler_path = file::JoinPath(cwd, kFakeExe);
+  const std::vector<std::string> compiler_info_envs =
+      DefaultCompilerInfoEnvs(cwd);
 
   FakeFlags flags(args, cwd);
 
@@ -74,21 +75,23 @@ TEST_F(FakeIncludeProcessorTest, Success) {
   EXPECT_FALSE(compiler_info.HasError()) << compiler_info.error_message();
 
   FakeIncludeProcessor include_processor;
-  std::set<string> required_files;
+  std::set<std::string> required_files;
   EXPECT_TRUE(
       include_processor.Run("trace_id", flags, compiler_info, &required_files));
 
-  EXPECT_EQ((std::set<string>{"success.txt"}), required_files);
+  EXPECT_EQ((std::set<std::string>{"success.txt"}), required_files);
 }
 
 TEST_F(FakeIncludeProcessorTest, Failure) {
   // If input filename is "fail", "fake"'s include processor fails.
-  const std::vector<string> args{
-      kFakeExe, "fail",
+  const std::vector<std::string> args{
+      kFakeExe,
+      "fail",
   };
-  const string cwd = GetCurrentDirNameOrDie();
-  const string local_compiler_path = file::JoinPath(cwd, kFakeExe);
-  const std::vector<string> compiler_info_envs = DefaultCompilerInfoEnvs(cwd);
+  const std::string cwd = GetCurrentDirNameOrDie();
+  const std::string local_compiler_path = file::JoinPath(cwd, kFakeExe);
+  const std::vector<std::string> compiler_info_envs =
+      DefaultCompilerInfoEnvs(cwd);
 
   FakeFlags flags(args, cwd);
 
@@ -101,7 +104,7 @@ TEST_F(FakeIncludeProcessorTest, Failure) {
   EXPECT_FALSE(compiler_info.HasError()) << compiler_info.error_message();
 
   FakeIncludeProcessor include_processor;
-  std::set<string> required_files;
+  std::set<std::string> required_files;
   EXPECT_FALSE(
       include_processor.Run("trace_id", flags, compiler_info, &required_files));
 }

@@ -19,8 +19,6 @@
 #include "absl/strings/string_view.h"
 #include "socket_factory.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // TLSEngine may not be synchronized.  It must be synchronized externally.
@@ -44,7 +42,7 @@ class TLSEngine {
   // An interface to the transport layer:
   // Sets |data| to be sent to the transport layer.
   // Returns |data| size (>=0) to send or TLSErrorReason if error.
-  virtual int GetDataToSendTransport(string* data) = 0;
+  virtual int GetDataToSendTransport(std::string* data) = 0;
   // Returns size to be written to the engine.
   virtual size_t GetBufSizeFromTransport() = 0;
   // Sets |data| come from the transport layer.
@@ -58,7 +56,7 @@ class TLSEngine {
   virtual int Write(const void* data, int size) = 0;
 
   // Returns a human readable last error message.
-  virtual string GetLastErrorMessage() const = 0;
+  virtual std::string GetLastErrorMessage() const = 0;
 
   // Returns true if the instance is recycled.
   // This is usually used for skipping initialize process.
@@ -80,11 +78,11 @@ class TLSEngineFactory : public SocketFactoryObserver {
   // Releases TLSEngine associated with the |sock|.
   virtual void WillCloseSocket(int sock) = 0;
   // Returns human readable string of certificates and CRLs TLSEngine's use.
-  virtual string GetCertsInfo() = 0;
+  virtual std::string GetCertsInfo() = 0;
   // Set a hostname to connect.
   // A subjectAltName of type dNSName in a server certificate should
   // match with |hostname|, or TLSEngine returns TLS_VERIFY_ERROR.
-  virtual void SetHostname(const string& hostname) = 0;
+  virtual void SetHostname(const std::string& hostname) = 0;
 };
 
 }  // namespace devtools_goma

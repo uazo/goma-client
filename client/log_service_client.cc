@@ -25,11 +25,13 @@ MSVC_POP_WARNING()
 #include <gnu/libc-version.h>
 #endif
 
+namespace devtools_goma {
+
 namespace {
 
-static devtools_goma::CpuFeatures GetCpuFeatures() {
-  devtools_goma::CPU cpu;
-  devtools_goma::CpuFeatures features;
+static CpuFeatures GetCpuFeatures() {
+  CPU cpu;
+  CpuFeatures features;
 
   features.set_mmx(cpu.has_mmx());
   features.set_sse(cpu.has_sse());
@@ -47,15 +49,14 @@ static devtools_goma::CpuFeatures GetCpuFeatures() {
   return features;
 }
 
-static devtools_goma::OSInfo GetOsInfo() {
-  devtools_goma::OSInfo os_info;
+static OSInfo GetOsInfo() {
+  OSInfo os_info;
 
 #if defined(_WIN32)
   // TODO: set windows version
   os_info.mutable_win_info();
 #elif defined(__MACH__)
-  os_info.mutable_mac_info()->set_mac_osx_minor_version(
-      devtools_goma::MacOSXMinorVersion());
+  os_info.mutable_mac_info()->set_mac_osx_minor_version(MacOSXMinorVersion());
 #elif defined(__linux__)
   // TODO: set linux (ubuntu) version (libc version is better?)
   os_info.mutable_linux_info()->set_gnu_libc_version(gnu_get_libc_version());
@@ -65,8 +66,6 @@ static devtools_goma::OSInfo GetOsInfo() {
 }
 
 }  // namespace
-
-namespace devtools_goma {
 
 class LogServiceClient::SaveLogJob {
  public:
@@ -161,14 +160,14 @@ class LogServiceClient::SaveLogJob {
   SaveLogResp resp_;
   HttpRPC::Status http_rpc_stat_;
 
-  devtools_goma::CpuFeatures cpu_features_;
-  const devtools_goma::OSInfo os_info_;
+  CpuFeatures cpu_features_;
+  const OSInfo os_info_;
 
   DISALLOW_COPY_AND_ASSIGN(SaveLogJob);
 };
 
 LogServiceClient::LogServiceClient(HttpRPC* http_rpc,
-                                   string save_log_path,
+                                   std::string save_log_path,
                                    size_t max_log_in_req,
                                    absl::Duration max_pending_duration,
                                    WorkerThreadManager* wm)

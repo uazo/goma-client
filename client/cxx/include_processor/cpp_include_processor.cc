@@ -66,8 +66,6 @@
 #include "posix_helper_win.h"
 #endif
 
-using std::string;
-
 namespace devtools_goma {
 
 namespace {
@@ -76,13 +74,13 @@ namespace {
 // If |file_stat_cache| has a FileStat for |filepath|, we use it.
 // Otherwise we take FileStat for |filepath| and stores it to |file_stat_cache|.
 // We don't take |file_stat_cache| ownership.
-IncludeItem TryInclude(const string& cwd,
-                       const string& filepath,
-                       string* next_current_directory,
+IncludeItem TryInclude(const std::string& cwd,
+                       const std::string& filepath,
+                       std::string* next_current_directory,
                        FileStatCache* file_stat_cache) {
   GOMA_COUNTERZ("TryInclude");
 
-  const string abs_filepath = file::JoinPathRespectAbsolute(cwd, filepath);
+  const std::string abs_filepath = file::JoinPathRespectAbsolute(cwd, filepath);
   FileStat file_stat(file_stat_cache->Get(abs_filepath));
   if (!file_stat.IsValid()) {
     return IncludeItem();
@@ -97,7 +95,7 @@ IncludeItem TryInclude(const string& cwd,
       << "IncludeCache is not enabled. "
       << "You forget to call IncludeCache::Init()?";
 
-  *next_current_directory = string(file::Dirname(filepath));
+  *next_current_directory = std::string(file::Dirname(filepath));
   return IncludeCache::instance()->GetIncludeItem(abs_filepath, file_stat);
 }
 
@@ -107,7 +105,7 @@ class IncludePathsObserver : public CppParser::IncludeObserver {
  public:
   IncludePathsObserver(std::string cwd,
                        CppParser* parser,
-                       std::set<string>* shared_include_files,
+                       std::set<std::string>* shared_include_files,
                        FileStatCache* file_stat_cache,
                        IncludeFileFinder* include_file_finder)
       : cwd_(std::move(cwd)),
@@ -120,9 +118,9 @@ class IncludePathsObserver : public CppParser::IncludeObserver {
     CHECK(file_stat_cache_);
   }
 
-  bool HandleInclude(const string& path,
-                     const string& current_directory,
-                     const string& current_filepath,
+  bool HandleInclude(const std::string& path,
+                     const std::string& current_directory,
+                     const std::string& current_filepath,
                      char quote_char,  // '"' or '<'
                      int include_dir_index) override {
     // shared_include_files_ contains a set of include files for compilers.
@@ -157,8 +155,8 @@ class IncludePathsObserver : public CppParser::IncludeObserver {
             << " dir:" << current_directory
             << " include_dir_index:" << include_dir_index;
 
-    string next_current_directory;
-    string filepath;
+    std::string next_current_directory;
+    std::string filepath;
 
     if (quote_char == '"') {
       // Look for current directory.
@@ -209,15 +207,15 @@ class IncludePathsObserver : public CppParser::IncludeObserver {
     return false;
   }
 
-  bool HasInclude(const string& path,
-                  const string& current_directory,
-                  const string& current_filepath,
+  bool HasInclude(const std::string& path,
+                  const std::string& current_directory,
+                  const std::string& current_filepath,
                   char quote_char,  // '"' or '<'
                   int include_dir_index) override {
     CHECK(!path.empty()) << current_filepath;
 
-    string next_current_directory;
-    string filepath;
+    std::string next_current_directory;
+    std::string filepath;
 
     if (quote_char == '"') {
       if (HasIncludeInDir(current_directory, path, current_filepath)) {
@@ -244,7 +242,8 @@ class IncludePathsObserver : public CppParser::IncludeObserver {
   }
 
  private:
-  bool CanPruneWithTopPathComponent(const string& dir, const string& path) {
+  bool CanPruneWithTopPathComponent(const std::string& dir,
+                                    const std::string& path) {
     // we don't need to care about case ignoreness here.
     // we'll access filesystem, so filesystem would handle case senstiveness.
     const std::string& dir_with_top_path_component = file::JoinPath(
@@ -252,10 +251,10 @@ class IncludePathsObserver : public CppParser::IncludeObserver {
     return !file_stat_cache_->Get(dir_with_top_path_component).IsValid();
   }
 
-  bool HandleIncludeInDir(const string& dir,
-                          const string& path,
+  bool HandleIncludeInDir(const std::string& dir,
+                          const std::string& path,
                           int include_dir_index,
-                          string* next_current_directory) {
+                          std::string* next_current_directory) {
     GOMA_COUNTERZ("handle include try");
     if (CanPruneWithTopPathComponent(file::JoinPathRespectAbsolute(cwd_, dir),
                                      path)) {
@@ -267,13 +266,13 @@ class IncludePathsObserver : public CppParser::IncludeObserver {
       return false;
     }
 
-    string filepath =
+    std::string filepath =
         PathResolver::PlatformConvert(file::JoinPathRespectAbsolute(dir, path));
 
     VLOG(2) << "handle include in dir: " << filepath;
 
     if (IncludeFileFinder::gch_hack_enabled()) {
-      const string& gchpath = filepath + GOMA_GCH_SUFFIX;
+      const std::string& gchpath = filepath + GOMA_GCH_SUFFIX;
       IncludeItem include_item(
           TryInclude(cwd_, gchpath, next_current_directory, file_stat_cache_));
       if (include_item.IsValid()) {
@@ -301,12 +300,12 @@ class IncludePathsObserver : public CppParser::IncludeObserver {
     return false;
   }
 
-  bool HasIncludeInDir(const string& dir,
-                       const string& path,
-                       const string& current_filepath) {
+  bool HasIncludeInDir(const std::string& dir,
+                       const std::string& path,
+                       const std::string& current_filepath) {
     std::string filepath = file::JoinPathRespectAbsolute(dir, path);
-    string abs_filepath = file::JoinPathRespectAbsolute(cwd_, filepath);
-    string abs_current_filepath =
+    std::string abs_filepath = file::JoinPathRespectAbsolute(cwd_, filepath);
+    std::string abs_current_filepath =
         file::JoinPathRespectAbsolute(cwd_, current_filepath);
     abs_filepath = PathResolver::ResolvePath(abs_filepath);
     bool is_current = (abs_filepath == abs_current_filepath);
@@ -333,7 +332,7 @@ class IncludePathsObserver : public CppParser::IncludeObserver {
 
   const std::string cwd_;
   CppParser* parser_;
-  std::set<string>* shared_include_files_;
+  std::set<std::string>* shared_include_files_;
   FileStatCache* file_stat_cache_;
 
   IncludeFileFinder* include_file_finder_;
@@ -345,7 +344,7 @@ class IncludeErrorObserver : public CppParser::ErrorObserver {
  public:
   IncludeErrorObserver() {}
 
-  void HandleError(const string& error) override {
+  void HandleError(const std::string& error) override {
     // Note that we don't set this error observer if VLOG_IS_ON(1) is false.
     // If you need to change this code, make sure you'll modify
     // set_error_observer call in CppIncludeProcessor::GetIncludeFiles()
@@ -357,18 +356,18 @@ class IncludeErrorObserver : public CppParser::ErrorObserver {
   DISALLOW_COPY_AND_ASSIGN(IncludeErrorObserver);
 };
 
-static void CopyIncludeDirs(const std::vector<string>& input_dirs,
-                            const string& toolchain_root,
-                            std::vector<string>* output_dirs) {
+static void CopyIncludeDirs(const std::vector<std::string>& input_dirs,
+                            const std::string& toolchain_root,
+                            std::vector<std::string>* output_dirs) {
   for (const auto& input_dir : input_dirs) {
-    const string& dir = file::JoinPath(
+    const std::string& dir = file::JoinPath(
         toolchain_root, PathResolver::PlatformConvert(input_dir));
     output_dirs->push_back(dir);
   }
 }
 
 #ifndef _WIN32
-static void CopyOriginalFileFromHashCriteria(const string& filepath) {
+static void CopyOriginalFileFromHashCriteria(const std::string& filepath) {
   static Lock mu;
 
   if (access(filepath.c_str(), R_OK) == 0) {
@@ -381,31 +380,31 @@ static void CopyOriginalFileFromHashCriteria(const string& filepath) {
     return;
   }
 
-  const string& hash_criteria_filepath = filepath + ".gch.hash-criteria";
+  const std::string& hash_criteria_filepath = filepath + ".gch.hash-criteria";
   std::ifstream ifs(hash_criteria_filepath.c_str());
   if (!ifs) {
     return;
   }
 
-  string line;
+  std::string line;
   getline(ifs, line);
   const char* expected_prefix = "Contents of ";
   if (!absl::StartsWith(line, expected_prefix)) {
     return;
   }
 
-  const string& original_filepath = line.substr(strlen(expected_prefix));
+  const std::string& original_filepath = line.substr(strlen(expected_prefix));
   VLOG(1) << "hash criteria file found. original filepath: "
           << original_filepath;
 
-  const string tmp_filepath = filepath + ".tmp";
+  const std::string tmp_filepath = filepath + ".tmp";
   file::Copy(original_filepath, tmp_filepath, file::Overwrite());
   rename(tmp_filepath.c_str(), filepath.c_str());
 }
 #endif
 
-static bool NormalizePath(const string& path_to_normalize,
-                          string* normalized_path) {
+static bool NormalizePath(const std::string& path_to_normalize,
+                          std::string* normalized_path) {
 // TODO: Can't we remove this ifdef? Maybe we have make a code
 //                    that is platform independent?
 //                    Do we need to resolve symlink on Unix?
@@ -428,12 +427,12 @@ static bool NormalizePath(const string& path_to_normalize,
 }
 
 static void MergeDirs(const std::string cwd,
-                      const std::vector<string>& dirs,
-                      std::vector<string>* include_dirs,
-                      std::set<string>* seen_include_dir_set) {
+                      const std::vector<std::string>& dirs,
+                      std::vector<std::string>* include_dirs,
+                      std::set<std::string>* seen_include_dir_set) {
   for (const auto& dir : dirs) {
     std::string abs_dir = file::JoinPathRespectAbsolute(cwd, dir);
-    string normalized_dir;
+    std::string normalized_dir;
     if (!NormalizePath(abs_dir, &normalized_dir)) {
       continue;
     }
@@ -445,18 +444,19 @@ static void MergeDirs(const std::string cwd,
   }
 }
 
-static void MergeIncludeDirs(const std::string& cwd,
-                             const std::vector<string>& nonsystem_include_dirs,
-                             const std::vector<string>& system_include_dirs,
-                             std::vector<string>* include_dirs) {
-  std::set<string> seen_include_dir_set;
+static void MergeIncludeDirs(
+    const std::string& cwd,
+    const std::vector<std::string>& nonsystem_include_dirs,
+    const std::vector<std::string>& system_include_dirs,
+    std::vector<std::string>* include_dirs) {
+  std::set<std::string> seen_include_dir_set;
 
   // We check system include paths first because we should give more
   // priority to system paths than non-system paths when we check
   // duplicates of them. We will push back the system include paths
   // into include_paths later because the order of include paths
   // should be non-system path first.
-  std::vector<string> unique_system_include_dirs;
+  std::vector<std::string> unique_system_include_dirs;
   MergeDirs(cwd, system_include_dirs, &unique_system_include_dirs,
             &seen_include_dir_set);
 
@@ -466,19 +466,19 @@ static void MergeIncludeDirs(const std::string& cwd,
        back_inserter(*include_dirs));
 }
 
-bool CppIncludeProcessor::GetIncludeFiles(const string& filename,
-                                          const string& current_directory,
+bool CppIncludeProcessor::GetIncludeFiles(const std::string& filename,
+                                          const std::string& current_directory,
                                           const CompilerFlags& compiler_flags,
                                           const CxxCompilerInfo& compiler_info,
-                                          std::set<string>* include_files,
+                                          std::set<std::string>* include_files,
                                           FileStatCache* file_stat_cache) {
   DCHECK(!current_directory.empty());
   DCHECK(file::IsAbsolutePath(current_directory)) << current_directory;
 
-  std::vector<string> non_system_include_dirs;
-  std::vector<string> root_includes;
-  std::vector<string> user_framework_dirs;
-  std::vector<std::pair<string, bool>> commandline_macros;
+  std::vector<std::string> non_system_include_dirs;
+  std::vector<std::string> root_includes;
+  std::vector<std::string> user_framework_dirs;
+  std::vector<std::pair<std::string, bool>> commandline_macros;
 #if _WIN32
   bool ignore_case = true;
 #else
@@ -525,11 +525,11 @@ bool CppIncludeProcessor::GetIncludeFiles(const string& filename,
     }
   }
 
-  std::vector<string> quote_dirs;
+  std::vector<std::string> quote_dirs;
   CopyIncludeDirs(compiler_info.quote_include_paths(), "", &quote_dirs);
 
-  std::vector<string> all_system_include_dirs;
-  if (compiler_info.lang().find("c++") != string::npos) {
+  std::vector<std::string> all_system_include_dirs;
+  if (compiler_info.lang().find("c++") != std::string::npos) {
     CopyIncludeDirs(compiler_info.cxx_system_include_paths(),
                     compiler_info.toolchain_root(), &all_system_include_dirs);
   } else {
@@ -551,9 +551,9 @@ bool CppIncludeProcessor::GetIncludeFiles(const string& filename,
                    all_system_include_dirs, &include_dirs);
 
 #ifndef _WIN32
-  std::vector<string> abs_user_framework_dirs;
+  std::vector<std::string> abs_user_framework_dirs;
   CopyIncludeDirs(user_framework_dirs, "", &abs_user_framework_dirs);
-  std::vector<string> system_framework_dirs;
+  std::vector<std::string> system_framework_dirs;
   CopyIncludeDirs(compiler_info.system_framework_paths(),
                   compiler_info.toolchain_root(), &system_framework_dirs);
   MergeIncludeDirs(current_directory, abs_user_framework_dirs,
@@ -568,7 +568,7 @@ bool CppIncludeProcessor::GetIncludeFiles(const string& filename,
                                         &include_dirs, &framework_dirs,
                                         file_stat_cache);
 
-  std::vector<std::pair<string, int>> root_includes_with_index =
+  std::vector<std::pair<std::string, int>> root_includes_with_index =
       CalculateRootIncludesWithIncludeDirIndex(
           root_includes, current_directory, compiler_flags,
           &include_file_finder, include_files);
@@ -602,18 +602,19 @@ bool CppIncludeProcessor::GetIncludeFiles(const string& filename,
   }
 
   for (const auto& commandline_macro : commandline_macros) {
-    const string& macro = commandline_macro.first;
+    const std::string& macro = commandline_macro.first;
     if (commandline_macro.second) {
       size_t found = macro.find('=');
-      if (found == string::npos) {
+      if (found == std::string::npos) {
         // https://gcc.gnu.org/onlinedocs/gcc/Preprocessor-Options.html
         // -D name
         //   Predefine name as a macro, with definition 1.
         cpp_parser_.AddMacroByString(macro, "1");
         continue;
       }
-      const string& key = macro.substr(0, found);
-      const string& value = macro.substr(found + 1, macro.size() - (found + 1));
+      const std::string& key = macro.substr(0, found);
+      const std::string& value =
+          macro.substr(found + 1, macro.size() - (found + 1));
       cpp_parser_.AddMacroByString(key, value);
     } else {
       cpp_parser_.DeleteMacro(macro);
@@ -638,7 +639,7 @@ bool CppIncludeProcessor::GetIncludeFiles(const string& filename,
       // So, here, we try to include stdc-predef.h anyway, and clear the error
       // if an error has occured.
       // See b/124756380.
-      const string stdc_predef_input(
+      const std::string stdc_predef_input(
           "#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)\n"
           "#include <stdc-predef.h>\n"
           "#endif\n");
@@ -657,7 +658,7 @@ bool CppIncludeProcessor::GetIncludeFiles(const string& filename,
   }
 
   for (const auto& input_index : root_includes_with_index) {
-    const string& input = input_index.first;
+    const std::string& input = input_index.first;
     const int dir_index = input_index.second;
 
     const std::string& abs_input =
@@ -678,7 +679,7 @@ bool CppIncludeProcessor::GetIncludeFiles(const string& filename,
     }
     VLOG(2) << "Looking into " << abs_input;
 
-    string input_basedir = string(file::Dirname(input));
+    std::string input_basedir = std::string(file::Dirname(input));
 
     cpp_parser_.AddFileInput(IncludeItem(std::move(directives), ""), input,
                              input_basedir, dir_index);
@@ -701,16 +702,16 @@ bool CppIncludeProcessor::GetIncludeFiles(const string& filename,
   return true;
 }
 
-std::vector<std::pair<string, int>>
+std::vector<std::pair<std::string, int>>
 CppIncludeProcessor::CalculateRootIncludesWithIncludeDirIndex(
-    const std::vector<string>& root_includes,
-    const string& current_directory,
+    const std::vector<std::string>& root_includes,
+    const std::string& current_directory,
     const CompilerFlags& compiler_flags,
     IncludeFileFinder* include_file_finder,
-    std::set<string>* include_files) {
-  std::vector<std::pair<string, int>> result;
+    std::set<std::string>* include_files) {
+  std::vector<std::pair<std::string, int>> result;
   for (const auto& root_include : root_includes) {
-    string abs_filepath = PathResolver::PlatformConvert(
+    std::string abs_filepath = PathResolver::PlatformConvert(
         file::JoinPathRespectAbsolute(current_directory, root_include));
 
 // TODO: this does not seem to apply to Windows. Need verify.
@@ -718,7 +719,7 @@ CppIncludeProcessor::CalculateRootIncludesWithIncludeDirIndex(
     if (IncludeFileFinder::gch_hack_enabled()) {
       // If there is the precompiled header for this header, we'll send
       // the precompiled header. Note that we don't need to check its content.
-      string gch_filepath = abs_filepath + GOMA_GCH_SUFFIX;
+      std::string gch_filepath = abs_filepath + GOMA_GCH_SUFFIX;
       ScopedFd fd(ScopedFd::OpenForRead(gch_filepath));
       if (fd.valid()) {
         fd.Close();
@@ -771,8 +772,8 @@ CppIncludeProcessor::CalculateRootIncludesWithIncludeDirIndex(
 
 bool CppIncludeProcessor::AddClangModulesFiles(
     const GCCFlags& flags,
-    const string& current_directory,
-    std::set<string>* include_files,
+    const std::string& current_directory,
+    std::set<std::string>* include_files,
     FileStatCache* file_stat_cache) const {
   // TODO: experiment support of clang modules.
   // In this implementation, we don't read the content of module file.
@@ -785,7 +786,7 @@ bool CppIncludeProcessor::AddClangModulesFiles(
 
   // module-file (not module-map-file).
   if (!flags.clang_module_file().second.empty()) {
-    string abs_path = file::JoinPathRespectAbsolute(
+    std::string abs_path = file::JoinPathRespectAbsolute(
         current_directory, flags.clang_module_file().second);
     FileStat fs = file_stat_cache->Get(abs_path);
     if (!fs.IsValid()) {
@@ -813,7 +814,7 @@ bool CppIncludeProcessor::AddClangModulesFiles(
   // module.modulemap is parsed only if flags.has_fimplicit_module_maps() is
   // true.
   if (flags.has_fimplicit_module_maps()) {
-    std::vector<string> dirs;
+    std::vector<std::string> dirs;
     for (const auto& file : *include_files) {
       dirs.emplace_back(file::Dirname(file));
     }
@@ -823,8 +824,8 @@ bool CppIncludeProcessor::AddClangModulesFiles(
       // Check both module.modulemap and module.map. The latter is an older
       // form.
       for (const auto& name : {"module.modulemap", "module.map"}) {
-        string rel_path = file::JoinPath(d, name);
-        string abs_path =
+        std::string rel_path = file::JoinPath(d, name);
+        std::string abs_path =
             file::JoinPathRespectAbsolute(current_directory, rel_path);
         FileStat fs = file_stat_cache->Get(abs_path);
         if (fs.IsValid() && !fs.is_directory) {

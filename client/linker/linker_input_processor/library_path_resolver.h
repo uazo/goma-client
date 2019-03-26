@@ -11,8 +11,6 @@
 
 #include "basictypes.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class LibraryPathResolverTest;
@@ -21,43 +19,46 @@ class LinkerInputProcessorTest;
 // Expands library name to full path name (e.g. -lfoo => /usr/lib/libfoo.so).
 class LibraryPathResolver {
  public:
-  explicit LibraryPathResolver(string cwd);
+  explicit LibraryPathResolver(std::string cwd);
   ~LibraryPathResolver();
 
   // for -lfoo flag, value is "foo".
-  string ExpandLibraryPath(const string& value) const;
+  std::string ExpandLibraryPath(const std::string& value) const;
   // e.g. soname = "libc.so.6"
-  string FindBySoname(const string& soname) const;
-  string FindByFullname(const string& fullname) const;
+  std::string FindBySoname(const std::string& soname) const;
+  std::string FindByFullname(const std::string& fullname) const;
   void PreventSharedLibrary() { static_link_ = true; }
-  void SetSyslibroot(const string& path) { syslibroot_ = path; }
-  void SetSysroot(const string& path) { sysroot_ = path; }
-  void AppendSearchdirs(const std::vector<string>& paths);
-  void AddSearchdir(const string& path);
+  void SetSyslibroot(const std::string& path) { syslibroot_ = path; }
+  void SetSysroot(const std::string& path) { sysroot_ = path; }
+  void AppendSearchdirs(const std::vector<std::string>& paths);
+  void AddSearchdir(const std::string& path);
 
-  const std::vector<string>& searchdirs() const { return searchdirs_; }
-  const string& cwd() const { return cwd_; }
-  const string& sysroot() const { return sysroot_; }
-  const string& syslibroot() const { return syslibroot_; }
+  const std::vector<std::string>& searchdirs() const { return searchdirs_; }
+  const std::string& cwd() const { return cwd_; }
+  const std::string& sysroot() const { return sysroot_; }
+  const std::string& syslibroot() const { return syslibroot_; }
 
  private:
   friend class LibraryPathResolverTest;
   friend class LinkerInputProcessorTest;
 
-  string FindByName(const string& so_name, const string& ar_name) const;
-  string ResolveLibraryFilePath(
-      const string& syslibroot, const string& dirname,
-      const string& so_name, const string& ar_name) const;
-  string ResolveFilePath(const string& syslibroot, const string& dirname,
-                         const string& filename) const;
+  std::string FindByName(const std::string& so_name,
+                         const std::string& ar_name) const;
+  std::string ResolveLibraryFilePath(const std::string& syslibroot,
+                                     const std::string& dirname,
+                                     const std::string& so_name,
+                                     const std::string& ar_name) const;
+  std::string ResolveFilePath(const std::string& syslibroot,
+                              const std::string& dirname,
+                              const std::string& filename) const;
 
-  std::vector<string> searchdirs_;
-  std::vector<string> fallback_searchdirs_;
-  const string cwd_;
+  std::vector<std::string> searchdirs_;
+  std::vector<std::string> fallback_searchdirs_;
+  const std::string cwd_;
   bool static_link_;
   // For mac -syslibroot option.
-  string syslibroot_;
-  string sysroot_;
+  std::string syslibroot_;
+  std::string sysroot_;
 
   static const char* fakeroot_;
 

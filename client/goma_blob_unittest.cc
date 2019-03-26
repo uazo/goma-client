@@ -10,24 +10,27 @@
 #include "absl/memory/memory.h"
 #include "basictypes.h"
 #include "compiler_specific.h"
+#include "file_helper.h"
 #include "goma_file_http.h"
 MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/goma_data.pb.h"
 MSVC_POP_WARNING()
 #include "gtest/gtest.h"
+#include "scoped_tmp_file.h"
 
 namespace devtools_goma {
 
 // example of BlobClient.
+// TODO: Do we still need this? This tests an interface class, not
+// an implementation class.
 class ExampleBlobClient : public BlobClient {
  public:
   class Uploader : public BlobClient::Uploader {
    public:
-    Uploader(string filename, ExampleBlobClient* client)
+    Uploader(std::string filename, ExampleBlobClient* client)
         : BlobClient::Uploader(std::move(filename)),
           client_(client),
-          blob_(absl::make_unique<FileBlob>()) {
-    }
+          blob_(absl::make_unique<FileBlob>()) {}
     ~Uploader() override = default;
 
     bool ComputeKey() override {
@@ -193,6 +196,63 @@ TEST(BlobClient, ExampleDownload) {
 
   BlobClient::Downloader::OutputFileInfo info_string;
   EXPECT_TRUE(downloader->Download(output, &info_string));
+}
+
+class ExampleFileServiceHttpClient : public FileServiceHttpClient {
+ public:
+  ExampleFileServiceHttpClient()
+      : FileServiceHttpClient(nullptr, "", "", nullptr) {}
+  ~ExampleFileServiceHttpClient() override = default;
+
+  std::unique_ptr<AsyncTask<StoreFileReq, StoreFileResp>>
+  NewAsyncStoreFileTask() override {
+    return nullptr;
+  }
+  std::unique_ptr<AsyncTask<LookupFileReq, LookupFileResp>>
+  NewAsyncLookupFileTask() override {
+    return nullptr;
+  }
+
+  bool StoreFile(const StoreFileReq* req, StoreFileResp* resp) override {
+    return true;
+  }
+  bool LookupFile(const LookupFileReq* req, LookupFileResp* resp) override {
+    return true;
+  }
+};
+
+TEST(FileBlobClient, ExampleDownloadEmbedded) {
+  std::unique_ptr<FileBlobClient> blob_client =
+      absl::make_unique<FileBlobClient>(
+          absl::make_unique<ExampleFileServiceHttpClient>());
+
+  RequesterInfo requester_info;
+  std::unique_ptr<BlobClient::Downloader> downloader =
+      blob_client->NewDownloader(requester_info, "trace_id");
+
+  ScopedTmpFile temp_file("file");
+  EXPECT_TRUE(temp_file.valid());
+  EXPECT_TRUE(temp_file.Close());
+  const std::string& filename = temp_file.filename();
+
+  ExecResult_Output output;
+  output.set_filename(filename);
+  FileBlob* blob = output.mutable_blob();
+  blob->set_blob_type(FileBlob::FILE);
+  blob->set_content("The quick brown fox jumps over the lazy dog.");
+
+  BlobClient::Downloader::OutputFileInfo info_file;
+  info_file.tmp_filename = filename;
+  info_file.mode = 0644;
+  EXPECT_TRUE(downloader->Download(output, &info_file));
+  std::string output_contents;
+  EXPECT_TRUE(ReadFileToString(filename, &output_contents));
+  EXPECT_EQ(output_contents, "The quick brown fox jumps over the lazy dog.");
+
+  BlobClient::Downloader::OutputFileInfo info_string;
+  EXPECT_TRUE(downloader->Download(output, &info_string));
+  EXPECT_EQ("The quick brown fox jumps over the lazy dog.",
+            info_string.content);
 }
 
 }  // namespace devtools_goma

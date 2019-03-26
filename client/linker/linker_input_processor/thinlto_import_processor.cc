@@ -13,9 +13,10 @@
 namespace devtools_goma {
 
 // static
-bool ThinLTOImportProcessor::GetIncludeFiles(const string& thinlto_index,
-                                             const string& cwd,
-                                             std::set<string>* input_files) {
+bool ThinLTOImportProcessor::GetIncludeFiles(
+    const std::string& thinlto_index,
+    const std::string& cwd,
+    std::set<std::string>* input_files) {
   static const char kIndexFileSuffix[] = ".thinlto.bc";
   static const char kImportsFileSuffix[] = ".imports";
 
@@ -29,12 +30,12 @@ bool ThinLTOImportProcessor::GetIncludeFiles(const string& thinlto_index,
   // phase.  We need to upload files listed there.
   // See:
   // https://github.com/llvm-mirror/llvm/blob/71e93dfc4b97a3291302ad83f82767a4ebd0ae72/tools/gold/gold-plugin.cpp#L158
-  const string imports_file = file::JoinPathRespectAbsolute(
-      cwd, thinlto_index.substr(
-                0, thinlto_index.size() - strlen(kIndexFileSuffix)) +
-                kImportsFileSuffix);
+  const std::string imports_file = file::JoinPathRespectAbsolute(
+      cwd,
+      thinlto_index.substr(0, thinlto_index.size() - strlen(kIndexFileSuffix)) +
+          kImportsFileSuffix);
 
-  string contents;
+  std::string contents;
   if (!ReadFileToString(imports_file, &contents)) {
     LOG(WARNING) << "Failed to read .imports file."
                  << " imports_file=" << imports_file;
@@ -43,7 +44,7 @@ bool ThinLTOImportProcessor::GetIncludeFiles(const string& thinlto_index,
 
   for (auto&& line :
        absl::StrSplit(contents, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
-    input_files->insert(string(line));
+    input_files->insert(std::string(line));
   }
 
   return true;

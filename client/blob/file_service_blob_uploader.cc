@@ -10,7 +10,7 @@
 namespace devtools_goma {
 
 FileServiceBlobUploader::FileServiceBlobUploader(
-    string filename,
+    std::string filename,
     std::unique_ptr<FileServiceHttpClient> file_service)
     : BlobClient::Uploader(std::move(filename)),
       file_service_(std::move(file_service)),

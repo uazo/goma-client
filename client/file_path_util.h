@@ -11,8 +11,6 @@
 
 #include "file_stat.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class ExecReq;
@@ -20,10 +18,10 @@ class ExecReq;
 // Returns true if |candidate_path| (at |cwd| with PATH=|path|) is gomacc.
 // Note: this is usually used to confirm the |candidate_path| is not gomacc.
 // Note: You MUST call InstallReadCommandOuptutFunc beforehand.
-bool IsGomacc(const string& candidate_path,
-              const string& path,
-              const string& pathext,
-              const string& cwd);
+bool IsGomacc(const std::string& candidate_path,
+              const std::string& path,
+              const std::string& pathext,
+              const std::string& cwd);
 
 // Find a real path name of |cmd| from |path_env|.
 // It avoids to choose the file having same FileStat with |gomacc_filestat|.
@@ -39,12 +37,12 @@ bool IsGomacc(const string& candidate_path,
 // Note: You MUST call InstallReadCommandOuptutFunc beforehand if you
 //       use gomacc_filestat.
 bool GetRealExecutablePath(const FileStat* gomacc_filestat,
-                           const string& cmd,
-                           const string& cwd,
-                           const string& path_env,
-                           const string& pathext_env,
-                           string* local_compiler_path,
-                           string* no_goma_path_env,
+                           const std::string& cmd,
+                           const std::string& cwd,
+                           const std::string& path_env,
+                           const std::string& pathext_env,
+                           std::string* local_compiler_path,
+                           std::string* no_goma_path_env,
                            bool* is_in_relative_path);
 
 // Remove duplicate filepath from |filenames|
@@ -58,16 +56,16 @@ void RemoveDuplicateFiles(const std::string& cwd,
 // Resolves path extension of |cmd| using PATHEXT environment given with
 // |pathext_env|.  If |cmd| is not an absolute path, it is automatically
 // converted to an absolute path using |cwd|.
-string ResolveExtension(const string& cmd,
-                        const string& pathext_env,
-                        const string& cwd);
+std::string ResolveExtension(const std::string& cmd,
+                             const std::string& pathext_env,
+                             const std::string& cwd);
 #endif
 
 // Validate local compiler path in |req| against |compiler_name|.
 // Returns true if they match, or if no local compiler path was provided.
-bool IsLocalCompilerPathValid(const string& trace_id,
+bool IsLocalCompilerPathValid(const std::string& trace_id,
                               const ExecReq& req,
-                              const string& compiler_name);
+                              const std::string& compiler_name);
 
 }  // namespace devtools_goma
 

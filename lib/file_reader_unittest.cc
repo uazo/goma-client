@@ -9,7 +9,6 @@
 
 #include "glog/logging.h"
 #include "gtest/gtest.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -32,7 +31,7 @@ class DummyFileReader : public FileReader {
     return true;
   }
 
-  static std::unique_ptr<FileReader> Create(const string& dummy) {
+  static std::unique_ptr<FileReader> Create(const std::string& dummy) {
     called_create_ = true;
     if (create_) {
       is_created_ = true;
@@ -56,7 +55,8 @@ class DummyFileReader : public FileReader {
   static bool is_created_;
 
  private:
-  explicit DummyFileReader(const string& filename) : FileReader(filename) {}
+  explicit DummyFileReader(const std::string& filename)
+      : FileReader(filename) {}
 };
 
 // enable / disable the function.
@@ -98,7 +98,7 @@ TEST_F(FileReaderTest, FlushDataInBuffer) {
   char buf[kBufSize];
   void *ptr;
   size_t len, copied;
-  string read_buffer;
+  std::string read_buffer;
 
   // Should not copy anything if len = 0.
   read_buffer.assign(kDummyValue);
@@ -117,7 +117,7 @@ TEST_F(FileReaderTest, FlushDataInBuffer) {
   ptr = buf;
   copied = FileReader::FlushDataInBuffer(&read_buffer, &ptr, &len);
   EXPECT_EQ("", read_buffer);
-  EXPECT_EQ(kDummyValue, string(buf, copied));
+  EXPECT_EQ(kDummyValue, std::string(buf, copied));
   EXPECT_EQ(1U, len);
 
   // Should copy all data if len = read_buffer_.length().
@@ -127,7 +127,7 @@ TEST_F(FileReaderTest, FlushDataInBuffer) {
   copied = FileReader::FlushDataInBuffer(&read_buffer, &ptr, &len);
   EXPECT_EQ("", read_buffer);
   EXPECT_EQ(strlen(kDummyValue), copied);
-  EXPECT_EQ(kDummyValue, string(buf, copied));
+  EXPECT_EQ(kDummyValue, std::string(buf, copied));
   EXPECT_EQ(0U, len);
 
   // Should remain some data if len < read_buffer_.length().
@@ -137,7 +137,7 @@ TEST_F(FileReaderTest, FlushDataInBuffer) {
   copied = FileReader::FlushDataInBuffer(&read_buffer, &ptr, &len);
   EXPECT_NE("", read_buffer);
   EXPECT_EQ(strlen(kDummyValue) - 1, copied);
-  EXPECT_EQ(string(kDummyValue, copied), string(buf, copied));
+  EXPECT_EQ(std::string(kDummyValue, copied), std::string(buf, copied));
   EXPECT_EQ(0U, len);
 }
 

@@ -16,6 +16,8 @@
 #include "absl/base/macros.h"
 #include "scoped_fd.h"
 
+namespace devtools_goma {
+
 namespace {
 
 static void SwapFatArchByteOrder(fat_arch* arch) {
@@ -26,7 +28,7 @@ static void SwapFatArchByteOrder(fat_arch* arch) {
   arch->align = OSSwapInt32(arch->align);
 }
 
-static const string GetArchName(cpu_type_t type, cpu_subtype_t subtype) {
+static const std::string GetArchName(cpu_type_t type, cpu_subtype_t subtype) {
   if (type == CPU_TYPE_I386 && subtype == CPU_SUBTYPE_I386_ALL) {
     return "i386";
   } else if (type == CPU_TYPE_X86_64 && subtype == CPU_SUBTYPE_X86_64_ALL) {
@@ -41,14 +43,12 @@ static const string GetArchName(cpu_type_t type, cpu_subtype_t subtype) {
   }
 }
 
-bool GetFatArchs(
-    const devtools_goma::ScopedFd& fd,
-    std::vector<fat_arch>* archs,
-    string* raw) {
+bool GetFatArchs(const ScopedFd& fd,
+                 std::vector<fat_arch>* archs,
+                 std::string* raw) {
   DCHECK(archs);
   // Parse fat header.
-  if (fd.Seek(0, devtools_goma::ScopedFd::SeekAbsolute)
-      == static_cast<off_t>(-1)) {
+  if (fd.Seek(0, ScopedFd::SeekAbsolute) == static_cast<off_t>(-1)) {
     PLOG(WARNING) << "seek 0: fd=" << fd;
     return false;
   }
@@ -97,8 +97,6 @@ bool GetFatArchs(
 
 }  // namespace
 
-namespace devtools_goma {
-
 bool GetFatHeader(const ScopedFd& fd, MacFatHeader* fheader) {
   std::vector<fat_arch> archs;
   if (!GetFatArchs(fd, &archs, &fheader->raw))
@@ -120,8 +118,7 @@ bool GetFatHeader(const ScopedFd& fd, MacFatHeader* fheader) {
   return true;
 }
 
-MachO::MachO(const string& filename)
-    : filename_(filename) {
+MachO::MachO(const std::string& filename) : filename_(filename) {
   fd_.reset(ScopedFd::OpenForRead(filename));
   // TODO: support non-fat mach object if needed.
   std::vector<fat_arch> archs;
@@ -141,8 +138,9 @@ MachO::MachO(const string& filename)
 MachO::~MachO() {
 }
 
-bool MachO::GetDylibs(const string& cpu_type, std::vector<DylibEntry>* dylibs) {
-  std::map<string, fat_arch>::const_iterator found = archs_.find(cpu_type);
+bool MachO::GetDylibs(const std::string& cpu_type,
+                      std::vector<DylibEntry>* dylibs) {
+  std::map<std::string, fat_arch>::const_iterator found = archs_.find(cpu_type);
   if (found == archs_.end()) {
     LOG(WARNING) << "unknown cpu type: " << cpu_type;
     return false;
@@ -213,8 +211,8 @@ bool MachO::GetDylibs(const string& cpu_type, std::vector<DylibEntry>* dylibs) {
           dylib_command* dycom = reinterpret_cast<dylib_command*>(command);
           if (dycom->dylib.name.offset < command->cmdsize) {
             DylibEntry entry;
-            entry.name = string(reinterpret_cast<char*>(command) +
-                dycom->dylib.name.offset);
+            entry.name = std::string(reinterpret_cast<char*>(command) +
+                                     dycom->dylib.name.offset);
             entry.timestamp = dycom->dylib.timestamp;
             entry.current_version = dycom->dylib.current_version;
             entry.compatibility_version = dycom->dylib.compatibility_version;

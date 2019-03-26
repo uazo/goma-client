@@ -13,13 +13,11 @@
 #include "json/json.h"
 #include "json_util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
-bool ParseOAuth2AccessToken(const string& json,
-                            string* token_type,
-                            string* access_token,
+bool ParseOAuth2AccessToken(const std::string& json,
+                            std::string* token_type,
+                            std::string* access_token,
                             absl::Duration* expires_in) {
   static const char kAccessToken[] = "access_token";
   static const char kTokenType[] = "token_type";
@@ -32,7 +30,7 @@ bool ParseOAuth2AccessToken(const string& json,
     return false;
   }
 
-  string err;
+  std::string err;
   if (!GetStringFromJson(root, kAccessToken, access_token, &err)) {
     LOG(WARNING) << err;
     return false;
@@ -82,7 +80,7 @@ void DefaultOAuth2Config(OAuth2Config* config) {
   CHECK(config->enabled());
 }
 
-bool ParseOAuth2Config(const string& str, OAuth2Config* config) {
+bool ParseOAuth2Config(const std::string& str, OAuth2Config* config) {
   Json::Reader reader;
   Json::Value root;
   if (!reader.parse(str, root, false)) {
@@ -90,15 +88,15 @@ bool ParseOAuth2Config(const string& str, OAuth2Config* config) {
     return false;
   }
 
-  string err;
+  std::string err;
 
-  string auth_uri;
+  std::string auth_uri;
   if (!GetNonEmptyStringFromJson(root, kAuthURI, &auth_uri, &err)) {
     LOG(WARNING) << err;
     auth_uri = kGoogleAuthURI;
   }
 
-  string token_uri;
+  std::string token_uri;
   if (!GetNonEmptyStringFromJson(root, kTokenURI, &token_uri, &err)) {
     LOG(WARNING) << err;
     token_uri = kGoogleTokenURI;
@@ -112,19 +110,19 @@ bool ParseOAuth2Config(const string& str, OAuth2Config* config) {
     token_uri = kGoogleTokenURI;
   }
 
-  string scope;
+  std::string scope;
   if (!GetNonEmptyStringFromJson(root, kScope, &scope, &err)) {
     LOG(WARNING) << err;
     scope = kGomaAuthScope;
   }
 
-  string client_id;
+  std::string client_id;
   if (!GetNonEmptyStringFromJson(root, kClientId, &client_id, &err)) {
     LOG(WARNING) << err;
     return false;
   }
 
-  string client_secret;
+  std::string client_secret;
   if (!GetNonEmptyStringFromJson(root, kClientSecret, &client_secret, &err)) {
     if (!GetNonEmptyStringFromJson(root, kClientNotSoSecret, &client_secret,
                                    &err)) {
@@ -133,12 +131,12 @@ bool ParseOAuth2Config(const string& str, OAuth2Config* config) {
     }
   }
 
-  string type;
+  std::string type;
   if (!GetNonEmptyStringFromJson(root, kType, &type, &err)) {
     LOG(WARNING) << err;
   }
 
-  string refresh_token;
+  std::string refresh_token;
   (void)GetStringFromJson(root, kRefreshToken, &refresh_token, &err);
 
   config->auth_uri = auth_uri;
@@ -151,7 +149,7 @@ bool ParseOAuth2Config(const string& str, OAuth2Config* config) {
   return true;
 }
 
-string FormatOAuth2Config(const OAuth2Config& config) {
+std::string FormatOAuth2Config(const OAuth2Config& config) {
   Json::Value root;
   root[kAuthURI] = config.auth_uri;
   root[kTokenURI] = config.token_uri;
@@ -164,8 +162,8 @@ string FormatOAuth2Config(const OAuth2Config& config) {
   return writer.write(root);
 }
 
-bool SaveOAuth2Config(const string& filename, const OAuth2Config& config) {
-  string config_string = FormatOAuth2Config(config);
+bool SaveOAuth2Config(const std::string& filename, const OAuth2Config& config) {
+  std::string config_string = FormatOAuth2Config(config);
   if (!WriteStringToFile(config_string, filename.c_str())) {
     LOG(ERROR) << "Failed to write " << filename;
     return false;
@@ -173,7 +171,8 @@ bool SaveOAuth2Config(const string& filename, const OAuth2Config& config) {
   return true;
 }
 
-bool ParseServiceAccountJson(const string& str, ServiceAccountConfig* config) {
+bool ParseServiceAccountJson(const std::string& str,
+                             ServiceAccountConfig* config) {
   // chrome-infra's /creds/service_accounts doesn't have
   // project_id, auth_uri, token_uri, auth_provider_x509_cert_url,
   // client_x509_cert_url, different from service account json
@@ -186,9 +185,9 @@ bool ParseServiceAccountJson(const string& str, ServiceAccountConfig* config) {
     return false;
   }
 
-  string err;
+  std::string err;
 
-  string type_str;
+  std::string type_str;
   if (!GetStringFromJson(root, "type", &type_str, &err)) {
     LOG(WARNING) << err;
     return false;
@@ -198,25 +197,25 @@ bool ParseServiceAccountJson(const string& str, ServiceAccountConfig* config) {
     return false;
   }
 
-  string private_key;
+  std::string private_key;
   if (!GetNonEmptyStringFromJson(root, "private_key", &private_key, &err)) {
     LOG(WARNING) << err;
     return false;
   }
 
-  string client_email;
+  std::string client_email;
   if (!GetNonEmptyStringFromJson(root, "client_email", &client_email, &err)) {
     LOG(WARNING) << err;
     return false;
   }
 
-  string project_id;
-  string private_key_id;
-  string client_id;
-  string auth_uri;
-  string token_uri;
-  string auth_provider_x509_cert_url;
-  string client_x509_cert_url;
+  std::string project_id;
+  std::string private_key_id;
+  std::string client_id;
+  std::string auth_uri;
+  std::string token_uri;
+  std::string auth_provider_x509_cert_url;
+  std::string client_x509_cert_url;
   (void)GetStringFromJson(root, "project_id", &project_id, &err);
   (void)GetStringFromJson(root, "private_key_id", &private_key_id, &err);
   (void)GetStringFromJson(root, "client_id", &client_id, &err);

@@ -9,8 +9,8 @@ namespace devtools_goma {
 std::unique_ptr<CompilerInfoData>
 ClangTidyCompilerTypeSpecific::BuildCompilerInfoData(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const std::vector<string>& compiler_info_envs) {
+    const std::string& local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs) {
   return compiler_info_builder_.FillFromCompilerOutputs(
       flags, local_compiler_path, compiler_info_envs);
 }

@@ -14,8 +14,6 @@
 #include "simple_timer.h"
 #include "spawner.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // A subclass of Spawner for POSIX.
@@ -25,8 +23,10 @@ class SpawnerPosix : public Spawner {
   SpawnerPosix();
   ~SpawnerPosix() override;
 
-  int Run(const string& cmd, const std::vector<string>& args,
-          const std::vector<string>& envs, const string& cwd) override;
+  int Run(const std::string& cmd,
+          const std::vector<std::string>& args,
+          const std::vector<std::string>& envs,
+          const std::string& cwd) override;
   ProcessStatus Kill() override;
   ProcessStatus Wait(WaitPolicy wait_policy) override;
   bool IsChildRunning() const override;
@@ -54,7 +54,7 @@ class SpawnerPosix : public Spawner {
   int64_t process_mem_kb_;
   int signal_;
 
-  string console_out_file_;
+  std::string console_out_file_;
 
   DISALLOW_COPY_AND_ASSIGN(SpawnerPosix);
 };

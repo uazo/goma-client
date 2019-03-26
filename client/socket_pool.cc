@@ -52,10 +52,8 @@ constexpr absl::Duration kSocketPoolSetupTimeout = absl::Seconds(10);
 // Wait connection success for this period.
 constexpr absl::Duration kConnTimeout = absl::Seconds(3);
 
-SocketPool::SocketPool(const string& host_name, int port)
-    : host_name_(host_name),
-      port_(port),
-      current_addr_(nullptr) {
+SocketPool::SocketPool(const std::string& host_name, int port)
+    : host_name_(host_name), port_(port), current_addr_(nullptr) {
   SimpleTimer timer;
   absl::Duration retry_backoff = absl::Milliseconds(50);
   while (timer.GetDuration() < kSocketPoolSetupTimeout) {
@@ -239,7 +237,7 @@ void SocketPool::SetErrorTimestampUnlocked(int sock,
     LOG(ERROR) << "sock " << sock << " not found in fd_addrs";
     return;
   }
-  const string& addr_name = p->second;
+  const std::string& addr_name = p->second;
   // fast path. most case, current_addr_ is the addr for the sock.
   if (current_addr_ != nullptr && current_addr_->name == addr_name) {
     current_addr_->error_timestamp = time;
@@ -271,7 +269,7 @@ bool SocketPool::AddrData::IsValid() const {
   return len > 0;
 }
 
-bool SocketPool::AddrData::InitFromIPv4Addr(const string& ipv4, int port) {
+bool SocketPool::AddrData::InitFromIPv4Addr(const std::string& ipv4, int port) {
   struct sockaddr_in* addr_in =
       reinterpret_cast<struct sockaddr_in*>(&this->storage);
   this->len = sizeof(struct sockaddr_in);
@@ -317,9 +315,9 @@ void SocketPool::AddrData::InitFromAddrInfo(const struct addrinfo* ai) {
 }
 
 /* static */
-void SocketPool::ResolveAddress(
-    const string& hostname, int port,
-    std::vector<SocketPool::AddrData>* addrs) {
+void SocketPool::ResolveAddress(const std::string& hostname,
+                                int port,
+                                std::vector<SocketPool::AddrData>* addrs) {
   if (hostname.empty()) {
     LOG(ERROR) << "hostname is empty";
     return;
@@ -335,7 +333,7 @@ void SocketPool::ResolveAddress(
   sa_family_t afs[2] = { AF_INET, AF_INET6 };
   std::ostringstream port_oss;
   port_oss << port;
-  const string port_string = port_oss.str();
+  const std::string port_string = port_oss.str();
   for (const auto& af : afs) {
     struct addrinfo hints;
     struct addrinfo *result, *rp;
@@ -599,7 +597,7 @@ ScopedSocket SocketPool::ScopedSocketList::Poll(
 Errno SocketPool::InitializeUnlocked() {
   // lock held.
   current_addr_ = nullptr;
-  std::map<string, absl::Time> last_errors;
+  std::map<std::string, absl::Time> last_errors;
   for (const auto& addr : addrs_) {
     if (addr.error_timestamp) {
       last_errors.insert(std::make_pair(addr.name, *addr.error_timestamp));
@@ -690,7 +688,7 @@ bool SocketPool::IsInitialized() const {
   return current_addr_ != nullptr && current_addr_->IsValid();
 }
 
-string SocketPool::DestName() const {
+std::string SocketPool::DestName() const {
   std::ostringstream ss;
   ss << host_name_ << ":" << port_;
   return ss.str();
@@ -701,10 +699,10 @@ size_t SocketPool::NumAddresses() const {
   return addrs_.size();
 }
 
-string SocketPool::DebugString() const {
+std::string SocketPool::DebugString() const {
   std::ostringstream ss;
   ss << "dest:" << DestName();
-  string name;
+  std::string name;
   size_t socket_pool_size = 0;
   size_t open_sockets = 0;
   {

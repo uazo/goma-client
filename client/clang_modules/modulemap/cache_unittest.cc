@@ -13,8 +13,6 @@
 #include "client/unittest_util.h"
 #include "gtest/gtest.h"
 
-using std::string;
-
 namespace devtools_goma {
 namespace modulemap {
 
@@ -29,10 +27,11 @@ class ModuleMapCacheTest : public testing::Test {
   ~ModuleMapCacheTest() { modulemap::Cache::Quit(); }
 
  protected:
-  string CreateTmpFileWithOldMtime(const string& content, const string& name) {
+  std::string CreateTmpFileWithOldMtime(const std::string& content,
+                                        const std::string& name) {
     tmpdir_util_->CreateTmpFile(name, content);
 
-    string path = tmpdir_util_->FullPath(name);
+    std::string path = tmpdir_util_->FullPath(name);
 
     // Set old timestamp.
     UpdateMtime(path.c_str(), absl::Now() - absl::Seconds(2));
@@ -59,7 +58,7 @@ module bar {
   EXPECT_EQ(0U, modulemap::Cache::instance()->cache_miss());
 
   {
-    std::set<string> include_files;
+    std::set<std::string> include_files;
     FileStatCache file_stat_cache;
 
     EXPECT_TRUE(modulemap::Cache::instance()->AddModuleMapFileAndDependents(
@@ -72,7 +71,7 @@ module bar {
   EXPECT_EQ(1U, modulemap::Cache::instance()->cache_miss());
 
   {
-    std::set<string> include_files;
+    std::set<std::string> include_files;
     FileStatCache file_stat_cache;
 
     EXPECT_TRUE(modulemap::Cache::instance()->AddModuleMapFileAndDependents(
@@ -91,7 +90,7 @@ module bar {
                             "bar.modulemap");
 
   {
-    std::set<string> include_files;
+    std::set<std::string> include_files;
     FileStatCache file_stat_cache;
 
     EXPECT_TRUE(modulemap::Cache::instance()->AddModuleMapFileAndDependents(
@@ -130,7 +129,7 @@ module baz {
 
   // Process "foo" and "bar".
   {
-    std::set<string> include_files;
+    std::set<std::string> include_files;
     FileStatCache file_stat_cache;
 
     EXPECT_TRUE(modulemap::Cache::instance()->AddModuleMapFileAndDependents(
@@ -147,7 +146,7 @@ module baz {
 
   // Process "baz".
   {
-    std::set<string> include_files;
+    std::set<std::string> include_files;
     FileStatCache file_stat_cache;
 
     EXPECT_TRUE(modulemap::Cache::instance()->AddModuleMapFileAndDependents(
@@ -161,7 +160,7 @@ module baz {
 
   // Process "bar" again. It's not evicted.
   {
-    std::set<string> include_files;
+    std::set<std::string> include_files;
     FileStatCache file_stat_cache;
 
     EXPECT_TRUE(modulemap::Cache::instance()->AddModuleMapFileAndDependents(
@@ -175,7 +174,7 @@ module baz {
 
   // Process "foo" again. It's evicted.
   {
-    std::set<string> include_files;
+    std::set<std::string> include_files;
     FileStatCache file_stat_cache;
 
     EXPECT_TRUE(modulemap::Cache::instance()->AddModuleMapFileAndDependents(

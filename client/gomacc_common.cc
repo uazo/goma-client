@@ -78,9 +78,8 @@ namespace devtools_goma {
 // TODO: move it into goma_ipc, and use it in goma_ipc_unittest.cc?
 class GomaIPCNamedPipeFactory : public GomaIPC::ChanFactory {
  public:
-  GomaIPCNamedPipeFactory(const string& name, absl::Duration timeout)
-      : factory_(name, timeout) {
-  }
+  GomaIPCNamedPipeFactory(const std::string& name, absl::Duration timeout)
+      : factory_(name, timeout) {}
   ~GomaIPCNamedPipeFactory() override {}
 
   GomaIPCNamedPipeFactory(const GomaIPCNamedPipeFactory&) = delete;
@@ -94,9 +93,7 @@ class GomaIPCNamedPipeFactory : public GomaIPC::ChanFactory {
     return std::unique_ptr<IOChannel>(new ScopedNamedPipe(std::move(pipe)));
   }
 
-  string DestName() const override {
-    return factory_.DestName();
-  }
+  std::string DestName() const override { return factory_.DestName(); }
 
  private:
   NamedPipeFactory factory_;
@@ -105,7 +102,7 @@ class GomaIPCNamedPipeFactory : public GomaIPC::ChanFactory {
 #else
 class GomaIPCSocketFactory : public GomaIPC::ChanFactory {
  public:
-  explicit GomaIPCSocketFactory(string socket_path)
+  explicit GomaIPCSocketFactory(std::string socket_path)
       : socket_path_(std::move(socket_path)), addr_(nullptr), addr_len_(0) {
     addr_len_ = InitializeGomaIPCAddress(socket_path_, &un_addr_);
     addr_ = reinterpret_cast<const sockaddr*>(&un_addr_);
@@ -139,12 +136,10 @@ class GomaIPCSocketFactory : public GomaIPC::ChanFactory {
     return nullptr;
   }
 
-  string DestName() const override {
-    return socket_path_;
-  }
+  std::string DestName() const override { return socket_path_; }
 
  private:
-  const string socket_path_;
+  const std::string socket_path_;
   GomaIPCAddr un_addr_;
   const sockaddr* addr_;
   socklen_t addr_len_;
@@ -236,7 +231,7 @@ bool StartCompilerProxy() {
   }
 
 #ifndef _WIN32
-  const string daemon_stderr = file::JoinPathRespectAbsolute(
+  const std::string daemon_stderr = file::JoinPathRespectAbsolute(
       GetGomaTmpDir(), FLAGS_COMPILER_PROXY_DAEMON_STDERR);
   if (!FLAGS_COMPILER_PROXY_DAEMON_STDERR.empty() &&
       FLAGS_GOMACC_COMPILER_PROXY_RESTART_DELAY > 0) {
@@ -255,8 +250,8 @@ bool StartCompilerProxy() {
   }
 #endif
 
-  const string& compiler_proxy_binary = file::JoinPath(
-      GetMyDirectory(), FLAGS_COMPILER_PROXY_BINARY);
+  const std::string& compiler_proxy_binary =
+      file::JoinPath(GetMyDirectory(), FLAGS_COMPILER_PROXY_BINARY);
 
   if (FLAGS_DUMP) {
     std::cerr << "GOMA: " << "Invoke " << compiler_proxy_binary << std::endl;
@@ -312,9 +307,9 @@ bool StartCompilerProxy() {
   ZeroMemory(&si, sizeof(STARTUPINFO));
   si.cb = sizeof(STARTUPINFO);
 
-  string path_env = GetEnv("PATH");
+  std::string path_env = GetEnv("PATH");
   CHECK(!path_env.empty()) << "No PATH env. found.";
-  string command_path;
+  std::string command_path;
   // Note: "" to use the Windows default pathext.
   if (!GetRealExecutablePath(
       nullptr, "cmd.exe", "", path_env, "", &command_path, nullptr, nullptr)) {
@@ -322,7 +317,7 @@ bool StartCompilerProxy() {
               << " path_env=" << path_env
               << std::endl;
   }
-  string command_line = command_path + " /k \"";
+  std::string command_line = command_path + " /k \"";
   command_line = command_line + compiler_proxy_binary;
   command_line = command_line + "\"";
   if (CreateProcessA(command_path.c_str(), &command_line[0], nullptr, nullptr,
@@ -370,16 +365,16 @@ bool StartCompilerProxy() {
 GomaClient::GomaClient(int id,
                        std::unique_ptr<CompilerFlags> flags,
                        const char** envp,
-                       string local_compiler_path)
+                       std::string local_compiler_path)
 #ifndef _WIN32
     : goma_ipc_(std::unique_ptr<GomaIPC::ChanFactory>(new GomaIPCSocketFactory(
           file::JoinPathRespectAbsolute(GetGomaTmpDir(),
                                         FLAGS_COMPILER_PROXY_SOCKET_NAME)))),
 #else
-    : goma_ipc_(std::unique_ptr<GomaIPC::ChanFactory>(
-          new GomaIPCNamedPipeFactory(
-                  FLAGS_COMPILER_PROXY_SOCKET_NAME,
-                  absl::Milliseconds(FLAGS_NAMEDPIPE_WAIT_TIMEOUT_MS)))),
+    : goma_ipc_(
+          std::unique_ptr<GomaIPC::ChanFactory>(new GomaIPCNamedPipeFactory(
+              FLAGS_COMPILER_PROXY_SOCKET_NAME,
+              absl::Milliseconds(FLAGS_NAMEDPIPE_WAIT_TIMEOUT_MS)))),
 #endif
       id_(id),
       flags_(std::move(flags)),
@@ -395,8 +390,8 @@ GomaClient::GomaClient(int id,
   }
 #endif
   // used for logging.
-  string buf;
-  std::vector<string> info;
+  std::string buf;
+  std::vector<std::string> info;
   info.push_back(flags_->compiler_name());
   if (flags_->type() == CompilerFlagType::Gcc) {
     const GCCFlags& gcc_flags = static_cast<const GCCFlags&>(*flags_);
@@ -468,7 +463,7 @@ int GomaClient::retval() const {
 
 // Call IPC Request. Return IPC_OK if successful.
 GomaClient::Result GomaClient::CallIPCAsync() {
-  string request_path;
+  std::string request_path;
   std::unique_ptr<google::protobuf::Message> req;
 
 #ifdef _WIN32
@@ -579,7 +574,7 @@ GomaClient::Result GomaClient::WaitIPC() {
   return IPC_OK;
 }
 
-string GomaClient::CreateStdinFile() {
+std::string GomaClient::CreateStdinFile() {
 #ifndef _WIN32
   stdin_filename_ = file::JoinPath(GetGomaTmpDir(), "gomacc.stdin.XXXXXX");
   stdin_file_.reset(mkstemp(&stdin_filename_[0]));
@@ -619,28 +614,28 @@ GomaClient::Result GomaClient::CallIPC() {
 
 #ifdef _WIN32
 bool GomaClient::PrepareMultiExecRequest(MultiExecReq* req) {
-  const string tmpdir = devtools_goma::GetGomaTmpDir();
+  const std::string tmpdir = devtools_goma::GetGomaTmpDir();
   pid_t pid = Getpid();
 
-  std::set<string> input_filenames(flags_->input_filenames().begin(),
-                              flags_->input_filenames().end());
-  std::vector<string> args_no_input;  // args other than input filenames.
+  std::set<std::string> input_filenames(flags_->input_filenames().begin(),
+                                        flags_->input_filenames().end());
+  std::vector<std::string> args_no_input;  // args other than input filenames.
   // Input filenames may be in @rsp file, so scan expanded_args here.
-  const std::vector<string>& expanded_args =
-      (flags_->expanded_args().empty()
-       ? flags_->args() : flags_->expanded_args());
+  const std::vector<std::string>& expanded_args =
+      (flags_->expanded_args().empty() ? flags_->args()
+                                       : flags_->expanded_args());
   FanOutArgsByInput(expanded_args, input_filenames, &args_no_input);
 
   int nth = 0;
-  for (std::set<string>::const_iterator iter = input_filenames.begin();
-       iter != input_filenames.end();
-       ++iter, ++nth) {
-    const string& input_filename = *iter;
-    const string cmdline = BuildArgsForInput(args_no_input, input_filename);
+  for (std::set<std::string>::const_iterator iter = input_filenames.begin();
+       iter != input_filenames.end(); ++iter, ++nth) {
+    const std::string& input_filename = *iter;
+    const std::string cmdline =
+        BuildArgsForInput(args_no_input, input_filename);
     std::stringstream fname;
     fname << file::Basename(input_filename)
           << "." << pid << "." << nth << ".rsp";
-    const string rsp_filename = file::JoinPath(tmpdir, fname.str());
+    const std::string rsp_filename = file::JoinPath(tmpdir, fname.str());
     if (!WriteStringToFile(cmdline, rsp_filename)) {
       LOG(ERROR) << "GOMA: Failed to create " << rsp_filename;
       return false;
@@ -649,7 +644,7 @@ bool GomaClient::PrepareMultiExecRequest(MultiExecReq* req) {
     // while gomacc is running.
     rsp_files_.emplace_back(rsp_filename,
                             new ScopedFd(ScopedFd::OpenForRead(rsp_filename)));
-    std::vector<string> args_of_input;
+    std::vector<std::string> args_of_input;
     args_of_input.push_back(flags_->args()[0]);
     args_of_input.push_back("@" + rsp_filename);
     std::unique_ptr<CompilerFlags> flags_of_input(
@@ -690,7 +685,7 @@ bool GomaClient::PrepareExecRequest(const CompilerFlags& flags, ExecReq* req) {
       CHECK(!isatty(STDIN_FILENO)) << "goma doesn't support tty input."
                                    << flags.DebugString();
       ExecReq_Input* input = req->add_input();
-      string tempfilename = CreateStdinFile();
+      std::string tempfilename = CreateStdinFile();
       input->set_filename(tempfilename);
       input->set_hash_key("");
       DCHECK_EQ(req->input_size(), 1);
@@ -736,7 +731,7 @@ bool GomaClient::PrepareExecRequest(const CompilerFlags& flags, ExecReq* req) {
       RequesterInfo::CURRENT_VERSION);
   req->mutable_requester_info()->set_pid(Getpid());
   req->mutable_requester_info()->set_goma_revision(kBuiltRevisionString);
-  string autoninja_build_id = GetEnv("AUTONINJA_BUILD_ID");
+  std::string autoninja_build_id = GetEnv("AUTONINJA_BUILD_ID");
   if (!autoninja_build_id.empty()) {
       req->mutable_requester_info()->set_build_id(
           std::move(autoninja_build_id));
@@ -758,7 +753,7 @@ bool GomaClient::PrepareExecRequest(const CompilerFlags& flags, ExecReq* req) {
   }
 
   devtools_goma::RequesterEnv* requester_env = req->mutable_requester_env();
-  const string path_env = GetEnv("PATH");
+  const std::string path_env = GetEnv("PATH");
   if (!path_env.empty())
     requester_env->set_local_path(path_env);
   if (!FLAGS_VERIFY_COMMAND.empty()) {
@@ -779,7 +774,7 @@ bool GomaClient::PrepareExecRequest(const CompilerFlags& flags, ExecReq* req) {
     for (auto&& f : absl::StrSplit(FLAGS_FALLBACK_INPUT_FILES,
                                    ',',
                                    absl::SkipEmpty())) {
-      requester_env->add_fallback_input_file(string(f));
+      requester_env->add_fallback_input_file(std::string(f));
     }
   }
 

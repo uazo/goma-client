@@ -42,8 +42,6 @@ MSVC_POP_WARNING()
 #include "tls_engine.h"
 #include "worker_thread_manager.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class Descriptor;
@@ -62,26 +60,26 @@ class HttpClient {
  public:
   struct Options {
     Options();
-    string dest_host_name;
+    std::string dest_host_name;
     int dest_port;
-    string proxy_host_name;
+    std::string proxy_host_name;
     int proxy_port;
-    string extra_params;
-    string authorization;
-    string cookie;
+    std::string extra_params;
+    std::string authorization;
+    std::string cookie;
     bool capture_response_header;
-    string url_path_prefix;
+    std::string url_path_prefix;
     bool use_ssl;
-    string ssl_extra_cert;
-    string ssl_extra_cert_data;
+    std::string ssl_extra_cert;
+    std::string ssl_extra_cert_data;
     absl::optional<absl::Duration> ssl_crl_max_valid_duration;
     absl::Duration socket_read_timeout;
     absl::Duration min_retry_backoff;
     absl::Duration max_retry_backoff;
 
     OAuth2Config oauth2_config;
-    string gce_service_account;
-    string service_account_json_filename;
+    std::string gce_service_account;
+    std::string service_account_json_filename;
     LuciContextAuth luci_context_auth;
 
     bool fail_fast;
@@ -97,19 +95,19 @@ class HttpClient {
 
     // Socket{Host,Port} represents where HttpClient connects.
     // If an HTTP proxy is used, the value should be the proxy's host and port.
-    string SocketHost() const;
+    std::string SocketHost() const;
     int SocketPort() const;
 
     // Returns HTTP request-target.
-    string RequestURL(absl::string_view path) const;
+    std::string RequestURL(absl::string_view path) const;
 
     // Returns "Host" header field.
-    string Host() const;
+    std::string Host() const;
 
     // Returns true if HttpClient is configure to use an HTTP proxy.
     bool UseProxy() const { return !proxy_host_name.empty(); }
 
-    string DebugString() const;
+    std::string DebugString() const;
     void ClearAuthConfig();
   };
 
@@ -171,13 +169,13 @@ class HttpClient {
 
     // Result of RPC for CallWithAsync. OK=success, or error code.
     int err;
-    string err_message;
+    std::string err_message;
 
     // Become false if http is disabled with failnow().
     bool enabled;
 
     int http_return_code;
-    string response_header;
+    std::string response_header;
 
     // size of message on http (maybe compressed).
     size_t req_size;
@@ -201,10 +199,10 @@ class HttpClient {
     int num_throttled;
     int num_connect_failed;
 
-    string trace_id;
-    string master_trace_id;  // master request in multi http rpc.
+    std::string trace_id;
+    std::string master_trace_id;  // master request in multi http rpc.
 
-    string DebugString() const;
+    std::string DebugString() const;
   };
 
   enum ConnectionCloseState {
@@ -233,17 +231,18 @@ class HttpClient {
     Request();
     virtual ~Request();
 
-    void Init(const string& method, const string& path,
+    void Init(const std::string& method,
+              const std::string& path,
               const Options& options);
 
-    void SetMethod(const string& method);
-    void SetRequestPath(const string& path);
-    const string& request_path() const { return request_path_; }
-    void SetHost(const string& host);
-    void SetContentType(const string& content_type);
-    void SetAuthorization(const string& authorization);
-    void SetCookie(const string& cookie);
-    void AddHeader(const string& key, const string& value);
+    void SetMethod(const std::string& method);
+    void SetRequestPath(const std::string& path);
+    const std::string& request_path() const { return request_path_; }
+    void SetHost(const std::string& host);
+    void SetContentType(const std::string& content_type);
+    void SetAuthorization(const std::string& authorization);
+    void SetCookie(const std::string& cookie);
+    void AddHeader(const std::string& key, const std::string& value);
 
     // Clone returns clone of this Request.
     virtual std::unique_ptr<Request> Clone() const = 0;
@@ -254,24 +253,25 @@ class HttpClient {
 
    protected:
     // CreateHeader creates a header line.
-    static string CreateHeader(absl::string_view key, absl::string_view value);
+    static std::string CreateHeader(absl::string_view key,
+                                    absl::string_view value);
 
     // BuildHeader creates HTTP request message with additional headers.
     // If content_length >= 0, set Content-Length: header.
     // If content_length < 0, header should include
     // "Transfer-Encoding: chunked" and NewStream should provide
     // chunked-body.
-    string BuildHeader(
-        const std::vector<string>& headers, int content_length) const;
+    std::string BuildHeader(const std::vector<std::string>& headers,
+                            int content_length) const;
 
    private:
-    string method_;
-    string request_path_;
-    string host_;
-    string content_type_;
-    string authorization_;
-    string cookie_;
-    std::vector<string> headers_;
+    std::string method_;
+    std::string request_path_;
+    std::string host_;
+    std::string content_type_;
+    std::string authorization_;
+    std::string cookie_;
+    std::vector<std::string> headers_;
 
     DISALLOW_ASSIGN(Request);
   };
@@ -321,8 +321,8 @@ class HttpClient {
     absl::string_view Header() const;
 
     // HttpClient will use the following methods to receive HTTP response.
-    void SetRequestPath(const string& path);
-    void SetTraceId(const string& trace_id);
+    void SetRequestPath(const std::string& path);
+    void SetTraceId(const std::string& trace_id);
     void Reset();
 
     // NextBuffer returns a buffer pointer and buffer's size.
@@ -346,7 +346,7 @@ class HttpClient {
 
     // result reports transaction results. OK or FAIL.
     int result() const { return result_; }
-    const string& err_message() const { return err_message_; }
+    const std::string& err_message() const { return err_message_; }
 
     // represents whether response has 'Connection: close' header.
     bool HasConnectionClose() const;
@@ -354,7 +354,7 @@ class HttpClient {
     // returns string of the total response size if Content-Length exists
     // in HTTP header.
     // Otherwise, "unknown".
-    string TotalResponseSize() const;
+    std::string TotalResponseSize() const;
 
    protected:
     // ParseBody parses body.
@@ -369,8 +369,8 @@ class HttpClient {
         EncodingType encoding_type) = 0;
 
     int result_;
-    string err_message_;
-    string trace_id_;
+    std::string err_message_;
+    std::string trace_id_;
 
    private:
     // Buffer is the default buffer used for receiving HTTP response.
@@ -396,10 +396,10 @@ class HttpClient {
       // Reset the buffer to be used for other input.
       void Reset();
 
-      string DebugString() const;
+      std::string DebugString() const;
 
      private:
-      string buffer_;
+      std::string buffer_;
       size_t len_ = 0UL;
     };
 
@@ -408,7 +408,7 @@ class HttpClient {
     // Returns false if need more data.
     bool BodyRecv(int r);
 
-    string request_path_;
+    std::string request_path_;
 
     size_t total_recv_len_ = 0UL;
     size_t body_offset_ = 0UL;  // position to start response body in buffer_
@@ -443,8 +443,9 @@ class HttpClient {
   ~HttpClient();
 
   // Initializes Request for method and path.
-  void InitHttpRequest(
-      Request* req, const string& method, const string& path) const;
+  void InitHttpRequest(Request* req,
+                       const std::string& method,
+                       const std::string& path) const;
 
   // Do performs a HTTP transaction.
   // Caller have ownership of req, resp and status.
@@ -477,17 +478,17 @@ class HttpClient {
   // (via options_.network_error_threshold_percent) of http requests in
   // last 3 seconds having status code other than 200.
   bool IsHealthyRecently();
-  string GetHealthStatusMessage() const;
+  std::string GetHealthStatusMessage() const;
   // Prefer to use IsHealthyRecently instead of IsHealthy to judge
   // network is healthy or not.  HTTP status could be temporarily unhealthy,
   // but we prefer to ignore the case.
   bool IsHealthy() const;
 
   // Get email address to login with oauth2.
-  string GetAccount();
+  std::string GetAccount();
   bool GetOAuth2Config(OAuth2Config* config) const;
 
-  string DebugString() const;
+  std::string DebugString() const;
 
   void DumpToJson(Json::Value* json) const;
   void DumpStatsToProto(HttpRPCStats* stats) const;
@@ -580,7 +581,7 @@ class HttpClient {
 
   absl::Duration EstimatedRecvTime(size_t bytes);
 
-  string GetOAuth2Authorization() const;
+  std::string GetOAuth2Authorization() const;
   bool ShouldRefreshOAuth2AccessToken() const;
   void RunAfterOAuth2AccessTokenGetReady(
       WorkerThread::ThreadId thread_id,
@@ -623,7 +624,7 @@ class HttpClient {
 
   mutable Lock mu_;
   ConditionVariable cond_;  // signaled when num_active_ is 0.
-  string health_status_ GUARDED_BY(mu_);
+  std::string health_status_ GUARDED_BY(mu_);
   bool shutting_down_ GUARDED_BY(mu_);
   std::deque<std::pair<absl::Time, int>>
       recent_http_status_code_ GUARDED_BY(mu_);
@@ -644,6 +645,8 @@ class HttpClient {
   int peak_pending_  GUARDED_BY(mu_);
   int num_pending_ GUARDED_BY(mu_);
   int num_http_retry_ GUARDED_BY(mu_);
+  int num_http_throttled_ GUARDED_BY(mu_);
+  int num_http_connect_failed_ GUARDED_BY(mu_);
   int num_http_timeout_ GUARDED_BY(mu_);
   int num_http_error_ GUARDED_BY(mu_);
 
@@ -683,7 +686,7 @@ class HttpRequest : public HttpClient::Request {
   HttpRequest();
   ~HttpRequest() override;
 
-  void SetBody(const string& body);
+  void SetBody(const std::string& body);
   std::unique_ptr<google::protobuf::io::ZeroCopyInputStream>
     NewStream() const override;
 
@@ -692,7 +695,7 @@ class HttpRequest : public HttpClient::Request {
   }
 
  private:
-  string body_;
+  std::string body_;
 
   DISALLOW_ASSIGN(HttpRequest);
 };
@@ -705,7 +708,7 @@ class HttpFileUploadRequest : public HttpClient::Request {
 
   void operator=(const HttpFileUploadRequest&) = delete;
 
-  void SetBodyFile(string filename, size_t size) {
+  void SetBodyFile(std::string filename, size_t size) {
     filename_ = std::move(filename);
     size_ = size;
   }
@@ -715,7 +718,7 @@ class HttpFileUploadRequest : public HttpClient::Request {
   std::unique_ptr<HttpClient::Request> Clone() const override;
 
  private:
-  string filename_;
+  std::string filename_;
   size_t size_ = 0;
 };
 
@@ -755,7 +758,7 @@ class HttpResponse : public HttpClient::Response {
   HttpResponse();
   ~HttpResponse() override;
 
-  const string& parsed_body() const { return parsed_body_; }
+  const std::string& parsed_body() const { return parsed_body_; }
 
   HttpClient::Response::Body* NewBody(
       size_t content_length, bool is_chunked,
@@ -768,7 +771,7 @@ class HttpResponse : public HttpClient::Response {
 
  private:
   std::unique_ptr<Body> response_body_;
-  string parsed_body_;  // dechunked and uncompressed
+  std::string parsed_body_;  // dechunked and uncompressed
 
   DISALLOW_COPY_AND_ASSIGN(HttpResponse);
 };

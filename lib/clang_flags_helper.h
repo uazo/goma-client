@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "absl/types/optional.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -17,14 +16,14 @@ namespace devtools_goma {
 // normalizer.
 class ClangFlagsHelper {
  public:
-  explicit ClangFlagsHelper(const std::vector<string>& args);
+  explicit ClangFlagsHelper(const std::vector<std::string>& args);
 
-  const absl::optional<string>& fdebug_compilation_dir() const {
+  const absl::optional<std::string>& fdebug_compilation_dir() const {
     return fdebug_compilation_dir_;
   }
 
  private:
-  absl::optional<string> fdebug_compilation_dir_;
+  absl::optional<std::string> fdebug_compilation_dir_;
 };
 
 }  // namespace devtools_goma

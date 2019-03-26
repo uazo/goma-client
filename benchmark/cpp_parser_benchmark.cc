@@ -8,18 +8,16 @@
 #include "cxx/include_processor/cpp_parser.h"
 #include "glog/logging.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 void BM_ReadObjectMacro(benchmark::State& state) {
-  string long_expr;
+  std::string long_expr;
 
   for (int i = 0; i < state.range(0); ++i) {
     long_expr += " long_long_expr_" + std::to_string(i);
   }
 
-  string directives;
+  std::string directives;
   for (int i = 0; i < state.range(0); ++i) {
     directives +=
         "#define long_long_macro_" + std::to_string(i) + long_expr + "\n";
@@ -38,13 +36,13 @@ void BM_ReadObjectMacro(benchmark::State& state) {
 BENCHMARK(BM_ReadObjectMacro)->RangeMultiplier(2)->Range(1, 16);
 
 void BM_ReadFunctionMacro(benchmark::State& state) {
-  string long_expr;
+  std::string long_expr;
 
   for (int i = 0; i < state.range(0); ++i) {
     long_expr += " long_long_expr_" + std::to_string(i);
   }
 
-  string directives;
+  std::string directives;
   for (int i = 0; i < state.range(0); ++i) {
     directives += "#define long_long_macro_" + std::to_string(i) + "()" +
                   long_expr + "\n";

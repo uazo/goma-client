@@ -30,17 +30,16 @@ class CppIncludeObserver : public CppParser::IncludeObserver {
       : parser_(parser) {
   }
   ~CppIncludeObserver() override {}
-  bool HandleInclude(
-      const string& path,
-      const string& current_directory ALLOW_UNUSED,
-      const string& current_filepath ALLOW_UNUSED,
-      char quote_char ALLOW_UNUSED,
-      int include_dir_index ALLOW_UNUSED) override {
+  bool HandleInclude(const std::string& path,
+                     const std::string& current_directory ALLOW_UNUSED,
+                     const std::string& current_filepath ALLOW_UNUSED,
+                     char quote_char ALLOW_UNUSED,
+                     int include_dir_index ALLOW_UNUSED) override {
     if (parser_->IsProcessedFile(path, include_dir_index)) {
       ++skipped_[path];
       return true;
     }
-    std::map<string, string>::const_iterator p = includes_.find(path);
+    std::map<std::string, std::string>::const_iterator p = includes_.find(path);
     if (p == includes_.end()) {
       return false;
     }
@@ -49,7 +48,7 @@ class CppIncludeObserver : public CppParser::IncludeObserver {
 
     SharedCppDirectives directives =
         CppDirectiveParser().ParseFromString(p->second, path);
-    string include_guard_ident = IncludeGuardDetector::Detect(*directives);
+    std::string include_guard_ident = IncludeGuardDetector::Detect(*directives);
 
     parser_->AddFileInput(IncludeItem(directives, include_guard_ident),
                           p->first,
@@ -58,27 +57,26 @@ class CppIncludeObserver : public CppParser::IncludeObserver {
     return true;
   }
 
-  bool HasInclude(
-      const string& path,
-      const string& current_directory ALLOW_UNUSED,
-      const string& current_filepath ALLOW_UNUSED,
-      char quote_char ALLOW_UNUSED,
-      int include_dir_index ALLOW_UNUSED) override {
+  bool HasInclude(const std::string& path,
+                  const std::string& current_directory ALLOW_UNUSED,
+                  const std::string& current_filepath ALLOW_UNUSED,
+                  char quote_char ALLOW_UNUSED,
+                  int include_dir_index ALLOW_UNUSED) override {
     return includes_.find(path) != includes_.end();
   }
 
-  void SetInclude(const string& filepath, const string& content) {
+  void SetInclude(const std::string& filepath, const std::string& content) {
     includes_.insert(make_pair(filepath, content));
   }
 
-  int SkipCount(const string& filepath) const {
+  int SkipCount(const std::string& filepath) const {
     const auto& it = skipped_.find(filepath);
     if (it == skipped_.end())
       return 0;
     return it->second;
   }
 
-  int IncludedCount(const string& filepath) const {
+  int IncludedCount(const std::string& filepath) const {
     const auto& it = included_.find(filepath);
     if (it == included_.end())
       return 0;
@@ -87,9 +85,9 @@ class CppIncludeObserver : public CppParser::IncludeObserver {
 
  private:
   CppParser* parser_;
-  std::map<string, string> includes_;
-  std::map<string, int> skipped_;
-  std::map<string, int> included_;
+  std::map<std::string, std::string> includes_;
+  std::map<std::string, int> skipped_;
+  std::map<std::string, int> included_;
   DISALLOW_COPY_AND_ASSIGN(CppIncludeObserver);
 };
 
@@ -97,15 +95,13 @@ class CppErrorObserver : public CppParser::ErrorObserver {
  public:
   CppErrorObserver() {}
   ~CppErrorObserver() override {}
-  void HandleError(const string& error) override {
+  void HandleError(const std::string& error) override {
     errors_.push_back(error);
   }
-  const std::vector<string>& errors() const {
-    return errors_;
-  }
+  const std::vector<std::string>& errors() const { return errors_; }
 
  private:
-  std::vector<string> errors_;
+  std::vector<std::string> errors_;
   DISALLOW_COPY_AND_ASSIGN(CppErrorObserver);
 };
 
@@ -453,7 +449,8 @@ TEST(CppParserTest, DontCrashWithEmptyTokenInCheckMacro) {
   cpp_parser.ProcessDirectives();
   ASSERT_EQ(18U, err_observer.errors().size()) << err_observer.errors();
   for (int i = 0; i < 18; ++i) {
-    string error_prefix(absl::StrCat("CppParser((string):", (i + 1) * 2, ") "));
+    std::string error_prefix(
+        absl::StrCat("CppParser((string):", (i + 1) * 2, ") "));
     EXPECT_TRUE(absl::StartsWith(err_observer.errors()[i], error_prefix));
   }
 }

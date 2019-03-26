@@ -34,16 +34,16 @@ LogCleaner::LogCleaner() {
 LogCleaner::~LogCleaner() {
 }
 
-void LogCleaner::AddLogBasename(const string& basename) {
+void LogCleaner::AddLogBasename(const std::string& basename) {
   LOG(INFO) << "log basename:" << basename;
   basenames_.push_back(basename);
 }
 
 void LogCleaner::CleanOldLogs(absl::Time time) {
-  const std::vector<string>& log_dirs = google::GetLoggingDirectories();
+  const std::vector<std::string>& log_dirs = google::GetLoggingDirectories();
   LOG(INFO) << "clean old logs in " << log_dirs;
 
-  std::set<string> old_logs;
+  std::set<std::string> old_logs;
   for (const auto& dir : log_dirs) {
     FindOldLogsInDir(dir, time, &old_logs);
   }
@@ -59,8 +59,9 @@ void LogCleaner::CleanOldLogs(absl::Time time) {
   }
 }
 
-void LogCleaner::FindOldLogsInDir(const string& log_dir, absl::Time time,
-                                  std::set<string>* old_logs) {
+void LogCleaner::FindOldLogsInDir(const std::string& log_dir,
+                                  absl::Time time,
+                                  std::set<std::string>* old_logs) {
   VLOG(1) << "log_dir:" << log_dir;
   std::vector<DirEntry> entries;
   if (!ListDirectory(log_dir, &entries))
@@ -72,16 +73,16 @@ void LogCleaner::FindOldLogsInDir(const string& log_dir, absl::Time time,
     if (!IsMyLogFile(entry.name))
       continue;
 
-    string fullname = file::JoinPath(log_dir, entry.name);
+    std::string fullname = file::JoinPath(log_dir, entry.name);
 #ifndef _WIN32
     char real_fullname[PATH_MAX];
     if (realpath(fullname.c_str(), real_fullname) == nullptr) {
       VLOG(1) << "realpath:" << fullname;
       continue;
     }
-    string log_filename = real_fullname;
+    std::string log_filename = real_fullname;
 #else
-    string log_filename = fullname;
+    std::string log_filename = fullname;
 #endif
 
     FileStat file_stat(log_filename);
@@ -96,7 +97,7 @@ void LogCleaner::FindOldLogsInDir(const string& log_dir, absl::Time time,
   }
 }
 
-bool LogCleaner::IsMyLogFile(const string& name) const {
+bool LogCleaner::IsMyLogFile(const std::string& name) const {
   static const char *kLogLevel[] = {
     "INFO", "WARNING", "ERROR", "FATAL"
   };

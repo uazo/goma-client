@@ -11,8 +11,6 @@
 #include "compiler_flags.h"
 #include "compiler_info.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // CompilerInfoState contains CompilerInfo (created from local system) and
@@ -37,10 +35,10 @@ class CompilerInfoState {
   // become true while checking input files or calling rpc), but it might
   // be acceptable.
   bool disabled() const;
-  string GetDisabledReason() const;
-  void SetDisabled(bool disabled, const string& disabled_reason);
+  std::string GetDisabledReason() const;
+  void SetDisabled(bool disabled, const std::string& disabled_reason);
 
-  void Use(const string& local_compiler_path, const CompilerFlags& flags);
+  void Use(const std::string& local_compiler_path, const CompilerFlags& flags);
   int used() const;
 
   void UpdateLastUsedAt();
@@ -64,7 +62,7 @@ class CompilerInfoState {
   // When server side does not have the information about this compiler,
   // it's disabled.
   bool disabled_ GUARDED_BY(mu_);
-  string disabled_reason_ GUARDED_BY(mu_);
+  std::string disabled_reason_ GUARDED_BY(mu_);
 
   int used_;
 
@@ -112,7 +110,7 @@ class ScopedCompilerInfoState {
   void swap(ScopedCompilerInfoState* other);
 
   bool disabled() const;
-  string GetDisabledReason() const;
+  std::string GetDisabledReason() const;
 
  private:
   CompilerInfoState* state_;

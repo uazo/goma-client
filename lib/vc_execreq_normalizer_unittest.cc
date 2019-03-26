@@ -274,8 +274,8 @@ void NormalizeExecReqForCacheKey(
     int id,
     bool normalize_include_path,
     bool is_linking,
-    const std::vector<string>& normalize_weak_relative_for_arg,
-    const std::map<string, string>& debug_prefix_map,
+    const std::vector<std::string>& normalize_weak_relative_for_arg,
+    const std::map<std::string, std::string>& debug_prefix_map,
     ExecReq* req) {
   CompilerFlagTypeSpecific::FromArg(req->command_spec().name())
       .NewExecReqNormalizer()
@@ -285,11 +285,11 @@ void NormalizeExecReqForCacheKey(
 }
 
 bool ValidateOutputFilesAndDirs(const ExecReq& req) {
-  std::vector<string> args(req.arg().begin(), req.arg().end());
-  std::vector<string> expected_output_files(req.expected_output_files().begin(),
-                                            req.expected_output_files().end());
-  std::vector<string> expected_output_dirs(req.expected_output_dirs().begin(),
-                                           req.expected_output_dirs().end());
+  std::vector<std::string> args(req.arg().begin(), req.arg().end());
+  std::vector<std::string> expected_output_files(
+      req.expected_output_files().begin(), req.expected_output_files().end());
+  std::vector<std::string> expected_output_dirs(
+      req.expected_output_dirs().begin(), req.expected_output_dirs().end());
   VCFlags flags(args, req.cwd());
 
   return expected_output_files == flags.output_files() &&
@@ -300,16 +300,16 @@ bool ValidateOutputFilesAndDirs(const ExecReq& req) {
 
 TEST(VCExecReqNormalizerTest, NormalizeExecReqForCacheKeyForClExe) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalizeWin, &req));
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
-  const string expected_include_path(
+  const std::string expected_include_path(
       "c:\\Program Files (x86)\\Microsoft Visual Studio 9.0\\VC\\INCLUDE");
   EXPECT_EQ(expected_include_path, req.command_spec().system_include_path(0));
   EXPECT_EQ(1, req.command_spec().cxx_system_include_path_size());
@@ -330,17 +330,17 @@ TEST(VCExecReqNormalizerTest, NormalizeExecReqForCacheKeyForClExe) {
 // cl.exe with showIncludes should keep cwd.
 TEST(VCExecReqNormalizerTest, NormalizeExecReqForCacheKeyForClExeRelative) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(
       kExecReqToNormalizeWinRelativeInputNoDebug, &req));
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
-  const string expected_include_path(
+  const std::string expected_include_path(
       "c:\\Program Files (x86)\\Microsoft Visual Studio 9.0\\VC\\INCLUDE");
   EXPECT_EQ(expected_include_path, req.command_spec().system_include_path(0));
   EXPECT_EQ(1, req.command_spec().cxx_system_include_path_size());
@@ -359,7 +359,7 @@ TEST(VCExecReqNormalizerTest, NormalizeExecReqForCacheKeyForClExeRelative) {
 // cl.exe with different cwd and /showIncludes option
 TEST(VCExecReqNormalizerTest, NormalizeExecReqForCacheKeyForClExeCWD) {
   devtools_goma::ExecReq alice_req, bob_req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(
@@ -372,9 +372,11 @@ TEST(VCExecReqNormalizerTest, NormalizeExecReqForCacheKeyForClExeCWD) {
   ASSERT_TRUE(ValidateOutputFilesAndDirs(bob_req));
 
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, true, false, kTestOptions, std::map<string, string>(), &alice_req);
+      0, true, false, kTestOptions, std::map<std::string, std::string>(),
+      &alice_req);
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, true, false, kTestOptions, std::map<string, string>(), &bob_req);
+      0, true, false, kTestOptions, std::map<std::string, std::string>(),
+      &bob_req);
 
   EXPECT_FALSE(MessageDifferencer::Equals(alice_req, bob_req));
 
@@ -390,27 +392,29 @@ TEST(VCExecReqNormalizerTest, NormalizeExecReqForCacheKeyForClExeCWD) {
   bob_req.clear_cwd();
 
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, true, false, kTestOptions, std::map<string, string>(), &alice_req);
+      0, true, false, kTestOptions, std::map<std::string, std::string>(),
+      &alice_req);
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, true, false, kTestOptions, std::map<string, string>(), &bob_req);
+      0, true, false, kTestOptions, std::map<std::string, std::string>(),
+      &bob_req);
 
   MessageDifferencer differencer;
-  string difference_reason;
+  std::string difference_reason;
   differencer.ReportDifferencesToString(&difference_reason);
   EXPECT_TRUE(differencer.Compare(alice_req, bob_req)) << difference_reason;
 }
 
 TEST(VCExecReqNormalizerTest, NormalizeExecReqForCacheKeyForClang) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalizeWinClang, &req));
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
 
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   static const char kEexpectedIncludePath[] =
       "c:\\Program Files (x86)\\Microsoft Visual Studio 9.0\\VC\\INCLUDE";
@@ -487,7 +491,7 @@ Input {
 expected_output_files: "C:\\src\\goma\\client\\build\\Debug\\vc\\stdafx.obj"
 )###";
 
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   devtools_goma::ExecReq req, req_expected;
@@ -498,11 +502,11 @@ expected_output_files: "C:\\src\\goma\\client\\build\\Debug\\vc\\stdafx.obj"
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req_expected));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req_expected));
 
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
 
   MessageDifferencer differencer;
-  string difference_reason;
+  std::string difference_reason;
   differencer.ReportDifferencesToString(&difference_reason);
   EXPECT_TRUE(differencer.Compare(req_expected, req)) << difference_reason;
 
@@ -533,7 +537,7 @@ TEST(VCExecReqNormalizerTest, FlagAbsPath) {
   ASSERT_EQ(req.input_size(), 2);
 
   MessageDifferencer differencer;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   {
@@ -542,7 +546,8 @@ TEST(VCExecReqNormalizerTest, FlagAbsPath) {
     // Relativize input path and omit cwd.
     ASSERT_TRUE(devtools_goma::VerifyExecReq(copy_req));
     devtools_goma::NormalizeExecReqForCacheKey(
-        0, true, false, kTestOptions, std::map<string, string>(), &copy_req);
+        0, true, false, kTestOptions, std::map<std::string, std::string>(),
+        &copy_req);
     EXPECT_EQ(copy_req.cwd(), "");
     EXPECT_EQ(copy_req.input(0).filename(), "a.cc");
     EXPECT_EQ(copy_req.input(1).filename(), "stdafx.cpp");
@@ -556,7 +561,8 @@ TEST(VCExecReqNormalizerTest, FlagAbsPath) {
 
     ASSERT_TRUE(devtools_goma::VerifyExecReq(copy_req));
     devtools_goma::NormalizeExecReqForCacheKey(
-        0, true, false, kTestOptions, std::map<string, string>(), &copy_req);
+        0, true, false, kTestOptions, std::map<std::string, std::string>(),
+        &copy_req);
     EXPECT_EQ(copy_req.cwd(), "");
     EXPECT_EQ(copy_req.input(0).filename(), "C:\\src\\alice\\chromium\\a.cc");
     EXPECT_EQ(copy_req.input(1).filename(), "stdafx.cpp");
@@ -570,7 +576,8 @@ TEST(VCExecReqNormalizerTest, FlagAbsPath) {
 
     ASSERT_TRUE(devtools_goma::VerifyExecReq(copy_req));
     devtools_goma::NormalizeExecReqForCacheKey(
-        0, true, false, kTestOptions, std::map<string, string>(), &copy_req);
+        0, true, false, kTestOptions, std::map<std::string, std::string>(),
+        &copy_req);
     EXPECT_EQ(copy_req.cwd(), "C:\\src\\alice\\chromium");
     EXPECT_EQ(copy_req.input(0).filename(), "a.cc");
     EXPECT_EQ(copy_req.input(1).filename(), "stdafx.cpp");
@@ -584,7 +591,8 @@ TEST(VCExecReqNormalizerTest, FlagAbsPath) {
 
     ASSERT_TRUE(devtools_goma::VerifyExecReq(copy_req));
     devtools_goma::NormalizeExecReqForCacheKey(
-        0, true, false, kTestOptions, std::map<string, string>(), &copy_req);
+        0, true, false, kTestOptions, std::map<std::string, std::string>(),
+        &copy_req);
     EXPECT_EQ(copy_req.cwd(), "C:\\src\\alice\\chromium");
     EXPECT_EQ(copy_req.input(0).filename(), "a.cc");
     EXPECT_EQ(copy_req.input(1).filename(), "stdafx.cpp");
@@ -600,7 +608,8 @@ TEST(VCExecReqNormalizerTest, FlagAbsPath) {
 
     ASSERT_TRUE(devtools_goma::VerifyExecReq(copy_req));
     devtools_goma::NormalizeExecReqForCacheKey(
-        0, true, false, kTestOptions, std::map<string, string>(), &copy_req);
+        0, true, false, kTestOptions, std::map<std::string, std::string>(),
+        &copy_req);
     EXPECT_EQ(copy_req.cwd(), ".");
     EXPECT_EQ(copy_req.input(0).filename(), "a.cc");
     EXPECT_EQ(copy_req.input(1).filename(), "stdafx.cpp");
@@ -619,7 +628,8 @@ TEST(VCExecReqNormalizerTest, FlagAbsPath) {
 
     ASSERT_TRUE(devtools_goma::VerifyExecReq(copy_req));
     devtools_goma::NormalizeExecReqForCacheKey(
-        0, true, false, kTestOptions, std::map<string, string>(), &copy_req);
+        0, true, false, kTestOptions, std::map<std::string, std::string>(),
+        &copy_req);
     EXPECT_EQ(copy_req.cwd(), ".");
     EXPECT_EQ(copy_req.input(0).filename(), "C:\\src\\alice\\chromium\\a.cc");
     EXPECT_EQ(copy_req.input(1).filename(), "stdafx.cpp");
@@ -638,7 +648,8 @@ TEST(VCExecReqNormalizerTest, FlagAbsPath) {
 
     ASSERT_TRUE(devtools_goma::VerifyExecReq(copy_req));
     devtools_goma::NormalizeExecReqForCacheKey(
-        0, true, false, kTestOptions, std::map<string, string>(), &copy_req);
+        0, true, false, kTestOptions, std::map<std::string, std::string>(),
+        &copy_req);
     EXPECT_EQ(copy_req.cwd(), ".");
     EXPECT_EQ(copy_req.input(0).filename(), "C:\\src\\alice\\chromium\\a.cc");
     EXPECT_EQ(copy_req.input(1).filename(), "stdafx.cpp");
@@ -657,7 +668,8 @@ TEST(VCExecReqNormalizerTest, FlagAbsPath) {
 
     ASSERT_TRUE(devtools_goma::VerifyExecReq(copy_req));
     devtools_goma::NormalizeExecReqForCacheKey(
-        0, true, false, kTestOptions, std::map<string, string>(), &copy_req);
+        0, true, false, kTestOptions, std::map<std::string, std::string>(),
+        &copy_req);
 
     // TODO: Replace cwd if it is better to do.
     EXPECT_EQ(copy_req.cwd(), "C:\\src\\alice\\chromium");
@@ -678,7 +690,8 @@ TEST(VCExecReqNormalizerTest, FlagAbsPath) {
 
     ASSERT_TRUE(devtools_goma::VerifyExecReq(copy_req));
     devtools_goma::NormalizeExecReqForCacheKey(
-        0, true, false, kTestOptions, std::map<string, string>(), &copy_req);
+        0, true, false, kTestOptions, std::map<std::string, std::string>(),
+        &copy_req);
 
     // TODO: Replace cwd if it is better to do.
     EXPECT_EQ(copy_req.cwd(), "C:\\src\\alice\\chromium");

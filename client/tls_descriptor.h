@@ -24,7 +24,7 @@ class TLSDescriptor : public Descriptor {
  public:
   struct Options {
     Options() : use_proxy(false) {}
-    string dest_host_name;
+    std::string dest_host_name;
     int dest_port;
     bool use_proxy;
   };
@@ -51,7 +51,7 @@ class TLSDescriptor : public Descriptor {
   bool NeedRetry() const override;
   bool CanReuse() const override;
   // TODO: implement the same feature with shutdown(2) for SSL.
-  string GetLastErrorMessage() const override;
+  std::string GetLastErrorMessage() const override;
   void StopRead() override;
   void StopWrite() override;
 
@@ -73,7 +73,7 @@ class TLSDescriptor : public Descriptor {
   void RestartTransportLayer();
 
   // HTTP request to ask proxy to connect the server.
-  string CreateProxyRequestMessage();
+  std::string CreateProxyRequestMessage();
 
   SocketDescriptor* socket_descriptor_;
   TLSEngine* engine_;
@@ -83,7 +83,7 @@ class TLSDescriptor : public Descriptor {
   std::unique_ptr<PermanentClosure> readable_closure_;
   std::unique_ptr<PermanentClosure> writable_closure_;
   char network_read_buffer_[kNetworkBufSize];
-  string network_write_buffer_;
+  std::string network_write_buffer_;
   size_t network_write_offset_;
   // Shows application read/write failed because TLS engine needs more work.
   bool ssl_pending_;
@@ -99,7 +99,7 @@ class TLSDescriptor : public Descriptor {
   enum ConnectStatus { NEED_WRITE, NEED_READ, READY} connect_status_;
   // Shows underlying SocketDescriptor closed.
   bool is_closed_;
-  string proxy_response_;
+  std::string proxy_response_;
   // Only used if transport layer socket is closed but we need to keep
   // http.cc read TLSDescriptor.  (b/22515030)
   // In such situation we need to let HttpClient::Task::DoRead to read

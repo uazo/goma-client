@@ -9,7 +9,8 @@
 
 namespace devtools_goma {
 
-bool SHA256HashCache::GetHashFromCacheOrFile(const string& path, string* hash) {
+bool SHA256HashCache::GetHashFromCacheOrFile(const std::string& path,
+                                             std::string* hash) {
   total_.Add(1);
 
   FileStat filestat(path);

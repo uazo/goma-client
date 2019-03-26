@@ -89,7 +89,7 @@ void RpcController::SendReply(const ExecResp& resp) {
   http_response_message << "HTTP/1.1 200 OK\r\n"
                         << "Content-Type: binary/x-protocol-buffer\r\n"
                         << "Content-Length: " << gomacc_resp_size << "\r\n\r\n";
-  string response_string = http_response_message.str();
+  std::string response_string = http_response_message.str();
   int header_size = response_string.size();
   response_string.resize(header_size + gomacc_resp_size);
   resp.SerializeToArray(&response_string[header_size], gomacc_resp_size);
@@ -191,7 +191,7 @@ void MultiRpcController::SendReply() {
   http_response_message << "HTTP/1.1 200 OK\r\n"
                         << "Content-Type: binary/x-protocol-buffer\r\n"
                         << "Content-Length: " << gomacc_resp_size << "\r\n\r\n";
-  string response_string = http_response_message.str();
+  std::string response_string = http_response_message.str();
   int header_size = response_string.size();
   response_string.resize(header_size + gomacc_resp_size);
   resp_->SerializeToArray(&response_string[header_size], gomacc_resp_size);

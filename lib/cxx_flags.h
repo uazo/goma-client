@@ -11,7 +11,6 @@
 #include "absl/strings/string_view.h"
 #include "lib/compiler_flags.h"
 #include "lib/flag_parser.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -21,24 +20,24 @@ class CxxFlags : public CompilerFlags {
   virtual bool is_cplusplus() const = 0;
 
  protected:
-  CxxFlags(const std::vector<string>& args, const string& cwd)
+  CxxFlags(const std::vector<std::string>& args, const std::string& cwd)
       : CompilerFlags(args, cwd) {}
 
   template <bool is_defined>
   class MacroStore : public FlagParser::Callback {
    public:
-    explicit MacroStore(std::vector<std::pair<string, bool>>* macros)
+    explicit MacroStore(std::vector<std::pair<std::string, bool>>* macros)
         : macros_(macros) {}
 
     // Returns parsed flag value of value for flag.
-    string ParseFlagValue(const FlagParser::Flag& /* flag */,
-                          const string& value) override {
+    std::string ParseFlagValue(const FlagParser::Flag& /* flag */,
+                               const std::string& value) override {
       macros_->emplace_back(value, is_defined);
       return value;
     }
 
    private:
-    std::vector<std::pair<string, bool>>* macros_;
+    std::vector<std::pair<std::string, bool>>* macros_;
   };
 };
 

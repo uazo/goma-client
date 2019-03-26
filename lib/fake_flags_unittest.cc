@@ -6,21 +6,23 @@
 
 #include "glog/logging.h"
 #include "gtest/gtest.h"
-using std::string;
 
 namespace devtools_goma {
 
 TEST(FakeFlagsTest, Basic) {
-  const std::vector<string> args{
-      "fake", "foo.fake", "bar.fake",
+  const std::vector<std::string> args{
+      "fake",
+      "foo.fake",
+      "bar.fake",
   };
-  const string cwd = ".";
+  const std::string cwd = ".";
 
   FakeFlags flags(args, cwd);
   EXPECT_TRUE(flags.is_successful());
-  EXPECT_EQ((std::vector<string>{"foo.fake", "bar.fake"}),
+  EXPECT_EQ((std::vector<std::string>{"foo.fake", "bar.fake"}),
             flags.input_filenames());
-  EXPECT_EQ((std::vector<string>{"foo.out", "bar.out"}), flags.output_files());
+  EXPECT_EQ((std::vector<std::string>{"foo.out", "bar.out"}),
+            flags.output_files());
 }
 
 TEST(FakeFlagsTest, IsFakeCommand) {

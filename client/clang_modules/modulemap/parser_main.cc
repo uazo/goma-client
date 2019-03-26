@@ -18,14 +18,13 @@ using devtools_goma::modulemap::Lexer;
 using devtools_goma::modulemap::ModuleMap;
 using devtools_goma::modulemap::Parser;
 using devtools_goma::modulemap::Token;
-using std::string;
 
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     return 1;
   }
 
-  string path = argv[1];
+  std::string path = argv[1];
 
   std::unique_ptr<Content> content(Content::CreateFromFile(path));
   if (!content) {

@@ -18,13 +18,11 @@ MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/goma_stats.pb.h"
 MSVC_POP_WARNING()
 
-using std::string;
-
 namespace devtools_goma {
 
 const int64_t kGraphWidth = 50;
 
-void Histogram::SetName(const string& name) {
+void Histogram::SetName(const std::string& name) {
   name_ = name;
 }
 
@@ -55,15 +53,15 @@ void Histogram::Add(int64_t value) {
   sum_of_squares_ += ((double)value * value);
 }
 
-string Histogram::ManySharps(int64_t n) const {
+std::string Histogram::ManySharps(int64_t n) const {
   CHECK_GE(n, 0) << name_;
   CHECK_LE(n, kGraphWidth) << name_;
 
-  string s(n, '#');
+  std::string s(n, '#');
   return s;
 }
 
-string Histogram::DebugString() const {
+std::string Histogram::DebugString() const {
   CHECK_GT(count_, 0)
       << name_
       << ": Histogram cannot be output unless there is at least one value";
@@ -93,8 +91,8 @@ string Histogram::DebugString() const {
     min_key_ss << BucketValue(i);
     max_key_ss << BucketValue(i + 1);
 
-    string min_key = min_key_ss.str();
-    string max_key = max_key_ss.str();
+    std::string min_key = min_key_ss.str();
+    std::string max_key = max_key_ss.str();
 
     if (buckets_.find(i) != buckets_.end()) {
       int64_t value = buckets_.find(i)->second;

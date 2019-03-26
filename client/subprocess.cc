@@ -36,54 +36,52 @@
 #include "spawner_win.h"
 #endif
 
-using std::string;
+namespace devtools_goma {
 
 namespace {
 
 #ifdef _WIN32
-string GetPathExt(const std::vector<string>& envs) {
-  return devtools_goma::GetEnvFromEnvIter(envs.begin(), envs.end(), "PATHEXT");
+std::string GetPathExt(const std::vector<std::string>& envs) {
+  return GetEnvFromEnvIter(envs.begin(), envs.end(), "PATHEXT");
 }
 #else
-string GetPathExt(const std::vector<string>& envs ALLOW_UNUSED) {
+std::string GetPathExt(const std::vector<std::string>& envs ALLOW_UNUSED) {
   return "";
 }
 #endif
 
-bool GetRealPrognameAndEnvs(const devtools_goma::FileStat* gomacc_filestat,
-                            const string& prog,
-                            const std::vector<string>& args,
-                            std::vector<string>* envs,
-                            string* real_progname) {
+bool GetRealPrognameAndEnvs(const FileStat* gomacc_filestat,
+                            const std::string& prog,
+                            const std::vector<std::string>& args,
+                            std::vector<std::string>* envs,
+                            std::string* real_progname) {
   static const char kPath[] = "PATH";
   *real_progname = prog;
   if (gomacc_filestat != nullptr) {
     // We should set ReadCommand to avoid gomacc in GetRealExecutablePath.
 #ifndef _WIN32
-    InstallReadCommandOutputFunc(devtools_goma::ReadCommandOutputByPopen);
+    InstallReadCommandOutputFunc(ReadCommandOutputByPopen);
 #else
-    InstallReadCommandOutputFunc(devtools_goma::ReadCommandOutputByRedirector);
+    InstallReadCommandOutputFunc(ReadCommandOutputByRedirector);
 #endif
   }
 
-  string no_goma_env_path;
+  std::string no_goma_env_path;
   if (!GetRealExecutablePath(
           gomacc_filestat, prog, ".",
-          devtools_goma::GetEnvFromEnvIter(envs->begin(), envs->end(), kPath),
+          GetEnvFromEnvIter(envs->begin(), envs->end(), kPath),
           GetPathExt(*envs), real_progname, &no_goma_env_path, nullptr)) {
     LOG(ERROR) << "failed to get executable path."
-               << " prog=" << prog
-               << " path=" << devtools_goma::GetEnvFromEnvIter(
-                   envs->begin(), envs->end(), kPath)
+               << " prog=" << prog << " path="
+               << GetEnvFromEnvIter(envs->begin(), envs->end(), kPath)
                << " pathext=" << GetPathExt(*envs);
     return false;
   }
-  if (!devtools_goma::ReplaceEnvInEnvIter(envs->begin(), envs->end(),
-                                          kPath, no_goma_env_path)) {
+  if (!ReplaceEnvInEnvIter(envs->begin(), envs->end(), kPath,
+                           no_goma_env_path)) {
     LOG(ERROR) << "failed to replace path env."
-               << " kPath=" << kPath
-               << " path=" << devtools_goma::GetEnvFromEnvIter(
-                   envs->begin(), envs->end(), kPath)
+               << " kPath=" << kPath << " path="
+               << GetEnvFromEnvIter(envs->begin(), envs->end(), kPath)
                << " no_goma_env_path=" << no_goma_env_path;
     return false;
   }
@@ -93,20 +91,19 @@ bool GetRealPrognameAndEnvs(const devtools_goma::FileStat* gomacc_filestat,
 
 } // namespace
 
-namespace devtools_goma {
-
 #ifdef _WIN32
 
-int SpawnAndWait(const string& prog, const std::vector<string>& args,
-                 const std::vector<string>& envs) {
+int SpawnAndWait(const std::string& prog,
+                 const std::vector<std::string>& args,
+                 const std::vector<std::string>& envs) {
   return SpawnAndWaitNonGomacc(nullptr, prog, args, envs);
 }
 
 int SpawnAndWaitNonGomacc(const FileStat* gomacc_filestat,
-                          const string& prog,
-                          const std::vector<string>& args,
-                          std::vector<string> envs) {
-  string real_progname;
+                          const std::string& prog,
+                          const std::vector<std::string>& args,
+                          std::vector<std::string> envs) {
+  std::string real_progname;
   GetRealPrognameAndEnvs(gomacc_filestat, prog, args, &envs, &real_progname);
 
   std::unique_ptr<SpawnerWin> spawner(new SpawnerWin);
@@ -122,16 +119,17 @@ int SpawnAndWaitNonGomacc(const FileStat* gomacc_filestat,
 
 #else
 
-int Execvpe(const string& prog, const std::vector<string>& args,
-            const std::vector<string>& envs) {
+int Execvpe(const std::string& prog,
+            const std::vector<std::string>& args,
+            const std::vector<std::string>& envs) {
   return ExecvpeNonGomacc(nullptr, prog, args, envs);
 }
 
 int ExecvpeNonGomacc(const FileStat* gomacc_filestat,
-                     const string& prog,
-                     const std::vector<string>& args,
-                     std::vector<string> envs) {
-  string real_progname;
+                     const std::string& prog,
+                     const std::vector<std::string>& args,
+                     std::vector<std::string> envs) {
+  std::string real_progname;
   GetRealPrognameAndEnvs(gomacc_filestat, prog, args, &envs, &real_progname);
 
   std::vector<const char*> argvp;
@@ -154,11 +152,13 @@ int ExecvpeNonGomacc(const FileStat* gomacc_filestat,
 #endif
 
 #ifndef _WIN32
-string ReadCommandOutputByPopen(
-    const string& prog, const std::vector<string>& argv,
-    const std::vector<string>& envs,
-    const string& cwd, CommandOutputOption option, int32_t* status) {
-  string commandline;
+std::string ReadCommandOutputByPopen(const std::string& prog,
+                                     const std::vector<std::string>& argv,
+                                     const std::vector<std::string>& envs,
+                                     const std::string& cwd,
+                                     CommandOutputOption option,
+                                     int32_t* status) {
+  std::string commandline;
   if (!cwd.empty()) {
     commandline = "sh -c 'cd " + cwd + " && ";
   }
@@ -166,8 +166,8 @@ string ReadCommandOutputByPopen(
     commandline += env + " ";
   for (const auto& arg : argv) {
     // Escaping only <, >, ( and ) is OK for now.
-    if (arg.find_first_of(" <>();&'#") == string::npos) {
-      CHECK(arg.find_first_of("\\\"") == string::npos) << arg;
+    if (arg.find_first_of(" <>();&'#") == std::string::npos) {
+      CHECK(arg.find_first_of("\\\"") == std::string::npos) << arg;
       commandline += arg + " ";
     } else {
       commandline += "\"" + arg + "\" ";
@@ -213,7 +213,8 @@ string ReadCommandOutputByPopen(
   return strbuf.str();
 }
 
-void Daemonize(const string& stderr_filename, int pid_record_fd,
+void Daemonize(const std::string& stderr_filename,
+               int pid_record_fd,
                const std::set<int>& preserve_fds) {
   PCHECK(setsid() >= 0);
   PCHECK(chdir("/") == 0);
@@ -258,15 +259,18 @@ void Daemonize(const string& stderr_filename, int pid_record_fd,
 
 #else
 
-string ReadCommandOutputByRedirector(const string& prog,
-    const std::vector<string>& argv, const std::vector<string>& env,
-    const string& cwd, CommandOutputOption option, int32_t* status) {
+std::string ReadCommandOutputByRedirector(const std::string& prog,
+                                          const std::vector<std::string>& argv,
+                                          const std::vector<std::string>& env,
+                                          const std::string& cwd,
+                                          CommandOutputOption option,
+                                          int32_t* status) {
   SpawnerWin spawner;
   Spawner::ConsoleOutputOption output_option =
       Spawner::MERGE_STDOUT_STDERR;
   if (option == STDOUT_ONLY)
     output_option = Spawner::STDOUT_ONLY;
-  string output;
+  std::string output;
   spawner.SetConsoleOutputBuffer(&output, output_option);
   spawner.Run(prog, argv, env, cwd);
   while (spawner.IsChildRunning())

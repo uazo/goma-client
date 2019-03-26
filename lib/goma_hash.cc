@@ -14,8 +14,6 @@
 #error "We expect BoringSSL in the third_party directory is used."
 #endif
 
-using std::string;
-
 namespace {
 
 bool FromHexChar(char c, unsigned char* ret) {
@@ -39,7 +37,7 @@ bool FromHexChar(char c, unsigned char* ret) {
 
 namespace devtools_goma {
 
-bool SHA256HashValue::ConvertFromHexString(const string& hex_string,
+bool SHA256HashValue::ConvertFromHexString(const std::string& hex_string,
                                            SHA256HashValue* hash_value) {
   if (hex_string.size() != 64U) {
     return false;
@@ -59,8 +57,8 @@ bool SHA256HashValue::ConvertFromHexString(const string& hex_string,
   return true;
 }
 
-string SHA256HashValue::ToHexString() const {
-  string md_str;
+std::string SHA256HashValue::ToHexString() const {
+  std::string md_str;
   for (size_t i = 0; i < 32; ++i) {
     char hex[3];
     hex[0] = "0123456789abcdef"[(data_[i] >> 4) & 0x0f];
@@ -80,14 +78,14 @@ void ComputeDataHashKeyForSHA256HashValue(absl::string_view data,
   SHA256_Final(hash_value->mutable_data(), &sha256);
 }
 
-void ComputeDataHashKey(absl::string_view data, string* md_str) {
+void ComputeDataHashKey(absl::string_view data, std::string* md_str) {
   SHA256HashValue value;
   ComputeDataHashKeyForSHA256HashValue(data, &value);
   *md_str = value.ToHexString();
 }
 
-bool GomaSha256FromFile(const string& filename, string* md_str) {
-  string s;
+bool GomaSha256FromFile(const std::string& filename, std::string* md_str) {
+  std::string s;
   if (!ReadFileToString(filename, &s)) return false;
   ComputeDataHashKey(s, md_str);
   return true;

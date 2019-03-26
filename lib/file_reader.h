@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "lib/scoped_fd.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -31,10 +30,11 @@ class FileReaderFactory {
  public:
   // A type to create an FileReader instance.
   // It returns NULL if it cannot handle the given |filename|.
-  typedef std::unique_ptr<FileReader> (*CreateFunction)(const string& filename);
+  typedef std::unique_ptr<FileReader> (*CreateFunction)(
+      const std::string& filename);
 
   // Returns a new instance of FileReader or its subclass.
-  std::unique_ptr<FileReader> NewFileReader(const string& filename);
+  std::unique_ptr<FileReader> NewFileReader(const std::string& filename);
 
   // Registers the creator functions of FileReader or its subclass.
   static void Register(CreateFunction create);
@@ -91,16 +91,15 @@ class FileReader {
   //
   // Note: if size of |*buf| is larger than |*len|, copy would happen,
   //       performance may suffer.
-  static size_t FlushDataInBuffer(string* buf, void** ptr, size_t* len);
+  static size_t FlushDataInBuffer(std::string* buf, void** ptr, size_t* len);
 
  protected:
-  explicit FileReader(const string& filename)
-      : fd_(ScopedFd::OpenForRead(filename)) {
-  }
+  explicit FileReader(const std::string& filename)
+      : fd_(ScopedFd::OpenForRead(filename)) {}
 
  private:
   // Returns an instance of FileReader.
-  static std::unique_ptr<FileReader> Create(const string& filename) {
+  static std::unique_ptr<FileReader> Create(const std::string& filename) {
     return std::unique_ptr<FileReader>(new FileReader(filename));
   }
 

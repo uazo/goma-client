@@ -184,9 +184,9 @@ class WorkerThread : public PlatformThread::Delegate {
   size_t pendings() const;
 
   bool IsIdle() const;
-  string DebugString() const;
+  std::string DebugString() const;
 
-  static string Priority_Name(Priority priority);
+  static std::string Priority_Name(Priority priority);
 
  private:
   struct ClosureData {

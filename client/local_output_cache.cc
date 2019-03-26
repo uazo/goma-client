@@ -67,8 +67,6 @@ MSVC_POP_WARNING()
 # include "posix_helper_win.h"
 #endif
 
-using std::string;
-
 namespace {
 
 // Timeout value in seconds for LoadCacheEntries().
@@ -88,7 +86,7 @@ namespace devtools_goma {
 
 LocalOutputCache* LocalOutputCache::instance_;
 
-LocalOutputCache::LocalOutputCache(string cache_dir,
+LocalOutputCache::LocalOutputCache(std::string cache_dir,
                                    std::int64_t max_cache_amount_byte,
                                    std::int64_t threshold_cache_amount_byte,
                                    size_t max_cache_items,
@@ -101,14 +99,13 @@ LocalOutputCache::LocalOutputCache(string cache_dir,
       ready_(false),
       entries_total_cache_amount_(0),
       gc_should_done_(false),
-      gc_working_(false) {
-}
+      gc_working_(false) {}
 
 LocalOutputCache::~LocalOutputCache() {
 }
 
 // static
-void LocalOutputCache::Init(string cache_dir,
+void LocalOutputCache::Init(std::string cache_dir,
                             WorkerThreadManager* wm,
                             int max_cache_amount_in_mb,
                             int threshold_cache_amount_in_mb,
@@ -206,7 +203,7 @@ void LocalOutputCache::LoadCacheEntries() {
       continue;
     }
 
-    string cache_dir_with_key_prefix =
+    std::string cache_dir_with_key_prefix =
         file::JoinPath(cache_dir_, key_prefix_entry.name);
     std::vector<DirEntry> key_entries;
 
@@ -228,7 +225,7 @@ void LocalOutputCache::LoadCacheEntries() {
         continue;
       }
 
-      string cache_file_path =
+      std::string cache_file_path =
           file::JoinPath(cache_dir_with_key_prefix, key_entry.name);
 
       if (key_entry.is_dir) {
@@ -458,9 +455,9 @@ void LocalOutputCache::RunGarbageCollection(GarbageCollectionStat* stat) {
     }
 
     const CacheEntry& entry = entries_.front().second;
-    string key_string = entries_.front().first.ToHexString();
+    std::string key_string = entries_.front().first.ToHexString();
 
-    string cache_file_path = CacheFilePath(key_string);
+    std::string cache_file_path = CacheFilePath(key_string);
     if (!DeleteFile(cache_file_path.c_str())) {
       LOG(ERROR) << "failed to remove cache: path=" << cache_file_path;
       break;
@@ -488,10 +485,10 @@ void LocalOutputCache::SetReady(bool ready) {
   ready_ = ready;
 }
 
-bool LocalOutputCache::SaveOutput(const string& key,
+bool LocalOutputCache::SaveOutput(const std::string& key,
                                   const ExecReq* req,
                                   const ExecResp* resp,
-                                  const string& trace_id) {
+                                  const std::string& trace_id) {
   WaitUntilReady();
   SimpleTimer timer(SimpleTimer::START);
 
@@ -506,7 +503,7 @@ bool LocalOutputCache::SaveOutput(const string& key,
   }
 
   // --- Ensure cache directory exists.
-  string cache_dir_with_key_prefix = CacheDirWithKeyPrefix(key);
+  std::string cache_dir_with_key_prefix = CacheDirWithKeyPrefix(key);
   if (!EnsureDirectory(cache_dir_with_key_prefix, 0755)) {
     LOG(ERROR) << trace_id << " failed to create " << cache_dir_with_key_prefix;
     return false;
@@ -516,8 +513,8 @@ bool LocalOutputCache::SaveOutput(const string& key,
   LocalOutputCacheEntry cache_entry;
   const ExecResult& result = resp->result();
   for (const auto& output : result.output()) {
-    string src_path = file::JoinPathRespectAbsolute(
-        req->cwd(), output.filename());
+    std::string src_path =
+        file::JoinPathRespectAbsolute(req->cwd(), output.filename());
 
     std::string output_file_content;
     if (!ReadFileToString(src_path, &output_file_content)) {
@@ -538,10 +535,10 @@ bool LocalOutputCache::SaveOutput(const string& key,
   // We should be able to expect this is atomic.
   std::int64_t cache_amount_in_byte = 0;
   {
-    string cache_file_path = CacheFilePath(key);
-    string cache_file_tmp_path = cache_file_path + ".tmp";
+    std::string cache_file_path = CacheFilePath(key);
+    std::string cache_file_tmp_path = cache_file_path + ".tmp";
 
-    string serialized;
+    std::string serialized;
     if (!cache_entry.SerializeToString(&serialized)) {
       LOG(ERROR) << trace_id << " failed to serialize LocalOutputCacheEntry: "
                  << " path=" << cache_file_path;
@@ -574,8 +571,9 @@ bool LocalOutputCache::SaveOutput(const string& key,
   return true;
 }
 
-bool LocalOutputCache::Lookup(const string& key, ExecResp* resp,
-                              const string& trace_id) {
+bool LocalOutputCache::Lookup(const std::string& key,
+                              ExecResp* resp,
+                              const std::string& trace_id) {
   WaitUntilReady();
   SimpleTimer timer(SimpleTimer::START);
 
@@ -595,7 +593,7 @@ bool LocalOutputCache::Lookup(const string& key, ExecResp* resp,
     }
   }
 
-  const string cache_file_path = CacheFilePath(key);
+  const std::string cache_file_path = CacheFilePath(key);
 
   // Read file.
   // If GC happened after entries_find(), this file might be lost.
@@ -673,28 +671,27 @@ std::int64_t LocalOutputCache::TotalCacheAmountInByte() {
 }
 
 // static
-string LocalOutputCache::MakeCacheKey(const ExecReq& req) {
+std::string LocalOutputCache::MakeCacheKey(const ExecReq& req) {
   ExecReq normalized(req);
 
   // Use the goma server default.
-  const std::vector<string> flags {
-    "Xclang", "B", "gcc-toolchain", "-sysroot", "resource-dir"
-  };
+  const std::vector<std::string> flags{"Xclang", "B", "gcc-toolchain",
+                                       "-sysroot", "resource-dir"};
 
   // TODO: Set debug_prefix_map, too?
   CompilerFlagTypeSpecific::FromArg(req.command_spec().name())
       .NewExecReqNormalizer()
-      ->NormalizeForCacheKey(0, true, false, flags, std::map<string, string>(),
-                             &normalized);
+      ->NormalizeForCacheKey(0, true, false, flags,
+                             std::map<std::string, std::string>(), &normalized);
 
-  string serialized;
+  std::string serialized;
   if (!normalized.SerializeToString(&serialized)) {
     LOG(ERROR) << "failed to make cache key: "
                << normalized.DebugString();
-    return string();
+    return std::string();
   }
 
-  string digest;
+  std::string digest;
   ComputeDataHashKey(serialized, &digest);
   return digest;
 }

@@ -22,14 +22,13 @@
 
 #include "scoped_fd.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 template <typename Ehdr, typename Phdr, typename Shdr, typename Dyn>
 class ElfParserImpl : public ElfParser {
  public:
-  ElfParserImpl(const string& filename, ScopedFd&& fd,
+  ElfParserImpl(const std::string& filename,
+                ScopedFd&& fd,
                 const char elfIdent[EI_NIDENT])
       : ElfParser(),
         filename_(filename),
@@ -68,7 +67,7 @@ class ElfParserImpl : public ElfParser {
     use_program_header_ = use_program_header;
   }
 
-  bool ReadDynamicNeeded(std::vector<string>* needed) override {
+  bool ReadDynamicNeeded(std::vector<std::string>* needed) override {
     VLOG(1) << "ReadDynamicNeeded:" << filename_;
     if (!valid_) {
       LOG(ERROR) << "not valid:" << filename_;
@@ -107,8 +106,8 @@ class ElfParserImpl : public ElfParser {
     return true;
   }
 
-  bool ReadDynamicNeededAndRpath(std::vector<string>* needed,
-                                 std::vector<string>* rpath) override {
+  bool ReadDynamicNeededAndRpath(std::vector<std::string>* needed,
+                                 std::vector<std::string>* rpath) override {
     if (!ReadDynamicNeeded(needed))
       return false;
 
@@ -242,16 +241,16 @@ class ElfParserImpl : public ElfParser {
     return ReadSectionData(*dynamic_shdr_, &dyntab_);
   }
 
-  bool ReadSegmentData(const Phdr& phdr, string* data) {
+  bool ReadSegmentData(const Phdr& phdr, std::string* data) {
     VLOG(1) << "read:" << DumpPhdr(phdr);
     return ReadFromFile(phdr.p_offset, phdr.p_filesz, data);
   }
-  bool ReadSectionData(const Shdr& shdr, string* data) {
+  bool ReadSectionData(const Shdr& shdr, std::string* data) {
     VLOG(1) << "read:" << DumpShdr(shdr);
     return ReadFromFile(shdr.sh_offset, shdr.sh_size, data);
   }
 
-  bool ReadFromFile(off_t offset, size_t size, string* data) {
+  bool ReadFromFile(off_t offset, size_t size, std::string* data) {
     if (!valid_)
       return false;
     if (lseek(fd_.fd(), offset, SEEK_SET) == static_cast<off_t>(-1)) {
@@ -288,7 +287,7 @@ class ElfParserImpl : public ElfParser {
     return ReadFromFile(off, size, &dt_strtab_);
   }
 
-  void ReadStringEntryInDynamic(int type, std::vector<string>* out) {
+  void ReadStringEntryInDynamic(int type, std::vector<std::string>* out) {
     for (size_t pos = 0; pos < dyntab_.size(); pos += sizeof(Dyn)) {
       const Dyn* dyn = reinterpret_cast<const Dyn*>(dyntab_.data() + pos);
       if (dyn->d_tag == type) {
@@ -302,7 +301,7 @@ class ElfParserImpl : public ElfParser {
     }
   }
 
-  string DumpEhdr(const Ehdr& ehdr) {
+  std::string DumpEhdr(const Ehdr& ehdr) {
     std::stringstream ss;
     ss << "Elf:";
     ss << " type:" << ehdr.e_type;
@@ -321,7 +320,7 @@ class ElfParserImpl : public ElfParser {
     return ss.str();
   }
 
-  string DumpPhdr(const Phdr& phdr) {
+  std::string DumpPhdr(const Phdr& phdr) {
     std::stringstream ss;
     ss << "Program:";
     ss << " type:" << phdr.p_type;
@@ -335,7 +334,7 @@ class ElfParserImpl : public ElfParser {
     return ss.str();
   }
 
-  string DumpShdr(const Shdr& shdr) {
+  std::string DumpShdr(const Shdr& shdr) {
     std::stringstream ss;
     ss << "Section:";
     ss << " name:" << shdr.sh_name;
@@ -355,7 +354,7 @@ class ElfParserImpl : public ElfParser {
     return ss.str();
   }
 
-  string DumpDyn(const Dyn& dyn) {
+  std::string DumpDyn(const Dyn& dyn) {
     std::stringstream ss;
     ss << "Dyn:";
     ss << " tag:" << dyn.d_tag;
@@ -363,7 +362,7 @@ class ElfParserImpl : public ElfParser {
     return ss.str();
   }
 
-  const string filename_;
+  const std::string filename_;
   ScopedFd fd_;
   bool valid_;
   bool use_program_header_;
@@ -372,10 +371,10 @@ class ElfParserImpl : public ElfParser {
   Phdr* dynamic_phdr_;
   std::vector<Shdr*> shdrs_;
   Shdr* strtab_shdr_;
-  string strtab_;
+  std::string strtab_;
   Shdr* dynamic_shdr_;
-  string dyntab_;
-  string dt_strtab_;
+  std::string dyntab_;
+  std::string dt_strtab_;
   size_t text_offset_;
   DISALLOW_COPY_AND_ASSIGN(ElfParserImpl);
 };
@@ -398,7 +397,7 @@ void ElfParserImpl<Elf64_Ehdr,
   }
 }
 
-static ScopedFd OpenElf(const string& filename, char *elfIdent) {
+static ScopedFd OpenElf(const std::string& filename, char* elfIdent) {
   ScopedFd fd(ScopedFd::OpenForRead(filename));
   if (!fd.valid()) {
     PLOG(WARNING) << "open:" << filename;
@@ -410,14 +409,15 @@ static ScopedFd OpenElf(const string& filename, char *elfIdent) {
   }
   if (memcmp(elfIdent, ELFMAG, SELFMAG) != 0) {
     LOG(WARNING) << "not elf: " << filename
-                 << " ident:" << string(elfIdent, SELFMAG);
+                 << " ident:" << std::string(elfIdent, SELFMAG);
     return ScopedFd();
   }
   return fd;
 }
 
 /* static */
-std::unique_ptr<ElfParser> ElfParser::NewElfParser(const string& filename) {
+std::unique_ptr<ElfParser> ElfParser::NewElfParser(
+    const std::string& filename) {
   char elfIdent[EI_NIDENT];
   ScopedFd fd(OpenElf(filename.c_str(), elfIdent));
   if (!fd.valid()) {
@@ -440,7 +440,7 @@ std::unique_ptr<ElfParser> ElfParser::NewElfParser(const string& filename) {
 }
 
 /* static */
-bool ElfParser::IsElf(const string& filename) {
+bool ElfParser::IsElf(const std::string& filename) {
   char elfIdent[EI_NIDENT];
   ScopedFd fd(OpenElf(filename.c_str(), elfIdent));
   return fd.valid();

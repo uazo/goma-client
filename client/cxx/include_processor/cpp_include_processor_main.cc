@@ -37,18 +37,18 @@ using devtools_goma::CompilerTypeSpecificCollection;
 using devtools_goma::GCCCompilerInfoBuilder;
 
 // TODO: share this code with include_processor_unittest.
-std::set<string> GetExpectedFiles(const std::vector<string>& args,
-                                  const std::vector<string>& env,
-                                  const string& cwd) {
-  std::set<string> expected_files;
+std::set<std::string> GetExpectedFiles(const std::vector<std::string>& args,
+                                       const std::vector<std::string>& env,
+                                       const std::string& cwd) {
+  std::set<std::string> expected_files;
 #ifndef _WIN32
   // TODO: ReadCommandOutputByPopen couldn't read large outputs
   // and causes exit=512, so use tmpfile.
   devtools_goma::ScopedTmpFile tmpfile("include_processor_verify");
   tmpfile.Close();
-  std::vector<string> run_args;
+  std::vector<std::string> run_args;
   for (size_t i = 0; i < args.size(); ++i) {
-    const string& arg = args[i];
+    const std::string& arg = args[i];
     if (strncmp(arg.c_str(), "-M", 2) == 0) {
       if (arg == "-MF" || arg == "-MT" || arg == "-MQ") {
         ++i;
@@ -68,7 +68,7 @@ std::set<string> GetExpectedFiles(const std::vector<string>& args,
   run_args.push_back("-MF");
   run_args.push_back(tmpfile.filename());
 
-  std::vector<string> run_env(env);
+  std::vector<std::string> run_env(env);
   run_env.push_back("LC_ALL=C");
 
   // The output format of -M will be
@@ -85,14 +85,14 @@ std::set<string> GetExpectedFiles(const std::vector<string>& args,
     LOG(INFO) << "env:" << run_env;
     LOG(FATAL) << "status:" << status;
   }
-  string output;
+  std::string output;
   CHECK(devtools_goma::ReadFileToString(tmpfile.filename(), &output));
-  std::vector<string> files = ToVector(
+  std::vector<std::string> files = ToVector(
       absl::StrSplit(output, absl::ByAnyChar(" \n\r\\"), absl::SkipEmpty()));
   devtools_goma::PathResolver pr;
   // Skip the first element as it's the make target.
   for (size_t i = 1; i < files.size(); i++) {
-    const string& file = files[i];
+    const std::string& file = files[i];
     // Need normalization as GCC may output a same file in different way.
     // TODO: don't use ResolvePath.
     expected_files.insert(
@@ -102,9 +102,9 @@ std::set<string> GetExpectedFiles(const std::vector<string>& args,
   return expected_files;
 }
 
-std::set<string> NormalizePaths(const string& cwd,
-                                const std::set<string>& paths) {
-  std::set<string> normalized;
+std::set<std::string> NormalizePaths(const std::string& cwd,
+                                     const std::set<std::string>& paths) {
+  std::set<std::string> normalized;
   for (const auto& iter : paths) {
     normalized.insert(devtools_goma::PathResolver::ResolvePath(
         file::JoinPathRespectAbsolute(cwd, iter)));
@@ -112,11 +112,11 @@ std::set<string> NormalizePaths(const string& cwd,
   return normalized;
 }
 
-int CompareFiles(const std::set<string>& expected_files,
-                 const std::set<string>& actual_files) {
-  std::vector<string> matched;
-  std::vector<string> extra;
-  std::vector<string> missing;
+int CompareFiles(const std::set<std::string>& expected_files,
+                 const std::set<std::string>& actual_files) {
+  std::vector<std::string> matched;
+  std::vector<std::string> extra;
+  std::vector<std::string> missing;
   std::set_intersection(expected_files.begin(), expected_files.end(),
                         actual_files.begin(), actual_files.end(),
                         back_inserter(matched));
@@ -144,7 +144,7 @@ int CompareFiles(const std::set<string>& expected_files,
 
 void GetAdditionalEnv(const char** envp,
                       const char* name,
-                      std::vector<string>* envs) {
+                      std::vector<std::string>* envs) {
   int namelen = strlen(name);
   for (const char** e = envp; *e; e++) {
     if (
@@ -219,14 +219,14 @@ int main(int argc, char* argv[], const char** envp) {
 
   devtools_goma::IncludeFileFinder::Init(false);
 
-  const string cwd = devtools_goma::GetCurrentDirNameOrDie();
-  std::vector<string> args;
+  const std::string cwd = devtools_goma::GetCurrentDirNameOrDie();
+  std::vector<std::string> args;
   for (int i = 1; i < argc; i++)
     args.push_back(argv[i]);
 
   std::unique_ptr<devtools_goma::CompilerFlags> flags(
       devtools_goma::CompilerFlagsParser::MustNew(args, cwd));
-  std::vector<string> compiler_info_envs;
+  std::vector<std::string> compiler_info_envs;
   flags->GetClientImportantEnvs(envp, &compiler_info_envs);
 
   // These env variables are needed to run cl.exe
@@ -245,7 +245,7 @@ int main(int argc, char* argv[], const char** envp) {
     exit(1);
   }
 
-  std::set<string> include_files;
+  std::set<std::string> include_files;
 
 #if HAVE_CPU_PROFILER
   ProfilerStart(file::JoinPathRespectAbsolute(
@@ -295,8 +295,9 @@ int main(int argc, char* argv[], const char** envp) {
     for (const auto& iter : flags->input_filenames()) {
       include_files.insert(file::JoinPathRespectAbsolute(cwd, iter));
     }
-    std::set<string> actual = NormalizePaths(cwd, include_files);
-    std::set<string> expected = GetExpectedFiles(args, compiler_info_envs, cwd);
+    std::set<std::string> actual = NormalizePaths(cwd, include_files);
+    std::set<std::string> expected =
+        GetExpectedFiles(args, compiler_info_envs, cwd);
     std::cout << "expected" << std::endl;
     for (const auto& iter : expected) {
       std::cout << iter << std::endl;

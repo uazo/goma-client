@@ -11,7 +11,7 @@
 namespace devtools_goma {
 
 bool JavaCompilerTypeSpecific::RemoteCompileSupported(
-    const string& trace_id,
+    const std::string& trace_id,
     const CompilerFlags& flags,
     bool verify_output) const {
   LOG(INFO) << trace_id << " force fallback to avoid running java program in"
@@ -22,15 +22,15 @@ bool JavaCompilerTypeSpecific::RemoteCompileSupported(
 std::unique_ptr<CompilerInfoData>
 JavaCompilerTypeSpecific::BuildCompilerInfoData(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const std::vector<string>& compiler_info_envs) {
+    const std::string& local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs) {
   return compiler_info_builder_.FillFromCompilerOutputs(
       flags, local_compiler_path, compiler_info_envs);
 }
 
 CompilerTypeSpecific::IncludeProcessorResult
 JavaCompilerTypeSpecific::RunIncludeProcessor(
-    const string& trace_id,
+    const std::string& trace_id,
     const CompilerFlags& compiler_flags,
     const CompilerInfo& compiler_info,
     const CommandSpec& command_spec,
@@ -45,7 +45,7 @@ JavaCompilerTypeSpecific::RunIncludeProcessor(
 // ----------------------------------------------------------------------
 
 bool JavacCompilerTypeSpecific::RemoteCompileSupported(
-    const string& trace_id,
+    const std::string& trace_id,
     const CompilerFlags& flags,
     bool verify_output) const {
   const JavacFlags& javac_flag = static_cast<const JavacFlags&>(flags);
@@ -63,22 +63,22 @@ bool JavacCompilerTypeSpecific::RemoteCompileSupported(
 std::unique_ptr<CompilerInfoData>
 JavacCompilerTypeSpecific::BuildCompilerInfoData(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const std::vector<string>& compiler_info_envs) {
+    const std::string& local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs) {
   return compiler_info_builder_.FillFromCompilerOutputs(
       flags, local_compiler_path, compiler_info_envs);
 }
 
 CompilerTypeSpecific::IncludeProcessorResult
 JavacCompilerTypeSpecific::RunIncludeProcessor(
-    const string& trace_id,
+    const std::string& trace_id,
     const CompilerFlags& compiler_flags,
     const CompilerInfo& compiler_info,
     const CommandSpec& command_spec,
     FileStatCache* file_stat_cache) {
   DCHECK_EQ(CompilerFlagType::Javac, compiler_flags.type());
 
-  std::set<string> required_files;
+  std::set<std::string> required_files;
   JarParser jar_parser;
   jar_parser.GetJarFiles(
       static_cast<const JavacFlags&>(compiler_flags).jar_files(),

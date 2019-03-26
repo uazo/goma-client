@@ -9,8 +9,6 @@
 
 #include "cpp_directive.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class IncludeGuardDetector {
@@ -18,7 +16,7 @@ class IncludeGuardDetector {
   IncludeGuardDetector(const IncludeGuardDetector&) = delete;
   void operator=(const IncludeGuardDetector&) = delete;
 
-  static string Detect(const CppDirectiveList& directives);
+  static std::string Detect(const CppDirectiveList& directives);
 };
 
 }  // namespace devtools_goma

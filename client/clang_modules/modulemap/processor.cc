@@ -16,7 +16,7 @@ namespace devtools_goma {
 namespace modulemap {
 
 bool Processor::AddModuleMapFile(const absl::string_view module_map_file) {
-  const string abs_module_map_file = PathResolver::ResolvePath(
+  const std::string abs_module_map_file = PathResolver::ResolvePath(
       file::JoinPathRespectAbsolute(cwd_, module_map_file));
   if (visited_abs_paths_.count(abs_module_map_file) > 0) {
     // already processed.
@@ -29,7 +29,7 @@ bool Processor::AddModuleMapFile(const absl::string_view module_map_file) {
     return false;
   }
 
-  collected_module_map_files_.emplace_back(string(module_map_file),
+  collected_module_map_files_.emplace_back(std::string(module_map_file),
                                            abs_module_map_file, stat);
   visited_abs_paths_.emplace(abs_module_map_file);
 
@@ -70,7 +70,7 @@ bool Processor::AddExternMapduleMapFilesRecursively(
     const absl::string_view module_map_dir) {
   // If the module is `extern module` form, extern_filename exists.
   if (!module_decl.extern_filename().empty()) {
-    string rel_path = file::JoinPathRespectAbsolute(
+    std::string rel_path = file::JoinPathRespectAbsolute(
         module_map_dir, module_decl.extern_filename());
     if (!AddModuleMapFile(rel_path)) {
       return false;

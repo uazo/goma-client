@@ -39,8 +39,8 @@ namespace {
 #include "clang_features.cc"
 
 bool AddResourceInfo(
-    const string& cwd,
-    const string& path,
+    const std::string& cwd,
+    const std::string& path,
     const CompilerInfoData::ResourceType type,
     google::protobuf::RepeatedPtrField<CompilerInfoData::ResourceInfo>* rr) {
   CompilerInfoData::ResourceInfo* r = rr->Add();
@@ -52,7 +52,7 @@ bool AddResourceInfo(
 }
 
 bool UpdateResourceInfo(
-    const string& cwd,
+    const std::string& cwd,
     const std::vector<ClangCompilerInfoBuilderHelper::ResourceList>& resource,
     CompilerInfoData* data) {
   for (const auto& r : resource) {
@@ -66,7 +66,7 @@ bool UpdateResourceInfo(
 }
 
 bool ParseDriverArgs(absl::string_view display_output,
-                     std::vector<string>* driver_args) {
+                     std::vector<std::string>* driver_args) {
   for (auto&& line : absl::StrSplit(display_output, absl::ByAnyChar("\r\n"),
                                     absl::SkipEmpty())) {
     if (absl::StartsWith(line, " ")) {
@@ -102,14 +102,15 @@ std::unique_ptr<FlagParser> GetFlagParser(absl::string_view argv0) {
   }
 }
 
-string GccDisplayPrograms(const string& normal_compiler_path,
-                          const std::vector<string>& compiler_info_flags,
-                          const std::vector<string>& compiler_info_envs,
-                          const string& lang_flag,
-                          const string& option,
-                          const string& cwd,
-                          int32_t* status) {
-  std::vector<string> argv;
+std::string GccDisplayPrograms(
+    const std::string& normal_compiler_path,
+    const std::vector<std::string>& compiler_info_flags,
+    const std::vector<std::string>& compiler_info_envs,
+    const std::string& lang_flag,
+    const std::string& option,
+    const std::string& cwd,
+    int32_t* status) {
+  std::vector<std::string> argv;
   argv.push_back(normal_compiler_path);
   copy(compiler_info_flags.begin(), compiler_info_flags.end(),
        back_inserter(argv));
@@ -132,10 +133,10 @@ string GccDisplayPrograms(const string& normal_compiler_path,
     return "";
   }
   tmp.Close();
-  const string& empty_file = tmp.filename();
+  const std::string& empty_file = tmp.filename();
   VLOG(2) << "empty_file=" << empty_file;
 #else
-  const string& empty_file = "/dev/null";
+  const std::string& empty_file = "/dev/null";
 #endif
   argv.push_back("-v");
   argv.push_back("-E");
@@ -143,7 +144,7 @@ string GccDisplayPrograms(const string& normal_compiler_path,
   argv.push_back("-o");
   argv.push_back(empty_file);
 
-  std::vector<string> env;
+  std::vector<std::string> env;
   env.push_back("LC_ALL=C");
   copy(compiler_info_envs.begin(), compiler_info_envs.end(),
        back_inserter(env));
@@ -155,14 +156,14 @@ string GccDisplayPrograms(const string& normal_compiler_path,
   }
 }
 
-string GccDisplayPredefinedMacros(
-    const string& normal_compiler_path,
-    const std::vector<string>& compiler_info_flags,
-    const std::vector<string>& compiler_info_envs,
-    const string& cwd,
-    const string& lang_flag,
+std::string GccDisplayPredefinedMacros(
+    const std::string& normal_compiler_path,
+    const std::vector<std::string>& compiler_info_flags,
+    const std::vector<std::string>& compiler_info_envs,
+    const std::string& cwd,
+    const std::string& lang_flag,
     int32_t* status) {
-  std::vector<string> argv;
+  std::vector<std::string> argv;
   argv.push_back(normal_compiler_path);
   copy(compiler_info_flags.begin(), compiler_info_flags.end(),
        back_inserter(argv));
@@ -178,10 +179,10 @@ string GccDisplayPredefinedMacros(
     return "";
   }
   tmp.Close();
-  const string& empty_file = tmp.filename();
+  const std::string& empty_file = tmp.filename();
   VLOG(2) << "empty_file=" << empty_file;
 #else
-  const string& empty_file = "/dev/null";
+  const std::string& empty_file = "/dev/null";
 #endif
 
   argv.push_back(lang_flag);
@@ -193,12 +194,12 @@ string GccDisplayPredefinedMacros(
   }
   argv.push_back("-dM");
 
-  std::vector<string> env;
+  std::vector<std::string> env;
   env.push_back("LC_ALL=C");
   copy(compiler_info_envs.begin(), compiler_info_envs.end(),
        back_inserter(env));
 
-  string macros;
+  std::string macros;
   {
     GOMA_COUNTERZ("ReadCommandOutput(-E -ffreestanding -dM)");
     macros = ReadCommandOutput(normal_compiler_path, argv, env, cwd,
@@ -218,9 +219,9 @@ string GccDisplayPredefinedMacros(
 
 /* static */
 bool ClangCompilerInfoBuilderHelper::GetResourceDir(
-    const string& c_display_output,
+    const std::string& c_display_output,
     CompilerInfoData* compiler_info) {
-  std::vector<string> driver_args;
+  std::vector<std::string> driver_args;
   if (!ParseDriverArgs(c_display_output, &driver_args)) {
     return false;
   }
@@ -236,7 +237,7 @@ bool ClangCompilerInfoBuilderHelper::GetResourceDir(
     return false;
   }
 
-  string dir = resource_dir->GetLastValue();
+  std::string dir = resource_dir->GetLastValue();
   if (dir.empty()) {
     return false;
   }
@@ -248,9 +249,9 @@ bool ClangCompilerInfoBuilderHelper::GetResourceDir(
 /* static */
 ClangCompilerInfoBuilderHelper::ParseStatus
 ClangCompilerInfoBuilderHelper::ParseResourceOutput(
-    const string& argv0,
-    const string& cwd,
-    const string& display_output,
+    const std::string& argv0,
+    const std::string& cwd,
+    const std::string& display_output,
     std::vector<ResourceList>* paths) {
   // We only detect resource for clang now.
   if (!GCCFlags::IsClangCommand(argv0) && !VCFlags::IsClangClCommand(argv0)) {
@@ -268,26 +269,26 @@ ClangCompilerInfoBuilderHelper::ParseResourceOutput(
     if (absl::ConsumePrefix(&line, "Selected GCC installation: ")) {
       const auto compiler_install_path = line;
       // TODO: consider supporting IAMCU?
-      string crtbegin_path =
+      std::string crtbegin_path =
           file::JoinPath(compiler_install_path, "crtbegin.o");
-      const string abs_crtbegin_path =
+      const std::string abs_crtbegin_path =
           file::JoinPathRespectAbsolute(cwd, crtbegin_path);
       if (access(abs_crtbegin_path.c_str(), R_OK) == 0) {
         paths->emplace_back(std::move(crtbegin_path),
                             CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER);
         // Also look for some common multilib crtbegin.o markers.
-        string crtbegin_32_path =
+        std::string crtbegin_32_path =
             file::JoinPath(compiler_install_path, "32", "crtbegin.o");
-        const string abs_crtbegin_32_path =
+        const std::string abs_crtbegin_32_path =
             file::JoinPathRespectAbsolute(cwd, crtbegin_32_path);
         if (access(abs_crtbegin_32_path.c_str(), R_OK) == 0) {
           paths->emplace_back(std::move(crtbegin_32_path),
                               CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER);
         }
 
-        string crtbegin_x32_path =
+        std::string crtbegin_x32_path =
             file::JoinPath(compiler_install_path, "x32", "crtbegin.o");
-        const string abs_crtbegin_x32_path =
+        const std::string abs_crtbegin_x32_path =
             file::JoinPathRespectAbsolute(cwd, crtbegin_x32_path);
         if (access(abs_crtbegin_x32_path.c_str(), R_OK) == 0) {
           paths->emplace_back(std::move(crtbegin_x32_path),
@@ -306,7 +307,7 @@ ClangCompilerInfoBuilderHelper::ParseResourceOutput(
 
     // The first command should be the "cc1" command.
     // We do not need to read anything else.
-    std::vector<string> argv;
+    std::vector<std::string> argv;
 #ifdef _WIN32
     ParseWinCommandLineToArgv(line, &argv);
 #else
@@ -327,11 +328,11 @@ ClangCompilerInfoBuilderHelper::ParseResourceOutput(
     if (!flag_parser) {
       return ParseStatus::kFail;
     }
-    std::vector<string> blacklist_paths;
+    std::vector<std::string> blacklist_paths;
     flag_parser->AddFlag("fsanitize-blacklist")
         ->SetValueOutputWithCallback(nullptr, &blacklist_paths);
     flag_parser->Parse(argv);
-    for (string& path : blacklist_paths) {
+    for (std::string& path : blacklist_paths) {
       paths->emplace_back(std::move(path), CompilerInfoData::CLANG_RESOURCE);
     }
     return ParseStatus::kSuccess;
@@ -343,7 +344,7 @@ ClangCompilerInfoBuilderHelper::ParseResourceOutput(
 }
 
 /* static */
-string ClangCompilerInfoBuilderHelper::ParseRealClangPath(
+std::string ClangCompilerInfoBuilderHelper::ParseRealClangPath(
     absl::string_view v_out) {
   absl::string_view::size_type pos = v_out.find_first_of('"');
   if (pos == absl::string_view::npos)
@@ -355,16 +356,16 @@ string ClangCompilerInfoBuilderHelper::ParseRealClangPath(
   v_out = v_out.substr(0, pos);
   if (!GCCFlags::IsClangCommand(v_out))
     return "";
-  return string(v_out);
+  return std::string(v_out);
 }
 
 /* static */
 bool ClangCompilerInfoBuilderHelper::ParseClangVersionTarget(
-    const string& sharp_output,
-    string* version,
-    string* target) {
+    const std::string& sharp_output,
+    std::string* version,
+    std::string* target) {
   static const char* kTarget = "Target: ";
-  std::vector<string> lines = ToVector(
+  std::vector<std::string> lines = ToVector(
       absl::StrSplit(sharp_output, absl::ByAnyChar("\r\n"), absl::SkipEmpty()));
   if (lines.size() < 2) {
     LOG(ERROR) << "lines has less than 2 elements."
@@ -383,14 +384,14 @@ bool ClangCompilerInfoBuilderHelper::ParseClangVersionTarget(
 
 // static
 bool ClangCompilerInfoBuilderHelper::GetPredefinedMacros(
-    const string& normal_compiler_path,
-    const std::vector<string>& compiler_info_flags,
-    const std::vector<string>& compiler_info_envs,
-    const string& cwd,
-    const string& lang_flag,
+    const std::string& normal_compiler_path,
+    const std::vector<std::string>& compiler_info_flags,
+    const std::vector<std::string>& compiler_info_envs,
+    const std::string& cwd,
+    const std::string& lang_flag,
     CompilerInfoData* compiler_info) {
   int32_t status;
-  const string& macros =
+  const std::string& macros =
       GccDisplayPredefinedMacros(normal_compiler_path, compiler_info_flags,
                                  compiler_info_envs, cwd, lang_flag, &status);
   if (status != 0)
@@ -401,7 +402,7 @@ bool ClangCompilerInfoBuilderHelper::GetPredefinedMacros(
 
 /* static */
 bool ClangCompilerInfoBuilderHelper::ParseFeatures(
-    const string& feature_output,
+    const std::string& feature_output,
     FeatureList object_macros,
     FeatureList function_macros,
     FeatureList features,
@@ -415,7 +416,7 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
       object_macros.second + function_macros.second + features.second +
       extensions.second + attributes.second + cpp_attributes.second +
       declspec_attributes.second + builtins.second;
-  std::vector<string> lines =
+  std::vector<std::string> lines =
       ToVector(absl::StrSplit(feature_output, '\n', absl::SkipEmpty()));
   size_t index = 0;
   int expected_index = -1;
@@ -551,11 +552,11 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
 
 /* static */
 bool ClangCompilerInfoBuilderHelper::GetPredefinedFeaturesAndExtensions(
-    const string& normal_compiler_path,
-    const string& lang_flag,
-    const std::vector<string>& compiler_info_flags,
-    const std::vector<string>& compiler_info_envs,
-    const string& cwd,
+    const std::string& normal_compiler_path,
+    const std::string& lang_flag,
+    const std::vector<std::string>& compiler_info_flags,
+    const std::vector<std::string>& compiler_info_envs,
+    const std::string& cwd,
     CompilerInfoData* compiler_info) {
   std::ostringstream oss;
 
@@ -613,12 +614,12 @@ bool ClangCompilerInfoBuilderHelper::GetPredefinedFeaturesAndExtensions(
   for (size_t i = 0; i < NUM_KNOWN_EXTENSIONS; i++) {
     // Specify the line number to tell pre-processor to output newlines.
     oss << '#' << ++index << '\n';
-    oss << string("__has_extension(") << KNOWN_EXTENSIONS[i] << ")\n";
+    oss << std::string("__has_extension(") << KNOWN_EXTENSIONS[i] << ")\n";
   }
   for (size_t i = 0; i < NUM_KNOWN_ATTRIBUTES; i++) {
     // Specify the line number to tell pre-processor to output newlines.
     oss << '#' << ++index << '\n';
-    oss << string("__has_attribute(") << KNOWN_ATTRIBUTES[i] << ")\n";
+    oss << std::string("__has_attribute(") << KNOWN_ATTRIBUTES[i] << ")\n";
   }
   // If the attributes has "::", gcc fails in C-mode,
   // but works on C++ mode. So, when "::" is detected, we ignore it in C mode.
@@ -642,7 +643,7 @@ bool ClangCompilerInfoBuilderHelper::GetPredefinedFeaturesAndExtensions(
     oss << "__has_builtin(" << KNOWN_BUILTINS[i] << ")\n";
   }
 
-  const string& source = oss.str();
+  const std::string& source = oss.str();
   VLOG(1) << "source=" << source;
 
   ScopedTmpFile tmp_file("goma_compiler_proxy_check_features_");
@@ -671,7 +672,7 @@ bool ClangCompilerInfoBuilderHelper::GetPredefinedFeaturesAndExtensions(
     return false;
   }
 
-  std::vector<string> argv;
+  std::vector<std::string> argv;
   argv.push_back(normal_compiler_path);
   copy(compiler_info_flags.begin(), compiler_info_flags.end(),
        back_inserter(argv));
@@ -679,13 +680,13 @@ bool ClangCompilerInfoBuilderHelper::GetPredefinedFeaturesAndExtensions(
   argv.push_back("-E");
   argv.push_back(tmp_file.filename());
 
-  std::vector<string> env;
+  std::vector<std::string> env;
   env.push_back("LC_ALL=C");
   copy(compiler_info_envs.begin(), compiler_info_envs.end(),
        back_inserter(env));
 
   int32_t status = 0;
-  string out;
+  std::string out;
   {
     GOMA_COUNTERZ("ReadCommandOutput(predefined features)");
     out = ReadCommandOutput(normal_compiler_path, argv, env, cwd, STDOUT_ONLY,
@@ -741,12 +742,12 @@ bool ClangCompilerInfoBuilderHelper::GetPredefinedFeaturesAndExtensions(
 // extensions etc.
 // static
 bool ClangCompilerInfoBuilderHelper::SetBasicCompilerInfo(
-    const string& local_compiler_path,
-    const std::vector<string>& compiler_info_flags,
-    const std::vector<string>& compiler_info_envs,
-    const string& cwd,
-    const string& lang_flag,
-    const string& resource_dir,
+    const std::string& local_compiler_path,
+    const std::vector<std::string>& compiler_info_flags,
+    const std::vector<std::string>& compiler_info_envs,
+    const std::string& cwd,
+    const std::string& lang_flag,
+    const std::string& resource_dir,
     bool is_cplusplus,
     bool has_nostdinc,
     CompilerInfoData* compiler_info) {
@@ -756,8 +757,8 @@ bool ClangCompilerInfoBuilderHelper::SetBasicCompilerInfo(
   // c++-header, c++-cpp-output, we'll use -xc++, -xc to get system include
   // paths.
   // For clang-cl.exe, we use /TP and /TC like we do for gcc and clang.
-  string cxx_lang_flag;
-  string c_lang_flag;
+  std::string cxx_lang_flag;
+  std::string c_lang_flag;
   if (VCFlags::IsClangClCommand(local_compiler_path)) {
     cxx_lang_flag = "/TP";
     c_lang_flag = "/TC";
@@ -780,7 +781,7 @@ bool ClangCompilerInfoBuilderHelper::SetBasicCompilerInfo(
   //
   // Note that the way to get system include paths are still under discussion
   // in b/13178705.
-  string c_output, cxx_output;
+  std::string c_output, cxx_output;
   if (is_cplusplus) {
     int32_t status;
     cxx_output =
@@ -908,11 +909,11 @@ bool ClangCompilerInfoBuilderHelper::SetBasicCompilerInfo(
 
 // static
 bool ClangCompilerInfoBuilderHelper::GetSystemIncludePaths(
-    const string& normal_compiler_path,
-    const std::vector<string>& compiler_info_flags,
-    const std::vector<string>& compiler_info_envs,
-    const string& cxx_display_output,
-    const string& c_display_output,
+    const std::string& normal_compiler_path,
+    const std::vector<std::string>& compiler_info_flags,
+    const std::vector<std::string>& compiler_info_envs,
+    const std::string& cxx_display_output,
+    const std::string& c_display_output,
     bool is_cplusplus,
     bool has_nostdinc,
     CompilerInfoData* compiler_info) {
@@ -921,9 +922,9 @@ bool ClangCompilerInfoBuilderHelper::GetSystemIncludePaths(
   compiler_info->mutable_cxx()->clear_system_include_paths();
   compiler_info->mutable_cxx()->clear_system_framework_paths();
 
-  std::vector<string> quote_include_paths;
-  std::vector<string> cxx_system_include_paths;
-  std::vector<string> system_framework_paths;
+  std::vector<std::string> quote_include_paths;
+  std::vector<std::string> cxx_system_include_paths;
+  std::vector<std::string> system_framework_paths;
   if (cxx_display_output.empty() ||
       !SplitGccIncludeOutput(cxx_display_output, &quote_include_paths,
                              &cxx_system_include_paths,
@@ -947,7 +948,7 @@ bool ClangCompilerInfoBuilderHelper::GetSystemIncludePaths(
       system_framework_paths,
       compiler_info->mutable_cxx()->mutable_system_framework_paths());
 
-  std::vector<string>* quote_include_paths_ptr = nullptr;
+  std::vector<std::string>* quote_include_paths_ptr = nullptr;
   // If quote_include_paths couldn't be obtained above,
   // we'll try to fetch them here.
   if (compiler_info->cxx().quote_include_paths_size() == 0) {
@@ -955,14 +956,14 @@ bool ClangCompilerInfoBuilderHelper::GetSystemIncludePaths(
     quote_include_paths_ptr = &quote_include_paths;
   }
 
-  std::vector<string>* framework_paths_ptr = nullptr;
+  std::vector<std::string>* framework_paths_ptr = nullptr;
   // If system_framework_paths couldn't be obtained above,
   // we'll try to fetch them here.
   if (compiler_info->cxx().system_framework_paths_size() == 0) {
     DCHECK(system_framework_paths.empty());
     framework_paths_ptr = &system_framework_paths;
   }
-  std::vector<string> system_include_paths;
+  std::vector<std::string> system_include_paths;
   if (!SplitGccIncludeOutput(c_display_output, quote_include_paths_ptr,
                              &system_include_paths, framework_paths_ptr)) {
     LOG(WARNING) << "Cannot detect gcc system include paths:"
@@ -1005,26 +1006,27 @@ bool ClangCompilerInfoBuilderHelper::GetSystemIncludePaths(
 
 /* static */
 bool ClangCompilerInfoBuilderHelper::SplitGccIncludeOutput(
-    const string& gcc_v_output,
-    std::vector<string>* qpaths,
-    std::vector<string>* paths,
-    std::vector<string>* framework_paths) {
+    const std::string& gcc_v_output,
+    std::vector<std::string>* qpaths,
+    std::vector<std::string>* paths,
+    std::vector<std::string>* framework_paths) {
   // TODO: use absl::string_view for gcc_v_output etc.
 
-  static const string kQStartMarker("#include \"...\" search starts here:");
-  static const string kStartMarker("#include <...> search starts here:");
-  static const string kEndMarker("End of search list.");
+  static const std::string kQStartMarker(
+      "#include \"...\" search starts here:");
+  static const std::string kStartMarker("#include <...> search starts here:");
+  static const std::string kEndMarker("End of search list.");
   size_t qstart_pos = gcc_v_output.find(kQStartMarker);
   size_t start_pos = gcc_v_output.find(kStartMarker);
   size_t end_pos = gcc_v_output.find(kEndMarker);
-  if (qstart_pos == string::npos || start_pos == string::npos ||
-      end_pos == string::npos) {
+  if (qstart_pos == std::string::npos || start_pos == std::string::npos ||
+      end_pos == std::string::npos) {
     // something is wrong with output from gcc.
     LOG(WARNING) << "gcc output is wrong. " << gcc_v_output;
     return false;
   }
   if (qpaths != nullptr) {
-    string gcc_v_qsearch_paths(
+    std::string gcc_v_qsearch_paths(
         gcc_v_output.substr(qstart_pos + kQStartMarker.size(),
                             start_pos - qstart_pos - kQStartMarker.size()));
     VLOG(2) << "extracted qsearch paths [" << gcc_v_qsearch_paths << "]";
@@ -1033,12 +1035,12 @@ bool ClangCompilerInfoBuilderHelper::SplitGccIncludeOutput(
              gcc_v_qsearch_paths, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
       absl::string_view qpath = absl::StripAsciiWhitespace(split_qpath);
       if (!qpath.empty()) {
-        qpaths->emplace_back(string(qpath));
+        qpaths->emplace_back(std::string(qpath));
       }
     }
   }
 
-  string gcc_v_search_paths(
+  std::string gcc_v_search_paths(
       gcc_v_output.substr(start_pos + kStartMarker.size(),
                           end_pos - start_pos - kStartMarker.size()));
   VLOG(2) << "extracted search paths [" << gcc_v_search_paths << "]";
@@ -1064,8 +1066,8 @@ bool ClangCompilerInfoBuilderHelper::SplitGccIncludeOutput(
 
 // static
 void ClangCompilerInfoBuilderHelper::UpdateIncludePaths(
-    const std::vector<string>& paths,
-    google::protobuf::RepeatedPtrField<string>* include_paths) {
+    const std::vector<std::string>& paths,
+    google::protobuf::RepeatedPtrField<std::string>* include_paths) {
   std::copy(paths.cbegin(), paths.cend(),
             google::protobuf::RepeatedFieldBackInserter(include_paths));
 }

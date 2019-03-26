@@ -13,12 +13,13 @@
 
 namespace devtools_goma {
 
-LocalOutputFileTask::LocalOutputFileTask(WorkerThreadManager* wm,
-                    std::unique_ptr<BlobClient::Uploader> blob_uploader,
-                    FileHashCache* file_hash_cache,
-                    const FileStat& file_stat,
-                    CompileTask* task,
-                    string filename)
+LocalOutputFileTask::LocalOutputFileTask(
+    WorkerThreadManager* wm,
+    std::unique_ptr<BlobClient::Uploader> blob_uploader,
+    FileHashCache* file_hash_cache,
+    const FileStat& file_stat,
+    CompileTask* task,
+    std::string filename)
     : wm_(wm),
       thread_id_(wm_->GetCurrentThreadId()),
       blob_uploader_(std::move(blob_uploader)),
@@ -40,7 +41,7 @@ void LocalOutputFileTask::Run(OneshotClosure* closure) {
   VLOG(1) << task_->trace_id() << " local output " << filename_;
   success_ = blob_uploader_->Upload();
   if (success_) {
-    string hash_key = blob_uploader_->hash_key();
+    std::string hash_key = blob_uploader_->hash_key();
     bool new_cache_key = file_hash_cache_->StoreFileCacheKey(
         filename_, hash_key, absl::Now(), file_stat_);
     if (new_cache_key) {

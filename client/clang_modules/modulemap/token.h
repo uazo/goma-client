@@ -13,8 +13,6 @@
 #include "client/content.h"
 #include "glog/logging.h"
 
-using std::string;
-
 namespace devtools_goma {
 namespace modulemap {
 
@@ -30,23 +28,23 @@ class Token {
   };
 
   // utility constructors. We provide only these ctors to users.
-  static Token Ident(string value) {
+  static Token Ident(std::string value) {
     return Token(Type::IDENT, std::move(value));
   }
-  static Token String(string value) {
+  static Token String(std::string value) {
     return Token(Type::STRING, std::move(value));
   }
-  static Token Integer(string value) {
+  static Token Integer(std::string value) {
     return Token(Type::INTEGER, std::move(value));
   }
-  static Token Punc(char c) { return Token(Type::PUNC, string(1, c)); }
-  static Token End() { return Token(Type::END, string()); }
-  static Token Invalid() { return Token(Type::INVALID, string()); }
+  static Token Punc(char c) { return Token(Type::PUNC, std::string(1, c)); }
+  static Token End() { return Token(Type::END, std::string()); }
+  static Token Invalid() { return Token(Type::INVALID, std::string()); }
 
   friend std::ostream& operator<<(std::ostream& os, const Token& token);
 
   Type type() const { return type_; }
-  const string& value() const { return value_; }
+  const std::string& value() const { return value_; }
 
   bool IsIdent(absl::string_view ident) const {
     return type_ == Type::IDENT && value_ == ident;
@@ -74,10 +72,10 @@ class Token {
   }
 
  private:
-  Token(Type type, string value) : type_(type), value_(std::move(value)) {}
+  Token(Type type, std::string value) : type_(type), value_(std::move(value)) {}
 
   Type type_;
-  string value_;
+  std::string value_;
 };
 
 }  // namespace modulemap

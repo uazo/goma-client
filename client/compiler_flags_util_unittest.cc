@@ -12,16 +12,14 @@
 #include "cxx/cxx_compiler_info.h"
 #include "gtest/gtest.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class CompilerFlagsUtilTest : public testing::Test {
  protected:
   void SetSystemIncludePaths(
-      const std::vector<string>& cxx_system_include_paths,
-      const std::vector<string>& system_include_paths,
-      const std::vector<string>& system_framework_paths,
+      const std::vector<std::string>& cxx_system_include_paths,
+      const std::vector<std::string>& system_include_paths,
+      const std::vector<std::string>& system_framework_paths,
       CompilerInfoData* compiler_info_data) {
     for (const auto& p : cxx_system_include_paths) {
       compiler_info_data->mutable_cxx()->add_cxx_system_include_paths(p);
@@ -37,9 +35,9 @@ class CompilerFlagsUtilTest : public testing::Test {
 
 #ifndef _WIN32
 TEST_F(CompilerFlagsUtilTest, MakeWeakRelativeMacWebKit) {
-  const string cwd =
+  const std::string cwd =
       "/Users/goma/src/chromium-webkit/src/third_party/WebKit/Source/WebKit";
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/Developer/usr/bin/gcc-4.2");
   args.push_back("-x");
   args.push_back("objective-c");
@@ -84,9 +82,9 @@ TEST_F(CompilerFlagsUtilTest, MakeWeakRelativeMacWebKit) {
   {
     compiler_info_data->mutable_cxx();
 
-    std::vector<string> cxx_system_include_paths;
-    std::vector<string> system_include_paths;
-    std::vector<string> system_framework_paths;
+    std::vector<std::string> cxx_system_include_paths;
+    std::vector<std::string> system_include_paths;
+    std::vector<std::string> system_framework_paths;
 
     cxx_system_include_paths.push_back("/usr/include/c++/4.2.1");
     system_include_paths.push_back(
@@ -107,9 +105,8 @@ TEST_F(CompilerFlagsUtilTest, MakeWeakRelativeMacWebKit) {
 
   CxxCompilerInfo compiler_info(std::move(compiler_info_data));
 
-  std::vector<string> parsed_args =
-      CompilerFlagsUtil::MakeWeakRelative(
-          args, cwd, compiler_info);
+  std::vector<std::string> parsed_args =
+      CompilerFlagsUtil::MakeWeakRelative(args, cwd, compiler_info);
   ASSERT_EQ(args.size(), parsed_args.size());
   EXPECT_EQ("/Developer/usr/bin/gcc-4.2", parsed_args[0]);
   EXPECT_EQ("-x", parsed_args[1]);
@@ -147,8 +144,8 @@ TEST_F(CompilerFlagsUtilTest, MakeWeakRelativeMacWebKit) {
 }
 
 TEST_F(CompilerFlagsUtilTest, MakeWeakRelativeChromiumClang) {
-  const string cwd = "/home/goma/src/chromium1/src";
-  std::vector<string> args;
+  const std::string cwd = "/home/goma/src/chromium1/src";
+  std::vector<std::string> args;
   args.push_back("clang++");
   args.push_back("-DNO_HEAPCHECKER");
   args.push_back("-DENABLE_REMOTING=1");
@@ -185,11 +182,11 @@ TEST_F(CompilerFlagsUtilTest, MakeWeakRelativeChromiumClang) {
   {
     compiler_info_data->mutable_cxx();
 
-    std::vector<string> cxx_system_include_paths;
+    std::vector<std::string> cxx_system_include_paths;
     cxx_system_include_paths.push_back("/usr/include/c++/4.4.3");
-    std::vector<string> system_include_paths;
+    std::vector<std::string> system_include_paths;
     system_include_paths.push_back("/usr/include");
-    std::vector<string> system_framework_paths;
+    std::vector<std::string> system_framework_paths;
     SetSystemIncludePaths(
         cxx_system_include_paths,
         system_include_paths,
@@ -199,9 +196,8 @@ TEST_F(CompilerFlagsUtilTest, MakeWeakRelativeChromiumClang) {
 
   CxxCompilerInfo compiler_info(std::move(compiler_info_data));
 
-  std::vector<string> parsed_args =
-      CompilerFlagsUtil::MakeWeakRelative(
-          args, cwd, compiler_info);
+  std::vector<std::string> parsed_args =
+      CompilerFlagsUtil::MakeWeakRelative(args, cwd, compiler_info);
   ASSERT_EQ(25U, parsed_args.size());
   EXPECT_EQ("clang++", parsed_args[0]);
   EXPECT_EQ("-DNO_HEAPCHECKER", parsed_args[1]);

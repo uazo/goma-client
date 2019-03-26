@@ -136,7 +136,7 @@ ExecLog_NetworkFailureType CompileStats::GetNetworkFailureTypeFromHttpStatus(
   return ExecLog::UNKNOWN_NETWORK_ERROR;
 }
 
-string CompileStats::GetMajorFactorInfo() const {
+std::string CompileStats::GetMajorFactorInfo() const {
   absl::Duration major_factor_time;
   const char* major_factor_name = "";
   if (this->compiler_info_process_time > major_factor_time) {

@@ -14,8 +14,6 @@
 #include "simple_timer.h"
 #include "worker_thread_manager.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class ExecLog;
@@ -27,7 +25,7 @@ class WorkerThreadManager;
 class LogServiceClient {
  public:
   LogServiceClient(HttpRPC* http_rpc,
-                   string save_log_path,
+                   std::string save_log_path,
                    size_t max_log_in_req,
                    absl::Duration max_pending_duration,
                    WorkerThreadManager* wm);
@@ -59,7 +57,7 @@ class LogServiceClient {
 
   WorkerThreadManager* wm_;
   HttpRPC* http_rpc_;
-  const string save_log_path_;
+  const std::string save_log_path_;
   const size_t max_log_in_req_;
   const absl::Duration max_pending_duration_;
 

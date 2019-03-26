@@ -46,7 +46,9 @@ class SocketDescriptor : public Descriptor {
 
   bool NeedRetry() const override;
   virtual int ShutdownForSend();
-  string GetLastErrorMessage() const override { return last_error_message_; }
+  std::string GetLastErrorMessage() const override {
+    return last_error_message_;
+  }
   virtual bool IsReadable() const;
   bool IsClosed() const { return is_closed_; }
   bool CanReuse() const override {
@@ -65,7 +67,7 @@ class SocketDescriptor : public Descriptor {
   OneshotClosure* GetWritableClosure();
   OneshotClosure* GetTimeoutClosure();
 
-  string PeerName() const;
+  std::string PeerName() const;
 
  private:
   // Gets a one-shot closure to run permanent "closure" and
@@ -108,7 +110,7 @@ class SocketDescriptor : public Descriptor {
   bool timeout_in_queue_;
   bool active_read_;
   bool active_write_;
-  string last_error_message_;
+  std::string last_error_message_;
   bool write_poll_registered_;
   bool is_closed_;
   bool need_retry_;

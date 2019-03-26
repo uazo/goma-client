@@ -11,7 +11,7 @@ namespace devtools_goma {
 
 namespace {
 
-TokenHSList TokenHSListFrom(const string& s) {
+TokenHSList TokenHSListFrom(const std::string& s) {
   ArrayTokenList tokens;
   EXPECT_TRUE(CppTokenizer::TokenizeAll(s, SpaceHandling::kKeep, &tokens));
 
@@ -218,7 +218,7 @@ TEST(CppMacroExpanderNaiveTest, GetMacroArgumentsUnterminatedParen) {
 }
 
 TEST(CppMacroExpanderNaiveTest, GetVaOptArgument) {
-  const string s = "( 1, F(1, 2) ) X";
+  const std::string s = "( 1, F(1, 2) ) X";
   ArrayTokenList tokens;
   ASSERT_TRUE(CppTokenizer::TokenizeAll(s, SpaceHandling::kKeep, &tokens));
 

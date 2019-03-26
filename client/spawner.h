@@ -14,8 +14,6 @@
 #include "config_win.h"
 #endif
 
-using std::string;
-
 namespace devtools_goma {
 
 // A subclass of Spawner spawns a child process.  It takes a file as stdin
@@ -54,9 +52,9 @@ class Spawner {
   // when |stderr_filename| is empty.
   // Note: this must be called BEFORE the Run method.
   // Note: you cannot use this method with SetConsoleOutputBuffer.
-  void SetFileRedirection(const string& stdin_filename,
-                          const string& stdout_filename,
-                          const string& stderr_filename,
+  void SetFileRedirection(const std::string& stdin_filename,
+                          const std::string& stdout_filename,
+                          const std::string& stderr_filename,
                           ConsoleOutputOption option) {
     stdin_filename_ = stdin_filename;
     stdout_filename_ = stdout_filename;
@@ -69,7 +67,7 @@ class Spawner {
   // Note: this must be called BEFORE the Run method.
   // Note: if |stdout_filename| or |stderr_filename| are set by
   //       SetFileRedirection, you cannot use this method.
-  void SetConsoleOutputBuffer(string* console_output,
+  void SetConsoleOutputBuffer(std::string* console_output,
                               ConsoleOutputOption option) {
     console_output_ = console_output;
     console_output_option_ = option;
@@ -96,8 +94,10 @@ class Spawner {
   // Returns kInvalidPid on non fatal error, and dies with fatal error. |prog|
   // is a program name, |args| is its arguments, |envs| is its environment, and
   // |cwd| is a current working directory.
-  virtual int Run(const string& cmd, const std::vector<string>& args,
-                  const std::vector<string>& envs, const string& cwd) = 0;
+  virtual int Run(const std::string& cmd,
+                  const std::vector<std::string>& args,
+                  const std::vector<std::string>& envs,
+                  const std::string& cwd) = 0;
 
   // Kills the process.
   virtual ProcessStatus Kill() = 0;
@@ -133,8 +133,8 @@ class Spawner {
       console_output_(NULL), detach_(false), keep_env_(false), umask_(-1),
       console_output_option_(MERGE_STDOUT_STDERR) {}
 
-  string stdin_filename_, stdout_filename_, stderr_filename_;
-  string* console_output_;
+  std::string stdin_filename_, stdout_filename_, stderr_filename_;
+  std::string* console_output_;
   bool detach_;
   bool keep_env_;
   int32_t umask_;

@@ -26,8 +26,6 @@
 #include "path_util.h"
 #include "unittest_util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 static const char *kElfBinary = "\177ELF\002\001\001\001blahblahblah";
@@ -56,49 +54,48 @@ class LinkerInputProcessorTest : public testing::Test {
     tmpdir_util_.reset();
   }
 
-  bool ParseDumpOutput(const string& dump_output,
-                       std::vector<string>* driver_args,
-                       std::vector<string>* driver_envs) {
+  bool ParseDumpOutput(const std::string& dump_output,
+                       std::vector<std::string>* driver_args,
+                       std::vector<std::string>* driver_envs) {
     return LinkerInputProcessor::ParseDumpOutput(dump_output, driver_args,
                                                  driver_envs);
   }
 
-  void ParseDriverCommandLine(
-      const std::vector<string>& driver_args,
-      const string& cwd,
-      string* sysroot,
-      string* arch,
-      std::vector<string>* searchdirs,
-      std::vector<string>* input_paths) {
+  void ParseDriverCommandLine(const std::vector<std::string>& driver_args,
+                              const std::string& cwd,
+                              std::string* sysroot,
+                              std::string* arch,
+                              std::vector<std::string>* searchdirs,
+                              std::vector<std::string>* input_paths) {
     LinkerInputProcessor linker_input_processor(cwd);
     linker_input_processor.ParseDriverCommandLine(driver_args, input_paths);
 
     *sysroot = linker_input_processor.library_path_resolver_->sysroot();
     *arch = linker_input_processor.arch_;
-    const std::vector<string>& parsed_searchdirs =
-      linker_input_processor.library_path_resolver_->searchdirs();
+    const std::vector<std::string>& parsed_searchdirs =
+        linker_input_processor.library_path_resolver_->searchdirs();
     copy(parsed_searchdirs.begin(), parsed_searchdirs.end(),
          back_inserter(*searchdirs));
   }
 
-  LinkerInputProcessor::FileType CheckFileType(const string& path) {
+  LinkerInputProcessor::FileType CheckFileType(const std::string& path) {
     return LinkerInputProcessor::CheckFileType(
         tmpdir_util_->FullPath(path));
   }
 
-  void GetLibraryPath(
-      const std::vector<string>& envs,
-      const string& cwd,
-      const std::vector<string>& searchdirs,
-      std::vector<string>* library_paths) {
+  void GetLibraryPath(const std::vector<std::string>& envs,
+                      const std::string& cwd,
+                      const std::vector<std::string>& searchdirs,
+                      std::vector<std::string>* library_paths) {
     LinkerInputProcessor linker_input_processor(cwd);
     linker_input_processor.library_path_resolver_->AppendSearchdirs(
         searchdirs);
     linker_input_processor.GetLibraryPath(envs, library_paths);
   }
 
-  void ParseThinArchive(const string& filename, std::set<string>* input_files) {
-    std::set<string> raw_input_files;
+  void ParseThinArchive(const std::string& filename,
+                        std::set<std::string>* input_files) {
+    std::set<std::string> raw_input_files;
     LinkerInputProcessor::ParseThinArchive(tmpdir_ + filename,
                                            &raw_input_files);
     for (const auto& iter : raw_input_files) {
@@ -109,8 +106,10 @@ class LinkerInputProcessorTest : public testing::Test {
   }
 
 #ifndef _WIN32
-  void Archive(const string& cwd, const string& op, const string& archive,
-               const std::vector<string>& files) {
+  void Archive(const std::string& cwd,
+               const std::string& op,
+               const std::string& archive,
+               const std::vector<std::string>& files) {
     tmpdir_util_->MkdirForPath(cwd, true);
     std::stringstream ss;
     ss << "cd " << tmpdir_ << cwd << " && ar " << op << " " << archive;
@@ -128,8 +127,8 @@ class LinkerInputProcessorTest : public testing::Test {
 };
 
 TEST_F(LinkerInputProcessorTest, ParseGccDumpOutput) {
-  std::vector<string> driver_args;
-  std::vector<string> driver_envs;
+  std::vector<std::string> driver_args;
+  std::vector<std::string> driver_envs;
   EXPECT_TRUE(ParseDumpOutput(
       "Using built-in specs.\n"
       "Target: x86_64-linux-gnu\n"
@@ -163,7 +162,7 @@ TEST_F(LinkerInputProcessorTest, ParseGccDumpOutput) {
       "\"/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crtn.o\"\n",
       &driver_args, &driver_envs));
 
-  std::vector<string> expected_args;
+  std::vector<std::string> expected_args;
   expected_args.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3/collect2");
   expected_args.push_back("--build-id");
   expected_args.push_back("--eh-frame-hdr");
@@ -212,7 +211,7 @@ TEST_F(LinkerInputProcessorTest, ParseGccDumpOutput) {
       "/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crtn.o");
   EXPECT_EQ(expected_args, driver_args);
 
-  std::vector<string> expected_envs;
+  std::vector<std::string> expected_envs;
   expected_envs.push_back(
       "COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/4.4.3/:"
       "/usr/lib/gcc/x86_64-linux-gnu/4.4.3/:/usr/lib/gcc/x86_64-linux-gnu");
@@ -223,8 +222,8 @@ TEST_F(LinkerInputProcessorTest, ParseGccDumpOutput) {
 }
 
 TEST_F(LinkerInputProcessorTest, ParseGcc46DumpOutput) {
-  std::vector<string> driver_args;
-  std::vector<string> driver_envs;
+  std::vector<std::string> driver_args;
+  std::vector<std::string> driver_envs;
   EXPECT_TRUE(ParseDumpOutput(
     "Using built-in specs.\n"
     "COLLECT_GCC=/usr/bin/g++\n"
@@ -278,7 +277,7 @@ TEST_F(LinkerInputProcessorTest, ParseGcc46DumpOutput) {
     "/usr/lib/gcc/x86_64-linux-gnu/4.6/../../../x86_64-linux-gnu/crtn.o\n",
       &driver_args, &driver_envs));
 
-  std::vector<string> expected_args;
+  std::vector<std::string> expected_args;
   expected_args.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.6/collect2");
   expected_args.push_back("--sysroot=/");
   expected_args.push_back("--build-id");
@@ -332,7 +331,7 @@ TEST_F(LinkerInputProcessorTest, ParseGcc46DumpOutput) {
       "/usr/lib/gcc/x86_64-linux-gnu/4.6/../../../x86_64-linux-gnu/crtn.o");
   EXPECT_EQ(expected_args, driver_args);
 
-  std::vector<string> expected_envs;
+  std::vector<std::string> expected_envs;
   expected_envs.push_back(
       "COMPILER_PATH=../../third_party/gold/:"
       "/usr/lib/gcc/x86_64-linux-gnu/4.6/:/usr/lib/gcc/x86_64-linux-gnu/4.6/:"
@@ -350,8 +349,8 @@ TEST_F(LinkerInputProcessorTest, ParseGcc46DumpOutput) {
 }
 
 TEST_F(LinkerInputProcessorTest, ParseGccErrorDumpOutput) {
-  std::vector<string> driver_args;
-  std::vector<string> driver_envs;
+  std::vector<std::string> driver_args;
+  std::vector<std::string> driver_envs;
   EXPECT_FALSE(ParseDumpOutput(
       "g++: out/Release/obj.target/memory_test/"
       "chrome/test/memory_test/memory_test.o: No such file or directory\n"
@@ -370,8 +369,8 @@ TEST_F(LinkerInputProcessorTest, ParseGccErrorDumpOutput) {
 }
 
 TEST_F(LinkerInputProcessorTest, ParseClangDumpOutput) {
-  std::vector<string> driver_args;
-  std::vector<string> driver_envs;
+  std::vector<std::string> driver_args;
+  std::vector<std::string> driver_envs;
   EXPECT_TRUE(ParseDumpOutput(
       "clang version 3.0 (trunk 131935)\n"
       "Target: x86_64-unknown-linux-gnu\n"
@@ -398,7 +397,7 @@ TEST_F(LinkerInputProcessorTest, ParseClangDumpOutput) {
       "\"/usr/lib/gcc/x86_64-linux-gnu/4.4.3/crtend.o\" "
       "\"/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib64/crtn.o\"\n",
       &driver_args, &driver_envs));
-  std::vector<string> expected_args;
+  std::vector<std::string> expected_args;
   expected_args.push_back("/usr/bin/ld");
   expected_args.push_back("-z");
   expected_args.push_back("relro");
@@ -454,13 +453,13 @@ TEST_F(LinkerInputProcessorTest, ParseClangDumpOutput) {
       "/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib64/crtn.o");
   EXPECT_EQ(expected_args, driver_args);
 
-  std::vector<string> expected_envs;
+  std::vector<std::string> expected_envs;
   EXPECT_EQ(expected_envs, driver_envs);
 }
 
 #ifdef __linux__
 TEST_F(LinkerInputProcessorTest, ParseGccDriverCommandLine) {
-  string cwd = "/src";
+  std::string cwd = "/src";
   tmpdir_util_->SetCwd(cwd);
   tmpdir_util_->CreateTmpFile("/lib64/ld-linux-x86-64.so.2", kElfBinary);
   tmpdir_util_->CreateTmpFile(file::JoinPath(cwd, "out/Release/chrome"), "");
@@ -501,7 +500,7 @@ TEST_F(LinkerInputProcessorTest, ParseGccDriverCommandLine) {
       "/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crtn.o",
       kElfBinary);
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3/collect2");
   args.push_back("--build-id");
   args.push_back("--eh-frame-hdr");
@@ -551,13 +550,13 @@ TEST_F(LinkerInputProcessorTest, ParseGccDriverCommandLine) {
   args.push_back(
       "/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crtn.o");
 
-  std::vector<string> input_paths;
-  std::vector<string> searchdirs;
-  string sysroot;
-  string arch;
+  std::vector<std::string> input_paths;
+  std::vector<std::string> searchdirs;
+  std::string sysroot;
+  std::string arch;
   ParseDriverCommandLine(
       args, cwd, &sysroot, &arch, &searchdirs, &input_paths);
-  std::vector<string> expected_paths;
+  std::vector<std::string> expected_paths;
   expected_paths.push_back(
       "/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crt1.o");
   expected_paths.push_back(
@@ -586,7 +585,7 @@ TEST_F(LinkerInputProcessorTest, ParseGccDriverCommandLine) {
 
   EXPECT_EQ(expected_paths, input_paths);
 
-  std::vector<string> expected_searchdirs;
+  std::vector<std::string> expected_searchdirs;
   expected_searchdirs.push_back("out/Release");
   expected_searchdirs.push_back("/lib");
   expected_searchdirs.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3");
@@ -599,7 +598,7 @@ TEST_F(LinkerInputProcessorTest, ParseGccDriverCommandLine) {
 }
 
 TEST_F(LinkerInputProcessorTest, ParseGccDriverCommandLineStaticLink) {
-  string cwd = "/src";
+  std::string cwd = "/src";
   tmpdir_util_->SetCwd(cwd);
   tmpdir_util_->CreateTmpFile(
       "/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crt1.o", kElfBinary);
@@ -620,7 +619,7 @@ TEST_F(LinkerInputProcessorTest, ParseGccDriverCommandLineStaticLink) {
   tmpdir_util_->CreateTmpFile(
       "/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crtn.o", kElfBinary);
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   // gcc -### -static -o hello hello.o
   args.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3/collect2");
   args.push_back("--build-id");
@@ -651,13 +650,13 @@ TEST_F(LinkerInputProcessorTest, ParseGccDriverCommandLineStaticLink) {
   args.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3/crtend.o");
   args.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crtn.o");
 
-  std::vector<string> input_paths;
-  std::vector<string> searchdirs;
-  string sysroot;
-  string arch;
+  std::vector<std::string> input_paths;
+  std::vector<std::string> searchdirs;
+  std::string sysroot;
+  std::string arch;
   ParseDriverCommandLine(
       args, cwd, &sysroot, &arch, &searchdirs, &input_paths);
-  std::vector<string> expected_paths;
+  std::vector<std::string> expected_paths;
   expected_paths.push_back(
       "/usr/lib/gcc/x86_64-linux-gnu/4.4.3/../../../../lib/crt1.o");
   expected_paths.push_back(
@@ -674,7 +673,7 @@ TEST_F(LinkerInputProcessorTest, ParseGccDriverCommandLineStaticLink) {
 
   EXPECT_EQ(expected_paths, input_paths);
 
-  std::vector<string> expected_searchdirs;
+  std::vector<std::string> expected_searchdirs;
   expected_searchdirs.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3");
   expected_searchdirs.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3");
   expected_searchdirs.push_back(
@@ -693,12 +692,12 @@ TEST_F(LinkerInputProcessorTest, ParseGccDriverCommandLineStaticLink) {
 #endif
 #ifdef __MACH__
 TEST_F(LinkerInputProcessorTest, ParseMacClangDriverCommandLine) {
-  string cwd = "/src";
+  std::string cwd = "/src";
   tmpdir_util_->SetCwd(cwd);
   tmpdir_util_->CreateTmpFile("/usr/lib/libSystem.dylib", kMachOFatFile);
   tmpdir_util_->CreateTmpFile("hello.o", kMachMagic);
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   // clang -### -o hello hello.o
   args.push_back("/usr/bin/ld");
   args.push_back("-demangle");
@@ -713,13 +712,13 @@ TEST_F(LinkerInputProcessorTest, ParseMacClangDriverCommandLine) {
   args.push_back("-lSystem");
   args.push_back("/usr/bin/../lib/clang/4.1/lib/darwin/libclang_rt.osx.a");
 
-  std::vector<string> input_paths;
-  std::vector<string> searchdirs;
-  string sysroot;
-  string arch;
+  std::vector<std::string> input_paths;
+  std::vector<std::string> searchdirs;
+  std::string sysroot;
+  std::string arch;
   ParseDriverCommandLine(
       args, cwd, &sysroot, &arch, &searchdirs, &input_paths);
-  std::vector<string> expected_paths;
+  std::vector<std::string> expected_paths;
   expected_paths.push_back("hello.o");
   expected_paths.push_back("/usr/bin/../lib/clang/4.1/lib/darwin/"
                            "libclang_rt.osx.a");
@@ -727,7 +726,7 @@ TEST_F(LinkerInputProcessorTest, ParseMacClangDriverCommandLine) {
   EXPECT_EQ(expected_paths, input_paths);
 
   // searchdir should not have default ones.
-  std::vector<string> expected_searchdirs;
+  std::vector<std::string> expected_searchdirs;
   EXPECT_EQ(expected_searchdirs, searchdirs);
 
   EXPECT_EQ("", sysroot);
@@ -738,7 +737,7 @@ TEST_F(LinkerInputProcessorTest, ParseMacClangDriverCommandLine) {
 #ifdef __linux__
 // TODO: fix library_path_resolver on mac could handle *.so for nacl.
 TEST_F(LinkerInputProcessorTest, ParseNaclGccSolinkDriverCommandLine) {
-  string cwd = "/src/chromium1/native_client/src/untrusted/nacl";
+  std::string cwd = "/src/chromium1/native_client/src/untrusted/nacl";
   tmpdir_util_->SetCwd(cwd);
   tmpdir_util_->CreateTmpFile(
       "/src/chromium1/native_client/src/untrusted/nacl/"
@@ -780,7 +779,7 @@ TEST_F(LinkerInputProcessorTest, ParseNaclGccSolinkDriverCommandLine) {
       "/bin/../lib/gcc/x86_64-nacl/4.4.3/../../../../x86_64-nacl"
       "/lib/../lib32/crtn.o", kElfBinary);
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back(
       "/src/chromium1/src/out/Release/gen/sdk/toolchain/linux_x86_glibc"
       "/bin/../libexec/gcc/x86_64-nacl/4.4.3/collect2");
@@ -835,13 +834,13 @@ TEST_F(LinkerInputProcessorTest, ParseNaclGccSolinkDriverCommandLine) {
       "/bin/../lib/gcc/x86_64-nacl/4.4.3/../../../../x86_64-nacl"
       "/lib/../lib32/crtn.o");
 
-  std::vector<string> input_paths;
-  std::vector<string> searchdirs;
-  string sysroot;
-  string arch;
+  std::vector<std::string> input_paths;
+  std::vector<std::string> searchdirs;
+  std::string sysroot;
+  std::string arch;
   ParseDriverCommandLine(
       args, cwd, &sysroot, &arch, &searchdirs, &input_paths);
-  std::vector<string> expected_paths;
+  std::vector<std::string> expected_paths;
   expected_paths.push_back(
       "/src/chromium1/src/out/Release/gen/sdk/toolchain/linux_x86_glibc"
       "/bin/../lib/gcc/x86_64-nacl/4.4.3/../../../../x86_64-nacl"
@@ -881,7 +880,7 @@ TEST_F(LinkerInputProcessorTest, ParseNaclGccSolinkDriverCommandLine) {
       "/lib/../lib32/libgcc_s.so");
   EXPECT_EQ(expected_paths, input_paths);
 
-  std::vector<string> expected_searchdirs;
+  std::vector<std::string> expected_searchdirs;
   expected_searchdirs.push_back(
       "/src/chromium1/src/out/Release/gen/sdk/toolchain/linux_x86_glibc"
       "/bin/../lib/gcc/x86_64-nacl/4.4.3/32");
@@ -908,11 +907,11 @@ TEST_F(LinkerInputProcessorTest, ParseNaclGccSolinkDriverCommandLine) {
 #endif
 
 TEST_F(LinkerInputProcessorTest, GetLibraryPath) {
-  std::vector<string> envs;
-  string cwd = "/dummy";
+  std::vector<std::string> envs;
+  std::string cwd = "/dummy";
   tmpdir_util_->SetCwd(cwd);
-  std::vector<string> searchdirs;
-  std::vector<string> library_paths;
+  std::vector<std::string> searchdirs;
+  std::vector<std::string> library_paths;
 
   searchdirs.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.6");
   searchdirs.push_back("/usr/lib/x86_64-linux-gnu");
@@ -930,7 +929,7 @@ TEST_F(LinkerInputProcessorTest, GetLibraryPath) {
       "/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/4.6/../../../:/lib/:"
       "/usr/lib/");
   GetLibraryPath(envs, cwd, searchdirs, &library_paths);
-  std::vector<string> expected_library_paths;
+  std::vector<std::string> expected_library_paths;
   expected_library_paths.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.6");
   expected_library_paths.push_back(
       "/usr/lib/gcc/x86_64-linux-gnu/4.6/../../../x86_64-linux-gnu");
@@ -949,11 +948,11 @@ TEST_F(LinkerInputProcessorTest, GetLibraryPath) {
 }
 
 TEST_F(LinkerInputProcessorTest, GetLibraryPathNoLibraryPathEnv) {
-  std::vector<string> envs;
-  string cwd = "/dummy";
+  std::vector<std::string> envs;
+  std::string cwd = "/dummy";
   tmpdir_util_->SetCwd(cwd);
-  std::vector<string> searchdirs;
-  std::vector<string> library_paths;
+  std::vector<std::string> searchdirs;
+  std::vector<std::string> library_paths;
 
   searchdirs.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.6");
   searchdirs.push_back("/usr/lib/x86_64-linux-gnu");
@@ -963,7 +962,7 @@ TEST_F(LinkerInputProcessorTest, GetLibraryPathNoLibraryPathEnv) {
       "/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/4.6/:"
       "/usr/lib/gcc/x86_64-linux-gnu/");
   GetLibraryPath(envs, cwd, searchdirs, &library_paths);
-  std::vector<string> expected_library_paths;
+  std::vector<std::string> expected_library_paths;
   expected_library_paths.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.6");
   expected_library_paths.push_back("/usr/lib/x86_64-linux-gnu");
 
@@ -972,16 +971,16 @@ TEST_F(LinkerInputProcessorTest, GetLibraryPathNoLibraryPathEnv) {
 
 TEST_F(LinkerInputProcessorTest, GetLibraryPathRelativePath) {
   // Not sure we will see this kind of pattern.
-  std::vector<string> envs;
-  string cwd = "/dummy";
+  std::vector<std::string> envs;
+  std::string cwd = "/dummy";
   tmpdir_util_->SetCwd(cwd);
-  std::vector<string> searchdirs;
-  std::vector<string> library_paths;
+  std::vector<std::string> searchdirs;
+  std::vector<std::string> library_paths;
 
   envs.push_back("LIBRARY_PATH=../../third_party/gold/:"
                  "/usr/lib/gcc/x86_64-linux-gnu/4.6/");
   GetLibraryPath(envs, cwd, searchdirs, &library_paths);
-  std::vector<string> expected_library_paths;
+  std::vector<std::string> expected_library_paths;
   expected_library_paths.push_back("/dummy/../../third_party/gold");
   expected_library_paths.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.6");
 
@@ -1053,14 +1052,14 @@ TEST_F(LinkerInputProcessorTest, ParseThinArchive) {
       "/src/out/Release/obj.target/foo/foo.o", kElfBinary);
   tmpdir_util_->CreateTmpFile(
       "/src/out/Release/obj.target/foo/bar.o", kElfBinary);
-  std::vector<string> files;
+  std::vector<std::string> files;
   files.push_back("../foo/foo.o");
   files.push_back("../foo/bar.o");
   Archive("/src/out/Release/obj.target/bar", "rcuT", "libfoo.a", files);
 
-  std::set<string> input_files;
+  std::set<std::string> input_files;
   ParseThinArchive("/src/out/Release/obj.target/bar/libfoo.a", &input_files);
-  std::set<string> expected_files;
+  std::set<std::string> expected_files;
   expected_files.insert("/src/out/Release/obj.target/bar/../foo/foo.o");
   expected_files.insert("/src/out/Release/obj.target/bar/../foo/bar.o");
   EXPECT_EQ(expected_files, input_files);

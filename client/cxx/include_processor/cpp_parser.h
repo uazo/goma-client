@@ -37,8 +37,6 @@
 # include "config_win.h"
 #endif
 
-using std::string;
-
 namespace devtools_goma {
 
 class Content;
@@ -56,26 +54,24 @@ class CppParser {
     // Returns true if the include file is found (or it was already processed).
     // Returns false if the include file was not found and failed to process
     // the include directive.
-    virtual bool HandleInclude(
-        const string& path,
-        const string& current_directory,
-        const string& current_filepath,
-        char quote_char,  // '"' or '<'
-        int include_dir_index) = 0;
+    virtual bool HandleInclude(const std::string& path,
+                               const std::string& current_directory,
+                               const std::string& current_filepath,
+                               char quote_char,  // '"' or '<'
+                               int include_dir_index) = 0;
 
     // Handles __has_include() macro.
     // Returns value of __has_include().
-    virtual bool HasInclude(
-        const string& path,
-        const string& current_directory,
-        const string& current_filepath,
-        char quote_char,  // '"' or '<'
-        int include_dir_index) = 0;
+    virtual bool HasInclude(const std::string& path,
+                            const std::string& current_directory,
+                            const std::string& current_filepath,
+                            char quote_char,  // '"' or '<'
+                            int include_dir_index) = 0;
   };
   class ErrorObserver {
    public:
     virtual ~ErrorObserver() {}
-    virtual void HandleError(const string& error) = 0;
+    virtual void HandleError(const std::string& error) = 0;
   };
 
   using Token = CppToken;
@@ -104,30 +100,30 @@ class CppParser {
   const CppDirective* NextDirective();
 
   // Macro dictionary helpers.
-  void AddMacroByString(const string& name, const string& body);
+  void AddMacroByString(const std::string& name, const std::string& body);
   void AddMacro(const Macro* macro);
-  void DeleteMacro(const string& name);
-  const Macro* GetMacro(const string& name);
-  bool IsMacroDefined(const string& name);
+  void DeleteMacro(const std::string& name);
+  const Macro* GetMacro(const std::string& name);
+  bool IsMacroDefined(const std::string& name);
   // For testing purpose
-  bool EnablePredefinedMacro(const string& name, bool is_hidden);
+  bool EnablePredefinedMacro(const std::string& name, bool is_hidden);
 
   void ClearBaseFile() { base_file_.clear(); }
 
-  void AddStringInput(const string& content, const string& pathname);
+  void AddStringInput(const std::string& content, const std::string& pathname);
   void AddPreparsedDirectivesInput(SharedCppDirectives directives);
   void AddPredefinedMacros(const CxxCompilerInfo& compiler_info);
 
   // Adds |content| of |path|, which exists in |directory|.
   // |include_dir_index| is an index of a list of include dirs.
   void AddFileInput(IncludeItem include_item,
-                    const string& path,
-                    const string& directory,
+                    const std::string& path,
+                    const std::string& directory,
                     int include_dir_index);
 
   // Returns true if the parser has already processed the |path|
   // and the set of macros that the file depends on have not changed.
-  bool IsProcessedFile(const string& filepath, int include_dir_index) {
+  bool IsProcessedFile(const std::string& filepath, int include_dir_index) {
     ++total_files_;
     if (!IsProcessedFileInternal(filepath, include_dir_index))
       return false;
@@ -142,11 +138,11 @@ class CppParser {
   int skipped_files() const { return skipped_files_; }
 
   // For debug.
-  string DumpMacros();
+  std::string DumpMacros();
 
   void Error(absl::string_view error);
   void Error(absl::string_view error, absl::string_view arg);
-  string DebugStringPrefix();
+  std::string DebugStringPrefix();
 
   // include_dir_index for the current directory, which is not specified by -I.
   // This is mainly used for the source file, or header files included by
@@ -181,7 +177,8 @@ class CppParser {
     bool taken;
   };
 
-  bool IsProcessedFileInternal(const string& filepath, int include_dir_index);
+  bool IsProcessedFileInternal(const std::string& filepath,
+                               int include_dir_index);
 
   void ProcessDirective(const CppDirective&);
   void ProcessDirectiveInFalseCondition(const CppDirective&);
@@ -203,10 +200,10 @@ class CppParser {
   void ProcessIncludeInternal(const CppDirectiveIncludeBase&);
   void ProcessConditionInFalse(const CppDirective&);
 
-  void EvalFunctionMacro(const string& name);
+  void EvalFunctionMacro(const std::string& name);
   int EvalCondition(const ArrayTokenList& orig_tokens);
   // Detects include guard from #if condition.
-  string DetectIncludeGuard(const ArrayTokenList& orig_tokens);
+  std::string DetectIncludeGuard(const ArrayTokenList& orig_tokens);
 
   Input* input() const {
     if (HasMoreInput()) {
@@ -287,9 +284,9 @@ class CppParser {
   }
 
   Token ProcessHasCheckMacro(
-      const string& name,
+      const std::string& name,
       const ArrayTokenList& tokens,
-      const std::unordered_map<string, int>& has_check_macro);
+      const std::unordered_map<std::string, int>& has_check_macro);
 
   // Initializes tables etc.
   static void EnsureInitialize();
@@ -308,9 +305,9 @@ class CppParser {
 
   PragmaOnceFileSet pragma_once_fileset_;
 
-  string current_date_;
-  string current_time_;
-  string base_file_;
+  std::string current_date_;
+  std::string current_time_;
+  std::string base_file_;
   int counter_;
 
   bool is_cplusplus_;
@@ -320,7 +317,7 @@ class CppParser {
   ErrorObserver* error_observer_;
 
   // When include guard macro is detected, the token is preserved here.
-  std::unordered_map<string, string> include_guard_ident_;
+  std::unordered_map<std::string, std::string> include_guard_ident_;
 
   const CxxCompilerInfo* compiler_info_;
   bool is_vc_;
@@ -339,7 +336,7 @@ class CppParser {
   // Holds (name, Macro*).
   // The same name macro might be registered twice.
   using PredefinedMacros =
-      std::vector<std::pair<string, std::unique_ptr<Macro>>>;
+      std::vector<std::pair<std::string, std::unique_ptr<Macro>>>;
   static PredefinedMacros* predefined_macros_;
 
   static bool global_initialized_;

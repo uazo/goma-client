@@ -10,12 +10,10 @@
 
 #include <gtest/gtest.h>
 
-using std::string;
-
 namespace devtools_goma {
 
 TEST(CrosUtil, ParseBlacklistContents) {
-  std::vector<string> expect;
+  std::vector<std::string> expect;
 
   static const char* kEmpty = "";
   EXPECT_EQ(expect, ParseBlacklistContents(kEmpty));
@@ -60,7 +58,7 @@ TEST(CrosUtil, ParseBlacklistContents) {
 }
 
 TEST(CrosUtil, IsBlacklisted) {
-  std::vector<string> blacklist;
+  std::vector<std::string> blacklist;
   blacklist.push_back("/tmp");
   EXPECT_TRUE(IsBlacklisted("/tmp", blacklist));
   blacklist.clear();

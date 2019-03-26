@@ -15,19 +15,19 @@ class JavaCompilerTypeSpecific : public CompilerTypeSpecific {
   JavaCompilerTypeSpecific(const JavaCompilerTypeSpecific&) = delete;
   void operator=(const JavaCompilerTypeSpecific&) = delete;
 
-  bool RemoteCompileSupported(const string& trace_id,
+  bool RemoteCompileSupported(const std::string& trace_id,
                               const CompilerFlags& flags,
                               bool verify_output) const override;
 
   std::unique_ptr<CompilerInfoData> BuildCompilerInfoData(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const std::vector<string>& compiler_info_envs) override;
+      const std::string& local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs) override;
 
   bool SupportsDepsCache(const CompilerFlags&) const override { return false; }
 
   IncludeProcessorResult RunIncludeProcessor(
-      const string& trace_id,
+      const std::string& trace_id,
       const CompilerFlags& compiler_flags,
       const CompilerInfo& compiler_info,
       const CommandSpec& command_spec,
@@ -46,19 +46,19 @@ class JavacCompilerTypeSpecific : public CompilerTypeSpecific {
   JavacCompilerTypeSpecific(const JavacCompilerTypeSpecific&) = delete;
   void operator=(const JavacCompilerTypeSpecific&) = delete;
 
-  bool RemoteCompileSupported(const string& trace_id,
+  bool RemoteCompileSupported(const std::string& trace_id,
                               const CompilerFlags& flags,
                               bool verify_output) const override;
 
   std::unique_ptr<CompilerInfoData> BuildCompilerInfoData(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const std::vector<string>& compiler_info_envs) override;
+      const std::string& local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs) override;
 
   bool SupportsDepsCache(const CompilerFlags&) const override { return false; }
 
   IncludeProcessorResult RunIncludeProcessor(
-      const string& trace_id,
+      const std::string& trace_id,
       const CompilerFlags& compiler_flags,
       const CompilerInfo& compiler_info,
       const CommandSpec& command_spec,

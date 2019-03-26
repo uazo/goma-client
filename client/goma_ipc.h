@@ -22,8 +22,6 @@
 #include "absl/time/time.h"
 #include "basictypes.h"
 
-using std::string;
-
 namespace google {
 namespace protobuf {
 class Message;
@@ -56,7 +54,7 @@ class GomaIPC {
 
     // Result of RPC for CallWithAsync. OK=success, or error code.
     int err;
-    string error_message;
+    std::string error_message;
 
     // The return code of HTTP.
     int http_return_code;
@@ -67,7 +65,7 @@ class GomaIPC {
     absl::Duration req_send_time;
     absl::Duration resp_recv_time;
 
-    string DebugString() const;
+    std::string DebugString() const;
   };
 
   class ChanFactory {
@@ -83,18 +81,18 @@ class GomaIPC {
   ~GomaIPC();
 
   // Returns OK on success, negative (Errno) on failure.
-  int Call(const string& path,
+  int Call(const std::string& path,
            const google::protobuf::Message* req,
            google::protobuf::Message* resp,
            Status* status);
 
   // Return debug information.
-  string DebugString() const;
+  std::string DebugString() const;
 
   // Returns io channel.
-  std::unique_ptr<IOChannel> CallAsync(
-      const string& path, const google::protobuf::Message* req,
-      Status* status);
+  std::unique_ptr<IOChannel> CallAsync(const std::string& path,
+                                       const google::protobuf::Message* req,
+                                       Status* status);
 
   // Takes ownership of io channel.
   // Returns OK or Errno.
@@ -104,14 +102,17 @@ class GomaIPC {
  private:
   // OK on success, negative (Errno) on failure.
   int SendRequest(const IOChannel* chan,
-                  const string& path, const string& s,
+                  const std::string& path,
+                  const std::string& s,
                   Status* status);
   // OK on success, negative (Errno) on failure.
   // If read timed-out after status->initial_timeout_sec, it will check /healthz
   // by status->check_timeout_sec intervals if status->health_check_on_timeout
   // is true.
   int ReadResponse(const IOChannel* chan,
-                   string* header, string* body, int* http_return_code,
+                   std::string* header,
+                   std::string* body,
+                   int* http_return_code,
                    Status* status);
 
   int CheckHealthz(Status* status);

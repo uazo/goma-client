@@ -48,14 +48,14 @@ ScopedFd::~ScopedFd() {
 }
 
 /* static */
-ScopedFd::FileDescriptor ScopedFd::OpenForRead(const string& filename) {
+ScopedFd::FileDescriptor ScopedFd::OpenForRead(const std::string& filename) {
 #ifndef _WIN32
   return open(filename.c_str(), O_RDONLY);
 #else
   // On Windows, the length of path is 256. When compiling NaCl untrusted code,
   // the length of path often exceeds 256. Usually it contains '..', so let's
   // clean it.
-  const string& resolved = PathResolver::ResolvePath(filename);
+  const std::string& resolved = PathResolver::ResolvePath(filename);
   return CreateFileA(resolved.c_str(), GENERIC_READ,
                      FILE_SHARE_READ,
                      nullptr,
@@ -66,14 +66,14 @@ ScopedFd::FileDescriptor ScopedFd::OpenForRead(const string& filename) {
 }
 
 /* static */
-ScopedFd::FileDescriptor ScopedFd::OpenForAppend(
-    const string& filename, int mode) {
+ScopedFd::FileDescriptor ScopedFd::OpenForAppend(const std::string& filename,
+                                                 int mode) {
 #ifndef _WIN32
   return open(filename.c_str(), O_WRONLY | O_CREAT | O_APPEND, mode);
 #else
   UNREFERENCED_PARAMETER(mode);
   // TODO: translate mode to file attribute.
-  const string& resolved = PathResolver::ResolvePath(filename);
+  const std::string& resolved = PathResolver::ResolvePath(filename);
   HANDLE h = CreateFileA(resolved.c_str(),
                          FILE_APPEND_DATA,
                          FILE_SHARE_WRITE,
@@ -90,11 +90,11 @@ ScopedFd::FileDescriptor ScopedFd::OpenForAppend(
 }
 
 /* static */
-ScopedFd::FileDescriptor ScopedFd::OpenForRewrite(const string& filename) {
+ScopedFd::FileDescriptor ScopedFd::OpenForRewrite(const std::string& filename) {
 #ifndef _WIN32
   return open(filename.c_str(), O_RDWR);
 #else
-  const string& resolved = PathResolver::ResolvePath(filename);
+  const std::string& resolved = PathResolver::ResolvePath(filename);
   HANDLE h = CreateFileA(resolved.c_str(),
                          GENERIC_READ | GENERIC_WRITE,
                          0,
@@ -111,14 +111,14 @@ ScopedFd::FileDescriptor ScopedFd::OpenForRewrite(const string& filename) {
 #endif
 }
 
-ScopedFd::FileDescriptor ScopedFd::Create(
-    const string& filename, int mode) {
+ScopedFd::FileDescriptor ScopedFd::Create(const std::string& filename,
+                                          int mode) {
 #ifndef _WIN32
   return open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, mode);
 #else
   UNREFERENCED_PARAMETER(mode);
   // TODO: translate mode to file attribute.
-  const string& resolved = PathResolver::ResolvePath(filename);
+  const std::string& resolved = PathResolver::ResolvePath(filename);
   HANDLE h = CreateFileA(resolved.c_str(),
                          GENERIC_WRITE,
                          FILE_SHARE_WRITE,
@@ -134,8 +134,8 @@ ScopedFd::FileDescriptor ScopedFd::Create(
 #endif
 }
 
-ScopedFd::FileDescriptor ScopedFd::CreateExclusive(
-    const string& filename, int mode) {
+ScopedFd::FileDescriptor ScopedFd::CreateExclusive(const std::string& filename,
+                                                   int mode) {
 #ifndef _WIN32
   return open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, mode);
 #else
@@ -144,7 +144,7 @@ ScopedFd::FileDescriptor ScopedFd::CreateExclusive(
   // If the file exists, CreateFile with dwCreationDisposition == CREATE_NEW
   // will fail.
   // See: http://msdn.microsoft.com/en-us/library/windows/desktop/aa363858(v=vs.85).aspx
-  const string& resolved = PathResolver::ResolvePath(filename);
+  const std::string& resolved = PathResolver::ResolvePath(filename);
   HANDLE h = CreateFileA(resolved.c_str(),
                          GENERIC_WRITE,
                          0,
@@ -496,7 +496,7 @@ int ScopedSocket::WriteString(absl::string_view message,
   return OK;
 }
 
-string ScopedSocket::GetLastErrorMessage() const {
+std::string ScopedSocket::GetLastErrorMessage() const {
   char message[1024];
 #ifndef _WIN32
   // Meaning of returned value of strerror_r is different between

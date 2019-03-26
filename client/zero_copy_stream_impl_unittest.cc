@@ -14,13 +14,11 @@
 #include "gtest/gtest.h"
 #include "http_util.h"
 
-using std::string;
-
 namespace {
 
-string ReadAllFromZeroCopyInputStream(
+std::string ReadAllFromZeroCopyInputStream(
     google::protobuf::io::ZeroCopyInputStream* input) {
-  string data;
+  std::string data;
   const void* buffer;
   int size;
   while (input->Next(&buffer, &size)) {
@@ -38,9 +36,9 @@ TEST(ZeroCopyStreamImplTest, GzipRequestInputStream) {
 
   GzipRequestInputStream::Options options;
   GzipRequestInputStream request(
-      absl::make_unique<StringInputStream>(string(kInputData)), options);
+      absl::make_unique<StringInputStream>(std::string(kInputData)), options);
 
-  string compressed_req_body = ReadAllFromZeroCopyInputStream(&request);
+  std::string compressed_req_body = ReadAllFromZeroCopyInputStream(&request);
   EXPECT_TRUE(absl::EndsWith(compressed_req_body, "0\r\n\r\n"))
       << absl::CEscape(compressed_req_body);
 
@@ -62,7 +60,7 @@ TEST(ZeroCopyStreamImplTest, GzipRequestInputStream) {
   GzipInputStream gzip_input(
       absl::make_unique<ChainedInputStream>(std::move(streams)));
 
-  string decompressed_data = ReadAllFromZeroCopyInputStream(&gzip_input);
+  std::string decompressed_data = ReadAllFromZeroCopyInputStream(&gzip_input);
   EXPECT_EQ(kInputData, decompressed_data);
 }
 

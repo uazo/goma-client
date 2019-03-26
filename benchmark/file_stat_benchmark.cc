@@ -11,7 +11,7 @@ namespace devtools_goma {
 void BM_FileStatExist(benchmark::State& state) {
   TmpdirUtil tmpdir("file_stat");
   tmpdir.CreateEmptyFile("empty");
-  const string& path = tmpdir.FullPath("empty");
+  const std::string& path = tmpdir.FullPath("empty");
 
   for (auto _ : state) {
     (void)_;
@@ -25,7 +25,7 @@ BENCHMARK(BM_FileStatExist);
 
 void BM_FileStatNotExist(benchmark::State& state) {
   TmpdirUtil tmpdir("file_stat");
-  const string& path = tmpdir.FullPath("not_exist");
+  const std::string& path = tmpdir.FullPath("not_exist");
 
   for (auto _ : state) {
     (void)_;

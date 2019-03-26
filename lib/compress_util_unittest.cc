@@ -21,8 +21,6 @@ using google::protobuf::io::ConcatenatingInputStream;
 using google::protobuf::io::StringOutputStream;
 #endif  // ENABLE_LZMA
 
-using std::string;
-
 namespace devtools_goma {
 
 TEST(CompressUtilTest, ParseEncodingName) {

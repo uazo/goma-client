@@ -11,7 +11,7 @@ namespace devtools_goma {
 
 namespace {
 
-bool IsParenBalanced(const string& s) {
+bool IsParenBalanced(const std::string& s) {
   ArrayTokenList tokens;
   EXPECT_TRUE(CppTokenizer::TokenizeAll(s, SpaceHandling::kSkip, &tokens));
   return Macro::IsParenBalanced(tokens);

@@ -20,8 +20,6 @@ MSVC_POP_WARNING()
 #include "scoped_fd.h"
 #include "zlib.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // StringInputStream is helper for ArrayInputStream.
@@ -29,7 +27,7 @@ namespace devtools_goma {
 // along with input stream.
 class StringInputStream : public google::protobuf::io::ZeroCopyInputStream {
  public:
-  explicit StringInputStream(string data);
+  explicit StringInputStream(std::string data);
   ~StringInputStream() override = default;
 
   bool Next(const void** data, int* size) override {
@@ -42,7 +40,7 @@ class StringInputStream : public google::protobuf::io::ZeroCopyInputStream {
   }
 
  private:
-  const string input_data_;
+  const std::string input_data_;
   std::unique_ptr<google::protobuf::io::ArrayInputStream> array_stream_;
 };
 

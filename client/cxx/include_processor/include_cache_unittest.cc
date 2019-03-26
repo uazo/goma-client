@@ -18,8 +18,6 @@
 #include "goma_hash.h"
 #include "unittest_util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class IncludeCacheTest : public testing::Test {
@@ -48,8 +46,8 @@ TEST_F(IncludeCacheTest, GetDirectiveList) {
   IncludeCache* ic = IncludeCache::instance();
 
   TmpdirUtil tmpdir("includecache");
-  string ah = tmpdir.FullPath("a.h");
-  string content = "#include <stdio.h>\n";
+  std::string ah = tmpdir.FullPath("a.h");
+  std::string content = "#include <stdio.h>\n";
   tmpdir.CreateTmpFile("a.h", content);
 
   FileStat file_stat;
@@ -83,8 +81,8 @@ TEST_F(IncludeCacheTest, SetGetIfMaxSizeIsZero) {
   IncludeCache* ic = IncludeCache::instance();
 
   TmpdirUtil tmpdir("includecache");
-  string ah = tmpdir.FullPath("a.h");
-  string content = "#include <stdio.h>\n";
+  std::string ah = tmpdir.FullPath("a.h");
+  std::string content = "#include <stdio.h>\n";
   tmpdir.CreateTmpFile("a.h", content);
 
   FileStat file_stat;
@@ -115,13 +113,13 @@ TEST_F(IncludeCacheTest, ExceedMemory) {
 
   TmpdirUtil tmpdir("includecache");
 
-  std::vector<string> paths;
-  std::vector<string> contents;
+  std::vector<std::string> paths;
+  std::vector<std::string> contents;
   std::vector<FileStat> file_stats;
   for (size_t i = 0; i < 3; ++i) {
-    string filename = absl::StrCat("a", i, ".h");
-    string path = tmpdir.FullPath(filename);
-    string content = "content";
+    std::string filename = absl::StrCat("a", i, ".h");
+    std::string path = tmpdir.FullPath(filename);
+    std::string content = "content";
     tmpdir.CreateTmpFile(filename, content);
 
     FileStat file_stat;
@@ -163,8 +161,8 @@ TEST_F(IncludeCacheTest, GetDirectiveHash)
   IncludeCache* ic = IncludeCache::instance();
 
   TmpdirUtil tmpdir("includecache");
-  const string& ah = tmpdir.FullPath("a.h");
-  const string& bh = tmpdir.FullPath("b.h");
+  const std::string& ah = tmpdir.FullPath("a.h");
+  const std::string& bh = tmpdir.FullPath("b.h");
   tmpdir.CreateTmpFile("a.h",
                        "#include <stdio.h>\n");
   tmpdir.CreateTmpFile("b.h",

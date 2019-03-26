@@ -17,9 +17,9 @@ class CxxCompilerInfo : public CompilerInfo {
   explicit CxxCompilerInfo(std::unique_ptr<CompilerInfoData> data);
   CompilerInfoType type() const override { return CompilerInfoType::Cxx; }
 
-  bool IsSystemInclude(const string& filepath) const;
+  bool IsSystemInclude(const std::string& filepath) const;
 
-  bool DependsOnCwd(const string& cwd) const override;
+  bool DependsOnCwd(const std::string& cwd) const override;
 
   // include paths could be relative path from cwd.
   // Also, system include paths could be relative path from toolchain root
@@ -29,64 +29,67 @@ class CxxCompilerInfo : public CompilerInfo {
 
   // quote dir is valid only if it exists. note quote dir may be cwd relative
   // so it depends on cwd if dir is valid or not.
-  const std::vector<string>& quote_include_paths() const {
+  const std::vector<std::string>& quote_include_paths() const {
     return quote_include_paths_;
   }
-  const std::vector<string>& cxx_system_include_paths() const {
+  const std::vector<std::string>& cxx_system_include_paths() const {
     return cxx_system_include_paths_;
   }
-  const std::vector<string>& system_include_paths() const {
+  const std::vector<std::string>& system_include_paths() const {
     return system_include_paths_;
   }
-  const std::vector<string>& system_framework_paths() const {
+  const std::vector<std::string>& system_framework_paths() const {
     return system_framework_paths_;
   }
 
-  const string& toolchain_root() const { return data_->cxx().toolchain_root(); }
-  const string& predefined_macros() const {
+  const std::string& toolchain_root() const {
+    return data_->cxx().toolchain_root();
+  }
+  const std::string& predefined_macros() const {
     return data_->cxx().predefined_macros();
   }
   const SharedCppDirectives& predefined_directives() const {
     return predefined_directives_;
   }
 
-  const std::unordered_map<string, bool>& supported_predefined_macros() const {
+  const std::unordered_map<std::string, bool>& supported_predefined_macros()
+      const {
     return supported_predefined_macros_;
   }
-  const std::unordered_map<string, int>& has_feature() const {
+  const std::unordered_map<std::string, int>& has_feature() const {
     return has_feature_;
   }
-  const std::unordered_map<string, int>& has_extension() const {
+  const std::unordered_map<std::string, int>& has_extension() const {
     return has_extension_;
   }
-  const std::unordered_map<string, int>& has_attribute() const {
+  const std::unordered_map<std::string, int>& has_attribute() const {
     return has_attribute_;
   }
-  const std::unordered_map<string, int>& has_cpp_attribute() const {
+  const std::unordered_map<std::string, int>& has_cpp_attribute() const {
     return has_cpp_attribute_;
   }
-  const std::unordered_map<string, int>& has_declspec_attribute() const {
+  const std::unordered_map<std::string, int>& has_declspec_attribute() const {
     return has_declspec_attribute_;
   }
-  const std::unordered_map<string, int>& has_builtin() const {
+  const std::unordered_map<std::string, int>& has_builtin() const {
     return has_builtin_;
   }
 
  private:
-  std::vector<string> quote_include_paths_;
-  std::vector<string> cxx_system_include_paths_;
-  std::vector<string> system_include_paths_;
-  std::vector<string> system_framework_paths_;
+  std::vector<std::string> quote_include_paths_;
+  std::vector<std::string> cxx_system_include_paths_;
+  std::vector<std::string> system_include_paths_;
+  std::vector<std::string> system_framework_paths_;
 
   // <macro name, hidden>.
   // If it is hidden macro like __has_include__ in GCC 5, hidden is set.
-  std::unordered_map<string, bool> supported_predefined_macros_;
-  std::unordered_map<string, int> has_feature_;
-  std::unordered_map<string, int> has_extension_;
-  std::unordered_map<string, int> has_attribute_;
-  std::unordered_map<string, int> has_cpp_attribute_;
-  std::unordered_map<string, int> has_declspec_attribute_;
-  std::unordered_map<string, int> has_builtin_;
+  std::unordered_map<std::string, bool> supported_predefined_macros_;
+  std::unordered_map<std::string, int> has_feature_;
+  std::unordered_map<std::string, int> has_extension_;
+  std::unordered_map<std::string, int> has_attribute_;
+  std::unordered_map<std::string, int> has_cpp_attribute_;
+  std::unordered_map<std::string, int> has_declspec_attribute_;
+  std::unordered_map<std::string, int> has_builtin_;
 
   SharedCppDirectives predefined_directives_;
 };

@@ -33,13 +33,13 @@ size_t Cache::size() const {
   return cache_.size();
 }
 
-bool Cache::AddModuleMapFileAndDependents(const string& module_map_file,
-                                          const string& cwd,
-                                          std::set<string>* include_files,
+bool Cache::AddModuleMapFileAndDependents(const std::string& module_map_file,
+                                          const std::string& cwd,
+                                          std::set<std::string>* include_files,
                                           FileStatCache* file_stat_cache) {
   // first, find from cache. If found, check all FileStat.
   // If nothing is changed, we just use it.
-  string abs_module_map_path =
+  std::string abs_module_map_path =
       file::JoinPathRespectAbsolute(cwd, module_map_file);
   CacheKey key(cwd, std::move(abs_module_map_path));
 

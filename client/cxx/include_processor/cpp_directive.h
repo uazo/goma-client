@@ -12,8 +12,6 @@
 #include "cpp_macro.h"
 #include "cpp_token.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // must align with CppParser::kDirectiveTable.
@@ -55,11 +53,12 @@ class CppDirective {
   }
 
   // Returns human readable directive for debugging purpose.
-  virtual string DebugString() const = 0;
+  virtual std::string DebugString() const = 0;
 
   // utility function to create Error type.
-  static std::unique_ptr<CppDirective> Error(string reason);
-  static std::unique_ptr<CppDirective> Error(string reason, string arg);
+  static std::unique_ptr<CppDirective> Error(std::string reason);
+  static std::unique_ptr<CppDirective> Error(std::string reason,
+                                             std::string arg);
 
  protected:
   explicit CppDirective(CppDirectiveType directive_type)
@@ -83,7 +82,7 @@ class CppDirectiveIncludeBase : public CppDirective {
   ~CppDirectiveIncludeBase() override {}
 
   char delimiter() const { return delimiter_; }
-  const string& filename() const {
+  const std::string& filename() const {
     // valid only if delimiter is '<' or '"'.
     DCHECK(delimiter_ == '<' || delimiter_ == '"') << delimiter_;
     return filename_;
@@ -96,7 +95,8 @@ class CppDirectiveIncludeBase : public CppDirective {
 
  protected:
   CppDirectiveIncludeBase(CppDirectiveType type,
-                          char delimiter, string filename)
+                          char delimiter,
+                          std::string filename)
       : CppDirective(type),
         delimiter_(delimiter),
         filename_(std::move(filename)) {
@@ -108,11 +108,11 @@ class CppDirectiveIncludeBase : public CppDirective {
         tokens_(std::move(tokens)) {
   }
 
-  string DebugString() const override;
+  std::string DebugString() const override;
 
  private:
   const char delimiter_; // one of '<', '"', or ' '.
-  const string filename_;
+  const std::string filename_;
 
   const std::vector<CppToken> tokens_;
 };
@@ -121,11 +121,10 @@ class CppDirectiveIncludeBase : public CppDirective {
 
 class CppDirectiveInclude : public CppDirectiveIncludeBase {
  public:
-  CppDirectiveInclude(char delimiter, string filename)
+  CppDirectiveInclude(char delimiter, std::string filename)
       : CppDirectiveIncludeBase(CppDirectiveType::DIRECTIVE_INCLUDE,
                                 delimiter,
-                                std::move(filename)) {
-  }
+                                std::move(filename)) {}
   explicit CppDirectiveInclude(std::vector<CppToken> tokens)
       : CppDirectiveIncludeBase(CppDirectiveType::DIRECTIVE_INCLUDE,
                                 std::move(tokens)) {
@@ -137,11 +136,10 @@ class CppDirectiveInclude : public CppDirectiveIncludeBase {
 
 class CppDirectiveImport : public CppDirectiveIncludeBase {
  public:
-  CppDirectiveImport(char delimiter, string filename)
+  CppDirectiveImport(char delimiter, std::string filename)
       : CppDirectiveIncludeBase(CppDirectiveType::DIRECTIVE_IMPORT,
                                 delimiter,
-                                std::move(filename)) {
-  }
+                                std::move(filename)) {}
   explicit CppDirectiveImport(std::vector<CppToken> tokens)
       : CppDirectiveIncludeBase(CppDirectiveType::DIRECTIVE_IMPORT,
                                 std::move(tokens)) {
@@ -153,11 +151,10 @@ class CppDirectiveImport : public CppDirectiveIncludeBase {
 
 class CppDirectiveIncludeNext : public CppDirectiveIncludeBase {
  public:
-  CppDirectiveIncludeNext(char delimiter, string filename)
+  CppDirectiveIncludeNext(char delimiter, std::string filename)
       : CppDirectiveIncludeBase(CppDirectiveType::DIRECTIVE_INCLUDE_NEXT,
                                 delimiter,
-                                std::move(filename)) {
-  }
+                                std::move(filename)) {}
   explicit CppDirectiveIncludeNext(std::vector<CppToken> tokens)
       : CppDirectiveIncludeBase(CppDirectiveType::DIRECTIVE_INCLUDE_NEXT,
                                 std::move(tokens)) {
@@ -170,7 +167,7 @@ class CppDirectiveIncludeNext : public CppDirectiveIncludeBase {
 class CppDirectiveDefine : public CppDirective {
  public:
   // ObjectMacro
-  CppDirectiveDefine(string name, std::vector<CppToken> replacement)
+  CppDirectiveDefine(std::string name, std::vector<CppToken> replacement)
       : CppDirective(CppDirectiveType::DIRECTIVE_DEFINE),
         macro_(new Macro(std::move(name),
                          Macro::OBJ,
@@ -179,7 +176,7 @@ class CppDirectiveDefine : public CppDirective {
                          false)) {}
 
   // FunctionMacro
-  CppDirectiveDefine(string name,
+  CppDirectiveDefine(std::string name,
                      int num_args,
                      bool has_vararg,
                      std::vector<CppToken> replacement)
@@ -191,9 +188,9 @@ class CppDirectiveDefine : public CppDirective {
                          has_vararg)) {}
   ~CppDirectiveDefine() override {}
 
-  string DebugString() const override;
+  std::string DebugString() const override;
 
-  const string& name() const { return macro_->name; }
+  const std::string& name() const { return macro_->name; }
 
   bool is_function_macro() const {
     return macro_->type == Macro::FUNC || macro_->type == Macro::CBK_FUNC;
@@ -220,58 +217,51 @@ class CppDirectiveDefine : public CppDirective {
 
 class CppDirectiveUndef : public CppDirective {
  public:
-  explicit CppDirectiveUndef(string name)
+  explicit CppDirectiveUndef(std::string name)
       : CppDirective(CppDirectiveType::DIRECTIVE_UNDEF),
-        name_(std::move(name)) {
-  }
+        name_(std::move(name)) {}
   ~CppDirectiveUndef() override {}
 
-  const string& name() const { return name_; }
+  const std::string& name() const { return name_; }
 
-  string DebugString() const override {
-    return "#undef " + name_;
-  }
+  std::string DebugString() const override { return "#undef " + name_; }
 
  private:
-  const string name_;
+  const std::string name_;
 };
 
 // ----------------------------------------------------------------------
 
 class CppDirectiveIfdef : public CppDirective {
  public:
-  explicit CppDirectiveIfdef(string name)
+  explicit CppDirectiveIfdef(std::string name)
       : CppDirective(CppDirectiveType::DIRECTIVE_IFDEF),
         name_(std::move(name)) {}
   ~CppDirectiveIfdef() override {}
 
-  const string& name() const { return name_; }
+  const std::string& name() const { return name_; }
 
-  string DebugString() const override {
-    return "#ifdef " + name_;
-  }
+  std::string DebugString() const override { return "#ifdef " + name_; }
 
  private:
-  const string name_;
+  const std::string name_;
 };
 
 // ----------------------------------------------------------------------
 
 class CppDirectiveIfndef : public CppDirective {
  public:
-  explicit CppDirectiveIfndef(string name)
+  explicit CppDirectiveIfndef(std::string name)
       : CppDirective(CppDirectiveType::DIRECTIVE_IFNDEF),
         name_(std::move(name)) {}
   ~CppDirectiveIfndef() override {}
 
-  const string& name() const { return name_; }
+  const std::string& name() const { return name_; }
 
-  string DebugString() const override {
-    return "#ifndef " + name_;
-  }
+  std::string DebugString() const override { return "#ifndef " + name_; }
 
  private:
-  const string name_;
+  const std::string name_;
 };
 
 // ----------------------------------------------------------------------
@@ -285,7 +275,7 @@ class CppDirectiveIf : public CppDirective {
 
   const std::vector<CppToken>& tokens() const { return tokens_; }
 
-  string DebugString() const override;
+  std::string DebugString() const override;
 
  private:
   const std::vector<CppToken> tokens_;
@@ -298,9 +288,7 @@ class CppDirectiveElse : public CppDirective {
   CppDirectiveElse() : CppDirective(CppDirectiveType::DIRECTIVE_ELSE) {}
   ~CppDirectiveElse() override {}
 
-  string DebugString() const override {
-    return "#else";
-  }
+  std::string DebugString() const override { return "#else"; }
 };
 
 // ----------------------------------------------------------------------
@@ -310,9 +298,7 @@ class CppDirectiveEndif : public CppDirective {
   CppDirectiveEndif() : CppDirective(CppDirectiveType::DIRECTIVE_ENDIF) {}
   ~CppDirectiveEndif() override {}
 
-  string DebugString() const override {
-    return "#endif";
-  }
+  std::string DebugString() const override { return "#endif"; }
 };
 
 // ----------------------------------------------------------------------
@@ -325,7 +311,7 @@ class CppDirectiveElif : public CppDirective {
   ~CppDirectiveElif() override {}
 
   const std::vector<CppToken>& tokens() const { return tokens_; }
-  string DebugString() const override;
+  std::string DebugString() const override;
 
  private:
   const std::vector<CppToken> tokens_;
@@ -342,7 +328,7 @@ class CppDirectivePragma : public CppDirective {
 
   bool is_pragma_once() const { return is_pragma_once_; }
 
-  string DebugString() const override {
+  std::string DebugString() const override {
     if (is_pragma_once()) {
       return "#pragma once";
     }
@@ -358,25 +344,24 @@ class CppDirectivePragma : public CppDirective {
 // Represents directives that contains an error.
 class CppDirectiveError : public CppDirective {
  public:
-  explicit CppDirectiveError(string error_reason)
+  explicit CppDirectiveError(std::string error_reason)
       : CppDirectiveError(std::move(error_reason), "") {}
-  CppDirectiveError(string error_reason, string arg)
+  CppDirectiveError(std::string error_reason, std::string arg)
       : CppDirective(CppDirectiveType::DIRECTIVE_ERROR),
         error_reason_(std::move(error_reason)),
-        arg_(std::move(arg)) {
-  }
+        arg_(std::move(arg)) {}
   ~CppDirectiveError() override {}
 
-  string DebugString() const override {
+  std::string DebugString() const override {
     return "#<error> reason=" + error_reason_ + " arg=" + arg_;
   }
 
-  const string& error_reason() const { return error_reason_; }
-  const string& arg() const { return arg_; }
+  const std::string& error_reason() const { return error_reason_; }
+  const std::string& arg() const { return arg_; }
 
  private:
-  const string error_reason_;
-  const string arg_;
+  const std::string error_reason_;
+  const std::string arg_;
 };
 
 // ----------------------------------------------------------------------

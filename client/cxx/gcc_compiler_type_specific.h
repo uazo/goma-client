@@ -15,17 +15,17 @@ class GCCCompilerTypeSpecific : public CxxCompilerTypeSpecific {
   GCCCompilerTypeSpecific(const GCCCompilerTypeSpecific&) = delete;
   void operator=(const GCCCompilerTypeSpecific&) = delete;
 
-  bool RemoteCompileSupported(const string& trace_id,
+  bool RemoteCompileSupported(const std::string& trace_id,
                               const CompilerFlags& flags,
                               bool verify_output) const override;
 
   std::unique_ptr<CompilerInfoData> BuildCompilerInfoData(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const std::vector<string>& compiler_info_envs) override;
+      const std::string& local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs) override;
 
   IncludeProcessorResult RunIncludeProcessor(
-      const string& trace_id,
+      const std::string& trace_id,
       const CompilerFlags& compiler_flags,
       const CompilerInfo& compiler_info,
       const CommandSpec& command_spec,
@@ -46,10 +46,10 @@ class GCCCompilerTypeSpecific : public CxxCompilerTypeSpecific {
  private:
   GCCCompilerTypeSpecific() = default;
 
-  IncludeProcessorResult RunThinLTOImports(const string& trace_id,
+  IncludeProcessorResult RunThinLTOImports(const std::string& trace_id,
                                            const GCCFlags& flags);
   IncludeProcessorResult RunLinkIncludeProcessor(
-      const string& trace_id,
+      const std::string& trace_id,
       const GCCFlags& flags,
       const CompilerInfo& compiler_info,
       const CommandSpec& command_spec);

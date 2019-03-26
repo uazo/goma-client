@@ -12,8 +12,6 @@
 #include "basictypes.h"
 #include "threadpool_http_server.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class Closure;
@@ -34,16 +32,17 @@ class Watchdog {
   // Sets watchdog target.
   // Doesn't take ownership of service.
   void SetTarget(CompileService* service,
-                 const std::vector<string>& goma_ipc_env);
+                 const std::vector<std::string>& goma_ipc_env);
+
  private:
   void Check();
 
-  const string dir_;
-  const string gomacc_path_;
+  const std::string dir_;
+  const std::string gomacc_path_;
   ThreadpoolHttpServer* server_;
   int idle_counter_;
   CompileService* service_;
-  std::vector<string> goma_ipc_env_;
+  std::vector<std::string> goma_ipc_env_;
   ThreadpoolHttpServer::RegisteredClosureID closure_id_;
 
   DISALLOW_COPY_AND_ASSIGN(Watchdog);

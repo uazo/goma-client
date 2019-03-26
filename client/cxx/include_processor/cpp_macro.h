@@ -12,8 +12,6 @@
 #include "cpp_token.h"
 #include "glog/logging.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class CppParser;
@@ -43,7 +41,7 @@ struct Macro {
   };
 
   // OBJ or FUNC
-  Macro(string name,
+  Macro(std::string name,
         Type type,
         ArrayTokenList replacement,
         size_t num_args,
@@ -61,7 +59,7 @@ struct Macro {
   }
 
   // CBK
-  Macro(string name, Type type, CallbackObj obj)
+  Macro(std::string name, Type type, CallbackObj obj)
       : name(std::move(name)),
         type(type),
         callback(obj),
@@ -74,7 +72,7 @@ struct Macro {
   }
 
   // CBK_FUNC
-  Macro(string name, Type type, CallbackFunc func, bool is_hidden)
+  Macro(std::string name, Type type, CallbackFunc func, bool is_hidden)
       : name(std::move(name)),
         type(type),
         callback(nullptr),
@@ -88,10 +86,10 @@ struct Macro {
 
   static bool IsParenBalanced(const ArrayTokenList& tokens);
 
-  string DebugString(CppParser* parser) const;
+  std::string DebugString(CppParser* parser) const;
   bool IsPredefinedMacro() const { return type == CBK || type == CBK_FUNC; }
 
-  const string name;
+  const std::string name;
   const Type type;
   const ArrayTokenList replacement;
   const CallbackObj callback;

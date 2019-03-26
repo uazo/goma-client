@@ -29,7 +29,7 @@ TrustedIpsManager::TrustedIpsManager() {
 TrustedIpsManager::~TrustedIpsManager() {
 }
 
-void TrustedIpsManager::AddAllow(const string& netspec) {
+void TrustedIpsManager::AddAllow(const std::string& netspec) {
   trusted_.push_back(NetSpec(netspec));
 }
 
@@ -43,24 +43,24 @@ bool TrustedIpsManager::IsTrustedClient(const struct in_addr& addr) const {
   return false;
 }
 
-string TrustedIpsManager::DebugString() const {
+std::string TrustedIpsManager::DebugString() const {
   std::ostringstream out;
   out << "TrustedClients[";
-  std::vector<string> res;
+  std::vector<std::string> res;
   for (std::vector<NetSpec>::const_iterator iter = trusted_.begin();
        iter != trusted_.end();
        ++iter) {
     res.push_back(iter->DebugString());
   }
-  string netspecs = absl::StrJoin(res, ",");
+  std::string netspecs = absl::StrJoin(res, ",");
   out << netspecs;
   out << "]";
   return out.str();
 }
 
-TrustedIpsManager::NetSpec::NetSpec(const string& netspec)
+TrustedIpsManager::NetSpec::NetSpec(const std::string& netspec)
     : netmask_(0xffffffff) {
-  std::vector<string> res = ToVector(absl::StrSplit(netspec, '/'));
+  std::vector<std::string> res = ToVector(absl::StrSplit(netspec, '/'));
   CHECK(res.size() == 1 || res.size() == 2)
       << "Wrong format of netspec:" << netspec;
   inet_aton(res[0].c_str(), &in_addr_);
@@ -83,7 +83,7 @@ bool TrustedIpsManager::NetSpec::Match(const struct in_addr& addr) const {
   return (ntohl(addr.s_addr) & netmask_) == ntohl(in_addr_.s_addr);
 }
 
-string TrustedIpsManager::NetSpec::DebugString() const {
+std::string TrustedIpsManager::NetSpec::DebugString() const {
   std::ostringstream out;
   char buf[128];
   out << inet_ntop(AF_INET, const_cast<in_addr*>(&in_addr_), buf, sizeof buf)

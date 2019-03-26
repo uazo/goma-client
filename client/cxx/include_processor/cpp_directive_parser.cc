@@ -17,13 +17,13 @@
 #include "directive_filter.h"
 #include "glog/logging.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 namespace {
 
-bool ReadIdent(CppInputStream* stream, string* ident, string* error_reason) {
+bool ReadIdent(CppInputStream* stream,
+               std::string* ident,
+               std::string* error_reason) {
   CppToken token;
   if (!CppTokenizer::NextTokenFrom(stream, SpaceHandling::kSkip, &token,
                                    error_reason)) {
@@ -46,7 +46,7 @@ std::vector<CppToken> ReadTokens(CppInputStream* stream,
 
   // Note: first space is always skipped.
   CppToken token;
-  string error_reason;
+  std::string error_reason;
   if (!CppTokenizer::NextTokenFrom(stream, SpaceHandling::kSkip, &token,
                                    &error_reason)) {
     LOG(ERROR) << error_reason;
@@ -66,7 +66,7 @@ std::vector<CppToken> ReadTokens(CppInputStream* stream,
 }
 
 CppToken NextToken(CppInputStream* stream, SpaceHandling space_handling) {
-  string error_reason;
+  std::string error_reason;
   CppToken token;
   if (!CppTokenizer::NextTokenFrom(stream, space_handling, &token,
                                    &error_reason)) {
@@ -84,8 +84,8 @@ void TrimTokenSpace(SmallCppTokenVector* tokens) {
   }
 }
 
-std::unique_ptr<CppDirective> ReadObjectMacro(
-    const string& name, CppInputStream* stream) {
+std::unique_ptr<CppDirective> ReadObjectMacro(const std::string& name,
+                                              CppInputStream* stream) {
   SmallCppTokenVector replacement;
 
   CppToken token = NextToken(stream, SpaceHandling::kSkip);
@@ -113,9 +113,9 @@ std::unique_ptr<CppDirective> ReadObjectMacro(
                             std::make_move_iterator(replacement.end()))));
 }
 
-std::unique_ptr<CppDirective> ReadFunctionMacro(const string& name,
+std::unique_ptr<CppDirective> ReadFunctionMacro(const std::string& name,
                                                 CppInputStream* stream) {
-  std::unordered_map<string, size_t> params;
+  std::unordered_map<std::string, size_t> params;
   size_t param_index = 0;
   bool is_vararg = false;
   for (;;) {
@@ -206,8 +206,8 @@ std::unique_ptr<CppDirective> ParseInclude(CppInputStream* stream) {
   }
 
   if (c == '<') {
-    string path;
-    string error_reason;
+    std::string path;
+    std::string error_reason;
     if (!CppTokenizer::ReadStringUntilDelimiter(stream, &path,
                                                 '>', &error_reason)) {
       return CppDirective::Error(error_reason);
@@ -216,8 +216,8 @@ std::unique_ptr<CppDirective> ParseInclude(CppInputStream* stream) {
     return std::unique_ptr<CppDirective>(new CppDirectiveIncludeCtor(c, path));
   }
   if (c == '"') {
-    string path;
-    string error_reason;
+    std::string path;
+    std::string error_reason;
     if (!CppTokenizer::ReadStringUntilDelimiter(stream, &path,
                                                 '"', &error_reason)) {
       return CppDirective::Error(error_reason);
@@ -262,8 +262,8 @@ std::unique_ptr<CppDirective> ParseDefine(CppInputStream* stream) {
 
 // Parse undef, and return token.
 std::unique_ptr<CppDirective> ParseUndef(CppInputStream* stream) {
-  string ident;
-  string error_reason;
+  std::string ident;
+  std::string error_reason;
   if (!ReadIdent(stream, &ident, &error_reason)) {
     return CppDirective::Error("failed to parse #undef: " + error_reason);
   }
@@ -272,8 +272,8 @@ std::unique_ptr<CppDirective> ParseUndef(CppInputStream* stream) {
 }
 
 std::unique_ptr<CppDirective> ParseIfdef(CppInputStream* stream) {
-  string ident;
-  string error_reason;
+  std::string ident;
+  std::string error_reason;
   if (!ReadIdent(stream, &ident, &error_reason)) {
     return CppDirective::Error("failed to parse #ifdef: " + error_reason);
   }
@@ -283,8 +283,8 @@ std::unique_ptr<CppDirective> ParseIfdef(CppInputStream* stream) {
 
 // Parse undef, and return token.
 std::unique_ptr<CppDirective> ParseIfndef(CppInputStream* stream) {
-  string ident;
-  string error_reason;
+  std::string ident;
+  std::string error_reason;
   if (!ReadIdent(stream, &ident, &error_reason)) {
     return CppDirective::Error("failed to parse #ifndef: " + error_reason);
   }
@@ -337,7 +337,7 @@ std::unique_ptr<CppDirective> ParsePragma(CppInputStream* stream) {
 // static
 SharedCppDirectives CppDirectiveParser::ParseFromContent(
     const Content& content,
-    const string& filename) {
+    const std::string& filename) {
   CppDirectiveList directives;
   if (!CppDirectiveParser().Parse(content, filename, &directives)) {
     return nullptr;
@@ -348,8 +348,8 @@ SharedCppDirectives CppDirectiveParser::ParseFromContent(
 
 // static
 SharedCppDirectives CppDirectiveParser::ParseFromString(
-    const string& string_content,
-    const string& filename) {
+    const std::string& string_content,
+    const std::string& filename) {
   std::unique_ptr<Content> content(Content::CreateFromString(string_content));
   if (!content) {
     return nullptr;
@@ -359,9 +359,9 @@ SharedCppDirectives CppDirectiveParser::ParseFromString(
 }
 
 bool CppDirectiveParser::Parse(const Content& content,
-                               const string& filename,
+                               const std::string& filename,
                                CppDirectiveList* result) {
-  string error_reason;
+  std::string error_reason;
   CppInputStream stream(&content, filename);
 
   CppDirectiveList directives;

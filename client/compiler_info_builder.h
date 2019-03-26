@@ -19,8 +19,6 @@ MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/compiler_info_data.pb.h"
 MSVC_POP_WARNING()
 
-using std::string;
-
 namespace devtools_goma {
 
 // CompilerInfoBuilder provides methods to construct CompilerInfoData.
@@ -39,26 +37,27 @@ class CompilerInfoBuilder {
   // Caller should take ownership of returned CompilerInfoData.
   std::unique_ptr<CompilerInfoData> FillFromCompilerOutputs(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const std::vector<string>& compiler_info_envs);
+      const std::string& local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs);
 
-  virtual void SetCompilerPath(const CompilerFlags& flags,
-                               const string& local_compiler_path,
-                               const std::vector<string>& compiler_info_envs,
-                               CompilerInfoData* data) const;
+  virtual void SetCompilerPath(
+      const CompilerFlags& flags,
+      const std::string& local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs,
+      CompilerInfoData* data) const;
 
   virtual void SetLanguageExtension(CompilerInfoData* data) const = 0;
 
   virtual void SetTypeSpecificCompilerInfo(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const string& abs_local_compiler_path,
-      const std::vector<string>& compiler_info_envs,
+      const std::string& local_compiler_path,
+      const std::string& abs_local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs,
       CompilerInfoData* data) const = 0;
 
   // Returns compiler name to be used in ExecReq's CompilerSpec.
   // If it fails to identify the compiler name, it returns empty string.
-  virtual string GetCompilerName(const CompilerInfoData& data) const;
+  virtual std::string GetCompilerName(const CompilerInfoData& data) const;
 
   // Adds error message to CompilerInfo. When |failed_at| is not 0,
   // it's also updated.
@@ -70,8 +69,8 @@ class CompilerInfoBuilder {
                             absl::optional<absl::Time> failed_at,
                             CompilerInfoData* compiler_info);
 
-  static bool ResourceInfoFromPath(const string& cwd,
-                                   const string& path,
+  static bool ResourceInfoFromPath(const std::string& cwd,
+                                   const std::string& path,
                                    CompilerInfoData::ResourceType type,
                                    CompilerInfoData::ResourceInfo* r);
 

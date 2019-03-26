@@ -37,7 +37,7 @@ class FileServiceDumpClient : public FileServiceClient {
   }
 
   // Dump recorded StoreFileReqs into filename.
-  bool Dump(const string& filename) const;
+  bool Dump(const std::string& filename) const;
 
  private:
   std::unique_ptr<StoreFileReq> req_;

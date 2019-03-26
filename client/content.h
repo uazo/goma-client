@@ -12,8 +12,6 @@
 #include "absl/strings/string_view.h"
 #include "basictypes.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class ScopedFd;
@@ -22,8 +20,8 @@ class Content final {
  public:
   // Creates content from a file. nullptr will be returned if an error
   // occured e.g. a file does not exist.
-  static std::unique_ptr<Content> CreateFromFile(const string& filepath);
-  static std::unique_ptr<Content> CreateFromString(const string& str);
+  static std::unique_ptr<Content> CreateFromFile(const std::string& filepath);
+  static std::unique_ptr<Content> CreateFromString(const std::string& str);
   static std::unique_ptr<Content> CreateFromContent(const Content& content);
 
   // The content of |buf| is copied, so Content won't own |buf|.
@@ -38,7 +36,9 @@ class Content final {
   // so that we can skip calling stat. The argument |filepath| is used for
   // logging purpose.
   static std::unique_ptr<Content> CreateFromFileDescriptor(
-      const string& filepath, const ScopedFd& fd, size_t filesize);
+      const std::string& filepath,
+      const ScopedFd& fd,
+      size_t filesize);
 
   absl::string_view ToStringView() const {
     return absl::string_view(buf_.get(), size());

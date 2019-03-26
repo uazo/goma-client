@@ -12,13 +12,12 @@
 #include "gtest/gtest.h"
 #include "unittest_util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 namespace {
 
-int FindValue(const std::unordered_map<string, int>& map, const string& key) {
+int FindValue(const std::unordered_map<std::string, int>& map,
+              const std::string& key) {
   const auto& it = map.find(key);
   if (it == map.end())
     return 0;
@@ -300,7 +299,7 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseRealClangPathForChromeOS) {
       "# 1 \"<built-in>\" 2\n"
       "# 1 \"/dev/null\" 2\n";
 
-  const string path =
+  const std::string path =
       ClangCompilerInfoBuilderHelper::ParseRealClangPath(kClangVoutput);
   EXPECT_EQ("/usr/local/google/home/test/usr/bin/clang-3.9", path);
 }
@@ -310,7 +309,7 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseClangVersionTarget) {
       "clang version 3.5 (trunk)\n"
       "Target: i686-pc-win32\n"
       "Thread model: posix\n";
-  string version, target;
+  std::string version, target;
   EXPECT_TRUE(ClangCompilerInfoBuilderHelper::ParseClangVersionTarget(
       kClangSharpOutput, &version, &target));
   EXPECT_EQ("clang version 3.5 (trunk)", version);
@@ -323,7 +322,7 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseClangVersionTargetCRLF) {
       "Target: x86_64-pc-windows-msvc\r\n"
       "Thread model: posix\r\n"
       "InstalledDIr: C:\\somewhere\\\r\n";
-  string version, target;
+  std::string version, target;
   EXPECT_TRUE(ClangCompilerInfoBuilderHelper::ParseClangVersionTarget(
       kClangSharpOutput, &version, &target));
   EXPECT_EQ("clang version 7.0.0 (trunk 324578)", version);
@@ -617,14 +616,14 @@ TEST(ClangCompilerInfoBuilderHelperTest, SplitGccIncludeOutputForClang) {
       "#line 1 \"<built-in>\"\n"
       "#line 1 \"..\\\\..\\\\proj\\\\clang\\\\empty.cc\"\n";
 
-  std::vector<string> qpaths;
-  std::vector<string> paths;
-  std::vector<string> framework_paths;
+  std::vector<std::string> qpaths;
+  std::vector<std::string> paths;
+  std::vector<std::string> framework_paths;
   EXPECT_TRUE(ClangCompilerInfoBuilderHelper::SplitGccIncludeOutput(
       kClangOutput, &qpaths, &paths, &framework_paths));
 
   EXPECT_TRUE(qpaths.empty());
-  std::vector<string> expected_paths;
+  std::vector<std::string> expected_paths;
   expected_paths.push_back(
       "C:\\Users\\goma\\proj\\clang\\trying\\build\\bin\\..\\lib"
       "\\clang\\3.5\\include");
@@ -713,17 +712,17 @@ TEST(ClangCompilerInfoBuilderHelperTest, SplitGccIncludeOutputForIQuote) {
       "COLLECT_GCC_OPTIONS='-v' '-iquote' 'include' '-E' '-mtune=generic' "
       "'-march=x86-64'\n";
 
-  std::vector<string> qpaths;
-  std::vector<string> paths;
-  std::vector<string> framework_paths;
+  std::vector<std::string> qpaths;
+  std::vector<std::string> paths;
+  std::vector<std::string> framework_paths;
   EXPECT_TRUE(ClangCompilerInfoBuilderHelper::SplitGccIncludeOutput(
       kGccVOutput, &qpaths, &paths, &framework_paths));
 
-  const std::vector<string> expected_qpaths{
+  const std::vector<std::string> expected_qpaths{
       "include",
   };
   EXPECT_EQ(expected_qpaths, qpaths);
-  const std::vector<string> expected_paths{
+  const std::vector<std::string> expected_paths{
       "/usr/include/c++/4.8",
       "/usr/include/x86_64-linux-gnu/c++/4.8",
       "/usr/include/c++/4.8/backward",
@@ -783,14 +782,14 @@ TEST(ClangCompilerInfoBuilderHelperTest, SplitGccIncludeOutput) {
       "COLLECT_GCC_OPTIONS='-v' '-E' '-o' '/dev/null' '-shared-libgcc' "
       "'-mtune=generic'\n";
 
-  std::vector<string> qpaths;
-  std::vector<string> paths;
-  std::vector<string> framework_paths;
+  std::vector<std::string> qpaths;
+  std::vector<std::string> paths;
+  std::vector<std::string> framework_paths;
   EXPECT_TRUE(ClangCompilerInfoBuilderHelper::SplitGccIncludeOutput(
       kGccVOutput, &qpaths, &paths, &framework_paths));
 
   EXPECT_TRUE(qpaths.empty());
-  std::vector<string> expected_paths;
+  std::vector<std::string> expected_paths;
   expected_paths.push_back("/usr/local/include");
   expected_paths.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3/include");
   expected_paths.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3/include-fixed");
@@ -847,14 +846,14 @@ TEST(ClangCompilerInfoBuilderHelperTest,
       "COLLECT_GCC_OPTIONS='-v' '-E' '-o' '/dev/null' '-shared-libgcc' "
       "'-mtune=generic'\n";
 
-  std::vector<string> qpaths;
-  std::vector<string> paths;
-  std::vector<string> framework_paths;
+  std::vector<std::string> qpaths;
+  std::vector<std::string> paths;
+  std::vector<std::string> framework_paths;
   EXPECT_TRUE(ClangCompilerInfoBuilderHelper::SplitGccIncludeOutput(
       kGccVOutput, &qpaths, &paths, &framework_paths));
 
   EXPECT_TRUE(qpaths.empty());
-  std::vector<string> expected_paths;
+  std::vector<std::string> expected_paths;
   expected_paths.push_back(".");
   expected_paths.push_back("/usr/local/include");
   expected_paths.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.4.3/include");

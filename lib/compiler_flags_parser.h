@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "lib/compiler_flags.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -18,12 +17,14 @@ class CompilerFlagsParser {
  public:
   // Returns new instance of subclass of CompilerFlags based on |args|.
   // Returns NULL if args is empty or args[0] is unsupported command.
-  static std::unique_ptr<CompilerFlags> New(const std::vector<string>& args,
-                                            const string& cwd);
+  static std::unique_ptr<CompilerFlags> New(
+      const std::vector<std::string>& args,
+      const std::string& cwd);
 
   // MustNew is like New but causes FATAL crash if New returns NULL.
-  static std::unique_ptr<CompilerFlags> MustNew(const std::vector<string>& args,
-                                                const string& cwd);
+  static std::unique_ptr<CompilerFlags> MustNew(
+      const std::vector<std::string>& args,
+      const std::string& cwd);
 };
 
 }  // namespace devtools_goma

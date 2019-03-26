@@ -77,7 +77,7 @@ bool CppTokenizer::TokenizeAll(const std::string& str,
   std::unique_ptr<Content> content = Content::CreateFromString(str);
   CppInputStream stream(content.get(), "<content>");
 
-  string error_reason;
+  std::string error_reason;
   ArrayTokenList tokens;
   while (true) {
     CppToken token;

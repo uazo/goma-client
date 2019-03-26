@@ -161,7 +161,7 @@ bool TLSDescriptor::NeedRetry() const {
   return ssl_pending_ && !io_failed_ && !is_closed_;
 }
 
-string TLSDescriptor::GetLastErrorMessage() const {
+std::string TLSDescriptor::GetLastErrorMessage() const {
   return absl::StrCat(
       "fd:", socket_descriptor_->fd(), " ",
       socket_descriptor_->PeerName(), " ",
@@ -390,7 +390,7 @@ void TLSDescriptor::RestartTransportLayer() {
   socket_descriptor_->RestartWrite();
 }
 
-string TLSDescriptor::CreateProxyRequestMessage() {
+std::string TLSDescriptor::CreateProxyRequestMessage() {
   std::ostringstream http_send_message;
   std::ostringstream dest_host_port;
   dest_host_port << options_.dest_host_name << ":" << options_.dest_port;

@@ -14,25 +14,23 @@
 #include <string>
 #include <sstream>
 
-using std::string;
-
 struct GomaAutoConfigurer {
-  GomaAutoConfigurer(string (*GetConfiguredValue)(void),
+  GomaAutoConfigurer(std::string (*GetConfiguredValue)(void),
                      void (*SetConfiguredValue)(void))
       : GetConfiguredValue(GetConfiguredValue),
         SetConfiguredValue(SetConfiguredValue) {}
 
-  string (*GetConfiguredValue)(void);
+  std::string (*GetConfiguredValue)(void);
   void (*SetConfiguredValue)(void);
 };
 
-static std::set<string>* g_env_flag_names;
-typedef std::map<string, GomaAutoConfigurer> AutoConfigurerMap;
+static std::set<std::string>* g_env_flag_names;
+typedef std::map<std::string, GomaAutoConfigurer> AutoConfigurerMap;
 static AutoConfigurerMap* g_autoconfigurers;
 
 void RegisterEnvFlag(const char* name) {
   if (!g_env_flag_names) {
-    g_env_flag_names = new std::set<string>;
+    g_env_flag_names = new std::set<std::string>;
   }
   if (!g_env_flag_names->insert(name).second) {
     fprintf(stderr, "%s has registered twice\n", name);
@@ -41,7 +39,7 @@ void RegisterEnvFlag(const char* name) {
 }
 
 void RegisterEnvAutoConfFlag(const char* name,
-                             string (*GetConfiguredValue)(),
+                             std::string (*GetConfiguredValue)(),
                              void (*SetConfiguredValue)()) {
   if (!g_autoconfigurers) {
     g_autoconfigurers = new AutoConfigurerMap;
@@ -49,7 +47,8 @@ void RegisterEnvAutoConfFlag(const char* name,
 
   GomaAutoConfigurer configurer(GetConfiguredValue, SetConfiguredValue);
 
-  if (!g_autoconfigurers->insert(make_pair(string(name), configurer)).second) {
+  if (!g_autoconfigurers->insert(make_pair(std::string(name), configurer))
+           .second) {
     fprintf(stderr, "%s has registered twice for autoconf\n", name);
     exit(1);
   }
@@ -63,7 +62,7 @@ void CheckFlagNames(const char** envp) {
     }
     const char* name_end = strchr(envp[i], '=');
     assert(name_end);
-    const string name(envp[i] + 5, name_end - envp[i] - 5);
+    const std::string name(envp[i] + 5, name_end - envp[i] - 5);
     if (!g_env_flag_names->count(name)) {
       fprintf(stderr, "%s: unknown GOMA_ parameter\n", envp[i]);
       ok = false;
@@ -75,7 +74,7 @@ void CheckFlagNames(const char** envp) {
 }
 
 void AutoConfigureFlags(const char** envp) {
-  std::set<string> goma_set_params;
+  std::set<std::string> goma_set_params;
 
   for (int i = 0; envp[i]; i++) {
     if (strncmp(envp[i], "GOMA_", 5))
@@ -83,7 +82,7 @@ void AutoConfigureFlags(const char** envp) {
 
     const char* name_end = strchr(envp[i], '=');
     assert(name_end);
-    const string name(envp[i] + 5, name_end - envp[i] - 5);
+    const std::string name(envp[i] + 5, name_end - envp[i] - 5);
     goma_set_params.insert(name);
   }
 
@@ -99,7 +98,7 @@ void DumpEnvFlag(std::ostringstream* ss) {
     return;
 
   for (const auto& iter : *g_env_flag_names) {
-    const string name = "GOMA_" + iter;
+    const std::string name = "GOMA_" + iter;
     char* v = nullptr;
 #ifdef _WIN32
     _dupenv_s(&v, nullptr, name.c_str());
@@ -117,10 +116,10 @@ void DumpEnvFlag(std::ostringstream* ss) {
 }
 
 #ifdef _WIN32
-string GOMA_EnvToString(const char* envname, const char* dflt) {
+std::string GOMA_EnvToString(const char* envname, const char* dflt) {
   char* env;
   if (_dupenv_s(&env, nullptr, envname) == 0 && env != nullptr) {
-    string value = env;
+    std::string value = env;
     free(env);
     return value;
   } else {

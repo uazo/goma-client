@@ -10,8 +10,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "cpp_macro.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class CppMacroEnv {
@@ -42,7 +40,7 @@ class CppMacroEnv {
   }
 
   // Get a macro by |name|.
-  const Macro* Get(const string& name) const {
+  const Macro* Get(const std::string& name) const {
     auto it = env_.find(name);
     if (it == env_.end()) {
       return nullptr;
@@ -53,7 +51,7 @@ class CppMacroEnv {
 
   // Delete a macro by name.
   // The deleted macro is returned.
-  const Macro* Delete(const string& name) {
+  const Macro* Delete(const std::string& name) {
     auto it = env_.find(name);
     if (it == env_.end()) {
       return nullptr;

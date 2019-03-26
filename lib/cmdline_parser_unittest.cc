@@ -7,14 +7,13 @@
 
 #include "glog/logging.h"
 #include "gtest/gtest.h"
-using std::string;
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvSimple) {
-  const string input = "a b c";
-  std::vector<string> argv;
+  const std::string input = "a b c";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b");
   expected_argv.push_back("c");
@@ -23,11 +22,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvSimple) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvWithQuote) {
-  const string input = "a \"b \" \'c \'";
-  std::vector<string> argv;
+  const std::string input = "a \"b \" \'c \'";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b ");
   expected_argv.push_back("c ");
@@ -36,11 +35,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvWithQuote) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvWithQuoteInDifferentQuote) {
-  const string input = "a \"b \' \" \'c \" \'";
-  std::vector<string> argv;
+  const std::string input = "a \"b \' \" \'c \" \'";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b \' ");
   expected_argv.push_back("c \" ");
@@ -49,11 +48,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvWithQuoteInDifferentQuote) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvNoCloseQuoteAfterBackslash) {
-  const string input = "a \"b \\\" \" \'c \\\'";
-  std::vector<string> argv;
+  const std::string input = "a \"b \\\" \" \'c \\\'";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b \" ");
   expected_argv.push_back("c \\");
@@ -62,11 +61,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvNoCloseQuoteAfterBackslash) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvKeepNonEscapeInDQuote) {
-  const string input = "a \"b \\c \" \"d\\?e\" f";
-  std::vector<string> argv;
+  const std::string input = "a \"b \\c \" \"d\\?e\" f";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b \\c ");
   expected_argv.push_back("d\\?e");
@@ -76,11 +75,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvKeepNonEscapeInDQuote) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvConjunctSpaceWithBackslash) {
-  const string input = "a b\\ c d";
-  std::vector<string> argv;
+  const std::string input = "a b\\ c d";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b c");
   expected_argv.push_back("d");
@@ -89,11 +88,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvConjunctSpaceWithBackslash) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvKeepCharAfterBackslashAsIs) {
-  const string input = "a b\\c d";
-  std::vector<string> argv;
+  const std::string input = "a b\\c d";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("bc");
   expected_argv.push_back("d");
@@ -102,11 +101,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvKeepCharAfterBackslashAsIs) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvBackslashAfterBackslash) {
-  const string input = "a b\\\\c d";
-  std::vector<string> argv;
+  const std::string input = "a b\\\\c d";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b\\c");
   expected_argv.push_back("d");
@@ -115,11 +114,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvBackslashAfterBackslash) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvIgnoreEndlAfterBackslash) {
-  const string input = "a b\\\nc d";
-  std::vector<string> argv;
+  const std::string input = "a b\\\nc d";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("bc");
   expected_argv.push_back("d");
@@ -128,11 +127,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvIgnoreEndlAfterBackslash) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvConjunctCharAfterBackslash) {
-  const string input = "a b\\ \"c \" \"d \"\\ e f\\ \' g \'\\ h i";
-  std::vector<string> argv;
+  const std::string input = "a b\\ \"c \" \"d \"\\ e f\\ \' g \'\\ h i";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b c ");
   expected_argv.push_back("d  e");
@@ -143,11 +142,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvConjunctCharAfterBackslash) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvBackslashEndlInQuote) {
-  const string input = "a \"b\\\nc\" \'d\\\ne\' f";
-  std::vector<string> argv;
+  const std::string input = "a \"b\\\nc\" \'d\\\ne\' f";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("bc");
   expected_argv.push_back("d\\\ne");
@@ -157,11 +156,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvBackslashEndlInQuote) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvSingleBackslashInQuote) {
-  const string input = "a \"b\\c\" \'d\\e\' f";
-  std::vector<string> argv;
+  const std::string input = "a \"b\\c\" \'d\\e\' f";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b\\c");
   expected_argv.push_back("d\\e");
@@ -171,11 +170,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvSingleBackslashInQuote) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvDoubleBackslashesInQuote) {
-  const string input = "a \"b\\\\c\" \'d\\\\e\' f";
-  std::vector<string> argv;
+  const std::string input = "a \"b\\\\c\" \'d\\\\e\' f";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b\\c");
   expected_argv.push_back("d\\\\e");
@@ -185,11 +184,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvDoubleBackslashesInQuote) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvTripleBackslashesInQuote) {
-  const string input = "a \"b\\\\\\c\" \'d\\\\\\e\' f";
-  std::vector<string> argv;
+  const std::string input = "a \"b\\\\\\c\" \'d\\\\\\e\' f";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b\\\\c");
   expected_argv.push_back("d\\\\\\e");
@@ -199,10 +198,10 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvTripleBackslashesInQuote) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineToArgvReturnFalseForUnfinished) {
-  const string open_single_quote = "\"";
-  const string open_double_quote = "\'";
-  const string open_backslash = "\\";
-  std::vector<string> argv;
+  const std::string open_single_quote = "\"";
+  const std::string open_double_quote = "\'";
+  const std::string open_backslash = "\\";
+  std::vector<std::string> argv;
   EXPECT_FALSE(devtools_goma::ParsePosixCommandLineToArgv(open_single_quote,
                                                           &argv));
   EXPECT_FALSE(devtools_goma::ParsePosixCommandLineToArgv(open_double_quote,
@@ -212,14 +211,14 @@ TEST(CmdlineParserTest, ParsePosixCommandLineToArgvReturnFalseForUnfinished) {
 }
 
 TEST(CmdlineParserTest, ParsePosixCommandLineShouldKeepOriginalArgv) {
-  const string input = "a b";
-  std::vector<string> argv;
+  const std::string input = "a b";
+  std::vector<std::string> argv;
 
   argv.push_back("0");
   argv.push_back("1");
   EXPECT_TRUE(devtools_goma::ParsePosixCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("0");
   expected_argv.push_back("1");
   expected_argv.push_back("a");
@@ -235,11 +234,11 @@ TEST(CmdlineParserTest, ParsePosixCommandLineShouldKeepOriginalArgv) {
 // Note:
 // In the document argv[3] is always capitailzed but I thought it typo.
 TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule1) {
-  const string input = "\"abc\" d e";
-  std::vector<string> argv;
+  const std::string input = "\"abc\" d e";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParseWinCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("abc");
   expected_argv.push_back("d");
   expected_argv.push_back("e");
@@ -248,11 +247,11 @@ TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule1) {
 }
 
 TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule2) {
-  const string input = "a\\\\\\b d\"e f\"g h";
-  std::vector<string> argv;
+  const std::string input = "a\\\\\\b d\"e f\"g h";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParseWinCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a\\\\\\b");
   expected_argv.push_back("de fg");
   expected_argv.push_back("h");
@@ -262,11 +261,11 @@ TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule2) {
 
 
 TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule3) {
-  const string input = "a\\\\\\\"b c d";
-  std::vector<string> argv;
+  const std::string input = "a\\\\\\\"b c d";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParseWinCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a\\\"b");
   expected_argv.push_back("c");
   expected_argv.push_back("d");
@@ -275,11 +274,11 @@ TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule3) {
 }
 
 TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule4) {
-  const string input = "a\\\\\\\\\"b c\" d e";
-  std::vector<string> argv;
+  const std::string input = "a\\\\\\\\\"b c\" d e";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParseWinCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a\\\\b c");
   expected_argv.push_back("d");
   expected_argv.push_back("e");
@@ -288,18 +287,18 @@ TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule4) {
 }
 
 TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule5) {
-  const string input = " \t\n\r";
-  std::vector<string> argv;
+  const std::string input = " \t\n\r";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParseWinCommandLineToArgv(input, &argv));
   EXPECT_EQ(0U, argv.size());
 }
 
 TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule6) {
-  const string input = "  \n a \r  b \t  c  ";
-  std::vector<string> argv;
+  const std::string input = "  \n a \r  b \t  c  ";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParseWinCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("a");
   expected_argv.push_back("b");
   expected_argv.push_back("c");
@@ -308,11 +307,11 @@ TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule6) {
 }
 
 TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule7) {
-  const string input = " \n \" a \" b\t\n\t \"c \"\n\t\" d\t\" ";
-  std::vector<string> argv;
+  const std::string input = " \n \" a \" b\t\n\t \"c \"\n\t\" d\t\" ";
+  std::vector<std::string> argv;
   EXPECT_TRUE(devtools_goma::ParseWinCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back(" a ");
   expected_argv.push_back("b");
   expected_argv.push_back("c ");
@@ -322,20 +321,20 @@ TEST(CmdlineParserTest, ParseWinCommandLineToArgvRule7) {
 }
 
 TEST(CmdlineParserTest, ParseWinCommandLineToArgvReturnFalseWithoutEndQuote) {
-  const string input = "\"";
-  std::vector<string> argv;
+  const std::string input = "\"";
+  std::vector<std::string> argv;
   EXPECT_FALSE(devtools_goma::ParseWinCommandLineToArgv(input, &argv));
 }
 
 TEST(CmdlineParserTest, ParseWinCommandLineToArgvShouldKeepOriginalArgv) {
-  const string input = "a b";
-  std::vector<string> argv;
+  const std::string input = "a b";
+  std::vector<std::string> argv;
 
   argv.push_back("0");
   argv.push_back("1");
   EXPECT_TRUE(devtools_goma::ParseWinCommandLineToArgv(input, &argv));
 
-  std::vector<string> expected_argv;
+  std::vector<std::string> expected_argv;
   expected_argv.push_back("0");
   expected_argv.push_back("1");
   expected_argv.push_back("a");

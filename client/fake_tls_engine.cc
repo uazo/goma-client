@@ -23,7 +23,7 @@ bool FakeTLSEngine::IsReady() const {
   return true;
 }
 
-int FakeTLSEngine::GetDataToSendTransport(string *data) {
+int FakeTLSEngine::GetDataToSendTransport(std::string* data) {
   if (broken_ == FAKE_TLS_GET_BROKEN) {
     execute_broken_ = true;
     return TLSEngine::TLS_ERROR;
@@ -43,7 +43,7 @@ int FakeTLSEngine::SetDataFromTransport(const absl::string_view& data) {
     execute_broken_ = true;
     return TLSEngine::TLS_ERROR;
   }
-  buffer_sock_to_app_.append(string(data));
+  buffer_sock_to_app_.append(std::string(data));
   return data.size();
 }
 
@@ -74,7 +74,7 @@ int FakeTLSEngine::Write(const void* data, int size) {
     execute_broken_ = true;
     return TLSEngine::TLS_ERROR;
   }
-  buffer_app_to_sock_.append(string(static_cast<const char*>(data), size));
+  buffer_app_to_sock_.append(std::string(static_cast<const char*>(data), size));
   return size;
 }
 

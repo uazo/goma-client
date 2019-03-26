@@ -25,7 +25,7 @@ class FakeTLSEngine : public TLSEngine {
   bool IsIOPending() const override;
   bool IsReady() const override;
 
-  int GetDataToSendTransport(string* data) override;
+  int GetDataToSendTransport(std::string* data) override;
   size_t GetBufSizeFromTransport() override;
   int SetDataFromTransport(const absl::string_view& data) override;
 
@@ -34,7 +34,7 @@ class FakeTLSEngine : public TLSEngine {
   int Read(void* data, int size) override;
   int Write(const void* data, int size) override;
 
-  string GetLastErrorMessage() const override {
+  std::string GetLastErrorMessage() const override {
     return "TLSEngine error message";
   }
 
@@ -54,8 +54,8 @@ class FakeTLSEngine : public TLSEngine {
   virtual void SetMaxReadSize(int size) { max_read_size_ = size; }
 
  private:
-  string buffer_app_to_sock_;
-  string buffer_sock_to_app_;
+  std::string buffer_app_to_sock_;
+  std::string buffer_sock_to_app_;
   size_t offset_sock_to_app_;
   bool is_recycled_;
   enum FakeTLSEngineBroken broken_;
@@ -75,7 +75,7 @@ class FakeTLSEngineFactory : public TLSEngineFactory {
   TLSEngine* NewTLSEngine(int sock) override;
   void WillCloseSocket(int sock) override;
 
-  string GetCertsInfo() override { return certs_info_; }
+  std::string GetCertsInfo() override { return certs_info_; }
   void SetBroken(FakeTLSEngine::FakeTLSEngineBroken broken) {
     broken_ = broken;
   }
@@ -83,12 +83,12 @@ class FakeTLSEngineFactory : public TLSEngineFactory {
     max_read_size_ = size;
   }
   // Dummy.
-  void SetHostname(const string& hostname ALLOW_UNUSED) override {}
+  void SetHostname(const std::string& hostname ALLOW_UNUSED) override {}
 
  private:
   int sock_;
   FakeTLSEngine* tls_engine_;
-  string certs_info_;
+  std::string certs_info_;
   enum FakeTLSEngine::FakeTLSEngineBroken broken_;
   int max_read_size_;
 

@@ -183,7 +183,7 @@ void CompileService::SetCompileTaskHistorySize(
   max_long_tasks_ = max_long_tasks;
 }
 
-void CompileService::SetCompilerProxyIdPrefix(const string& prefix) {
+void CompileService::SetCompilerProxyIdPrefix(const std::string& prefix) {
   AUTOLOCK(lock, &mu_);
   if (!compiler_proxy_id_prefix_.empty()) {
     LOG_IF(WARNING, compiler_proxy_id_prefix_ != prefix)
@@ -247,7 +247,7 @@ void CompileService::SetAutoUpdater(std::unique_ptr<AutoUpdater> auto_updater) {
 }
 
 void CompileService::SetWatchdog(std::unique_ptr<Watchdog> watchdog,
-                                 const std::vector<string>& goma_ipc_env) {
+                                 const std::vector<std::string>& goma_ipc_env) {
   watchdog_ = std::move(watchdog);
   watchdog_->SetTarget(this, goma_ipc_env);
 }
@@ -504,7 +504,7 @@ void CompileService::Wait() {
   watchdog_.reset();
 }
 
-bool CompileService::DumpTask(int task_id, string* out) {
+bool CompileService::DumpTask(int task_id, std::string* out) {
   AUTOLOCK(lock, &mu_);
   const CompileTask* task = FindTaskByIdUnlocked(task_id, true);
   if (task == nullptr)
@@ -515,7 +515,7 @@ bool CompileService::DumpTask(int task_id, string* out) {
   return true;
 }
 
-bool CompileService::DumpTaskRequest(int task_id, string* message) {
+bool CompileService::DumpTaskRequest(int task_id, std::string* message) {
   const CompileTask* task = nullptr;
   {
     AUTOLOCK(lock, &mu_);
@@ -868,31 +868,31 @@ void CompileService::DumpStatsJson(
     }
 
     if (!error_to_user_.empty()) {
-      *statz.mutable_error_to_user() = google::protobuf::Map<string, int64_t>(
-          error_to_user_.begin(), error_to_user_.end());
+      *statz.mutable_error_to_user() =
+          google::protobuf::Map<std::string, int64_t>(error_to_user_.begin(),
+                                                      error_to_user_.end());
     }
     if (!local_run_reason_.empty()) {
       *statz.mutable_local_run_reason() =
-          google::protobuf::Map<string, int64_t>(
-              local_run_reason_.begin(),
-              local_run_reason_.end());
+          google::protobuf::Map<std::string, int64_t>(local_run_reason_.begin(),
+                                                      local_run_reason_.end());
     }
     if (!command_version_mismatch_.empty()) {
       *statz.mutable_version_mismatch() =
-          google::protobuf::Map<string, int64_t>(
+          google::protobuf::Map<std::string, int64_t>(
               command_version_mismatch_.begin(),
               command_version_mismatch_.end());
     }
     if (!command_binary_hash_mismatch_.empty()) {
       *statz.mutable_subprogram_mismatch() =
-          google::protobuf::Map<string, int64_t>(
+          google::protobuf::Map<std::string, int64_t>(
               command_binary_hash_mismatch_.begin(),
               command_binary_hash_mismatch_.end());
     }
     if (!subprogram_mismatch_.empty()) {
       *statz.mutable_subprogram_mismatch() =
-          google::protobuf::Map<string, int64_t>(subprogram_mismatch_.begin(),
-                                                 subprogram_mismatch_.end());
+          google::protobuf::Map<std::string, int64_t>(
+              subprogram_mismatch_.begin(), subprogram_mismatch_.end());
     }
   }
 
@@ -970,21 +970,20 @@ void CompileService::DumpCompilerInfo(std::ostringstream* ss) {
   }
 }
 
-bool CompileService::FindLocalCompilerPath(
-    const string& gomacc_path,
-    const string& basename_orig,
-    const string& cwd,
-    const string& local_path,
-    const string& pathext,
-    string* local_compiler_path,
-    string* no_goma_local_path) {
+bool CompileService::FindLocalCompilerPath(const std::string& gomacc_path,
+                                           const std::string& basename_orig,
+                                           const std::string& cwd,
+                                           const std::string& local_path,
+                                           const std::string& pathext,
+                                           std::string* local_compiler_path,
+                                           std::string* no_goma_local_path) {
   // If all PATH components are absolute paths, local compiler path doesn't
   // depend on cwd.  In this case, we'll use "." in cwd field for key.
   // Otherwise, use key_cwd.
-  string basename = basename_orig;
-  string key(gomacc_path + kSep + basename + kCurrentDir + local_path);
-  const string key_cwd(
-      gomacc_path + kSep + basename + kSep + cwd + kSep + local_path);
+  std::string basename = basename_orig;
+  std::string key(gomacc_path + kSep + basename + kCurrentDir + local_path);
+  const std::string key_cwd(gomacc_path + kSep + basename + kSep + cwd + kSep +
+                            local_path);
 
   VLOG(1) << "find local compiler: key=" << key << " or " << key_cwd;
 
@@ -1001,10 +1000,10 @@ bool CompileService::FindLocalCompilerPath(
 }
 
 bool CompileService::FindLocalCompilerPathUnlocked(
-    const string& key,
-    const string& key_cwd,
-    string* local_compiler_path,
-    string* no_goma_local_path) const {
+    const std::string& key,
+    const std::string& key_cwd,
+    std::string* local_compiler_path,
+    std::string* no_goma_local_path) const {
   // assert compiler_mu held either exclusive or shared.
   auto found = local_compiler_paths_.find(key);
   if (found != local_compiler_paths_.end()) {
@@ -1022,15 +1021,15 @@ bool CompileService::FindLocalCompilerPathUnlocked(
 }
 
 bool CompileService::FindLocalCompilerPathAndUpdate(
-    const string& key,
-    const string& key_cwd,
-    const string& gomacc_path,
-    const string& basename,
-    const string& cwd,
-    const string& local_path,
-    const string& pathext,
-    string* local_compiler_path,
-    string* no_goma_local_path) {
+    const std::string& key,
+    const std::string& key_cwd,
+    const std::string& gomacc_path,
+    const std::string& basename,
+    const std::string& cwd,
+    const std::string& local_path,
+    const std::string& pathext,
+    std::string* local_compiler_path,
+    std::string* no_goma_local_path) {
   {
     AUTO_SHARED_LOCK(lock, &compiler_mu_);
     if (FindLocalCompilerPathUnlocked(
@@ -1047,12 +1046,12 @@ bool CompileService::FindLocalCompilerPathAndUpdate(
     return true;
   }
 
-  string local_compiler_key = key;
+  std::string local_compiler_key = key;
 
   if (!local_compiler_path->empty()) {
     if (!IsGomacc(*local_compiler_path, local_path, pathext, cwd)) {
       // Convert to an absolute path if the path is a relative path.
-      string orig_local_compiler_path = *local_compiler_path;
+      std::string orig_local_compiler_path = *local_compiler_path;
 #ifndef _WIN32
       local_compiler_path->assign(
           PathResolver::ResolvePath(
@@ -1087,7 +1086,7 @@ bool CompileService::FindLocalCompilerPathAndUpdate(
   }
 
   bool is_relative;
-  string no_goma_path_env;
+  std::string no_goma_path_env;
   if (GetRealExecutablePath(&gomacc_filestat, basename, cwd, local_path,
                             pathext, local_compiler_path, &no_goma_path_env,
                             &is_relative)) {
@@ -1155,7 +1154,7 @@ void CompileService::GetCompilerInfoInternal(
     // If local_compiler_path is (masquerated) gomacc, it'll reenter
     // this routine and deadlock on mu_.  Invalid GOMA env flag
     // avoid this deadlock.
-    std::vector<string> env(param->run_envs);
+    std::vector<std::string> env(param->run_envs);
     env.push_back("GOMA_WILL_FAIL_WITH_UKNOWN_FLAG=true");
     std::unique_ptr<CompilerInfoData> cid(
         compiler_type_specific_collection_->Get(param->flags->type())
@@ -1175,8 +1174,8 @@ void CompileService::GetCompilerInfoInternal(
   std::unique_ptr<CompilerInfoWaiterList> waiters;
   {
     AUTOLOCK(lock, &compiler_info_mu_);
-    const string key_cwd = param->key.ToString(
-        CompilerInfoCache::Key::kCwdRelative);
+    const std::string key_cwd =
+        param->key.ToString(CompilerInfoCache::Key::kCwdRelative);
     auto p = compiler_info_waiters_.find(key_cwd);
     CHECK(p != compiler_info_waiters_.end())
         << param->trace_id << " state=" << param->state.get()
@@ -1188,7 +1187,7 @@ void CompileService::GetCompilerInfoInternal(
   // param->state might be derefed so CompilerInfoState may be deleted.
   ScopedCompilerInfoState state(param->state.get());
 
-  string trace_id = param->trace_id;
+  std::string trace_id = param->trace_id;
 
   wm_->RunClosureInThread(FROM_HERE,
                           param->thread_id,
@@ -1211,12 +1210,12 @@ void CompileService::GetCompilerInfoInternal(
 }
 
 bool CompileService::DisableCompilerInfo(CompilerInfoState* state,
-                                         const string& disabled_reason) {
+                                         const std::string& disabled_reason) {
   return CompilerInfoCache::instance()->Disable(state, disabled_reason);
 }
 
 bool CompileService::RecordCommandSpecVersionMismatch(
-    const string& exec_command_version_mismatch) {
+    const std::string& exec_command_version_mismatch) {
   AUTOLOCK(lock, &mu_);
   auto p = command_version_mismatch_.insert(
       std::make_pair(exec_command_version_mismatch, 0));
@@ -1225,7 +1224,7 @@ bool CompileService::RecordCommandSpecVersionMismatch(
 }
 
 bool CompileService::RecordCommandSpecBinaryHashMismatch(
-    const string& exec_command_binary_hash_mismatch) {
+    const std::string& exec_command_binary_hash_mismatch) {
   AUTOLOCK(lock, &mu_);
   auto p = command_binary_hash_mismatch_.insert(
       std::make_pair(exec_command_binary_hash_mismatch, 0));
@@ -1234,15 +1233,15 @@ bool CompileService::RecordCommandSpecBinaryHashMismatch(
 }
 
 bool CompileService::RecordSubprogramMismatch(
-    const string& subprogram_mismatch) {
+    const std::string& subprogram_mismatch) {
   AUTOLOCK(lock, &mu_);
   auto p = subprogram_mismatch_.insert(std::make_pair(subprogram_mismatch, 0));
   p.first->second += 1;
   return p.second;
 }
 
-void CompileService::RecordErrorToLog(
-    const string& error_message, bool is_error) {
+void CompileService::RecordErrorToLog(const std::string& error_message,
+                                      bool is_error) {
   AUTOLOCK(lock, &mu_);
   auto p = error_to_log_.insert(
       std::make_pair(error_message, std::make_pair(is_error, 0)));
@@ -1255,7 +1254,7 @@ void CompileService::RecordErrorToLog(
 }
 
 void CompileService::RecordErrorsToUser(
-    const std::vector<string>& error_messages) {
+    const std::vector<std::string>& error_messages) {
   AUTOLOCK(lock, &mu_);
   for (const auto& errmsg : error_messages) {
     auto p = error_to_user_.insert(std::make_pair(errmsg,  0));
@@ -1263,8 +1262,8 @@ void CompileService::RecordErrorsToUser(
   }
 }
 
-void CompileService::RecordInputResult(
-    const std::vector<string>& inputs, bool success) {
+void CompileService::RecordInputResult(const std::vector<std::string>& inputs,
+                                       bool success) {
   AUTO_EXCLUSIVE_LOCK(lock, &failed_inputs_mu_);
   for (const auto& input : inputs) {
     if (success) {
@@ -1276,7 +1275,7 @@ void CompileService::RecordInputResult(
 }
 
 bool CompileService::ContainFailedInput(
-    const std::vector<string>& inputs) const {
+    const std::vector<std::string>& inputs) const {
   AUTO_SHARED_LOCK(lock, &failed_inputs_mu_);
   for (const auto& input : inputs) {
     if (failed_inputs_.count(input)) {
@@ -1286,7 +1285,7 @@ bool CompileService::ContainFailedInput(
   return false;
 }
 
-bool CompileService::AcquireOutputBuffer(size_t filesize, string* buf) {
+bool CompileService::AcquireOutputBuffer(size_t filesize, std::string* buf) {
   DCHECK_EQ(0U, buf->size());
 
   bool success = false;
@@ -1336,7 +1335,7 @@ bool CompileService::AcquireOutputBuffer(size_t filesize, string* buf) {
   return false;
 }
 
-void CompileService::ReleaseOutputBuffer(size_t filesize, string* buf) {
+void CompileService::ReleaseOutputBuffer(size_t filesize, std::string* buf) {
   AUTO_EXCLUSIVE_LOCK(lock, &buf_mu_);
   if (req_sum_output_size_ < filesize) {
     req_sum_output_size_ = 0;
@@ -1649,7 +1648,7 @@ void CompileService::DumpCommonStatsUnlocked(GomaStats* stats) {
         num_subprogram_mismatch);
 }
 
-void CompileService::DumpStatsToFile(const string& filename) {
+void CompileService::DumpStatsToFile(const std::string& filename) {
   GomaStats stats;
   {
     AUTOLOCK(lock, &mu_);
@@ -1672,7 +1671,7 @@ void CompileService::DumpStatsToFile(const string& filename) {
   stats.mutable_machine_info()->set_ncpus(GetNumCPUs());
   stats.mutable_machine_info()->set_memory_size(GetSystemTotalMemory());
 
-  string stats_buf;
+  std::string stats_buf;
   if (absl::EndsWith(filename, ".json")) {
     google::protobuf::util::JsonPrintOptions options;
     options.preserve_proto_field_names = true;

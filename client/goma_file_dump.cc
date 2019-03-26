@@ -32,10 +32,10 @@ bool FileServiceDumpClient::StoreFile(
   return true;
 }
 
-bool FileServiceDumpClient::Dump(const string& filename) const {
+bool FileServiceDumpClient::Dump(const std::string& filename) const {
   if (req_->blob_size() == 0)
     return true;
-  string s;
+  std::string s;
   req_->SerializeToString(&s);
   return WriteStringToFile(s, filename);
 }

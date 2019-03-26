@@ -20,24 +20,24 @@ namespace devtools_goma {
 
 /* static */
 void CxxCompilerInfoBuilder::ParseGetSubprogramsOutput(
-    const string& gcc_output,
-    std::vector<string>* paths) {
-  const std::vector<string> candidates = {"as",      "objcopy", "cc1",
-                                          "cc1plus", "cpp",     "nm"};
-  std::set<string> known;
+    const std::string& gcc_output,
+    std::vector<std::string>* paths) {
+  const std::vector<std::string> candidates = {"as",      "objcopy", "cc1",
+                                               "cc1plus", "cpp",     "nm"};
+  std::set<std::string> known;
 
   for (auto&& line :
        absl::StrSplit(gcc_output, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
     if (!absl::StartsWith(line, " ")) {
       continue;
     }
-    std::vector<string> argv;
+    std::vector<std::string> argv;
     // Since clang is not used on Windows now, this won't be the issue.
     ParsePosixCommandLineToArgv(line, &argv);
     if (argv.empty()) {
       continue;
     }
-    const string& cmd = argv[0];
+    const std::string& cmd = argv[0];
     absl::string_view basename = file::Basename(cmd);
     if (basename == cmd) {
       // To keep backword compatibility, we do not add subprogram searched
@@ -60,14 +60,14 @@ void CxxCompilerInfoBuilder::ParseGetSubprogramsOutput(
 
 /* static */
 bool CxxCompilerInfoBuilder::GetSubprograms(
-    const string& gcc_path,
-    const string& lang,
-    const std::vector<string>& compiler_info_flags,
-    const std::vector<string>& compiler_info_envs,
-    const string& cwd,
+    const std::string& gcc_path,
+    const std::string& lang,
+    const std::vector<std::string>& compiler_info_flags,
+    const std::vector<std::string>& compiler_info_envs,
+    const std::string& cwd,
     bool warn_on_empty,
-    std::vector<string>* subprogs) {
-  std::vector<string> argv = {gcc_path};
+    std::vector<std::string>* subprogs) {
+  std::vector<std::string> argv = {gcc_path};
   copy(compiler_info_flags.begin(), compiler_info_flags.end(),
        back_inserter(argv));
   // Since a compiler returns EXIT_FAILURE if fails to output file,
@@ -89,12 +89,12 @@ bool CxxCompilerInfoBuilder::GetSubprograms(
     return false;
   }
   tmpfile.Close();
-  const string& empty_file = tmpfile.filename();
+  const std::string& empty_file = tmpfile.filename();
   VLOG(2) << "empty_file=" << empty_file;
 #else
-  const string& empty_file = "/dev/null";
+  const std::string& empty_file = "/dev/null";
 #endif
-  const string output_file = file::JoinPath(tmp.dirname(), "output");
+  const std::string output_file = file::JoinPath(tmp.dirname(), "output");
   VLOG(2) << "output_file=" << output_file;
   argv.emplace_back("-x" + lang);
   argv.emplace_back("-c");
@@ -103,7 +103,7 @@ bool CxxCompilerInfoBuilder::GetSubprograms(
   argv.emplace_back(output_file);
   argv.emplace_back("-v");
   int32_t status;
-  string gcc_output;
+  std::string gcc_output;
   {
     GOMA_COUNTERZ("ReadCommandOutput(subprogram)");
     gcc_output = ReadCommandOutput(gcc_path, argv, compiler_info_envs, cwd,
@@ -130,8 +130,8 @@ bool CxxCompilerInfoBuilder::GetSubprograms(
 }
 
 /* static */
-string CxxCompilerInfoBuilder::GetRealSubprogramPath(
-    const string& subprog_path) {
+std::string CxxCompilerInfoBuilder::GetRealSubprogramPath(
+    const std::string& subprog_path) {
 #ifndef __linux__
   return subprog_path;
 #else
@@ -154,7 +154,7 @@ string CxxCompilerInfoBuilder::GetRealSubprogramPath(
   if (absl::EndsWith(dirname, kGoldSuffix)) {
     dirname.remove_suffix(sizeof(kGoldSuffix) - 1);
   }
-  const string new_subprog_path = file::JoinPath(dirname, "objcopy.elf");
+  const std::string new_subprog_path = file::JoinPath(dirname, "objcopy.elf");
   FileStat new_id(new_subprog_path);
   if (!new_id.IsValid()) {
     LOG(INFO) << ".elf does not exist, might not be chromeos path?"
@@ -171,14 +171,14 @@ string CxxCompilerInfoBuilder::GetRealSubprogramPath(
 
 /* static */
 bool CxxCompilerInfoBuilder::SubprogramInfoFromPath(
-    const string& user_specified_path,
-    const string& abs_path,
+    const std::string& user_specified_path,
+    const std::string& abs_path,
     CompilerInfoData::SubprogramInfo* s) {
   FileStat file_stat(abs_path);
   if (!file_stat.IsValid()) {
     return false;
   }
-  string hash;
+  std::string hash;
   if (!GomaSha256FromFile(GetRealSubprogramPath(abs_path), &hash)) {
     return false;
   }

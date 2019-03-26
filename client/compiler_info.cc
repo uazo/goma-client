@@ -32,7 +32,7 @@ void CompilerInfo::SubprogramInfo::FromData(
   }
 }
 
-string CompilerInfo::SubprogramInfo::DebugString() const {
+std::string CompilerInfo::SubprogramInfo::DebugString() const {
   std::stringstream ss;
   ss << "abs_path: " << abs_path;
   ss << ", user_specified_path: " << user_specified_path;
@@ -56,22 +56,22 @@ CompilerInfo::ResourceInfo CompilerInfo::ResourceInfo::FromData(
   return info;
 }
 
-string CompilerInfo::ResourceInfo::DebugString() const {
+std::string CompilerInfo::ResourceInfo::DebugString() const {
   return absl::StrCat("name: ", name, ", type: ", type,
                       ", valid:", file_stat.IsValid(), ", hash: ", hash,
                       ", is_executable: ", is_executable,
                       ", symlink_path: ", symlink_path);
 }
 
-bool CompilerInfo::ResourceInfo::IsUpToDate(const string& cwd,
-                                            string* reason) const {
+bool CompilerInfo::ResourceInfo::IsUpToDate(const std::string& cwd,
+                                            std::string* reason) const {
   if (!symlink_path.empty()) {
     // symlink case.
 #ifdef _WIN32
     // symlink is not supported on Windows.
     return false;
 #else
-    string abs_path = file::JoinPathRespectAbsolute(cwd, name);
+    std::string abs_path = file::JoinPathRespectAbsolute(cwd, name);
     struct stat st;
     if (lstat(abs_path.c_str(), &st) < 0) {
       *reason = absl::StrCat("lstat failed: path=", abs_path,
@@ -120,7 +120,7 @@ bool CompilerInfo::ResourceInfo::IsUpToDate(const string& cwd,
   return true;
 }
 
-string CompilerInfo::DebugString() const {
+std::string CompilerInfo::DebugString() const {
   return data_->DebugString();
 }
 
@@ -149,7 +149,7 @@ CompilerInfo::CompilerInfo(std::unique_ptr<CompilerInfoData> data)
   }
 }
 
-bool CompilerInfo::IsUpToDate(const string& local_compiler_path) const {
+bool CompilerInfo::IsUpToDate(const std::string& local_compiler_path) const {
   FileStat cur_local(local_compiler_path);
   if (cur_local != local_compiler_stat_) {
     LOG(INFO) << "compiler id is not matched:"
@@ -186,7 +186,7 @@ bool CompilerInfo::IsUpToDate(const string& local_compiler_path) const {
   }
 
   for (const auto& r : resource_) {
-    string error_reason;
+    std::string error_reason;
     if (!r.IsUpToDate(data_->cwd(), &error_reason)) {
       LOG(INFO) << "resource file is not matched:"
                 << " local_compiler_path=" << local_compiler_path << " "
@@ -202,7 +202,7 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
   // Checks real compiler hash and subprogram hash.
   // If they are all matched, we update FileStat.
 
-  string local_hash;
+  std::string local_hash;
   if (!sha256_cache->GetHashFromCacheOrFile(abs_local_compiler_path(),
                                             &local_hash)) {
     LOG(WARNING) << "calculating local compiler hash failed: "
@@ -217,7 +217,7 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
     return false;
   }
 
-  string real_hash;
+  std::string real_hash;
   if (!sha256_cache->GetHashFromCacheOrFile(real_compiler_path(), &real_hash)) {
     LOG(WARNING) << "calculating real compiler hash failed: "
                  << "path=" << real_compiler_path();
@@ -232,7 +232,7 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
   }
 
   for (const auto& subprog : subprograms_) {
-    string subprogram_hash;
+    std::string subprogram_hash;
     if (!sha256_cache->GetHashFromCacheOrFile(subprog.abs_path,
                                               &subprogram_hash)) {
       LOG(WARNING) << "calculating subprogram hash failed: "
@@ -281,7 +281,8 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
                  << r.name;
       return false;
 #else
-      string abs_path = file::JoinPathRespectAbsolute(data_->cwd(), r.name);
+      std::string abs_path =
+          file::JoinPathRespectAbsolute(data_->cwd(), r.name);
       struct stat st;
       if (lstat(abs_path.c_str(), &st) < 0) {
         LOG(ERROR) << "CompilerInfo resource: not found: " << abs_path;
@@ -320,7 +321,7 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
 #endif
     }
 
-    string r_hash;
+    std::string r_hash;
     if (!sha256_cache->GetHashFromCacheOrFile(
         file::JoinPathRespectAbsolute(data_->cwd(), r.name), &r_hash)) {
       LOG(WARNING) << "calculating file hash failed: "
@@ -408,7 +409,7 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
       continue;
     }
 
-    string abs_path =
+    std::string abs_path =
         file::JoinPathRespectAbsolute(data_->cwd(), resource.name);
     FileStat file_stat(abs_path);
     if (file_stat != resource.file_stat) {
@@ -424,7 +425,7 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
   return true;
 }
 
-bool CompilerInfo::DependsOnCwd(const string& cwd) const {
+bool CompilerInfo::DependsOnCwd(const std::string& cwd) const {
   if (!data_->real_compiler_path().empty()) {
     if (!file::IsAbsolutePath(data_->real_compiler_path()) ||
         HasPrefixDir(data_->real_compiler_path(), cwd)) {
@@ -435,7 +436,8 @@ bool CompilerInfo::DependsOnCwd(const string& cwd) const {
   }
   for (size_t i = 0; i < subprograms_.size(); ++i) {
     // user_specified_path can be absolute (if specified so).
-    const string& user_specified_path = subprograms_[i].user_specified_path;
+    const std::string& user_specified_path =
+        subprograms_[i].user_specified_path;
     if (!file::IsAbsolutePath(user_specified_path) ||
         HasPrefixDir(user_specified_path, cwd)) {
       VLOG(1) << "subprograms[" << i
@@ -455,12 +457,12 @@ bool CompilerInfo::DependsOnCwd(const string& cwd) const {
   return false;
 }
 
-string CompilerInfo::abs_local_compiler_path() const {
+std::string CompilerInfo::abs_local_compiler_path() const {
   return file::JoinPathRespectAbsolute(
       data_->cwd(), data_->local_compiler_path());
 }
 
-const string& CompilerInfo::request_compiler_hash() const {
+const std::string& CompilerInfo::request_compiler_hash() const {
   if (GCCFlags::IsPNaClClangCommand(data_->local_compiler_path())) {
     return data_->local_compiler_hash();
   }

@@ -25,8 +25,6 @@
 #include "simple_timer.h"
 #include "socket_factory.h"
 
-using std::string;
-
 struct addrinfo;
 
 namespace devtools_goma {
@@ -36,7 +34,7 @@ class SimpleTimer;
 // TODO: template for ScopedSocket and ScopedNamedPipe.
 class SocketPool : public SocketFactory {
  public:
-  SocketPool(const string& host_name, int port);
+  SocketPool(const std::string& host_name, int port);
   ~SocketPool() override;
   bool IsInitialized() const override;
   ScopedSocket NewSocket() override;
@@ -51,13 +49,13 @@ class SocketPool : public SocketFactory {
   // it needs to open new connection.
   void CloseSocket(ScopedSocket&& sock, bool err) override;
 
-  string DestName() const override;
-  string host_name() const override { return host_name_; }
+  std::string DestName() const override;
+  std::string host_name() const override { return host_name_; }
   int port() const override { return port_; }
 
   size_t NumAddresses() const;
 
-  string DebugString() const override;
+  std::string DebugString() const override;
 
  private:
   struct AddrData {
@@ -66,19 +64,20 @@ class SocketPool : public SocketFactory {
     size_t len;
     int ai_socktype;
     int ai_protocol;
-    string name;
+    std::string name;
     absl::optional<absl::Time> error_timestamp;
 
     const struct sockaddr* addr_ptr() const;
     void Invalidate();
     bool IsValid() const;
-    bool InitFromIPv4Addr(const string& ipv4, int port);
+    bool InitFromIPv4Addr(const std::string& ipv4, int port);
     void InitFromAddrInfo(const struct addrinfo* ai);
   };
   class ScopedSocketList;
 
   // Resolves hostname:port and stores in addrs.
-  static void ResolveAddress(const string& hostname, int port,
+  static void ResolveAddress(const std::string& hostname,
+                             int port,
                              std::vector<AddrData>* addrs);
 
   // Initializes socket_pool.
@@ -93,13 +92,13 @@ class SocketPool : public SocketFactory {
 
   // This host:port is for means the address we will connect directly.
   // So, this can be either a destination address or a proxy address.
-  string host_name_;
+  std::string host_name_;
   int port_;
 
   mutable Lock mu_;
   std::vector<AddrData> addrs_;
   AddrData* current_addr_;  // point in addrs_, or NULL.
-  std::unordered_map<int, string> fd_addrs_;
+  std::unordered_map<int, std::string> fd_addrs_;
   // TODO: use ScopedSocket. std::pair doesn't support movable yet?
   std::deque<std::pair<int, SimpleTimer>> socket_pool_;
 

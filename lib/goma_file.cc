@@ -28,8 +28,6 @@ MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/goma_data.pb.h"
 MSVC_POP_WARNING()
 
-using std::string;
-
 namespace {
 
 const size_t kLargeFileThreshold = 2 * 1024 * 1024UL;  // 2MB
@@ -41,15 +39,16 @@ const int kNumChunksInStreamRequest = 5;
 
 namespace devtools_goma {
 
-static string GetHashKeyInLookupFileReq(const LookupFileReq& req, int i) {
+static std::string GetHashKeyInLookupFileReq(const LookupFileReq& req, int i) {
   CHECK_GE(i, 0);
   if (i < req.hash_key_size())
     return req.hash_key(i);
   return "(out of range)";
 }
 
-bool FileServiceClient::CreateFileBlob(
-    const string& filename, bool store_large, FileBlob* blob) {
+bool FileServiceClient::CreateFileBlob(const std::string& filename,
+                                       bool store_large,
+                                       FileBlob* blob) {
   VLOG(1) << "CreateFileBlob " << filename;
   blob->set_blob_type(FileBlob::FILE);
   blob->set_file_size(-1);
@@ -122,7 +121,8 @@ bool FileServiceClient::StoreFileBlobs(const std::vector<FileBlob*>& blobs) {
   return ok;
 }
 
-bool FileServiceClient::GetFileBlob(const string& hash_key, FileBlob* blob) {
+bool FileServiceClient::GetFileBlob(const std::string& hash_key,
+                                    FileBlob* blob) {
   VLOG(1) << "GetFileBlob " << hash_key;
   LookupFileReq req;
   LookupFileResp resp;
@@ -142,7 +142,7 @@ bool FileServiceClient::GetFileBlob(const string& hash_key, FileBlob* blob) {
   return true;
 }
 
-bool FileServiceClient::GetFileBlobs(const std::vector<string>& hash_keys,
+bool FileServiceClient::GetFileBlobs(const std::vector<std::string>& hash_keys,
                                      std::vector<FileBlob*>* blobs) {
   VLOG(1) << "GetFileBlobs num=" << hash_keys.size();
   LookupFileReq req;
@@ -166,7 +166,7 @@ bool FileServiceClient::GetFileBlobs(const std::vector<string>& hash_keys,
   return true;
 }
 
-bool FileServiceClient::WriteFileBlob(const string& filename,
+bool FileServiceClient::WriteFileBlob(const std::string& filename,
                                       int mode,
                                       const FileBlob& blob) {
   VLOG(1) << "WriteFileBlob " << filename;
@@ -261,7 +261,7 @@ bool FileServiceClient::CreateFileChunks(
       chunk->set_blob_type(FileBlob::FILE_CHUNK);
       chunk->set_offset(offset);
       chunk->set_file_size(chunk_size);
-      string hash_key = ComputeFileBlobHashKey(*chunk);
+      std::string hash_key = ComputeFileBlobHashKey(*chunk);
       LOG(INFO) << "chunk hash_key:" << hash_key;
       blob->add_hash_key(hash_key);
       if (task->req().blob_size() >= kNumChunksInStreamRequest) {
@@ -303,7 +303,7 @@ bool FileServiceClient::CreateFileChunks(
     chunk->set_blob_type(FileBlob::FILE_CHUNK);
     chunk->set_offset(offset);
     chunk->set_file_size(chunk_size);
-    string hash_key = ComputeFileBlobHashKey(*chunk);
+    std::string hash_key = ComputeFileBlobHashKey(*chunk);
     VLOG(1) << "chunk hash_key:" << hash_key;
     blob->add_hash_key(hash_key);
     if (store) {
@@ -326,7 +326,7 @@ bool FileServiceClient::ReadFileContent(FileReader* fr,
                                         FileBlob* blob) {
   VLOG(1) << "ReadFileContent"
           << " offset=" << offset << " chunk_size=" << chunk_size;
-  string* buf = blob->mutable_content();
+  std::string* buf = blob->mutable_content();
   buf->resize(chunk_size);
   if (offset > 0) {
     blob->set_blob_type(FileBlob::FILE_CHUNK);

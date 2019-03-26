@@ -13,8 +13,6 @@
 #include "linker_script_parser.h"
 #include "unittest_util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class LinkerScriptParserTest : public testing::Test {
@@ -38,7 +36,7 @@ class LinkerScriptParserTest : public testing::Test {
 
 #ifndef _WIN32
 TEST_F(LinkerScriptParserTest, ParseLibcSo) {
-  std::vector<string> searchdirs;
+  std::vector<std::string> searchdirs;
   // Since script do not see inside, I provide empty files.
   tmpdir_util_->CreateTmpFile("/lib/libc.so.6", "");
   tmpdir_util_->CreateTmpFile("/usr/lib/libc_nonshared.a", "");
@@ -56,7 +54,7 @@ TEST_F(LinkerScriptParserTest, ParseLibcSo) {
   EXPECT_TRUE(parser.Parse());
 
   EXPECT_EQ("", parser.startup());
-  std::vector<string> expected_inputs;
+  std::vector<std::string> expected_inputs;
   expected_inputs.push_back("/lib/libc.so.6");
   expected_inputs.push_back("/usr/lib/libc_nonshared.a");
   expected_inputs.push_back("/lib/ld-linux-x86-64.so.2");
@@ -66,7 +64,7 @@ TEST_F(LinkerScriptParserTest, ParseLibcSo) {
 #endif
 
 TEST_F(LinkerScriptParserTest, ParseSample) {
-  std::vector<string> searchdirs;
+  std::vector<std::string> searchdirs;
   LinkerScriptParser parser(Content::CreateFromString(
       "SECTIONS\n"
       "{\n"
@@ -82,13 +80,13 @@ TEST_F(LinkerScriptParserTest, ParseSample) {
   EXPECT_TRUE(parser.Parse());
 
   EXPECT_EQ("", parser.startup());
-  std::vector<string> expected_inputs;
+  std::vector<std::string> expected_inputs;
   EXPECT_EQ(expected_inputs, parser.inputs());
   EXPECT_EQ("", parser.output());
 }
 
 TEST_F(LinkerScriptParserTest, ParseSample2) {
-  std::vector<string> searchdirs;
+  std::vector<std::string> searchdirs;
   LinkerScriptParser parser(Content::CreateFromString(
       "floating_point = 0;\n"
       "SECTIONS\n"
@@ -107,13 +105,13 @@ TEST_F(LinkerScriptParserTest, ParseSample2) {
   EXPECT_TRUE(parser.Parse());
 
   EXPECT_EQ("", parser.startup());
-  std::vector<string> expected_inputs;
+  std::vector<std::string> expected_inputs;
   EXPECT_EQ(expected_inputs, parser.inputs());
   EXPECT_EQ("", parser.output());
 }
 
 TEST_F(LinkerScriptParserTest, ParseSample3) {
-  std::vector<string> searchdirs;
+  std::vector<std::string> searchdirs;
   LinkerScriptParser parser(Content::CreateFromString(
       "OVERLAY 0x1000 : AT (0x4000)\n"
       " {\n"
@@ -126,7 +124,7 @@ TEST_F(LinkerScriptParserTest, ParseSample3) {
   EXPECT_TRUE(parser.Parse());
 
   EXPECT_EQ("", parser.startup());
-  std::vector<string> expected_inputs;
+  std::vector<std::string> expected_inputs;
   EXPECT_EQ(expected_inputs, parser.inputs());
   EXPECT_EQ("", parser.output());
 }

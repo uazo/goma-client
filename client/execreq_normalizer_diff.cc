@@ -16,10 +16,10 @@
 #include "google/protobuf/util/message_differencer.h"
 
 void NormalizeExecReq(devtools_goma::ExecReq* req) {
-  const std::vector<string> kFlagToNormalize{
+  const std::vector<std::string> kFlagToNormalize{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
-  std::vector<string> args(req->arg().begin(), req->arg().end());
+  std::vector<std::string> args(req->arg().begin(), req->arg().end());
   devtools_goma::GCCFlags flags(args, req->cwd());
 
   auto normalizer = devtools_goma::CompilerFlagTypeSpecific::FromArg(

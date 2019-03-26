@@ -15,19 +15,20 @@ class VCCompilerInfoBuilderTest : public testing::Test {
  protected:
   void SetUp() override { CheckTempDirectory(GetGomaTmpDir()); }
 
-  void AppendPredefinedMacros(const string& macro, CompilerInfoData* cid) {
+  void AppendPredefinedMacros(const std::string& macro, CompilerInfoData* cid) {
     cid->mutable_cxx()->set_predefined_macros(cid->cxx().predefined_macros() +
                                               macro);
   }
 
-  int FindValue(const std::unordered_map<string, int>& map, const string& key) {
+  int FindValue(const std::unordered_map<std::string, int>& map,
+                const std::string& key) {
     const auto& it = map.find(key);
     if (it == map.end())
       return 0;
     return it->second;
   }
 
-  string TestDir() {
+  std::string TestDir() {
     // This module is in out\Release.
     const std::string parent_dir = file::JoinPath(GetMyDirectory(), "..");
     const std::string top_dir = file::JoinPath(parent_dir, "..");
@@ -68,8 +69,8 @@ TEST_F(VCCompilerInfoBuilderTest, ParseVCOutput) {
   std::unique_ptr<CompilerInfoData> info_cpp_data(new CompilerInfoData);
   AppendPredefinedMacros("#define __cplusplus\n", info_cpp_data.get());
   {
-    std::vector<string> cxx_system_include_paths;
-    string predefined_macros(info_cpp_data->cxx().predefined_macros());
+    std::vector<std::string> cxx_system_include_paths;
+    std::string predefined_macros(info_cpp_data->cxx().predefined_macros());
     EXPECT_TRUE(VCCompilerInfoBuilder::ParseVCOutputString(
         kInputCpp, &cxx_system_include_paths, &predefined_macros));
     for (const auto& p : cxx_system_include_paths) {
@@ -80,7 +81,7 @@ TEST_F(VCCompilerInfoBuilderTest, ParseVCOutput) {
 
   CxxCompilerInfo info_cpp(std::move(info_cpp_data));
 
-  std::vector<string> expected_include_paths;
+  std::vector<std::string> expected_include_paths;
   expected_include_paths.push_back("C:\\vs08\\VC\\ATLMFC\\INCLUDE");
   expected_include_paths.push_back("C:\\vs08\\VC\\INCLUDE");
   expected_include_paths.push_back(
@@ -113,8 +114,8 @@ TEST_F(VCCompilerInfoBuilderTest, ParseVCOutput) {
 
   std::unique_ptr<CompilerInfoData> info_c_data(new CompilerInfoData);
   {
-    std::vector<string> system_include_paths;
-    string predefined_macros;
+    std::vector<std::string> system_include_paths;
+    std::string predefined_macros;
     EXPECT_TRUE(VCCompilerInfoBuilder::ParseVCOutputString(
         kInputC, &system_include_paths, &predefined_macros));
     for (const auto& p : system_include_paths) {
@@ -143,9 +144,9 @@ TEST_F(VCCompilerInfoBuilderTest, ParseVCOutput) {
   std::unique_ptr<CompilerInfoData> info_data(new CompilerInfoData);
   AppendPredefinedMacros("#define __cplusplus\n", info_data.get());
   {
-    std::vector<string> system_include_paths;
-    std::vector<string> cxx_system_include_paths;
-    string predefined_macros(info_data->cxx().predefined_macros());
+    std::vector<std::string> system_include_paths;
+    std::vector<std::string> cxx_system_include_paths;
+    std::string predefined_macros(info_data->cxx().predefined_macros());
     EXPECT_TRUE(VCCompilerInfoBuilder::ParseVCOutputString(
         kInputCpp, &cxx_system_include_paths, &predefined_macros));
     EXPECT_TRUE(VCCompilerInfoBuilder::ParseVCOutputString(
@@ -178,7 +179,7 @@ TEST_F(VCCompilerInfoBuilderTest, ParseVCOutput) {
       "#define _MT\n",
       info.predefined_macros());
 
-  std::vector<string> dummy;
+  std::vector<std::string> dummy;
   EXPECT_FALSE(
       VCCompilerInfoBuilder::ParseVCOutputString("\"", &dummy, nullptr));
 }
@@ -199,7 +200,7 @@ TEST_F(VCCompilerInfoBuilderTest, GetVCVersion) {
     "Copyright (C) Microsoft Corporation.  All rights reserved.\r\n\r\n"
     "cl : Command line error D8003 : missing source filename";
 
-  string version, target;
+  std::string version, target;
   EXPECT_TRUE(
       VCCompilerInfoBuilder::ParseVCVersion(kVc2008, &version, &target));
   EXPECT_EQ("15.00.30729.01", version);

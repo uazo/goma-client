@@ -26,8 +26,6 @@
 #include "scoped_fd.h"
 #include "zlib.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 void WriteStdout(absl::string_view data) {
@@ -152,7 +150,7 @@ void FlushLogFiles() {
 #endif
 }
 
-string EscapeString(const string& str) {
+std::string EscapeString(const std::string& str) {
   std::stringstream escaped_str;
   escaped_str << "\"";
   for (size_t i = 0; i < str.size(); ++i) {

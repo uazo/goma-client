@@ -7,17 +7,16 @@
 #include "glog/logging.h"
 #include "lib/clang_flags_helper.h"
 #include "lib/vc_flags.h"
-using std::string;
 
 namespace devtools_goma {
 
 ConfigurableExecReqNormalizer::Config VCExecReqNormalizer::Configure(
     int id,
-    const std::vector<string>& args,
+    const std::vector<std::string>& args,
     bool normalize_include_path,
     bool is_linking,
-    const std::vector<string>& normalize_weak_relative_for_arg,
-    const std::map<string, string>& debug_prefix_map,
+    const std::vector<std::string>& normalize_weak_relative_for_arg,
+    const std::map<std::string, std::string>& debug_prefix_map,
     const ExecReq* req) const {
   int keep_cwd = kOmit;
   int keep_args = kNormalizeWithCwd;
@@ -80,7 +79,7 @@ ConfigurableExecReqNormalizer::Config VCExecReqNormalizer::Configure(
     keep_cwd |= kAsIs;
   }
 
-  absl::optional<string> fdebug_compilation_dir;
+  absl::optional<std::string> fdebug_compilation_dir;
   if (is_clang_cl && !(keep_cwd & kAsIs)) {
     ClangFlagsHelper clang_flags_helper(args);
     fdebug_compilation_dir = clang_flags_helper.fdebug_compilation_dir();

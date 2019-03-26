@@ -12,7 +12,6 @@
 #include "absl/strings/string_view.h"
 #include "lib/compiler_flag_type.h"
 #include "lib/execreq_normalizer.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -28,16 +27,16 @@ class CompilerFlagTypeSpecific {
   static CompilerFlagTypeSpecific FromArg(absl::string_view arg);
 
   // Gets CompilerName from argument.
-  static string GetCompilerNameFromArg(absl::string_view arg) {
+  static std::string GetCompilerNameFromArg(absl::string_view arg) {
     return FromArg(arg).GetCompilerName(arg);
   }
 
   CompilerFlagType type() const { return type_; }
 
   std::unique_ptr<CompilerFlags> NewCompilerFlags(
-      const std::vector<string>& args,
-      const string& cwd) const;
-  string GetCompilerName(absl::string_view arg) const;
+      const std::vector<std::string>& args,
+      const std::string& cwd) const;
+  std::string GetCompilerName(absl::string_view arg) const;
 
   // Creates ExecReqNormalizer by type.
   std::unique_ptr<ExecReqNormalizer> NewExecReqNormalizer() const;

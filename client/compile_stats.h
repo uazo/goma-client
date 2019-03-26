@@ -17,8 +17,6 @@ MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/goma_log.pb.h"
 MSVC_POP_WARNING()
 
-using std::string;
-
 namespace Json {
 class Value;
 }  // namespace Json
@@ -121,7 +119,7 @@ class CompileStats : public ExecLog {
   // Returns the name of the compile task component that took the most time,
   // and how much time it took and the percentage of the overall time. If all
   // durations were zero, returns an empty string.
-  string GetMajorFactorInfo() const;
+  std::string GetMajorFactorInfo() const;
 };
 
 }  // namespace devtools_goma

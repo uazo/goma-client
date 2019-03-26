@@ -8,24 +8,24 @@ namespace {
 
 // Pretty printing helpers.
 struct PrettyString {
-  explicit PrettyString(const string& s) : s(s) {}
+  explicit PrettyString(const std::string& s) : s(s) {}
 
   friend std::ostream& operator<<(std::ostream& os, const PrettyString& p) {
     // TODO: escape if p.s contains '"'.
     return os << '\"' << p.s << '\"';
   }
 
-  const string& s;
+  const std::string& s;
 };
 
 struct PrettyAttr {
-  explicit PrettyAttr(const string& s) : s(s) {}
+  explicit PrettyAttr(const std::string& s) : s(s) {}
 
   friend std::ostream& operator<<(std::ostream& os, const PrettyAttr& p) {
     return os << '[' << p.s << ']';
   }
 
-  const string& s;
+  const std::string& s;
 };
 
 struct PrettyIndent {
@@ -42,7 +42,7 @@ struct PrettyIndent {
 };
 
 struct PrettyVector {
-  PrettyVector(const std::vector<string>& vs, const string& sep)
+  PrettyVector(const std::vector<std::string>& vs, const std::string& sep)
       : vs(vs), sep(sep) {}
 
   friend std::ostream& operator<<(std::ostream& os, const PrettyVector& p) {
@@ -55,8 +55,8 @@ struct PrettyVector {
     return os;
   }
 
-  const std::vector<string>& vs;
-  const string& sep;
+  const std::vector<std::string>& vs;
+  const std::string& sep;
 };
 
 }  // anonymous namespace

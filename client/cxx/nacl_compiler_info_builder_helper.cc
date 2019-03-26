@@ -18,16 +18,16 @@ namespace {
 // Given a clang binary in |clang_dir|, add paths of its library file
 // dependencies to |resource_paths|
 void CollectClangDependentLibs(absl::string_view clang_dir,
-                               std::vector<string>* resource_paths) {
+                               std::vector<std::string>* resource_paths) {
   // Also, collect all dependent libraries by ldd.
   // Currently, instead using ldd, just list the necessary files.
   // TODO: Really use ldd to collect necessary libraries.
 #ifdef __linux__
-  const string lib_dir = file::JoinPath(clang_dir, "..", "lib");
+  const std::string lib_dir = file::JoinPath(clang_dir, "..", "lib");
   resource_paths->push_back(file::JoinPath(lib_dir, "libLLVM-3.7svn.so"));
   resource_paths->push_back(file::JoinPath(lib_dir, "libc++.so.1"));
 #elif defined(__MACH__)
-  const string lib_dir = file::JoinPath(clang_dir, "..", "lib");
+  const std::string lib_dir = file::JoinPath(clang_dir, "..", "lib");
   resource_paths->push_back(file::JoinPath(lib_dir, "libLLVM-3.7svn.dylib"));
   resource_paths->push_back(file::JoinPath(lib_dir, "libc++.1.dylib"));
 #elif defined(_WIN32)
@@ -44,8 +44,8 @@ void CollectClangDependentLibs(absl::string_view clang_dir,
 
 #ifdef _WIN32
 // static
-string NaClCompilerInfoBuilderHelper::GetNaClToolchainRoot(
-    const string& normal_nacl_gcc_path) {
+std::string NaClCompilerInfoBuilderHelper::GetNaClToolchainRoot(
+    const std::string& normal_nacl_gcc_path) {
   return PathResolver::ResolvePath(
       file::JoinPath(file::Dirname(normal_nacl_gcc_path), ".."));
 }
@@ -53,15 +53,15 @@ string NaClCompilerInfoBuilderHelper::GetNaClToolchainRoot(
 
 // static
 void NaClCompilerInfoBuilderHelper::CollectPNaClClangResources(
-    const string& local_compiler_path,
-    const string& cwd,
-    std::vector<string>* resource_paths) {
+    const std::string& local_compiler_path,
+    const std::string& cwd,
+    std::vector<std::string>* resource_paths) {
   // If compiler is pnacl, gather all pydir/*.py (don't gather other files.)
 
   absl::string_view local_compiler_dir = file::Dirname(local_compiler_path);
   std::vector<DirEntry> entries;
-  string pydir(file::JoinPath(local_compiler_dir, "pydir"));
-  string abs_pydir = file::JoinPathRespectAbsolute(cwd, pydir);
+  std::string pydir(file::JoinPath(local_compiler_dir, "pydir"));
+  std::string abs_pydir = file::JoinPathRespectAbsolute(cwd, pydir);
   if (ListDirectory(abs_pydir, &entries)) {
     for (const auto& entry : entries) {
       if (!entry.is_dir && absl::EndsWith(entry.name, ".py")) {
@@ -93,9 +93,9 @@ void NaClCompilerInfoBuilderHelper::CollectPNaClClangResources(
 
 // static
 void NaClCompilerInfoBuilderHelper::CollectNaClGccResources(
-    const string& local_compiler_path,
-    const string& cwd,
-    std::vector<string>* resource_paths) {
+    const std::string& local_compiler_path,
+    const std::string& cwd,
+    std::vector<std::string>* resource_paths) {
   absl::string_view local_dir = file::Dirname(local_compiler_path);
 
   const std::string libexec_dir = file::JoinPath(local_dir, "..", "libexec");
@@ -139,9 +139,9 @@ void NaClCompilerInfoBuilderHelper::CollectNaClGccResources(
 
 // static
 void NaClCompilerInfoBuilderHelper::CollectNaClClangResources(
-    const string& local_compiler_path,
-    const string& cwd,
-    std::vector<string>* resource_paths) {
+    const std::string& local_compiler_path,
+    const std::string& cwd,
+    std::vector<std::string>* resource_paths) {
   absl::string_view local_dir = file::Dirname(local_compiler_path);
 
   // REV is used for --version.

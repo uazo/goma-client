@@ -17,9 +17,7 @@
 
 namespace devtools_goma {
 
-using std::string;
-
-CacheFile::CacheFile(string filename) : filename_(std::move(filename)) {}
+CacheFile::CacheFile(std::string filename) : filename_(std::move(filename)) {}
 
 CacheFile::~CacheFile() {}
 
@@ -30,15 +28,15 @@ bool CacheFile::Load(google::protobuf::Message* msg) const {
 bool CacheFile::LoadWithMaxLimit(google::protobuf::Message* msg,
                                  int total_bytes_limit,
                                  int warning_threshold) const {
-  const string sha256_path = filename_ + ".sha256";
+  const std::string sha256_path = filename_ + ".sha256";
   {
     // First, check *.sha256, so that it is not corrupted.
-    string sha256_expected;
+    std::string sha256_expected;
     if (!ReadFileToString(sha256_path, &sha256_expected)) {
       LOG(INFO) << sha256_path << " does not exist.";
       return false;
     }
-    string sha256_actual;
+    std::string sha256_actual;
     if (!GomaSha256FromFile(filename_, &sha256_actual)) {
       LOG(INFO) << "failed to calculate sha256 of " << filename_;
       return false;
@@ -82,7 +80,7 @@ bool CacheFile::LoadWithMaxLimit(google::protobuf::Message* msg,
 
 bool CacheFile::Save(const google::protobuf::Message& msg) const {
   {
-    string msg_buf;
+    std::string msg_buf;
     msg.SerializeToString(&msg_buf);
     if (!WriteStringToFile(msg_buf, filename_)) {
       LOG(ERROR) << "failed to write " << filename_;
@@ -91,8 +89,8 @@ bool CacheFile::Save(const google::protobuf::Message& msg) const {
   }
 
   // Calculate sha256 of filename_, so that we can check it's not corrupted.
-  const string sha256_path = filename_ + ".sha256";
-  string sha256_str;
+  const std::string sha256_path = filename_ + ".sha256";
+  std::string sha256_str;
   if (!GomaSha256FromFile(filename_, &sha256_str)) {
     LOG(ERROR) << "failed to calculate sha256 of " << filename_;
     if (remove(filename_.c_str()) != 0) {

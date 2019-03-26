@@ -19,13 +19,14 @@ namespace devtools_goma {
 
 static const char* kGomaVerifyCommandFlag = "--goma-verify-command";
 
-bool BuildGomaccArgv(int orig_argc, const char* orig_argv[],
-                     std::vector<string>* args,
+bool BuildGomaccArgv(int orig_argc,
+                     const char* orig_argv[],
+                     std::vector<std::string>* args,
                      bool* masquerade_mode,
-                     string* verify_command,
-                     string* local_command_path) {
+                     std::string* verify_command,
+                     std::string* local_command_path) {
   int argv0 = -1;
-  const string progname = string(file::Basename(orig_argv[0]));
+  const std::string progname = std::string(file::Basename(orig_argv[0]));
   for (int i = 0; i < orig_argc; i++) {
     if (absl::StartsWith(orig_argv[i], kGomaVerifyCommandFlag)) {
       // --goma-veirfy-command is useful for end-to-end test.
@@ -92,10 +93,9 @@ bool BuildGomaccArgv(int orig_argc, const char* orig_argv[],
 
 #ifdef _WIN32
 
-void FanOutArgsByInput(
-  const std::vector<string>& args,
-  const std::set<string>& input_filenames,
-  std::vector<string>* args_no_input) {
+void FanOutArgsByInput(const std::vector<std::string>& args,
+                       const std::set<std::string>& input_filenames,
+                       std::vector<std::string>* args_no_input) {
   for (size_t i = 1; i < args.size(); ++i) {
     if (input_filenames.count(args[i]))
       continue;
@@ -103,9 +103,8 @@ void FanOutArgsByInput(
   }
 }
 
-string BuildArgsForInput(
-    const std::vector<string>& args_no_input,
-    const string& input_filename) {
+std::string BuildArgsForInput(const std::vector<std::string>& args_no_input,
+                              const std::string& input_filename) {
   std::ostringstream rsp;
   for (const auto& arg : args_no_input) {
     rsp << EscapeWinArg(arg) << " ";
@@ -116,7 +115,7 @@ string BuildArgsForInput(
   return rsp.str();
 }
 
-string EscapeWinArg(const string& arg) {
+std::string EscapeWinArg(const std::string& arg) {
   std::stringstream ss;
   ss << '"';
   for (size_t i = 0; i < arg.size(); ++i) {

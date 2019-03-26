@@ -935,8 +935,8 @@ void NormalizeExecReqForCacheKey(
     int id,
     bool normalize_include_path,
     bool is_linking,
-    const std::vector<string>& normalize_weak_relative_for_arg,
-    const std::map<string, string>& debug_prefix_map,
+    const std::vector<std::string>& normalize_weak_relative_for_arg,
+    const std::map<std::string, std::string>& debug_prefix_map,
     ExecReq* req) {
   CompilerFlagTypeSpecific::FromArg(req->command_spec().name())
       .NewExecReqNormalizer()
@@ -946,11 +946,11 @@ void NormalizeExecReqForCacheKey(
 }
 
 bool ValidateOutputFilesAndDirs(const ExecReq& req) {
-  std::vector<string> args(req.arg().begin(), req.arg().end());
-  std::vector<string> expected_output_files(req.expected_output_files().begin(),
-                                            req.expected_output_files().end());
-  std::vector<string> expected_output_dirs(req.expected_output_dirs().begin(),
-                                           req.expected_output_dirs().end());
+  std::vector<std::string> args(req.arg().begin(), req.arg().end());
+  std::vector<std::string> expected_output_files(
+      req.expected_output_files().begin(), req.expected_output_files().end());
+  std::vector<std::string> expected_output_dirs(
+      req.expected_output_dirs().begin(), req.expected_output_dirs().end());
   GCCFlags flags(args, req.cwd());
   return expected_output_files == flags.output_files() &&
          expected_output_dirs == flags.output_dirs();
@@ -960,7 +960,7 @@ bool ValidateOutputFilesAndDirs(const ExecReq& req) {
 
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKey) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   // Check all features can be disabled.
@@ -968,7 +968,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKey) {
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, false, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -994,7 +995,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKey) {
 
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyRelativeSystemPath) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   // Convert system include path.
@@ -1002,7 +1003,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyRelativeSystemPath) {
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, true, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, true, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("../../third_party/include",
             req.command_spec().system_include_path(0));
@@ -1029,14 +1031,15 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyRelativeSystemPath) {
 // Convert arguments followed by the certain flags.
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyRelativeSysroot) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, false, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, false, false, kTestOptions, std::map<std::string, std::string>(),
+      &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -1063,15 +1066,15 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyRelativeSysroot) {
 // -g.
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithFlagG) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
   req.add_arg("-g");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -1096,15 +1099,15 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithFlagG) {
 // -g0.
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithFlagG0) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
   req.add_arg("-g0");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("../../third_party/include",
             req.command_spec().system_include_path(0));
@@ -1128,7 +1131,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithFlagG0) {
 // -gsplit-dwarf (fission)
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithFission) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1136,8 +1139,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithFission) {
   req.add_expected_output_files("hello.dwo");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -1163,15 +1166,15 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithFission) {
 // -fdebug-prefix-map should be normalized with release build.
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithDebugPrefixMap) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
   req.add_arg("-fdebug-prefix-map=/tmp/src=/ts");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("../../third_party/include",
             req.command_spec().system_include_path(0));
@@ -1197,7 +1200,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithDebugPrefixMap) {
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqForCacheKeyWithDebugPrefixMapWithFlagG0) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1205,8 +1208,8 @@ TEST(GCCExecReqNormalizerTest,
   req.add_arg("-fdebug-prefix-map=/tmp/src=/ts");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("../../third_party/include",
             req.command_spec().system_include_path(0));
@@ -1232,7 +1235,7 @@ TEST(GCCExecReqNormalizerTest,
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqForCacheKeyWithDebugPrefixMapWithRelativeArgs) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(
@@ -1240,8 +1243,8 @@ TEST(GCCExecReqNormalizerTest,
   req.add_arg("-fdebug-prefix-map=/tmp/src=/ts");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("../../third_party/include",
             req.command_spec().system_include_path(0));
@@ -1266,7 +1269,7 @@ TEST(GCCExecReqNormalizerTest,
 // -MD
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMD) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1274,8 +1277,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMD) {
   req.add_expected_output_files("hello.d");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -1300,7 +1303,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMD) {
 // -M && -MF
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMF) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1311,8 +1314,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMF) {
   req.add_expected_output_files("hello.d");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -1338,7 +1341,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMF) {
 // to stdout.
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithM) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1346,8 +1349,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithM) {
   req.clear_expected_output_files();
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -1372,7 +1375,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithM) {
 // -MMD
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMD) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1380,8 +1383,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMD) {
   req.add_expected_output_files("hello.d");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("../../third_party/include",
             req.command_spec().system_include_path(0));
@@ -1406,7 +1409,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMD) {
 // -MM + -MF
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMMF) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1417,8 +1420,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMMF) {
   req.add_expected_output_files("hello.d");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("../../third_party/include",
             req.command_spec().system_include_path(0));
@@ -1442,7 +1445,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMMF) {
 // -MM
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMM) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1450,8 +1453,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMM) {
   req.clear_expected_output_files();
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("../../third_party/include",
             req.command_spec().system_include_path(0));
@@ -1474,7 +1477,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMM) {
 // -MF only
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMF) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1483,8 +1486,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMF) {
   req.add_expected_output_files("hello.d");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("../../third_party/include",
             req.command_spec().system_include_path(0));
@@ -1511,7 +1514,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMF) {
 // -MD & -MMD
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMDMMD) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1520,8 +1523,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMDMMD) {
   req.add_expected_output_files("hello.d");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -1546,7 +1549,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMDMMD) {
 // -MMD & -MD (inverted order)
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMDMD) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1555,8 +1558,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMDMD) {
   req.add_expected_output_files("hello.d");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -1582,7 +1585,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMDMD) {
 // -MD should be ignored if -MMD exists.
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMDMDGCC) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalizeGcc, &req));
@@ -1591,8 +1594,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMDMDGCC) {
   req.add_expected_output_files("hello.d");
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("../../third_party/include",
             req.command_spec().system_include_path(0));
@@ -1616,14 +1619,14 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyWithMMDMDGCC) {
 // link.
 TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyForLink) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalizeLink, &req));
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, true, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, true, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -1651,7 +1654,7 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqForCacheKeyForLink) {
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqForCacheKeyWithSubprogramPathCleanup) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1669,7 +1672,8 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, false, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
   EXPECT_EQ(2, req.subprogram_size());
   EXPECT_EQ("", req.subprogram(0).path());
   EXPECT_EQ("2f931b1183b807976cb304a66d1b84dcfe5a32f02b45f54c2358e5c43f9183b0",
@@ -1684,14 +1688,14 @@ TEST(GCCExecReqNormalizerTest,
 
 TEST(ExecReqNormalizeTest, NormalizeExecReqForCacheKeyWithDebugPrefixMap) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   // TODO: On Windows, we should try to use Windows path?
   // Currently no one is using debug prefix map on Windows.
 
   // debug_prefix_map.
-  const std::map<string, string> debug_prefix_map = {
+  const std::map<std::string, std::string> debug_prefix_map = {
       {"/tmp/src", "/ts"},
   };
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1728,7 +1732,7 @@ TEST(ExecReqNormalizeTest, NormalizeExecReqForCacheKeyWithDebugPrefixMap) {
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqForCacheKeyWithDisabledDebugPrefixMap) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReqToNormalize, &req));
@@ -1737,8 +1741,8 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
   // Note: passing empty debug_prefix_map means disabling the feature.
-  devtools_goma::NormalizeExecReqForCacheKey(0, true, false, kTestOptions,
-                                             std::map<string, string>(), &req);
+  devtools_goma::NormalizeExecReqForCacheKey(
+      0, true, false, kTestOptions, std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -1760,14 +1764,14 @@ TEST(GCCExecReqNormalizerTest,
 
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqShouldNormalizeWithDebugPrefixMap) {
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
   devtools_goma::ExecReq alice_req, bob_req;
 
-  const std::map<string, string> expected_alice_map = {
+  const std::map<std::string, std::string> expected_alice_map = {
       {"/home/alice", "/base_dir"},
   };
-  const std::map<string, string> expected_bob_map = {
+  const std::map<std::string, std::string> expected_bob_map = {
       {"/home/bob", "/base_dir"},
   };
   ASSERT_TRUE(TextFormat::ParseFromString(
@@ -1779,9 +1783,9 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(ValidateOutputFilesAndDirs(alice_req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(bob_req));
 
-  std::vector<string> alice_args(alice_req.arg().begin(),
-                                 alice_req.arg().end());
-  std::vector<string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
+  std::vector<std::string> alice_args(alice_req.arg().begin(),
+                                      alice_req.arg().end());
+  std::vector<std::string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
   devtools_goma::GCCFlags alice_flags(alice_args, alice_req.cwd());
   devtools_goma::GCCFlags bob_flags(bob_args, bob_req.cwd());
   ASSERT_EQ(expected_alice_map, alice_flags.fdebug_prefix_map());
@@ -1792,8 +1796,8 @@ TEST(GCCExecReqNormalizerTest,
                                              &alice_req);
   devtools_goma::NormalizeExecReqForCacheKey(
       0, true, false, kTestOptions, bob_flags.fdebug_prefix_map(), &bob_req);
-  string normalized_alice;
-  string normalized_bob;
+  std::string normalized_alice;
+  std::string normalized_bob;
   ASSERT_TRUE(TextFormat::PrintToString(alice_req, &normalized_alice));
   ASSERT_TRUE(TextFormat::PrintToString(bob_req, &normalized_bob));
   EXPECT_EQ(normalized_alice, normalized_bob);
@@ -1801,11 +1805,11 @@ TEST(GCCExecReqNormalizerTest,
 
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqShouldNormalizeWithDebugPrefixMapAndCWD) {
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
   devtools_goma::ExecReq alice_req, bob_req;
 
-  const std::map<string, string> kExpectedMap = {
+  const std::map<std::string, std::string> kExpectedMap = {
       {"/proc/self/cwd", ""},
   };
 
@@ -1818,9 +1822,9 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(ValidateOutputFilesAndDirs(alice_req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(bob_req));
 
-  std::vector<string> alice_args(alice_req.arg().begin(),
-                                 alice_req.arg().end());
-  std::vector<string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
+  std::vector<std::string> alice_args(alice_req.arg().begin(),
+                                      alice_req.arg().end());
+  std::vector<std::string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
   devtools_goma::GCCFlags alice_flags(alice_args, alice_req.cwd());
   devtools_goma::GCCFlags bob_flags(bob_args, bob_req.cwd());
   ASSERT_EQ(kExpectedMap, alice_flags.fdebug_prefix_map());
@@ -1843,15 +1847,15 @@ TEST(GCCExecReqNormalizerTest,
 
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqShouldNormalizeWith2DebugPrefixMapAndCWD) {
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
   devtools_goma::ExecReq alice_req, bob_req;
 
-  const std::map<string, string> kExpectedMapAlice = {{"/proc/self/cwd", ""},
-                                                      {"/home/alice/src/", ""}};
+  const std::map<std::string, std::string> kExpectedMapAlice = {
+      {"/proc/self/cwd", ""}, {"/home/alice/src/", ""}};
 
-  const std::map<string, string> kExpectedMapBob = {{"/proc/self/cwd", ""},
-                                                    {"/home/bob/src/", ""}};
+  const std::map<std::string, std::string> kExpectedMapBob = {
+      {"/proc/self/cwd", ""}, {"/home/bob/src/", ""}};
 
   ASSERT_TRUE(TextFormat::ParseFromString(
       kExecReqToNormalize2DebugPrefixMapAlicePSC, &alice_req));
@@ -1862,9 +1866,9 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(ValidateOutputFilesAndDirs(alice_req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(bob_req));
 
-  std::vector<string> alice_args(alice_req.arg().begin(),
-                                 alice_req.arg().end());
-  std::vector<string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
+  std::vector<std::string> alice_args(alice_req.arg().begin(),
+                                      alice_req.arg().end());
+  std::vector<std::string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
   devtools_goma::GCCFlags alice_flags(alice_args, alice_req.cwd());
   devtools_goma::GCCFlags bob_flags(bob_args, bob_req.cwd());
   ASSERT_EQ(kExpectedMapAlice, alice_flags.fdebug_prefix_map());
@@ -1883,22 +1887,22 @@ TEST(GCCExecReqNormalizerTest,
       0, true, false, kTestOptions, bob_flags.fdebug_prefix_map(), &bob_req);
 
   MessageDifferencer differencer;
-  string difference_reason;
+  std::string difference_reason;
   differencer.ReportDifferencesToString(&difference_reason);
   EXPECT_TRUE(differencer.Compare(alice_req, bob_req)) << difference_reason;
 }
 
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqShouldNormalizeWith2DebugPrefixMapAndCWDGCC) {
-  const std::vector<string> kTestOptions{"B", "I", "gcc-toolchain", "-sysroot",
-                                         "resource-dir"};
+  const std::vector<std::string> kTestOptions{"B", "I", "gcc-toolchain",
+                                              "-sysroot", "resource-dir"};
   devtools_goma::ExecReq alice_req, bob_req;
 
-  const std::map<string, string> kExpectedMapAlice = {{"/proc/self/cwd", ""},
-                                                      {"/home/alice/src/", ""}};
+  const std::map<std::string, std::string> kExpectedMapAlice = {
+      {"/proc/self/cwd", ""}, {"/home/alice/src/", ""}};
 
-  const std::map<string, string> kExpectedMapBob = {{"/proc/self/cwd", ""},
-                                                    {"/home/bob/src/", ""}};
+  const std::map<std::string, std::string> kExpectedMapBob = {
+      {"/proc/self/cwd", ""}, {"/home/bob/src/", ""}};
 
   ASSERT_TRUE(TextFormat::ParseFromString(
       kExecReqToNormalize2DebugPrefixMapAlicePSCGCC, &alice_req));
@@ -1909,9 +1913,9 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(ValidateOutputFilesAndDirs(alice_req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(bob_req));
 
-  std::vector<string> alice_args(alice_req.arg().begin(),
-                                 alice_req.arg().end());
-  std::vector<string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
+  std::vector<std::string> alice_args(alice_req.arg().begin(),
+                                      alice_req.arg().end());
+  std::vector<std::string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
   devtools_goma::GCCFlags alice_flags(alice_args, alice_req.cwd());
   devtools_goma::GCCFlags bob_flags(bob_args, bob_req.cwd());
   ASSERT_EQ(kExpectedMapAlice, alice_flags.fdebug_prefix_map());
@@ -1934,11 +1938,11 @@ TEST(GCCExecReqNormalizerTest,
 
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqShouldNormalizeWithDebugPrefixMapAndCWDGCC) {
-  const std::vector<string> kTestOptions{"B", "I", "gcc-toolchain", "-sysroot",
-                                         "resource-dir"};
+  const std::vector<std::string> kTestOptions{"B", "I", "gcc-toolchain",
+                                              "-sysroot", "resource-dir"};
   devtools_goma::ExecReq alice_req, bob_req;
 
-  const std::map<string, string> kExpectedMap = {
+  const std::map<std::string, std::string> kExpectedMap = {
       {"/proc/self/cwd", ""},
   };
 
@@ -1951,9 +1955,9 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(ValidateOutputFilesAndDirs(alice_req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(bob_req));
 
-  std::vector<string> alice_args(alice_req.arg().begin(),
-                                 alice_req.arg().end());
-  std::vector<string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
+  std::vector<std::string> alice_args(alice_req.arg().begin(),
+                                      alice_req.arg().end());
+  std::vector<std::string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
   devtools_goma::GCCFlags alice_flags(alice_args, alice_req.cwd());
   devtools_goma::GCCFlags bob_flags(bob_args, bob_req.cwd());
   ASSERT_EQ(kExpectedMap, alice_flags.fdebug_prefix_map());
@@ -1976,11 +1980,11 @@ TEST(GCCExecReqNormalizerTest,
 
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqShouldNotNormalizeWithDebugPrefixMapAndCWDGCC) {
-  const std::vector<string> kTestOptions{"B", "I", "gcc-toolchain", "-sysroot",
-                                         "resource-dir"};
+  const std::vector<std::string> kTestOptions{"B", "I", "gcc-toolchain",
+                                              "-sysroot", "resource-dir"};
   devtools_goma::ExecReq alice_req, bob_req;
 
-  const std::map<string, string> kExpectedMap = {
+  const std::map<std::string, std::string> kExpectedMap = {
       {"/proc/self/cwd", ""},
   };
 
@@ -1993,9 +1997,9 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(ValidateOutputFilesAndDirs(alice_req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(bob_req));
 
-  std::vector<string> alice_args(alice_req.arg().begin(),
-                                 alice_req.arg().end());
-  std::vector<string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
+  std::vector<std::string> alice_args(alice_req.arg().begin(),
+                                      alice_req.arg().end());
+  std::vector<std::string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
   devtools_goma::GCCFlags alice_flags(alice_args, alice_req.cwd());
   devtools_goma::GCCFlags bob_flags(bob_args, bob_req.cwd());
   ASSERT_EQ(kExpectedMap, alice_flags.fdebug_prefix_map());
@@ -2018,11 +2022,11 @@ TEST(GCCExecReqNormalizerTest,
 
 TEST(GCCExecReqNormalizerTest,
      NormalizeExecReqShouldNotNormalizeWithDebugPrefixMapAndCWDNoPWD) {
-  const std::vector<string> kTestOptions{"B", "I", "gcc-toolchain", "-sysroot",
-                                         "resource-dir"};
+  const std::vector<std::string> kTestOptions{"B", "I", "gcc-toolchain",
+                                              "-sysroot", "resource-dir"};
   devtools_goma::ExecReq alice_req, bob_req;
 
-  const std::map<string, string> kExpectedMap = {
+  const std::map<std::string, std::string> kExpectedMap = {
       {"/proc/self/cwd", ""},
   };
 
@@ -2035,9 +2039,9 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(ValidateOutputFilesAndDirs(alice_req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(bob_req));
 
-  std::vector<string> alice_args(alice_req.arg().begin(),
-                                 alice_req.arg().end());
-  std::vector<string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
+  std::vector<std::string> alice_args(alice_req.arg().begin(),
+                                      alice_req.arg().end());
+  std::vector<std::string> bob_args(bob_req.arg().begin(), bob_req.arg().end());
   devtools_goma::GCCFlags alice_flags(alice_args, alice_req.cwd());
   devtools_goma::GCCFlags bob_flags(bob_args, bob_req.cwd());
   ASSERT_EQ(kExpectedMap, alice_flags.fdebug_prefix_map());
@@ -2065,7 +2069,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqInputOrderForCacheKey) {
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, false, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
 
   EXPECT_EQ("bbbbbbbbbb", req.input(0).hash_key());
   EXPECT_EQ("aaaaaaaaaa", req.input(1).hash_key());
@@ -2083,7 +2088,8 @@ TEST(GCCExecReqNormalizerTest, NormalizeExecReqShouldClearContent) {
   ASSERT_TRUE(req.input(0).has_content());
 
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, false, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
 
   EXPECT_EQ(1, req.input_size());
   EXPECT_EQ("dummy_hash_key", req.input(0).hash_key());
@@ -2103,7 +2109,8 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
 
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, true, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, true, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
 
   EXPECT_EQ(3, req.command_spec().cxx_system_include_path_size());
   EXPECT_EQ("..\\..\\pnacl_newlib\\bin\\..\\x86_64-nacl\\include\\c++\\v1",
@@ -2143,7 +2150,8 @@ TEST(GCCExecReqNormalizerTest,
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
 
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, true, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, true, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
 
   EXPECT_EQ(3, req.command_spec().cxx_system_include_path_size());
   EXPECT_EQ("../../pnacl_newlib/bin/../x86_64-nacl/include/c++/v1",
@@ -2173,8 +2181,8 @@ TEST(GCCExecReqNormalizerTest,
 TEST(GCCExecReqNormalizerTest, AlwaysRemoveRequesterInfo) {
   // Test for b/38184335
 
-  const std::vector<string> kTestOptions{"B", "I", "gcc-toolchain", "-sysroot",
-                                         "resource-dir"};
+  const std::vector<std::string> kTestOptions{"B", "I", "gcc-toolchain",
+                                              "-sysroot", "resource-dir"};
 
   devtools_goma::ExecReq req;
 
@@ -2183,11 +2191,11 @@ TEST(GCCExecReqNormalizerTest, AlwaysRemoveRequesterInfo) {
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
 
-  const std::map<string, string> kExpectedMap = {
+  const std::map<std::string, std::string> kExpectedMap = {
       {"/home/goma/chromium/src", "."},
   };
 
-  std::vector<string> args(req.arg().begin(), req.arg().end());
+  std::vector<std::string> args(req.arg().begin(), req.arg().end());
   devtools_goma::GCCFlags flags(args, req.cwd());
   ASSERT_EQ(kExpectedMap, flags.fdebug_prefix_map());
 
@@ -2224,7 +2232,8 @@ TEST(GCCExecReqNormalizerTest, DropDeveloperDir) {
   ASSERT_TRUE(found_developer_env);
 
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, false, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
 
   found_developer_env = false;
   for (const auto& env : req.env()) {
@@ -2243,7 +2252,7 @@ TEST(GCCExecReqNormalizerTest, DropDeveloperDir) {
 
 TEST(GCCExecReqNormalizerTest, ClangCoverageMapping) {
   devtools_goma::ExecReq req;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   // Check all features can be disabled.
@@ -2253,7 +2262,8 @@ TEST(GCCExecReqNormalizerTest, ClangCoverageMapping) {
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, false, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
   EXPECT_EQ(1, req.command_spec().system_include_path_size());
   EXPECT_EQ("/tmp/src/third_party/include",
             req.command_spec().system_include_path(0));
@@ -2344,7 +2354,7 @@ expected_output_files: "c.o"
 )";
 
   devtools_goma::ExecReq req_a, req_b;
-  const std::vector<string> kTestOptions{
+  const std::vector<std::string> kTestOptions{
       "Xclang", "B", "I", "gcc-toolchain", "-sysroot", "resource-dir"};
 
   ASSERT_TRUE(TextFormat::ParseFromString(kExecReq, &req_a));
@@ -2359,11 +2369,11 @@ expected_output_files: "c.o"
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req_a));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req_b));
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), std::map<string, string>(),
-      &req_a);
+      0, false, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req_a);
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), std::map<string, string>(),
-      &req_b);
+      0, false, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req_b);
 
   EXPECT_EQ(req_a.input(0).filename(), "./A.h");
   EXPECT_EQ(req_b.input(0).filename(), "./B.h");
@@ -2386,7 +2396,8 @@ TEST(GCCExecReqNormalizerTest, FDebugCompilationDir) {
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, false, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
 
   EXPECT_EQ(req.cwd(), "/chromium");
 
@@ -2405,12 +2416,12 @@ TEST(GCCExecReqNormalizerTest, FDebugCompilationDirFDebugPrefixMap) {
   req.set_cwd("/home/chromium/chromium/src/");
 
   req.add_arg("-fdebug-prefix-map=/chromium=/home/chrome");
-  const std::map<string, string> debug_prefix_map{
+  const std::map<std::string, std::string> debug_prefix_map{
       {"/chromium", "/home/chrome"}};
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), debug_prefix_map, &req);
+      0, false, false, std::vector<std::string>(), debug_prefix_map, &req);
 
   EXPECT_EQ(req.cwd(), "/home/chrome");
 
@@ -2434,7 +2445,8 @@ TEST(GCCExecReqNormalizerTest, FDebugCompilationDirCoverageMapping) {
   ASSERT_TRUE(devtools_goma::VerifyExecReq(req));
   ASSERT_TRUE(ValidateOutputFilesAndDirs(req));
   devtools_goma::NormalizeExecReqForCacheKey(
-      0, false, false, std::vector<string>(), std::map<string, string>(), &req);
+      0, false, false, std::vector<std::string>(),
+      std::map<std::string, std::string>(), &req);
 
   EXPECT_EQ(req.cwd(), "/home/chromium/chromium/src");
 

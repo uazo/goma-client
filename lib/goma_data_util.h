@@ -8,8 +8,6 @@
 
 #include <string>
 
-using std::string;
-
 namespace devtools_goma {
 
 class ExecReq;
@@ -24,7 +22,7 @@ bool IsSameSubprograms(const ExecReq& req, const ExecResp& resp);
 bool IsValidFileBlob(const FileBlob& blob);
 
 // Compute a unique hash key of from the contents of |blob|.
-string ComputeFileBlobHashKey(const FileBlob& blob);
+std::string ComputeFileBlobHashKey(const FileBlob& blob);
 
 }  // namespace devtools_goma
 

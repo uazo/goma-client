@@ -16,8 +16,8 @@ TEST(ClangTidyCompilerInfoBuilderTest, ParseClangTidyVersionTarget) {
       "  Default target: x86_64-unknown-linux-gnu\n"
       "  Host CPU: sandybridge\n";
 
-  string version;
-  string target;
+  std::string version;
+  std::string target;
   ClangTidyCompilerInfoBuilder::ParseClangTidyVersionTarget(kOutput, &version,
                                                             &target);
 
@@ -33,8 +33,8 @@ TEST(ClangTidyCompilerInfoBuilderTest, ParseClangTidyVersionTargetCRLF) {
       "  Default target: x86_64-unknown-linux-gnu\r\n"
       "  Host CPU: sandybridge\r\n";
 
-  string version;
-  string target;
+  std::string version;
+  std::string target;
   ClangTidyCompilerInfoBuilder::ParseClangTidyVersionTarget(kOutput, &version,
                                                             &target);
 

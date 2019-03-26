@@ -12,21 +12,20 @@
 
 #include "basictypes.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class ElfParser {
  public:
-  static std::unique_ptr<ElfParser> NewElfParser(const string& filename);
+  static std::unique_ptr<ElfParser> NewElfParser(const std::string& filename);
   virtual ~ElfParser() {}
   virtual bool valid() const = 0;
   virtual void UseProgramHeader(bool use_program_header) = 0;
-  virtual bool ReadDynamicNeeded(std::vector<string>* needed) = 0;
-  virtual bool ReadDynamicNeededAndRpath(std::vector<string>* needed,
-                                         std::vector<string>* rpath) = 0;
+  virtual bool ReadDynamicNeeded(std::vector<std::string>* needed) = 0;
+  virtual bool ReadDynamicNeededAndRpath(std::vector<std::string>* needed,
+                                         std::vector<std::string>* rpath) = 0;
 
-  static bool IsElf(const string& filename);
+  static bool IsElf(const std::string& filename);
+
  protected:
   ElfParser() {}
  private:

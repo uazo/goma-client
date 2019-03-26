@@ -11,7 +11,7 @@ namespace {
 // We detect include guard if the following form.
 //    [!][defined][(][XXX][)]
 // or [!][defined][XXX]
-string DetectIncludeGuard(const ArrayTokenList& tokens) {
+std::string DetectIncludeGuard(const ArrayTokenList& tokens) {
   // Assuming |tokens| does not contains spaces.
 
   if (tokens.size() == 5 && tokens[0].IsPuncChar('!') &&
@@ -28,14 +28,14 @@ string DetectIncludeGuard(const ArrayTokenList& tokens) {
     return tokens[2].string_value;
   }
 
-  return string();
+  return std::string();
 }
 
 class State {
  public:
   State() : ok_(true), if_depth_(0) {}
 
-  const string& detected_ident() const { return detected_ident_; }
+  const std::string& detected_ident() const { return detected_ident_; }
 
   bool IsGuardDetected() const { return ok_ && !detected_ident_.empty(); }
 
@@ -47,9 +47,9 @@ class State {
   // be empty.
   // TODO: Consider renaming this method so that the definition of
   // |ident| is clearer.
-  void OnProcessIf(const string& ident);
+  void OnProcessIf(const std::string& ident);
   // Called when #ifndef is found.
-  void OnProcessIfndef(const string& ident);
+  void OnProcessIfndef(const std::string& ident);
   // Called when #else or #elif is found.
   void OnProcessElseElif();
   // Called when #endif is found.
@@ -72,7 +72,7 @@ class State {
   // The current depth of if/endif. We say it is toplevel when if_depth_ == 0.
   int if_depth_ = 0;
   // Detected include guard identifier.
-  string detected_ident_;
+  std::string detected_ident_;
 };
 
 void State::OnProcessCondition() {
@@ -84,7 +84,7 @@ void State::OnProcessCondition() {
   ok_ = false;
 }
 
-void State::OnProcessIf(const string& ident) {
+void State::OnProcessIf(const std::string& ident) {
   if (!ident.empty()) {
     OnProcessIfndef(ident);
   } else {
@@ -92,7 +92,7 @@ void State::OnProcessIf(const string& ident) {
   }
 }
 
-void State::OnProcessIfndef(const string& ident) {
+void State::OnProcessIfndef(const std::string& ident) {
   ++if_depth_;
   if (if_depth_ > 1) {
     // Non toplevel. Just skipping.
@@ -152,7 +152,7 @@ void State::OnPop() {
 }  // anonymous namespace
 
 // static
-string IncludeGuardDetector::Detect(const CppDirectiveList& directives) {
+std::string IncludeGuardDetector::Detect(const CppDirectiveList& directives) {
   State s;
 
   for (const auto& d : directives) {
@@ -191,7 +191,7 @@ string IncludeGuardDetector::Detect(const CppDirectiveList& directives) {
     return s.detected_ident();
   }
 
-  return string();
+  return std::string();
 }
 
 }  // namespace devtools_goma

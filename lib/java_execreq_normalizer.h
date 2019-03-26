@@ -6,30 +6,31 @@
 #define DEVTOOLS_GOMA_LIB_JAVA_EXECREQ_NORMALIZER_H_
 
 #include "lib/execreq_normalizer.h"
-using std::string;
 
 namespace devtools_goma {
 
 class JavaExecReqNormalizer : public ConfigurableExecReqNormalizer {
  protected:
-  Config Configure(int id,
-                   const std::vector<string>& args,
-                   bool normalize_include_path,
-                   bool is_linking,
-                   const std::vector<string>& normalize_weak_relative_for_arg,
-                   const std::map<string, string>& debug_prefix_map,
-                   const ExecReq* req) const override;
+  Config Configure(
+      int id,
+      const std::vector<std::string>& args,
+      bool normalize_include_path,
+      bool is_linking,
+      const std::vector<std::string>& normalize_weak_relative_for_arg,
+      const std::map<std::string, std::string>& debug_prefix_map,
+      const ExecReq* req) const override;
 };
 
 class JavacExecReqNormalizer : public ConfigurableExecReqNormalizer {
  protected:
-  Config Configure(int id,
-                   const std::vector<string>& args,
-                   bool normalize_include_path,
-                   bool is_linking,
-                   const std::vector<string>& normalize_weak_relative_for_arg,
-                   const std::map<string, string>& debug_prefix_map,
-                   const ExecReq* req) const override;
+  Config Configure(
+      int id,
+      const std::vector<std::string>& args,
+      bool normalize_include_path,
+      bool is_linking,
+      const std::vector<std::string>& normalize_weak_relative_for_arg,
+      const std::map<std::string, std::string>& debug_prefix_map,
+      const ExecReq* req) const override;
 };
 
 }  // namespace devtools_goma

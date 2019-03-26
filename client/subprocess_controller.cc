@@ -57,7 +57,7 @@ SubProcessController::Options::Options()
       dont_kill_subprocess(false) {
 }
 
-string SubProcessController::Options::DebugString() const {
+std::string SubProcessController::Options::DebugString() const {
   std::ostringstream ss;
   ss << " max_subprocs=" << max_subprocs
      << " max_subprocs_low_priority=" << max_subprocs_low_priority
@@ -80,7 +80,7 @@ void SubProcessController::Initialize(
   }
   if (pid == 0) {
     // child.
-    string argv0(arg0);
+    std::string argv0(arg0);
     argv0 += "-subproc";
 
     ScopedFd devnullfd(ScopedFd::OpenNull());
@@ -99,7 +99,7 @@ void SubProcessController::Initialize(
     google::InitGoogleLogging(argv0.c_str());
     google::InstallFailureSignalHandler();
     if (FLAGS_COMPILER_PROXY_ENABLE_CRASH_DUMP) {
-      devtools_goma::InitCrashReporter(devtools_goma::GetCrashDumpDirectory());
+      InitCrashReporter(devtools_goma::GetCrashDumpDirectory());
     }
     LOG(INFO) << "goma built revision " << kBuiltRevisionString;
     {
@@ -167,7 +167,7 @@ SubProcessController::~SubProcessController() {
 bool SubProcessController::AddMessage(
     int op, const google::protobuf::Message& message) {
   int old_size = pending_write_.size();
-  string msg;
+  std::string msg;
   message.SerializeToString(&msg);
   int size = msg.size();
   pending_write_.resize(old_size + kMessageHeaderLen + size);

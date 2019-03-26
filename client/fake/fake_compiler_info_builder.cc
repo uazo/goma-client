@@ -18,7 +18,8 @@ namespace {
 // Parses compiler's output. |compiler_output| is the stdout string of compiler.
 // Returns true if succeeded, and |version| will contain compiler version.
 // Returns false if failed.
-bool ParseFakeCompilerVersion(const string& compiler_output, string* version) {
+bool ParseFakeCompilerVersion(const std::string& compiler_output,
+                              std::string* version) {
   // output should be like
   // `fake version 1.0`.
 
@@ -30,7 +31,7 @@ bool ParseFakeCompilerVersion(const string& compiler_output, string* version) {
     return false;
   }
 
-  *version = string(line);
+  *version = std::string(line);
   return true;
 }
 
@@ -40,19 +41,20 @@ bool ParseFakeCompilerVersion(const string& compiler_output, string* version) {
 // |cwd| is the current directory.
 // If succeeded, returns true and |version| will contain compiler version.
 // If failed, returns false. The content of |version| is undefined.
-bool GetFakeCompilerVersion(const string& compiler_path,
-                            const std::vector<string>& compiler_info_envs,
-                            const string& cwd,
-                            string* version) {
-  const std::vector<string> argv{
-      compiler_path, "--version",
+bool GetFakeCompilerVersion(const std::string& compiler_path,
+                            const std::vector<std::string>& compiler_info_envs,
+                            const std::string& cwd,
+                            std::string* version) {
+  const std::vector<std::string> argv{
+      compiler_path,
+      "--version",
   };
-  std::vector<string> env(compiler_info_envs);
+  std::vector<std::string> env(compiler_info_envs);
   env.emplace_back("LC_ALL=C");
 
   int32_t status = 0;
-  string output = ReadCommandOutput(compiler_path, argv, env, cwd,
-                                    MERGE_STDOUT_STDERR, &status);
+  std::string output = ReadCommandOutput(compiler_path, argv, env, cwd,
+                                         MERGE_STDOUT_STDERR, &status);
   if (status != 0) {
     LOG(ERROR) << "ReadCommandOutput exited with non zero status code."
                << " compiler_path=" << compiler_path << " status=" << status
@@ -74,9 +76,9 @@ void FakeCompilerInfoBuilder::SetLanguageExtension(
 
 void FakeCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const string& abs_local_compiler_path,
-    const std::vector<string>& compiler_info_envs,
+    const std::string& local_compiler_path,
+    const std::string& abs_local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs,
     CompilerInfoData* data) const {
   // In SetTypeSpecificCompilerInfo, we have to set CompilerInfoData fields that
   // are compiler type specific. Especially, we have to set these.

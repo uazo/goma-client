@@ -13,7 +13,6 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "glog/logging.h"
-using std::string;
 
 namespace {
 
@@ -60,12 +59,13 @@ void FlagParser::Flag::SetSeenOutput(bool* seen_output) {
   *seen_output_ = false;
 }
 
-void FlagParser::Flag::SetOutput(std::vector<string>* output) {
+void FlagParser::Flag::SetOutput(std::vector<std::string>* output) {
   output_ = output;
 }
 
 void FlagParser::Flag::SetValueOutputWithCallback(
-    Callback* callback, std::vector<string>* values) {
+    Callback* callback,
+    std::vector<std::string>* values) {
   value_callback_ = callback;
   values_output_ = values;
 }
@@ -74,7 +74,8 @@ void FlagParser::Flag::SetCallbackForParsedArgs(Callback* callback) {
   parse_callback_ = callback;
 }
 
-bool FlagParser::Flag::Parse(const std::vector<string>& args, size_t i,
+bool FlagParser::Flag::Parse(const std::vector<std::string>& args,
+                             size_t i,
                              size_t* last_i) {
   absl::string_view key;
   if (!flag_prefix_) {
@@ -117,7 +118,7 @@ bool FlagParser::Flag::Parse(const std::vector<string>& args, size_t i,
     if (!allows_space_arg_) {
       // E.g., "-O"
       VLOG(3) << "FlagParser: no allow space arg: " << key;
-      string no_value;
+      std::string no_value;
       Output(i, args[i], &no_value);
       *last_i = i;
       return true;
@@ -139,11 +140,12 @@ bool FlagParser::Flag::Parse(const std::vector<string>& args, size_t i,
   }
   if (allows_equal_arg_) {
     size_t equal_index = key.find('=');
-    if (equal_index != string::npos &&
+    if (equal_index != std::string::npos &&
         key.substr(0, equal_index) == name_) {
       // E.g., "-isysroot=/foobar"
       VLOG(3) << "FlagParser: key-value argument with equal: " << args[i];
-      const string value = string(absl::ClippedSubstr(key, equal_index + 1));
+      const std::string value =
+          std::string(absl::ClippedSubstr(key, equal_index + 1));
       Output(i, args[i], &value);
       *last_i = i;
       return true;
@@ -152,7 +154,7 @@ bool FlagParser::Flag::Parse(const std::vector<string>& args, size_t i,
   if (allows_nonspace_arg_) {
     // E.g. "-xc++" or "-O2"
     VLOG(3) << "FlagParser: key-value argument without separator: " << args[i];
-    const string value =
+    const std::string value =
         args[i].substr(name_.size() + (flag_prefix_ ? 1 : 0));
     Output(i, args[i], &value);
     *last_i = i;
@@ -161,25 +163,27 @@ bool FlagParser::Flag::Parse(const std::vector<string>& args, size_t i,
   return false;
 }
 
-const string& FlagParser::Flag::value(int i) const {
+const std::string& FlagParser::Flag::value(int i) const {
   CHECK_GE(i, 0);
   CHECK_LT(i, static_cast<int>(values_.size()));
   return values_[i];
 }
 
-string FlagParser::Flag::GetLastValue() const {
+std::string FlagParser::Flag::GetLastValue() const {
   if (values_.empty())
     return "";
   return values_[values_.size() - 1];
 }
 
-const string& FlagParser::Flag::GetParsedArgs(int i) const {
+const std::string& FlagParser::Flag::GetParsedArgs(int i) const {
   auto found = parsed_args_.find(i);
   CHECK(found != parsed_args_.end()) << name_ << " at " << i;
   return found->second;
 }
 
-void FlagParser::Flag::Output(int i, const string& arg, const string* value) {
+void FlagParser::Flag::Output(int i,
+                              const std::string& arg,
+                              const std::string* value) {
   VLOG(4) << "Output:" << i << " " << arg << " value="
           << (value ? *value : "(null)");
   seen_ = true;
@@ -194,7 +198,7 @@ void FlagParser::Flag::Output(int i, const string& arg, const string* value) {
   }
   values_.push_back(*value);
   if (values_output_ != nullptr) {
-    string v;
+    std::string v;
     if (value_callback_)
       v = value_callback_->ParseFlagValue(*this, *value);
     else
@@ -202,10 +206,10 @@ void FlagParser::Flag::Output(int i, const string& arg, const string* value) {
     values_output_->push_back(v);
   }
 
-  string parsed_value = *value;
+  std::string parsed_value = *value;
   if (parse_callback_)
     parsed_value = parse_callback_->ParseFlagValue(*this, *value);
-  string parsed_arg = arg;
+  std::string parsed_arg = arg;
   if (parsed_value != *value) {
     parsed_arg = absl::StrReplaceAll(arg, {{*value, parsed_value}});
   }
@@ -219,7 +223,7 @@ FlagParser::~FlagParser() {
 }
 
 FlagParser::Flag* FlagParser::AddBoolFlag(const char* name) {
-  std::pair<std::map<string, std::unique_ptr<Flag>>::iterator, bool> p =
+  std::pair<std::map<std::string, std::unique_ptr<Flag>>::iterator, bool> p =
       flags_.emplace(name, nullptr);
   if (p.second) {
     p.first->second.reset(new Flag(name, false, false, opts_));
@@ -228,7 +232,7 @@ FlagParser::Flag* FlagParser::AddBoolFlag(const char* name) {
 }
 
 FlagParser::Flag* FlagParser::AddPrefixFlag(const char* name) {
-  std::pair<std::map<string, std::unique_ptr<Flag>>::iterator, bool> p =
+  std::pair<std::map<std::string, std::unique_ptr<Flag>>::iterator, bool> p =
       flags_.emplace(name, nullptr);
   if (p.second) {
     p.first->second.reset(new Flag(name, true, false, opts_));
@@ -237,7 +241,7 @@ FlagParser::Flag* FlagParser::AddPrefixFlag(const char* name) {
 }
 
 FlagParser::Flag* FlagParser::AddFlag(const char* name) {
-  std::pair<std::map<string, std::unique_ptr<Flag>>::iterator, bool> p =
+  std::pair<std::map<std::string, std::unique_ptr<Flag>>::iterator, bool> p =
       flags_.emplace(name, nullptr);
   if (p.second) {
     p.first->second.reset(new Flag(name, true, true, opts_));
@@ -246,7 +250,7 @@ FlagParser::Flag* FlagParser::AddFlag(const char* name) {
 }
 
 FlagParser::Flag* FlagParser::AddNonFlag() {
-  std::pair<std::map<string, std::unique_ptr<Flag>>::iterator, bool> p =
+  std::pair<std::map<std::string, std::unique_ptr<Flag>>::iterator, bool> p =
       flags_.emplace("", nullptr);
   if (p.second) {
     p.first->second.reset(new Flag("", true, false, opts_));
@@ -254,7 +258,7 @@ FlagParser::Flag* FlagParser::AddNonFlag() {
   return p.first->second.get();
 }
 
-void FlagParser::Parse(const std::vector<string>& args) {
+void FlagParser::Parse(const std::vector<std::string>& args) {
   std::copy(args.begin(), args.end(), back_inserter(args_));
   parsed_flags_.resize(args_.size());
 
@@ -267,7 +271,7 @@ void FlagParser::Parse(const std::vector<string>& args) {
   std::sort(flags.begin(), flags.end(), comp);
 
   for (size_t i = opts_.has_command_name ? 1 : 0; i < args.size(); i++) {
-    const string& arg = args[i];
+    const std::string& arg = args[i];
     VLOG(4) << "FlagParser: arg=" << arg;
     if (arg.empty()) {
       VLOG(3) << "FlagParser: empty flag";
@@ -294,8 +298,8 @@ void FlagParser::Parse(const std::vector<string>& args) {
   }
 }
 
-std::vector<string> FlagParser::GetParsedArgs() {
-  std::vector<string> args;
+std::vector<std::string> FlagParser::GetParsedArgs() {
+  std::vector<std::string> args;
   if (opts_.has_command_name)
     args.push_back(args_[0]);
   for (size_t i = (opts_.has_command_name ? 1 : 0);

@@ -10,16 +10,14 @@
 
 #include "gcc_flags.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class ThinLTOImportProcessor {
  public:
   // Get import files.
-  static bool GetIncludeFiles(const string& thinlto_index,
-                              const string& cwd,
-                              std::set<string>* input_files);
+  static bool GetIncludeFiles(const std::string& thinlto_index,
+                              const std::string& cwd,
+                              std::set<std::string>* input_files);
 };
 
 }  // namespace devtools_goma

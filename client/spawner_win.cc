@@ -25,29 +25,31 @@
 #include "mypath.h"
 #include "path.h"
 
+namespace devtools_goma {
+
 namespace {
 
 const DWORD kWaitTimeout = 10;
 const DWORD kTerminateExitCode = 1;
 
-string GetSubprocTempDirectory() {
+std::string GetSubprocTempDirectory() {
   std::ostringstream oss;
   oss << "goma_temp" << "." << GetCurrentProcessId();
-  return file::JoinPath(devtools_goma::GetGomaTmpDir(), oss.str());
+  return file::JoinPath(GetGomaTmpDir(), oss.str());
 }
 
 bool IsEnvVar(absl::string_view env_line, absl::string_view env_prefix) {
   return absl::StartsWithIgnoreCase(env_line, env_prefix);
 }
 
-string EscapeCommandlineArg(const string& arg) {
+std::string EscapeCommandlineArg(const std::string& arg) {
   // TODO: More accurate escape.
   // https://msdn.microsoft.com/en-us/library/17w5ykft(v=vs.85).aspx
-  if (!arg.empty() && arg.find_first_of(" \t\n\v\"") == string::npos) {
+  if (!arg.empty() && arg.find_first_of(" \t\n\v\"") == std::string::npos) {
     return arg;
   }
 
-  string escaped_arg;
+  std::string escaped_arg;
 
   // escaped_arg will be double quoted.
   bool quote_end = true;
@@ -76,17 +78,20 @@ string EscapeCommandlineArg(const string& arg) {
 
 // Iter should be an iterator of string containers.
 template <typename Iter>
-string PrepareCommandLine(const char* cwd, const char* prog,
-                          Iter env_begin, Iter env_end,
-                          Iter argv_begin, Iter argv_end) {
+std::string PrepareCommandLine(const char* cwd,
+                               const char* prog,
+                               Iter env_begin,
+                               Iter env_end,
+                               Iter argv_begin,
+                               Iter argv_end) {
   // Check if we have PATH spec and/or PATHEXT spec.
   static const size_t kPathLength = 5;
   static const char* kPathStr = "PATH=";
   static const size_t kPathExtLength = 8;
   static const char* kPathExtStr = "PATHEXT=";
 
-  string path_spec;
-  string pathext_spec;
+  std::string path_spec;
+  std::string pathext_spec;
   for (Iter i = env_begin; i != env_end; ++i) {
     if (IsEnvVar(*i, kPathStr)) {
       path_spec = i->substr(kPathLength);
@@ -99,14 +104,13 @@ string PrepareCommandLine(const char* cwd, const char* prog,
   // TODO: remove this when |prog| become full path.
   CHECK(!path_spec.empty()) << "PATH env. should be set.";
   CHECK(!pathext_spec.empty()) << "PATHEXT env. should be set.";
-  string command_line;
-  if (!devtools_goma::GetRealExecutablePath(
-      nullptr, prog, cwd, path_spec, pathext_spec, &command_line,
-      nullptr, nullptr)) {
+  std::string command_line;
+  if (!GetRealExecutablePath(nullptr, prog, cwd, path_spec, pathext_spec,
+                             &command_line, nullptr, nullptr)) {
     LOG(ERROR) << "Failed GetRealExecutablePath prog=" << prog << " cwd=" << cwd
                << " path_spec=" << path_spec
                << " pathext_spec=" << pathext_spec;
-    return string();
+    return std::string();
   }
 
   if (command_line[0] != '\"') {
@@ -130,7 +134,7 @@ void PrepareEnvBlock(Iter begin, Iter end, std::vector<char>* env) {
   env->resize(kMaxEnv);  // max env size
   size_t index = 0;
   for (Iter i = begin; i != end; i++) {
-    const string& e = *i;
+    const std::string& e = *i;
     size_t len = e.size();
     strcpy_s(&((*env)[index]), kMaxEnv - index, e.c_str());
     index += len + 1;
@@ -143,16 +147,16 @@ void PrepareEnvBlock(Iter begin, Iter end, std::vector<char>* env) {
   env->at(index) = 0;
 }
 
-string CreateJobName(DWORD pid, const string& command) {
+std::string CreateJobName(DWORD pid, const std::string& command) {
   std::ostringstream ss;
   // Get <prog> from |command|.
-  std::vector<string> args;
-  devtools_goma::ParseWinCommandLineToArgv(command, &args);
+  std::vector<std::string> args;
+  ParseWinCommandLineToArgv(command, &args);
 
   ss << "goma job:"
      << " pid=" << pid
      << " exe=" << file::Basename(args[0]);
-  string job_name(ss.str());
+  std::string job_name(ss.str());
   if (job_name.length() > MAX_PATH)
     job_name.erase(MAX_PATH);
   return job_name;
@@ -167,7 +171,7 @@ void SetProcessMemoryUsage(HANDLE child_handle, SIZE_T* mem_bytes) {
   }
 }
 
-bool WaitThread(devtools_goma::ScopedFd* thread, DWORD timeout) {
+bool WaitThread(ScopedFd* thread, DWORD timeout) {
   if (thread->valid()) {
     DWORD r = WaitForSingleObject(thread->handle(), timeout);
     switch (r) {
@@ -194,8 +198,6 @@ bool WaitThread(devtools_goma::ScopedFd* thread, DWORD timeout) {
 
 }  // namespace
 
-namespace devtools_goma {
-
 static const DWORD kInvalidProcessStatus = 0xffffffff;
 
 // On Windows, the common convention of invalid PID is 0 (see
@@ -204,14 +206,14 @@ static const DWORD kInvalidProcessStatus = 0xffffffff;
 // 0xffffffff and not 64-bit friendly).
 const int Spawner::kInvalidPid = 0;
 
-string* SpawnerWin::temp_dir_;
+std::string* SpawnerWin::temp_dir_;
 
 /* static */
 void SpawnerWin::Setup() {
   if (temp_dir_ != nullptr) {
     delete temp_dir_;
   }
-  temp_dir_ = new string(GetSubprocTempDirectory());
+  temp_dir_ = new std::string(GetSubprocTempDirectory());
   file::RecursivelyDelete(*temp_dir_, file::Defaults());
   CHECK(file::CreateDir(temp_dir_->c_str(), file::CreationMode(0755)).ok())
       << temp_dir_->c_str();
@@ -243,11 +245,13 @@ SpawnerWin::~SpawnerWin() {
   CleanUp();
 }
 
-int SpawnerWin::Run(const string& cmd, const std::vector<string>& args,
-                    const std::vector<string>& envs, const string& cwd) {
+int SpawnerWin::Run(const std::string& cmd,
+                    const std::vector<std::string>& args,
+                    const std::vector<std::string>& envs,
+                    const std::string& cwd) {
   DCHECK(!child_process_.valid());
 
-  std::vector<string> environs;
+  std::vector<std::string> environs;
   if (keep_env_) {
     environs = envs;
   } else {
@@ -283,10 +287,9 @@ int SpawnerWin::Run(const string& cmd, const std::vector<string>& args,
         << " stdout_filename_=" << stdout_filename_
         << " stderr_filename_=" << stderr_filename_;
 
-    const string command_line =
-        PrepareCommandLine(cwd.c_str(), cmd.c_str(),
-                           environs.cbegin(), environs.cend(),
-                           args.begin(), args.end());
+    const std::string command_line =
+        PrepareCommandLine(cwd.c_str(), cmd.c_str(), environs.cbegin(),
+                           environs.cend(), args.begin(), args.end());
     if (command_line.empty()) {
       LOG(ERROR) << "command line is empty."
                  << " cwd=" << cwd << " cmd=" << cmd;
@@ -309,10 +312,9 @@ int SpawnerWin::Run(const string& cmd, const std::vector<string>& args,
     create_flag |= DETACHED_PROCESS;
   }
 
-  string command_line =
-      PrepareCommandLine(cwd.c_str(), cmd.c_str(),
-                         environs.cbegin(), environs.cend(),
-                         args.begin(), args.end());
+  std::string command_line =
+      PrepareCommandLine(cwd.c_str(), cmd.c_str(), environs.cbegin(),
+                         environs.cend(), args.begin(), args.end());
   if (command_line.empty()) {
     return Spawner::kInvalidPid;
   }
@@ -497,11 +499,11 @@ Spawner::ProcessStatus SpawnerWin::Wait(Spawner::WaitPolicy wait_policy) {
 }
 
 // TODO: make stderr stored to the specified file.
-int SpawnerWin::RunRedirected(const string& command_line,
+int SpawnerWin::RunRedirected(const std::string& command_line,
                               std::vector<char>* env,
-                              const string& cwd,
-                              const string& out_file,
-                              const string& in_file) {
+                              const std::string& cwd,
+                              const std::string& out_file,
+                              const std::string& in_file) {
   VLOG(1) << "RunRedirect: command_line:" << command_line
           << " cwd:" << cwd
           << " out_file:" << out_file
@@ -604,7 +606,7 @@ int SpawnerWin::RunRedirected(const string& command_line,
   stdin_write_tmp.reset(nullptr);
 
   if (!out_file.empty()) {
-    string file_path = file::JoinPathRespectAbsolute(cwd, out_file);
+    std::string file_path = file::JoinPathRespectAbsolute(cwd, out_file);
     stdout_file_.reset(CreateFileA(file_path.c_str(), GENERIC_WRITE,
                                    FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS,
                                    FILE_ATTRIBUTE_NORMAL, nullptr));
@@ -623,7 +625,7 @@ int SpawnerWin::RunRedirected(const string& command_line,
   // compiler path (in command_line) is relative, a compiler will be searched
   // from compiler_proxy relative path, however, it should be build's expected
   // cwd relative. So, we inject "cmd /c" to set cwd to build's expected one.
-  string cmd = "cmd /c " + command_line;
+  std::string cmd = "cmd /c " + command_line;
   // TODO: Code around here looks like Run().
   // Can we share some code?
   const DWORD process_create_flag =
@@ -678,7 +680,8 @@ int SpawnerWin::RunRedirected(const string& command_line,
 
 // static
 ScopedFd SpawnerWin::AssignProcessToNewJobObject(
-    ScopedFd::FileDescriptor child_process, const string& job_name) {
+    ScopedFd::FileDescriptor child_process,
+    const std::string& job_name) {
   ScopedFd job_fd(CreateJobObjectA(nullptr, job_name.c_str()));
   if (!job_fd.handle()) {
     LOG_SYSRESULT(GetLastError());

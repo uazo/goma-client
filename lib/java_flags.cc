@@ -11,20 +11,21 @@
 
 namespace devtools_goma {
 
-void ParseJavaClassPaths(const std::vector<string>& class_paths,
-                         std::vector<string>* jar_files) {
-  for (const string& class_path : class_paths) {
+void ParseJavaClassPaths(const std::vector<std::string>& class_paths,
+                         std::vector<std::string>* jar_files) {
+  for (const std::string& class_path : class_paths) {
     for (auto&& path : absl::StrSplit(class_path, ':')) {
       // TODO: We need to handle directories.
       absl::string_view ext = GetExtension(path);
       if (ext == "jar" || ext == "zip") {
-        jar_files->push_back(string(path));
+        jar_files->push_back(std::string(path));
       }
     }
   }
 }
 
-JavacFlags::JavacFlags(const std::vector<string>& args, const string& cwd)
+JavacFlags::JavacFlags(const std::vector<std::string>& args,
+                       const std::string& cwd)
     : CompilerFlags(args, cwd) {
   if (!CompilerFlags::ExpandPosixArgs(cwd, args, &expanded_args_,
                                       &optional_input_filenames_)) {
@@ -38,9 +39,9 @@ JavacFlags::JavacFlags(const std::vector<string>& args, const string& cwd)
 
   FlagParser parser;
   DefineFlags(&parser);
-  std::vector<string> boot_class_paths;
-  std::vector<string> class_paths;
-  std::vector<string> remained_flags;
+  std::vector<std::string> boot_class_paths;
+  std::vector<std::string> class_paths;
+  std::vector<std::string> remained_flags;
   // The destination directory for class files.
   FlagParser::Flag* flag_d = parser.AddFlag("d");
   flag_d->SetValueOutputWithCallback(nullptr, &output_dirs_);
@@ -77,7 +78,8 @@ JavacFlags::JavacFlags(const std::vector<string>& args, const string& cwd)
   for (const auto& arg : remained_flags) {
     if (absl::EndsWith(arg, ".java")) {
       input_filenames_.push_back(arg);
-      const string& output_filename = arg.substr(0, arg.size() - 5) + ".class";
+      const std::string& output_filename =
+          arg.substr(0, arg.size() - 5) + ".class";
       if (!flag_d->seen()) {
         output_files_.push_back(output_filename);
       }
@@ -88,9 +90,9 @@ JavacFlags::JavacFlags(const std::vector<string>& args, const string& cwd)
   ParseJavaClassPaths(class_paths, &jar_files_);
 
   if (flag_processor->seen()) {
-    for (const string& value : flag_processor->values()) {
+    for (const std::string& value : flag_processor->values()) {
       for (auto&& c : absl::StrSplit(value, ',')) {
-        processors_.push_back(string(c));
+        processors_.push_back(std::string(c));
       }
     }
   }
@@ -158,22 +160,23 @@ bool JavacFlags::IsJavacCommand(absl::string_view arg) {
 }
 
 /* static */
-string JavacFlags::GetCompilerName(absl::string_view /*arg*/) {
+std::string JavacFlags::GetCompilerName(absl::string_view /*arg*/) {
   return "javac";
 }
 
 // ----------------------------------------------------------------------
 
-JavaFlags::JavaFlags(const std::vector<string>& args, const string& cwd)
+JavaFlags::JavaFlags(const std::vector<std::string>& args,
+                     const std::string& cwd)
     : CompilerFlags(args, cwd) {
   is_successful_ = true;
   lang_ = "java bytecode";
 
   FlagParser parser;
   DefineFlags(&parser);
-  std::vector<string> class_paths;
-  std::vector<string> system_properties;
-  std::vector<string> remained_flags;
+  std::vector<std::string> class_paths;
+  std::vector<std::string> system_properties;
+  std::vector<std::string> remained_flags;
   parser.AddFlag("cp")->SetValueOutputWithCallback(nullptr, &class_paths);
   parser.AddFlag("classpath")
       ->SetValueOutputWithCallback(nullptr, &class_paths);

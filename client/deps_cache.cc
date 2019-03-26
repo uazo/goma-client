@@ -39,8 +39,6 @@ MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/goma_stats.pb.h"
 MSVC_POP_WARNING()
 
-using std::string;
-
 namespace {
 
 template<typename Flags>
@@ -65,7 +63,7 @@ namespace devtools_goma {
 
 DepsCache* DepsCache::instance_;
 
-DepsCache::DepsCache(const string& cache_filename,
+DepsCache::DepsCache(const std::string& cache_filename,
                      absl::optional<absl::Duration> identifier_alive_duration,
                      size_t deps_table_size_threshold,
                      int max_proto_size_in_mega_bytes)
@@ -75,13 +73,12 @@ DepsCache::DepsCache(const string& cache_filename,
       max_proto_size_in_mega_bytes_(max_proto_size_in_mega_bytes),
       hit_count_(0),
       missed_count_(0),
-      missed_by_updated_count_(0) {
-}
+      missed_by_updated_count_(0) {}
 
 DepsCache::~DepsCache() {}
 
 // static
-void DepsCache::Init(const string& cache_filename,
+void DepsCache::Init(const std::string& cache_filename,
                      absl::optional<absl::Duration> identifier_alive_duration,
                      size_t deps_table_size_threshold,
                      int max_proto_size_in_mega_bytes) {
@@ -140,8 +137,8 @@ void DepsCache::Clear() {
 
 bool DepsCache::SetDependencies(const DepsCache::Identifier& identifier,
                                 const std::string& cwd,
-                                const string& input_file,
-                                const std::set<string>& dependencies,
+                                const std::string& input_file,
+                                const std::set<std::string>& dependencies,
                                 FileStatCache* file_stat_cache) {
   DCHECK(identifier.has_value());
   DCHECK(file::IsAbsolutePath(cwd)) << cwd;
@@ -149,7 +146,7 @@ bool DepsCache::SetDependencies(const DepsCache::Identifier& identifier,
   std::vector<DepsHashId> deps_hash_ids;
 
   // We set input_file as dependency also.
-  std::set<string> deps(dependencies);
+  std::set<std::string> deps(dependencies);
   deps.insert(input_file);
 
   bool all_ok = true;
@@ -196,8 +193,8 @@ bool DepsCache::SetDependencies(const DepsCache::Identifier& identifier,
 
 bool DepsCache::GetDependencies(const DepsCache::Identifier& identifier,
                                 const std::string& cwd,
-                                const string& input_file,
-                                std::set<string>* dependencies,
+                                const std::string& input_file,
+                                std::set<std::string>* dependencies,
                                 FileStatCache* file_stat_cache) {
   DCHECK(identifier.has_value());
   DCHECK(file::IsAbsolutePath(cwd)) << cwd;
@@ -214,9 +211,10 @@ bool DepsCache::GetDependencies(const DepsCache::Identifier& identifier,
     deps_hash_ids = it->second.deps_hash_ids;
   }
 
-  std::set<string> result;
+  std::set<std::string> result;
   for (const auto& deps_hash_id : deps_hash_ids) {
-    const string& filename = filename_id_table_.ToFilename(deps_hash_id.id);
+    const std::string& filename =
+        filename_id_table_.ToFilename(deps_hash_id.id);
     if (filename.empty()) {
       LOG(ERROR) << "Unexpected FilenameIdTable conversion failure: "
                  << "id=" << deps_hash_id.id;
@@ -288,7 +286,7 @@ void DepsCache::DumpStatsToProto(DepsCacheStats* stat) const {
 }
 
 // static
-bool DepsCache::IsDirectiveModified(const string& filename,
+bool DepsCache::IsDirectiveModified(const std::string& filename,
                                     const FileStat& old_file_stat,
                                     const SHA256HashValue& old_directive_hash,
                                     FileStatCache* file_stat_cache) {
@@ -383,7 +381,7 @@ bool DepsCache::LoadGomaDeps() {
   }
 
   // Load DepsIdTable
-  std::unordered_map<FilenameIdTable::Id, std::pair<FileStat, string>>
+  std::unordered_map<FilenameIdTable::Id, std::pair<FileStat, std::string>>
       deps_hash_id_map;
   {
     const GomaDepsIdTable& table = goma_deps.deps_id_table();

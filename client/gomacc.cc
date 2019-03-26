@@ -79,7 +79,6 @@ using devtools_goma::GetMyDirectory;
 using devtools_goma::GetMyPathname;
 using devtools_goma::Getpid;
 using devtools_goma::GomaClient;
-using std::string;
 
 #ifndef _WIN32
 using devtools_goma::ReadCommandOutputByPopen;
@@ -95,8 +94,9 @@ namespace {
 
 #ifndef _WIN32
 // Dump for debugging
-string DumpArgvString(
-    size_t argc, const char *argv[], const char *message) {
+std::string DumpArgvString(size_t argc,
+                           const char* argv[],
+                           const char* message) {
   std::stringstream ss;
   ss << "DEBUG: " << message << ": ";
   for (size_t i = 0; i < argc; ++i) {
@@ -164,7 +164,7 @@ bool HandleGomaTmpDir(int argc, char* argv[]) {
 // Runs gomacc again with modification to get preprocessed code (-E) or
 // assembler code (-S) instead of object code (-c).
 void VerifyIntermediateStageOutput(bool args0_is_argv0,
-                                   const std::vector<string>& args,
+                                   const std::vector<std::string>& args,
                                    const char* new_option,
                                    const char* new_ext) {
 #ifndef _WIN32
@@ -172,9 +172,9 @@ void VerifyIntermediateStageOutput(bool args0_is_argv0,
   unsetenv("GOMA_VERIFY_PREPROCESS_CODE");
   unsetenv("GOMA_VERIFY_ASSEMBLER_CODE");
 
-  string mypath = GetMyPathname();
+  std::string mypath = GetMyPathname();
   std::vector<const char*> new_argv;
-  std::vector<string> outputs;
+  std::vector<std::string> outputs;
   new_argv.push_back(mypath.c_str());
   bool run_verify_output = false;
   // TODO: refactor CompilerFlags and reuse here.
@@ -210,9 +210,9 @@ void VerifyIntermediateStageOutput(bool args0_is_argv0,
       continue;
     }
     // args[i] is filename or -ofilename.
-    string output = args[i];
+    std::string output = args[i];
     size_t ext = output.find_last_of('.');
-    CHECK_NE(ext, string::npos);
+    CHECK_NE(ext, std::string::npos);
     output = output.substr(0, ext) + new_ext;
     outputs.push_back(output);
     new_argv.push_back(outputs.back().c_str());
@@ -287,10 +287,10 @@ int main(int argc, char* argv[], const char* envp[]) {
     return 0;
   }
 
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode = false;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   if (!devtools_goma::BuildGomaccArgv(
           argc, (const char**)argv,
           &args, &masquerade_mode,
@@ -298,7 +298,8 @@ int main(int argc, char* argv[], const char* envp[]) {
     // no gcc or g++ in argv.
     fprintf(stderr, "usage: %s [gcc|g++|cl] [options]\n", argv[0]);
 #ifndef _WIN32
-    const string& goma_ctl = file::JoinPath(GetMyDirectory(), "goma_ctl.py");
+    const std::string& goma_ctl =
+        file::JoinPath(GetMyDirectory(), "goma_ctl.py");
     if (system(goma_ctl.c_str())) {
       fprintf(stderr, "Failed to check compiler_proxy's status\n");
     }
@@ -331,7 +332,7 @@ int main(int argc, char* argv[], const char* envp[]) {
       local_command_path = argv[1];
     }
 
-    std::vector<string> envs;
+    std::vector<std::string> envs;
     envs.push_back("GOMA_WILL_FAIL_WITH_UKNOWN_FLAG=true");
     for (int i = 0; envp[i]; ++i)
       envs.push_back(envp[i]);
@@ -375,7 +376,7 @@ int main(int argc, char* argv[], const char* envp[]) {
       fprintf(stderr, "usage: %s [gcc|g++|cl] [options]\n", argv[0]);
       exit(1);
     }
-    std::vector<string> envs;
+    std::vector<std::string> envs;
     for (int i = 0; envp[i]; ++i)
       envs.push_back(envp[i]);
     // prepend mode with command path.

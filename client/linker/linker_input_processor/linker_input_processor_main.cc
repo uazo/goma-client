@@ -20,14 +20,14 @@ using devtools_goma::GCCCompilerInfoBuilder;
 int main(int argc, char* argv[], const char** envp) {
   google::InitGoogleLogging(argv[0]);
 
-  const string cwd = devtools_goma::GetCurrentDirNameOrDie();
+  const std::string cwd = devtools_goma::GetCurrentDirNameOrDie();
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " local_compiler_path gcc ..."
               << std::endl;
     exit(1);
   }
-  string local_compiler_path = argv[1];
-  std::vector<string> args;
+  std::string local_compiler_path = argv[1];
+  std::vector<std::string> args;
   for (int i = 2; i < argc; ++i)
     args.push_back(argv[i]);
 
@@ -39,7 +39,7 @@ int main(int argc, char* argv[], const char** envp) {
   }
   const devtools_goma::GCCFlags& gcc_flags =
       static_cast<const devtools_goma::GCCFlags&>(*flags);
-  std::vector<string> compiler_info_envs;
+  std::vector<std::string> compiler_info_envs;
   flags->GetClientImportantEnvs(envp, &compiler_info_envs);
   std::unique_ptr<devtools_goma::CompilerInfoData> compiler_info_data(
       GCCCompilerInfoBuilder().FillFromCompilerOutputs(
@@ -55,17 +55,16 @@ int main(int argc, char* argv[], const char** envp) {
 
   devtools_goma::LinkerInputProcessor linker_input_processor(args, cwd);
 
-  std::set<string> input_files;
-  std::vector<string> library_paths;
+  std::set<std::string> input_files;
+  std::vector<std::string> library_paths;
   if (!linker_input_processor.GetInputFilesAndLibraryPath(
           compiler_info, command_spec, &input_files, &library_paths)) {
     std::cerr << "GetInputFilesAndLibraryPath failed" << std::endl;
     exit(1);
   }
   std::cout << "#Input files" << std::endl;
-  for (std::set<string>::iterator iter = input_files.begin();
-       iter != input_files.end();
-       ++iter) {
+  for (std::set<std::string>::iterator iter = input_files.begin();
+       iter != input_files.end(); ++iter) {
     std::cout << *iter << std::endl;
   }
   std::cout << "#library path" << std::endl;

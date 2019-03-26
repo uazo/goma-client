@@ -17,34 +17,35 @@ class GCCCompilerInfoBuilderTest : public testing::Test {
  protected:
   void SetUp() override { CheckTempDirectory(GetGomaTmpDir()); }
 
-  void AppendPredefinedMacros(const string& macro, CompilerInfoData* cid) {
+  void AppendPredefinedMacros(const std::string& macro, CompilerInfoData* cid) {
     cid->mutable_cxx()->set_predefined_macros(cid->cxx().predefined_macros() +
                                               macro);
   }
 
-  int FindValue(const std::unordered_map<string, int>& map, const string& key) {
+  int FindValue(const std::unordered_map<std::string, int>& map,
+                const std::string& key) {
     const auto& it = map.find(key);
     if (it == map.end())
       return 0;
     return it->second;
   }
 
-  string TestDir() {
+  std::string TestDir() {
     // This module is in out\Release.
-    const string parent_dir = file::JoinPath(GetMyDirectory(), "..");
-    const string top_dir = file::JoinPath(parent_dir, "..");
+    const std::string parent_dir = file::JoinPath(GetMyDirectory(), "..");
+    const std::string top_dir = file::JoinPath(parent_dir, "..");
     return file::JoinPath(top_dir, "test");
   }
 };
 
 TEST_F(GCCCompilerInfoBuilderTest, GetExtraSubprogramsClangPlugin) {
-  const string cwd("/");
+  const std::string cwd("/");
 
   TmpdirUtil tmpdir("get_extra_subprograms_clang_plugin");
   tmpdir.SetCwd(cwd);
   tmpdir.CreateEmptyFile("libPlugin.so");
 
-  std::vector<string> args, envs;
+  std::vector<std::string> args, envs;
   args.push_back("/usr/bin/clang");
   args.push_back("-Xclang");
   args.push_back("-load");
@@ -53,25 +54,25 @@ TEST_F(GCCCompilerInfoBuilderTest, GetExtraSubprogramsClangPlugin) {
   args.push_back("-c");
   args.push_back("hello.c");
   GCCFlags flags(args, cwd);
-  std::vector<string> clang_plugins;
-  std::vector<string> B_options;
+  std::vector<std::string> clang_plugins;
+  std::vector<std::string> B_options;
   bool no_integrated_as = false;
   GCCCompilerInfoBuilder::ParseSubprogramFlags(
       "/usr/bin/clang", flags, &clang_plugins, &B_options, &no_integrated_as);
-  std::vector<string> expected = {tmpdir.FullPath("libPlugin.so")};
+  std::vector<std::string> expected = {tmpdir.FullPath("libPlugin.so")};
   EXPECT_EQ(expected, clang_plugins);
   EXPECT_TRUE(B_options.empty());
   EXPECT_FALSE(no_integrated_as);
 }
 
 TEST_F(GCCCompilerInfoBuilderTest, GetExtraSubprogramsClangPluginRelative) {
-  const string cwd("/");
+  const std::string cwd("/");
 
   TmpdirUtil tmpdir("get_extra_subprograms_clang_plugin");
   tmpdir.SetCwd(cwd);
   tmpdir.CreateEmptyFile("libPlugin.so");
 
-  std::vector<string> args, envs;
+  std::vector<std::string> args, envs;
   args.push_back("/usr/bin/clang");
   args.push_back("-Xclang");
   args.push_back("-load");
@@ -80,45 +81,48 @@ TEST_F(GCCCompilerInfoBuilderTest, GetExtraSubprogramsClangPluginRelative) {
   args.push_back("-c");
   args.push_back("hello.c");
   GCCFlags flags(args, cwd);
-  std::vector<string> clang_plugins;
-  std::vector<string> B_options;
+  std::vector<std::string> clang_plugins;
+  std::vector<std::string> B_options;
   bool no_integrated_as = false;
   GCCCompilerInfoBuilder::ParseSubprogramFlags(
       "/usr/bin/clang", flags, &clang_plugins, &B_options, &no_integrated_as);
-  std::vector<string> expected = {"libPlugin.so"};
+  std::vector<std::string> expected = {"libPlugin.so"};
   EXPECT_EQ(expected, clang_plugins);
   EXPECT_TRUE(B_options.empty());
   EXPECT_FALSE(no_integrated_as);
 }
 
 TEST_F(GCCCompilerInfoBuilderTest, GetExtraSubprogramsBOptions) {
-  const string cwd("/");
+  const std::string cwd("/");
 
   TmpdirUtil tmpdir("get_extra_subprograms_clang_plugin");
   tmpdir.SetCwd(cwd);
   tmpdir.CreateEmptyFile("libPlugin.so");
 
-  std::vector<string> args, envs;
+  std::vector<std::string> args, envs;
   args.push_back("/usr/bin/clang");
   args.push_back("-B");
   args.push_back("dummy");
   args.push_back("-c");
   args.push_back("hello.c");
   GCCFlags flags(args, cwd);
-  std::vector<string> clang_plugins;
-  std::vector<string> B_options;
+  std::vector<std::string> clang_plugins;
+  std::vector<std::string> B_options;
   bool no_integrated_as = false;
   GCCCompilerInfoBuilder::ParseSubprogramFlags(
       "/usr/bin/clang", flags, &clang_plugins, &B_options, &no_integrated_as);
-  std::vector<string> expected = {"dummy"};
+  std::vector<std::string> expected = {"dummy"};
   EXPECT_TRUE(clang_plugins.empty());
   EXPECT_EQ(expected, B_options);
   EXPECT_FALSE(no_integrated_as);
 }
 
 TEST_F(GCCCompilerInfoBuilderTest, GetCompilerNameUsualCases) {
-  std::vector<std::pair<string, string>> test_cases = {
-      {"clang", "clang"}, {"clang++", "clang"}, {"g++", "g++"}, {"gcc", "gcc"},
+  std::vector<std::pair<std::string, std::string>> test_cases = {
+      {"clang", "clang"},
+      {"clang++", "clang"},
+      {"g++", "g++"},
+      {"gcc", "gcc"},
   };
 
   GCCCompilerInfoBuilder builder;
@@ -131,7 +135,7 @@ TEST_F(GCCCompilerInfoBuilderTest, GetCompilerNameUsualCases) {
 }
 
 TEST_F(GCCCompilerInfoBuilderTest, GetCompilerNameCc) {
-  std::vector<string> test_cases = {"clang", "gcc"};
+  std::vector<std::string> test_cases = {"clang", "gcc"};
 
   GCCCompilerInfoBuilder builder;
   for (const auto& tc : test_cases) {
@@ -175,41 +179,41 @@ TEST_F(GCCCompilerInfoBuilderTest, BuildWithRealClang) {
   // clang++ is usually a symlink to clang.
   // To check a symlink is correctly working, use clang++ instead of clang.
 
-  const string clang = GetClangPath();
+  const std::string clang = GetClangPath();
   // TODO: unittest_util should have GetClangXXPath()?
-  const string clangxx = GetClangPath() + "++";
+  const std::string clangxx = GetClangPath() + "++";
 
   // Needs to use real .so otherwise clang fails to read the file.
   // Linux has .so, and mac has .dylib.
   // TODO: Remove plugin use? (b/122436038)
 #ifdef __MACH__
-  const string lib_find_bad_constructs_so = file::JoinPath(
+  const std::string lib_find_bad_constructs_so = file::JoinPath(
       file::Dirname(clangxx), "..", "lib", "libFindBadConstructs.dylib");
 #else
-  const string lib_find_bad_constructs_so = file::JoinPath(
+  const std::string lib_find_bad_constructs_so = file::JoinPath(
       file::Dirname(clangxx), "..", "lib", "libFindBadConstructs.so");
 #endif
 
-  std::vector<string> args{
+  std::vector<std::string> args{
       clangxx,
       "-c",
       "hello.cc",
   };
 
   if (access(lib_find_bad_constructs_so.c_str(), R_OK) == 0) {
-    const std::vector<string> plugin_args = {"-Xclang", "-load", "-Xclang",
-                                             lib_find_bad_constructs_so};
+    const std::vector<std::string> plugin_args = {"-Xclang", "-load", "-Xclang",
+                                                  lib_find_bad_constructs_so};
     args.insert(args.end(), plugin_args.begin(), plugin_args.end());
   }
 
-  const std::vector<string> envs;
+  const std::vector<std::string> envs;
   GCCFlags flags(args, tmpdir.realcwd());
 
   GCCCompilerInfoBuilder builder;
   std::unique_ptr<CompilerInfoData> data =
       builder.FillFromCompilerOutputs(flags, clangxx, envs);
 
-  std::vector<string> actual_executable_binaries;
+  std::vector<std::string> actual_executable_binaries;
   ASSERT_NE(data.get(), nullptr);
   for (const auto& resource : data->resource()) {
     if (resource.type() == CompilerInfoData_ResourceType_EXECUTABLE_BINARY) {
@@ -217,7 +221,7 @@ TEST_F(GCCCompilerInfoBuilderTest, BuildWithRealClang) {
     }
   }
 
-  std::vector<string> expected_executable_binaries{
+  std::vector<std::string> expected_executable_binaries{
       clangxx,
       clang,
   };

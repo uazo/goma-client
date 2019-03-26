@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
   std::unique_ptr<ElfParser> elf = ElfParser::NewElfParser(argv[1]);
   CHECK(elf != nullptr);
   CHECK(elf->valid());
-  std::vector<string> needed, rpath;
+  std::vector<std::string> needed, rpath;
   if (!elf->ReadDynamicNeededAndRpath(&needed, &rpath)) {
     LOG(FATAL) << "ReadDynamicNeededAndRpath";
   }

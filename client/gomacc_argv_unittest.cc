@@ -24,16 +24,14 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-using std::string;
-
 namespace devtools_goma {
 
 #ifndef _WIN32
 TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gcc", "-c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(3, argv,
@@ -49,10 +47,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeClang) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"/gomadir/clang", "-c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(3, argv,
@@ -68,10 +66,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeClang) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependBaseGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "gcc", "-c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -87,10 +85,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependBaseGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependBaseGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"/gomadir/gomacc", "gcc", "-c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -106,10 +104,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependBaseGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependPathGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "path/gcc", "-c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -125,10 +123,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependPathGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependFullPathGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "/usr/bin/gcc", "-c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -144,10 +142,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependFullPathGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependPathGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"/gomadir/gomacc", "path/gcc", "-c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -163,10 +161,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependPathGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependFullPathGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"/gomadir/gomacc", "/usr/bin/gcc", "-c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -182,10 +180,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependFullPathGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeVerifyCommandGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gcc", "--goma-verify-command", "-c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -202,10 +200,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeVerifyCommandGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependVerifyCommandGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "--goma-verify-command",
                         "gcc", "-c", "hello.c"};
 
@@ -222,10 +220,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependVerifyCommandGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependVerifyCommandVersionGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "--goma-verify-command=version",
                         "gcc", "-c", "hello.c"};
 
@@ -242,10 +240,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependVerifyCommandVersionGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependVerifyCommandChecksumFullPathGcc) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "--goma-verify-command=checksum",
                         "/usr/bin/gcc", "-c", "hello.c"};
 
@@ -262,10 +260,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependVerifyCommandChecksumFullPathGcc) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependFlag) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "-c", "hello.c"};
 
   EXPECT_FALSE(BuildGomaccArgv(3, argv,
@@ -274,10 +272,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependFlag) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeNoCompiler) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"echo", "test"};
 
   EXPECT_TRUE(BuildGomaccArgv(2, argv,
@@ -292,10 +290,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeNoCompiler) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeFullPathNoCompiler) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"/gomadir/echo", "test"};
 
   EXPECT_TRUE(BuildGomaccArgv(2, argv,
@@ -310,10 +308,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeFullPathNoCompiler) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependBaseNoCompiler) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "echo", "test"};
 
   EXPECT_TRUE(BuildGomaccArgv(3, argv,
@@ -328,10 +326,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependBaseNoCompiler) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependoCompiler) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "/bin/echo", "test"};
 
   EXPECT_TRUE(BuildGomaccArgv(3, argv,
@@ -347,10 +345,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependoCompiler) {
 
 #else  // _WIN32
 TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeCl) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"c:\\gomadir\\cl.exe", "/c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(3, argv,
@@ -366,10 +364,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvMasqueradeCl) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependBaseCl) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc.exe", "cl", "/c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -385,10 +383,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependBaseCl) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependBaseCl) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"c:\\gomadir\\gomacc.exe", "cl", "/c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -404,10 +402,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependBaseCl) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependPathCl) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "path\\cl", "/c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -423,10 +421,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependPathCl) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependFullPathCl) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "c:\\vc\\bin\\cl", "/c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -442,10 +440,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependFullPathCl) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependPathCl) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"c:\\gomadir\\gomacc", "path\\cl", "/c", "hello.c"};
 
   EXPECT_TRUE(BuildGomaccArgv(4, argv,
@@ -461,10 +459,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependPathCl) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependFullPathCl) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"c:\\gomadir\\gomacc",
                         "c:\\vc\\bin\\cl", "/c", "hello.c"};
 
@@ -481,10 +479,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvFullPathPrependFullPathCl) {
 }
 
 TEST(GomaccArgvTest, BuildGomaccArgvPrependNoCl) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc", "/c", "hello.c"};
 
   EXPECT_FALSE(BuildGomaccArgv(3, argv,
@@ -494,10 +492,10 @@ TEST(GomaccArgvTest, BuildGomaccArgvPrependNoCl) {
 #endif  // _WIN32
 
 TEST(GomaccArgvTest, BuildGomaccArgvNoCompiler) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   bool masquerade_mode;
-  string verify_command;
-  string local_command_path;
+  std::string verify_command;
+  std::string local_command_path;
   const char* argv[] = {"gomacc"};
 
   EXPECT_FALSE(BuildGomaccArgv(1, argv,
@@ -508,7 +506,7 @@ TEST(GomaccArgvTest, BuildGomaccArgvNoCompiler) {
 #ifdef _WIN32
 
 TEST(GomaccArgvTest, FanOutArgsByInput) {
-  std::vector<string> args;
+  std::vector<std::string> args;
   args.push_back("cl");
   args.push_back("/c");
   args.push_back("/DFOO");
@@ -520,12 +518,12 @@ TEST(GomaccArgvTest, FanOutArgsByInput) {
   args.push_back("baz.cpp");
   args.push_back("/MP");
 
-  std::set<string> input_filenames;
+  std::set<std::string> input_filenames;
   input_filenames.insert("foo.cpp");
   input_filenames.insert("bar.cpp");
   input_filenames.insert("baz.cpp");
 
-  std::vector<string> args_no_input;
+  std::vector<std::string> args_no_input;
   FanOutArgsByInput(args, input_filenames, &args_no_input);
   EXPECT_EQ(6U, args_no_input.size());
   EXPECT_EQ("/c", args_no_input[0]);
@@ -537,7 +535,7 @@ TEST(GomaccArgvTest, FanOutArgsByInput) {
 }
 
 TEST(GomaccArgvTest, BuildArgsForInput) {
-  std::vector<string> args_no_input;
+  std::vector<std::string> args_no_input;
   args_no_input.push_back("/c");
   args_no_input.push_back("/DFOO=\"foo.h\"");
   args_no_input.push_back("/Ic:\\vc\\include");
@@ -545,7 +543,7 @@ TEST(GomaccArgvTest, BuildArgsForInput) {
   args_no_input.push_back("/Fdfoo.pdb");
   args_no_input.push_back("/MP");
 
-  string cmdline = BuildArgsForInput(args_no_input, "foo.cpp");
+  std::string cmdline = BuildArgsForInput(args_no_input, "foo.cpp");
   EXPECT_EQ("\"/c\" \"/DFOO=\\\"foo.h\\\"\" \"/Ic:\\vc\\include\" "
             "\"/Fo..\\obj\\\\\" \"/Fdfoo.pdb\" \"/MP\" \"foo.cpp\"", cmdline);
 }

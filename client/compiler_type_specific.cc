@@ -9,7 +9,7 @@ namespace devtools_goma {
 // static
 CompilerTypeSpecific::IncludeProcessorResult
 CompilerTypeSpecific::IncludeProcessorResult::Ok(
-    std::set<string> required_files) {
+    std::set<std::string> required_files) {
   IncludeProcessorResult result;
   result.ok = true;
   result.required_files = std::move(required_files);
@@ -18,7 +18,8 @@ CompilerTypeSpecific::IncludeProcessorResult::Ok(
 
 // static
 CompilerTypeSpecific::IncludeProcessorResult
-CompilerTypeSpecific::IncludeProcessorResult::ErrorToLog(string error_reason) {
+CompilerTypeSpecific::IncludeProcessorResult::ErrorToLog(
+    std::string error_reason) {
   IncludeProcessorResult result;
   result.ok = false;
   result.error_reason = std::move(error_reason);
@@ -28,7 +29,8 @@ CompilerTypeSpecific::IncludeProcessorResult::ErrorToLog(string error_reason) {
 
 // static
 CompilerTypeSpecific::IncludeProcessorResult
-CompilerTypeSpecific::IncludeProcessorResult::ErrorToUser(string error_reason) {
+CompilerTypeSpecific::IncludeProcessorResult::ErrorToUser(
+    std::string error_reason) {
   IncludeProcessorResult result;
   result.ok = false;
   result.error_reason = std::move(error_reason);

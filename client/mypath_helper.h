@@ -7,11 +7,9 @@
 
 #include <string>
 
-using std::string;
-
 namespace devtools_goma {
 
-string GetPlatformSpecificTempDirectory();
+std::string GetPlatformSpecificTempDirectory();
 
 }  // namespace devtools_goma
 

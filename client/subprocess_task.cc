@@ -29,10 +29,13 @@ MSVC_POP_WARNING()
 namespace devtools_goma {
 
 /* static */
-string SubProcessTask::ReadCommandOutput(
-    const string& prog,
-    const std::vector<string>& argv, const std::vector<string>& envs,
-    const string& cwd, CommandOutputOption option, int32_t* status) {
+std::string SubProcessTask::ReadCommandOutput(
+    const std::string& prog,
+    const std::vector<std::string>& argv,
+    const std::vector<std::string>& envs,
+    const std::string& cwd,
+    CommandOutputOption option,
+    int32_t* status) {
   CHECK(!SubProcessControllerClient::Get()->BelongsToCurrentThread());
   std::vector<const char*> args;
   for (const auto& arg : argv)
@@ -55,7 +58,7 @@ string SubProcessTask::ReadCommandOutput(
     return "";
   }
   tmpfile.Close();
-  const string& tempfilename_stdout = tmpfile.filename();
+  const std::string& tempfilename_stdout = tmpfile.filename();
   req->set_stdout_filename(tempfilename_stdout);
   if (option == STDOUT_ONLY)
     req->set_output_option(SubProcessReq::STDOUT_ONLY);
@@ -64,7 +67,7 @@ string SubProcessTask::ReadCommandOutput(
   req->set_weight(SubProcessReq::LIGHT_WEIGHT);
 
   s.StartInternal(nullptr);  // blocking.
-  string output;
+  std::string output;
   if (!ReadFileToString(tempfilename_stdout, &output)) {
     LOG(ERROR) << "Failed to read tempfile for storing stdout."
                << " tempfilename_stdout=" << tempfilename_stdout;
@@ -87,11 +90,10 @@ string SubProcessTask::ReadCommandOutput(
   return output;
 }
 
-SubProcessTask::SubProcessTask(
-    const string& trace_id, const char* prog, char* const argv[])
-    : thread_id_(0),
-      callback_(nullptr),
-      state_(SubProcessState::SETUP) {
+SubProcessTask::SubProcessTask(const std::string& trace_id,
+                               const char* prog,
+                               char* const argv[])
+    : thread_id_(0), callback_(nullptr), state_(SubProcessState::SETUP) {
   DCHECK(SubProcessControllerClient::IsRunning());
   DCHECK(SubProcessControllerClient::Get()->Initialized());
   thread_id_ = SubProcessControllerClient::Get()->wm()->GetCurrentThreadId();
@@ -229,7 +231,7 @@ int SubProcessTask::NumPending() {
 void SubProcessTask::Started(std::unique_ptr<SubProcessStarted> started) {
   VLOG(1) << req_.trace_id() << " started " << started->pid();
   DCHECK(!BelongsToCurrentThread());
-  string state_name;
+  std::string state_name;
   {
     AUTOLOCK(lock, &mu_);
 

@@ -24,7 +24,7 @@
 
 namespace devtools_goma {
 
-AutoUpdater::AutoUpdater(string goma_ctl)
+AutoUpdater::AutoUpdater(std::string goma_ctl)
     : dir_(GetMyDirectory()),
       my_version_(-1),
       pulled_version_(-1),
@@ -89,20 +89,19 @@ void AutoUpdater::Wait() {
   }
 }
 
-bool AutoUpdater::ReadManifest(const string& path, int* version) {
-  string manifest;
+bool AutoUpdater::ReadManifest(const std::string& path, int* version) {
+  std::string manifest;
   if (!ReadFileToString(path.c_str(), &manifest))
     return false;
   static const int kVersionLen = strlen("VERSION=");
   size_t version_start = manifest.find("VERSION=");
-  if (version_start == string::npos)
+  if (version_start == std::string::npos)
     return false;
   size_t version_end = manifest.find("\n", version_start + kVersionLen);
-  if (version_end == string::npos)
+  if (version_end == std::string::npos)
     return false;
-  string version_str = manifest.substr(
-      version_start + kVersionLen,
-      version_end - (version_start + kVersionLen));
+  std::string version_str = manifest.substr(
+      version_start + kVersionLen, version_end - (version_start + kVersionLen));
   *version = atoi(version_str.c_str());
   LOG(INFO) << "manifest " << path << " VERSION=" << *version;
   return (*version > 0);
@@ -127,7 +126,7 @@ void AutoUpdater::CheckUpdate() {
 
 void AutoUpdater::StartGomaCtlPull() {
   CHECK(server_ != nullptr);
-  string goma_ctl = file::JoinPath(dir_, goma_ctl_);
+  std::string goma_ctl = file::JoinPath(dir_, goma_ctl_);
   std::vector<const char*> args;
   args.push_back(goma_ctl.c_str());
   args.push_back("pull");
@@ -200,7 +199,7 @@ void AutoUpdater::GomaCtlPullDone() {
 void AutoUpdater::StartGomaCtlUpdate() {
   CHECK(server_ != nullptr);
   LOG(INFO) << "Update version " << my_version_ << " to " << pulled_version_;
-  string goma_ctl = file::JoinPath(dir_, goma_ctl_);
+  std::string goma_ctl = file::JoinPath(dir_, goma_ctl_);
   std::vector<const char*> args;
   args.push_back(goma_ctl.c_str());
   args.push_back("update");

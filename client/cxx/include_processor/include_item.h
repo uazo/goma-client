@@ -9,25 +9,25 @@
 
 #include "cpp_directive.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class IncludeItem {
  public:
   IncludeItem() = default;
-  IncludeItem(SharedCppDirectives directives, string include_guard_ident)
+  IncludeItem(SharedCppDirectives directives, std::string include_guard_ident)
       : directives_(std::move(directives)),
         include_guard_ident_(std::move(include_guard_ident)) {}
 
   bool IsValid() const { return directives_.get() != nullptr; }
 
   const SharedCppDirectives& directives() const { return directives_; }
-  const string& include_guard_ident() const { return include_guard_ident_; }
+  const std::string& include_guard_ident() const {
+    return include_guard_ident_;
+  }
 
  private:
   SharedCppDirectives directives_;
-  string include_guard_ident_;
+  std::string include_guard_ident_;
 };
 
 }  // namespace devtools_goma

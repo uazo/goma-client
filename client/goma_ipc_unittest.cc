@@ -31,8 +31,6 @@ MSVC_POP_WARNING()
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-using std::string;
-
 namespace devtools_goma {
 
 #ifdef _WIN32
@@ -79,9 +77,7 @@ class GomaIPCTest : public ::testing::Test {
       return std::unique_ptr<IOChannel>(new ScopedNamedPipe(std::move(pipe)));
     }
 
-    string DestName() const override {
-      return factory_.DestName();
-    }
+    std::string DestName() const override { return factory_.DestName(); }
 
    private:
     NamedPipeFactory factory_;
@@ -156,7 +152,7 @@ TEST_F(GomaIPCTest, CallPortz) {
   int socks[2];
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   EmptyMessage req;
-  string serialized_req;
+  std::string serialized_req;
   req.SerializeToString(&serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /portz HTTP/1.1\r\n"
@@ -166,13 +162,13 @@ TEST_F(GomaIPCTest, CallPortz) {
          << "Content-Length: " << serialized_req.size() << "\r\n\r\n"
          << serialized_req;
 
-  string req_expected = req_ss.str();
-  string req_buf;
+  std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   HttpPortResponse resp;
   resp.set_port(8088);
-  string serialized_resp;
+  std::string serialized_resp;
   resp.SerializeToString(&serialized_resp);
   std::ostringstream resp_ss;
   resp_ss << "HTTP/1.1 200 OK\r\n"
@@ -206,7 +202,7 @@ TEST_F(GomaIPCTest, CallPortz) {
 #ifdef _WIN32
 TEST_F(GomaIPCTest, CallPortzNamedPipewin) {
   EmptyMessage req;
-  string serialized_req;
+  std::string serialized_req;
   req.SerializeToString(&serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /portz HTTP/1.1\r\n"
@@ -217,7 +213,7 @@ TEST_F(GomaIPCTest, CallPortzNamedPipewin) {
          << serialized_req;
   HttpPortResponse resp;
   resp.set_port(8088);
-  string serialized_resp;
+  std::string serialized_resp;
   resp.SerializeToString(&serialized_resp);
   std::ostringstream resp_ss;
   resp_ss << "HTTP/1.1 200 OK\r\n"

@@ -35,8 +35,8 @@ const char* kVCRegPath[] = {
 
 namespace devtools_goma {
 
-string GetVCInstallDir(const string& reg_path) {
-  string install_dir;
+std::string GetVCInstallDir(const std::string& reg_path) {
+  std::string install_dir;
   HKEY regKey;
   if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, reg_path.c_str(), 0, KEY_READ, &regKey)
       != ERROR_SUCCESS) {
@@ -50,14 +50,14 @@ string GetVCInstallDir(const string& reg_path) {
   DWORD ret = RegQueryValueExA(regKey, "InstallDir", nullptr, &reg_type,
                        reinterpret_cast<LPBYTE>(data.get()), &data_size);
   if (ret == ERROR_SUCCESS) {
-    install_dir = string(data.get());
+    install_dir = std::string(data.get());
   } else if (ret == ERROR_MORE_DATA) {
     CHECK_GT(data_size, 0U);
     data.reset(new char[data_size]);
     if (RegQueryValueExA(regKey, "InstallDir", nullptr, &reg_type,
                          reinterpret_cast<LPBYTE>(data.get()), &data_size) ==
         ERROR_SUCCESS) {
-      install_dir = string(data.get());
+      install_dir = std::string(data.get());
     } else {
       LOG_SYSRESULT(GetLastError());
       LOG(ERROR) << "Failed to get InstallDir for " << reg_path;
@@ -70,15 +70,15 @@ string GetVCInstallDir(const string& reg_path) {
   return install_dir;
 }
 
-void GetVSVarsPath(string vs_version, std::set<string>* vsvars) {
+void GetVSVarsPath(std::string vs_version, std::set<std::string>* vsvars) {
   for (const auto* path : kVCRegPath) {
-    string install_dir = GetVCInstallDir(path + vs_version);
+    std::string install_dir = GetVCInstallDir(path + vs_version);
     VLOG(1) << "VC " << path << vs_version << " " << install_dir;
     if (!install_dir.empty()) {
-      const string tooldir = file::JoinPath(file::JoinPath(install_dir, ".."),
-                                            "Tools");
+      const std::string tooldir =
+          file::JoinPath(file::JoinPath(install_dir, ".."), "Tools");
       // TODO: check vsvars64.bat for x64 support?
-      string vsvar_path = file::JoinPath(tooldir, "vsvars32.bat");
+      std::string vsvar_path = file::JoinPath(tooldir, "vsvars32.bat");
       if (access(vsvar_path.c_str(), R_OK) == 0) {
         vsvars->insert(vsvar_path);
       } else {

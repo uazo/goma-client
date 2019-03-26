@@ -16,8 +16,6 @@ MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/compiler_info_data.pb.h"
 MSVC_POP_WARNING()
 
-using std::string;
-
 namespace devtools_goma {
 
 class VCCompilerInfoBuilder : public CxxCompilerInfoBuilder {
@@ -26,22 +24,22 @@ class VCCompilerInfoBuilder : public CxxCompilerInfoBuilder {
 
   void SetTypeSpecificCompilerInfo(
       const CompilerFlags& flags,
-      const string& local_compiler_path,
-      const string& abs_local_compiler_path,
-      const std::vector<string>& compiler_info_envs,
+      const std::string& local_compiler_path,
+      const std::string& abs_local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs,
       CompilerInfoData* data) const override;
 
   // Parses output of "cl.exe", and extracts |version| and |target|.
-  static bool ParseVCVersion(const string& vc_logo,
-                             string* version,
-                             string* target);
+  static bool ParseVCVersion(const std::string& vc_logo,
+                             std::string* version,
+                             std::string* target);
 
   // Execute VC and get the string output for VC version
-  static bool GetVCVersion(const string& cl_exe_path,
-                           const std::vector<string>& env,
-                           const string& cwd,
-                           string* version,
-                           string* target);
+  static bool GetVCVersion(const std::string& cl_exe_path,
+                           const std::vector<std::string>& env,
+                           const std::string& cwd,
+                           std::string* version,
+                           std::string* target);
 
   // Parses output of "cl.exe /nologo /Bxvcflags.exe non-exist-file.cpp" (C++)
   // or "cl.exe /nologo /B1vcflags.exe non-exist-file.c" (C),
@@ -49,32 +47,33 @@ class VCCompilerInfoBuilder : public CxxCompilerInfoBuilder {
   // "#define FOO X\n" format.
   // |predefined_macros| may be NULL (don't capture predefined macros
   // in this case).
-  static bool ParseVCOutputString(const string& output,
-                                  std::vector<string>* include_paths,
-                                  string* predefined_macros);
+  static bool ParseVCOutputString(const std::string& output,
+                                  std::vector<std::string>* include_paths,
+                                  std::string* predefined_macros);
 
-  static bool GetVCDefaultValues(const string& cl_exe_path,
-                                 const string& vcflags_path,
-                                 const std::vector<string>& compiler_info_flags,
-                                 const std::vector<string>& compiler_info_envs,
-                                 const string& cwd,
-                                 const string& lang,
-                                 CompilerInfoData* compiler_info);
+  static bool GetVCDefaultValues(
+      const std::string& cl_exe_path,
+      const std::string& vcflags_path,
+      const std::vector<std::string>& compiler_info_flags,
+      const std::vector<std::string>& compiler_info_envs,
+      const std::string& cwd,
+      const std::string& lang,
+      CompilerInfoData* compiler_info);
 
  private:
   // SetTypeSpecificCompilerInfo for cl.exe
   void SetClexeSpecificCompilerInfo(
       const VCFlags& flags,
-      const string& local_compiler_path,
-      const string& abs_local_compiler_path,
-      const std::vector<string>& compiler_info_envs,
+      const std::string& local_compiler_path,
+      const std::string& abs_local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs,
       CompilerInfoData* data) const;
   // SetTypeSpecificCompilerInfo for clang-cl.exe
   void SetClangClSpecificCompilerInfo(
       const VCFlags& flags,
-      const string& local_compiler_path,
-      const string& abs_local_compiler_path,
-      const std::vector<string>& compiler_info_envs,
+      const std::string& local_compiler_path,
+      const std::string& abs_local_compiler_path,
+      const std::vector<std::string>& compiler_info_envs,
       CompilerInfoData* data) const;
 };
 

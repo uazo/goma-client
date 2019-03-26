@@ -33,16 +33,15 @@ MSVC_POP_WARNING()
 #include "simple_timer.h"
 #include "util.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 namespace {
 
 constexpr absl::Duration kReadSelectTimeout = absl::Seconds(20);
 
-void SetError(int err, const string error_message,
-                     GomaIPC::Status* status) {
+void SetError(int err,
+              const std::string error_message,
+              GomaIPC::Status* status) {
   VLOG(1) << error_message;
   if (status->err == OK)
     status->err = err;
@@ -61,7 +60,7 @@ GomaIPC::GomaIPC(std::unique_ptr<ChanFactory> chan_factory)
 GomaIPC::~GomaIPC() {
 }
 
-int GomaIPC::Call(const string& path,
+int GomaIPC::Call(const std::string& path,
                   const google::protobuf::Message* req,
                   google::protobuf::Message* resp,
                   Status* status) {
@@ -76,7 +75,7 @@ int GomaIPC::Call(const string& path,
 }
 
 std::unique_ptr<IOChannel> GomaIPC::CallAsync(
-    const string& path,
+    const std::string& path,
     const google::protobuf::Message* req,
     Status* status) {
   DCHECK(status);
@@ -96,7 +95,7 @@ std::unique_ptr<IOChannel> GomaIPC::CallAsync(
   }
   status->connect_success = true;
 
-  string send_string;
+  std::string send_string;
   SimpleTimer req_send_timer;
   req->SerializeToString(&send_string);
   status->req_size = send_string.size();
@@ -124,8 +123,8 @@ int GomaIPC::Wait(std::unique_ptr<IOChannel> chan,
     return FAIL;
   }
 
-  string header;
-  string body;
+  std::string header;
+  std::string body;
   status->http_return_code = 0;
   SimpleTimer resp_recv_timer;
 
@@ -163,7 +162,8 @@ int GomaIPC::Wait(std::unique_ptr<IOChannel> chan,
 }
 
 int GomaIPC::SendRequest(const IOChannel* chan,
-                         const string& path, const string& s,
+                         const std::string& path,
+                         const std::string& s,
                          Status* status) {
   std::ostringstream http_send_message;
   // Using "Host: 0.0.0.0" is hack not to create goma ipc request
@@ -209,12 +209,12 @@ int GomaIPC::SendRequest(const IOChannel* chan,
 }
 
 int GomaIPC::ReadResponse(const IOChannel* chan,
-                          string* header,
-                          string* body,
+                          std::string* header,
+                          std::string* body,
                           int* http_return_code,
                           Status* status) {
   absl::Duration timeout = status->initial_timeout;
-  string response;
+  std::string response;
   size_t response_len = 0;
   size_t offset = 0;
   size_t content_length = 0;
@@ -290,8 +290,8 @@ int GomaIPC::ReadResponse(const IOChannel* chan,
     *header = response;
     *body = "";
   } else {
-    *header = string(response, offset);
-    *body = string(response.c_str() + offset, content_length);
+    *header = std::string(response, offset);
+    *body = std::string(response.c_str() + offset, content_length);
   }
 
   return OK;
@@ -320,7 +320,7 @@ int GomaIPC::CheckHealthz(Status* status) {
       return err;
     }
   }
-  string healthz_response;
+  std::string healthz_response;
   healthz_response.resize(kNetworkBufSize);
   char* buf = const_cast<char*>(healthz_response.data());
   SimpleTimer timer;
@@ -357,13 +357,13 @@ int GomaIPC::CheckHealthz(Status* status) {
   return OK;
 }
 
-string GomaIPC::DebugString() const {
+std::string GomaIPC::DebugString() const {
   std::ostringstream ss;
   ss << "Socket path: " << chan_factory_->DestName() << std::endl;
   return ss.str();
 }
 
-string GomaIPC::Status::DebugString() const {
+std::string GomaIPC::Status::DebugString() const {
   return absl::StrCat(
       "GomaIPC::Status",
       " connect_success=", connect_success,

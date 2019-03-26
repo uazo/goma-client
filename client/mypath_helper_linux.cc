@@ -13,20 +13,20 @@
 
 namespace devtools_goma {
 
-string GetPlatformSpecificTempDirectory() {
+std::string GetPlatformSpecificTempDirectory() {
   const uid_t uid = getuid();
-  const string dir = absl::StrCat("/run/user/", uid);
+  const std::string dir = absl::StrCat("/run/user/", uid);
 
   struct stat st;
   if (lstat(dir.c_str(), &st) != 0) {
     PLOG(INFO) << "lstat failed."
                << " dir=" << dir;
-    return string();
+    return std::string();
   }
   if (!S_ISDIR(st.st_mode)) {
     LOG(WARNING) << "not a directory."
                  << " dir=" << dir;
-    return string();
+    return std::string();
   }
   // Return empty string if the directory is not owned by the user.
   // (b/116622386)
@@ -35,19 +35,19 @@ string GetPlatformSpecificTempDirectory() {
                  << " dir=" << dir
                  << " st_uid=" << st.st_uid
                  << " getuid=" << uid;
-    return string();
+    return std::string();
   }
   if ((st.st_mode & S_IRWXU) != S_IRWXU) {
     LOG(WARNING) << "directory is not read/write/executable by the user."
                  << " dir=" << dir
                  << " st_mode=" << st.st_mode;
-    return string();
+    return std::string();
   }
   if ((st.st_mode & (S_IRWXG|S_IRWXO)) != 0) {
     LOG(WARNING) << "directory is open to group or others."
                  << " dir=" << dir
                  << " st_mode=" << st.st_mode;
-    return string();
+    return std::string();
   }
 
   return dir;

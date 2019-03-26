@@ -18,8 +18,6 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 // A helper class to check if a file is updated.
@@ -29,7 +27,7 @@ namespace devtools_goma {
 struct FileStat {
   static const off_t kInvalidFileSize;
   FileStat() : size(kInvalidFileSize), is_directory(false) {}
-  explicit FileStat(const string& filename);
+  explicit FileStat(const std::string& filename);
 
   bool IsValid() const;
   bool CanBeNewerThan(const FileStat& old) const;

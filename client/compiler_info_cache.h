@@ -60,7 +60,8 @@ class CompilerInfoCache {
   // when cache_filename is empty, this won't load cached data.
   // otherwise, it will try to load cached data from
   // JoinPathRespectAbsolute(cache_dir, cache_filename).
-  static void Init(const string& cache_dir, const string& cache_filename,
+  static void Init(const std::string& cache_dir,
+                   const std::string& cache_filename,
                    absl::Duration cache_holding_time);
   static CompilerInfoCache* instance() { return instance_; }
 
@@ -115,10 +116,10 @@ class CompilerInfoCache {
   bool Save() LOCKS_EXCLUDED(mu_);
 
  private:
-  CompilerInfoCache(const string& cache_filename,
+  CompilerInfoCache(const std::string& cache_filename,
                     absl::Duration cache_holding_time);
 
-  static string HashKey(const CompilerInfoData& data);
+  static std::string HashKey(const CompilerInfoData& data);
   bool Load() LOCKS_EXCLUDED(mu_);
   bool Unmarshal(const CompilerInfoDataTable& table) LOCKS_EXCLUDED(mu_);
   bool UnmarshalUnlocked(const CompilerInfoDataTable& table)
@@ -128,8 +129,8 @@ class CompilerInfoCache {
   void Clear() LOCKS_EXCLUDED(mu_);
   void ClearUnlocked() EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  CompilerInfoState* LookupUnlocked(const string& compiler_info_key,
-                                    const string& abs_local_compiler_path)
+  CompilerInfoState* LookupUnlocked(const std::string& compiler_info_key,
+                                    const std::string& abs_local_compiler_path)
       SHARED_LOCKS_REQUIRED(mu_);
 
   // Check CompilerInfo validity. CompilerInfo that does not match with the

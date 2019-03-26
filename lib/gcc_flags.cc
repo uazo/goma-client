@@ -20,20 +20,19 @@
 #include "lib/known_warning_options.h"
 #include "lib/path_resolver.h"
 #include "lib/path_util.h"
-using std::string;
 
 namespace devtools_goma {
 
 /* static */
-string GCCFlags::GetCompilerName(absl::string_view arg) {
+std::string GCCFlags::GetCompilerName(absl::string_view arg) {
   absl::string_view name = GetBasename(arg);
-  if (name.find("clang++") != string::npos) {
+  if (name.find("clang++") != std::string::npos) {
     return "clang++";
   }
-  if (name.find("clang") != string::npos) {
+  if (name.find("clang") != std::string::npos) {
     return "clang";
   }
-  if (name.find("g++") != string::npos || name == "c++") {
+  if (name.find("g++") != std::string::npos || name == "c++") {
     return "g++";
   }
   return "gcc";
@@ -41,11 +40,11 @@ string GCCFlags::GetCompilerName(absl::string_view arg) {
 
 // Return the key 'gcc' or 'g++' with architecture and version
 // stripped from compiler_name.
-string GCCFlags::compiler_name() const {
+std::string GCCFlags::compiler_name() const {
   return GetCompilerName(compiler_name_);
 }
 
-GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
+GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
     : CxxFlags(args, cwd),
       is_cplusplus_(false),
       has_nostdinc_(false),
@@ -77,7 +76,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
 
   bool fmodules = false;
   bool fno_implicit_module_maps = false;
-  std::vector<string> xclang_flags;
+  std::vector<std::string> xclang_flags;
 
   FlagParser parser;
   DefineFlags(&parser);
@@ -121,7 +120,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
   // -mllvm takes extra arg.
   // ASAN uses -mllvm -asan-blacklist=$FILE
   // TSAN uses -mllvm -tsan-blacklist=$FILE
-  std::vector<string> llvm_options;
+  std::vector<std::string> llvm_options;
   parser.AddFlag("mllvm")->SetOutput(&llvm_options);
   FlagParser::Flag* flag_fsanitize_blacklist =
       parser.AddFlag("fsanitize-blacklist");
@@ -197,7 +196,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
 
   // We should allow both -imacro and --imacro, -include and --include.
   // See: b/10020850.
-  std::vector<string> includes, imacros;
+  std::vector<std::string> includes, imacros;
   parser.AddFlag("imacros")->SetValueOutputWithCallback(nullptr, &imacros);
   parser.AddFlag("-imacros")->SetValueOutputWithCallback(nullptr, &imacros);
   parser.AddFlag("include")->SetValueOutputWithCallback(nullptr, &includes);
@@ -218,8 +217,8 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
   FlagParser::Flag* flag_Wa = parser.AddPrefixFlag("Wa,");
   FlagParser::Flag* flag_Wl = parser.AddPrefixFlag("Wl,");
   FlagParser::Flag* flag_Wp = parser.AddPrefixFlag("Wp,");
-  std::vector<string> assembler_flags;
-  std::vector<string> preprocessor_flags;
+  std::vector<std::string> assembler_flags;
+  std::vector<std::string> preprocessor_flags;
   flag_Wa->SetValueOutputWithCallback(nullptr, &assembler_flags);
   flag_Wp->SetValueOutputWithCallback(nullptr, &preprocessor_flags);
 
@@ -234,7 +233,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
   // -Wa, is a flag for assembler.
   // -Wa,--noexecstack is often used.
   if (!assembler_flags.empty()) {
-    std::vector<string> subflags;
+    std::vector<std::string> subflags;
     for (const auto& fs : assembler_flags) {
       for (auto&& f : absl::StrSplit(fs, ',')) {
         subflags.emplace_back(f);
@@ -271,7 +270,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
 
   // Note: -Wp,-D -Wp,FOOBAR can be considered as -Wp,-D,FOOBAR
   if (!preprocessor_flags.empty()) {
-    std::vector<string> subflags;
+    std::vector<std::string> subflags;
     for (const auto& fs : preprocessor_flags) {
       for (auto&& f : absl::StrSplit(fs, ',')) {
         subflags.emplace_back(f);
@@ -327,14 +326,14 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
   if (flag_fsanitize->seen()) {
     for (const auto& value : flag_fsanitize->values()) {
       for (auto&& v : absl::StrSplit(value, ',')) {
-        fsanitize_.insert(string(v));
+        fsanitize_.insert(std::string(v));
       }
     }
   }
   if (flag_fdebug_prefix_map->seen()) {
     for (const auto& value : flag_fdebug_prefix_map->values()) {
       size_t pos = value.find("=");
-      if (pos == string::npos) {
+      if (pos == std::string::npos) {
         LOG(ERROR) << "invalid argument is given to -fdebug-prefix-map:"
                    << value;
         return;
@@ -366,7 +365,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
       is_stdin_input_ = true;
     }
   } else if (mode_ != LINK && input_filenames_.size() > 1) {
-    string buf = absl::StrJoin(input_filenames_, ", ");
+    std::string buf = absl::StrJoin(input_filenames_, ", ");
     Fail("multiple input file names: " + buf);
   }
 
@@ -392,7 +391,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
   // Please see also:
   // https://github.com/llvm-mirror/clang/blob/5b04748157cbb00ccb3e91f6633a1561b3250e25/lib/Driver/SanitizerArgs.cpp#L485
   if (flag_fsanitize_blacklist->seen()) {
-    const std::vector<string>& values = flag_fsanitize_blacklist->values();
+    const std::vector<std::string>& values = flag_fsanitize_blacklist->values();
     for (const auto& value : values) {
       // -fsanitize-blacklist doesn't affect system include dirs or
       // predefined macros, so don't include it in compiler_info_flags_.
@@ -472,12 +471,12 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
     lang_ = GetLanguage(compiler_name_,
                         (!input_filenames_.empty() ? input_filenames_[0] : ""));
   }
-  is_cplusplus_ = (lang_.find("c++") != string::npos);
+  is_cplusplus_ = (lang_.find("c++") != std::string::npos);
   if (mode_ == COMPILE)
     is_precompiling_header_ = absl::EndsWith(lang_, "-header");
 
   {  // outout
-    string output;
+    std::string output;
     if (flag_o->seen()) {
       output = flag_o->GetLastValue();
     }
@@ -515,7 +514,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
       // assume .d file output.
       if ((flag_MD->seen() || flag_MMD->seen()) && !flag_MF->seen()) {
         size_t ext_start = output.rfind('.');
-        if (string::npos != ext_start) {
+        if (std::string::npos != ext_start) {
           output_files_.push_back(output.substr(0, ext_start) + ".d");
         }
       }
@@ -526,7 +525,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
               file::JoinPath(GetDirname(output), GetStem(output)) + ".dwo");
         }
 
-        const string& input0 = input_filenames_[0];
+        const std::string& input0 = input_filenames_[0];
         if (mode_ == LINK && GetExtension(input0) != "o") {
           output_files_.push_back(
               file::JoinPath(GetDirname(input0), GetStem(input0)) + ".dwo");
@@ -540,7 +539,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
   }
 
   bool use_profile_input = false;
-  string profile_input_dir = ".";
+  std::string profile_input_dir = ".";
 
   for (const auto& flag : flag_fprofile->values()) {
     compiler_info_flags_.emplace_back("-fprofile-" + flag);
@@ -557,7 +556,7 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
     use_profile_input |= absl::StartsWith(flag, "use");
 
     if (absl::StartsWith(flag, "use=")) {
-      const string& use_path = flag.substr(strlen("use="));
+      const std::string& use_path = flag.substr(strlen("use="));
 
       // https://clang.llvm.org/docs/ClangCommandLineReference.html#cmdoption-clang1-fprofile-use
       if (IsClangCommand(compiler_name_) &&
@@ -585,11 +584,11 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
       absl::string_view path = flag_fmodule_file->value(0);
       absl::string_view::size_type pos = path.find('=');
       if (pos != absl::string_view::npos) {
-        clang_module_file_.first = string(path.substr(0, pos));
-        clang_module_file_.second = string(path.substr(pos + 1));
+        clang_module_file_.first = std::string(path.substr(0, pos));
+        clang_module_file_.second = std::string(path.substr(pos + 1));
       } else {
         clang_module_file_.first = "";
-        clang_module_file_.second = string(path);
+        clang_module_file_.second = std::string(path);
       }
     }
 
@@ -604,10 +603,10 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
       !is_precompiling_header_) {
     for (const auto& filename : input_filenames_) {
       size_t ext_start = filename.rfind('.');
-      if (ext_start == string::npos)
+      if (ext_start == std::string::npos)
         continue;
       size_t last_dir = filename.rfind('/');
-      if (last_dir == string::npos)
+      if (last_dir == std::string::npos)
         last_dir = 0;
       else
         last_dir++;
@@ -626,8 +625,8 @@ GCCFlags::GCCFlags(const std::vector<string>& args, const string& cwd)
   }
 }
 
-const std::vector<string> GCCFlags::include_dirs() const {
-  std::vector<string> dirs(non_system_include_dirs_);
+const std::vector<std::string> GCCFlags::include_dirs() const {
+  std::vector<std::string> dirs(non_system_include_dirs_);
   std::copy(framework_dirs_.begin(), framework_dirs_.end(),
             back_inserter(dirs));
   return dirs;
@@ -865,8 +864,8 @@ bool GCCFlags::IsKnownWarningOption(absl::string_view option) {
       << "kKnownWarningOptions must be sorted";
 
   // for "foo=x", take "foo=" only.
-  string::size_type p = option.find('=');
-  if (p != string::npos) {
+  std::string::size_type p = option.find('=');
+  if (p != std::string::npos) {
     option = option.substr(0, p + 1);  // Keep '='.
   }
 
@@ -939,11 +938,11 @@ bool GCCFlags::IsKnownDebugOption(absl::string_view v) {
 }
 
 /* static */
-string GCCFlags::GetLanguage(const string& compiler_name,
-                             const string& input_filename) {
+std::string GCCFlags::GetLanguage(const std::string& compiler_name,
+                                  const std::string& input_filename) {
   // Decision based on a compiler name.
   bool is_cplusplus = false;
-  if (compiler_name.find("g++") != string::npos) {
+  if (compiler_name.find("g++") != std::string::npos) {
     is_cplusplus = true;
   }
   if (input_filename.empty())
@@ -970,10 +969,10 @@ string GCCFlags::GetLanguage(const string& compiler_name,
     is_cplusplus = false;
   }
 
-  const string lang = is_cplusplus ? "c++" : "c";
+  const std::string lang = is_cplusplus ? "c++" : "c";
   if (!suffix.empty()) {
     if (suffix[0] == 'm' || suffix[0] == 'M')
-      return string("objective-") + lang;
+      return std::string("objective-") + lang;
 
     if (suffix[0] == 'h' || suffix[0] == 'H' || suffix == "tcc")
       return lang + "-header";
@@ -981,7 +980,8 @@ string GCCFlags::GetLanguage(const string& compiler_name,
   return lang;
 }
 
-void GCCFlags::ProcessXclangFlags(const std::vector<string>& xclang_flags) {
+void GCCFlags::ProcessXclangFlags(
+    const std::vector<std::string>& xclang_flags) {
   // xclang_flags should be like:
   // ["-Xclang", "something", "-Xclang", "foo"]
   // The odd element must be always "-Xclang".
@@ -1038,10 +1038,11 @@ void GCCFlags::ProcessXclangFlags(const std::vector<string>& xclang_flags) {
   }
 }
 
-string GetCxxCompilerVersionFromCommandOutputs(const string& /* command */,
-                                               const string& dumpversion,
-                                               const string& version) {
-  string result(GetFirstLine(dumpversion));
+std::string GetCxxCompilerVersionFromCommandOutputs(
+    const std::string& /* command */,
+    const std::string& dumpversion,
+    const std::string& version) {
+  std::string result(GetFirstLine(dumpversion));
   // Both GCC and clang contain their full version info in the first
   // line of their --version output.
   // E.g., clang version 2.9 (trunk 127176), gcc (Ubuntu 4.4.3-4ubuntu5) 4.4.3
@@ -1049,31 +1050,31 @@ string GetCxxCompilerVersionFromCommandOutputs(const string& /* command */,
   return result;
 }
 
-string GetFirstLine(const string& buf) {
+std::string GetFirstLine(const std::string& buf) {
   size_t pos = buf.find_first_of("\r\n");
-  if (pos == string::npos) {
+  if (pos == std::string::npos) {
     return buf;
   }
   return buf.substr(0, pos);
 }
 
-string NormalizeGccVersion(const string& version) {
+std::string NormalizeGccVersion(const std::string& version) {
   // gcc version string format:
   // <program name> <package version string> <version string>
   // Note: <package version string> is "(<something>)" by default.
   // Then, we can expect the string until '(' is <program name>.
   size_t pos = version.find('(');
-  if (pos == string::npos)
+  if (pos == std::string::npos)
     return version;
 
-  const string program_name = version.substr(0, pos);
+  const std::string program_name = version.substr(0, pos);
   // No need to normalize clang.
-  if (program_name.find("clang") != string::npos)
+  if (program_name.find("clang") != std::string::npos)
     return version;
   // Only need to normalize cc/c++/gcc/g++/<arch>-<os>-gcc/<arch>-<os>-g++.
   // TODO: should we handle <arch>-<os>-cc or so?
-  if (program_name.find("g++") == string::npos &&
-      program_name.find("gcc") == string::npos && program_name != "c++ " &&
+  if (program_name.find("g++") == std::string::npos &&
+      program_name.find("gcc") == std::string::npos && program_name != "c++ " &&
       program_name != "cc ") {
     return version;
   }

@@ -13,7 +13,6 @@
 #include "base/basictypes.h"
 #include "lib/file_reader.h"
 #include "prototmp/goma_data.pb.h"
-using std::string;
 
 #ifdef _WIN32
 # include <shlobj.h>
@@ -69,7 +68,9 @@ class FileServiceClient {
   // Note that |blob| itself will not be stored in file service by this method,
   // so need to use StoreFileBlob() to store.
   // Returns true on success, false on error.
-  bool CreateFileBlob(const string& filename, bool store_large, FileBlob* blob);
+  bool CreateFileBlob(const std::string& filename,
+                      bool store_large,
+                      FileBlob* blob);
 
   // Store |blob| in file service.
   // Returns true on success, false on error.
@@ -81,18 +82,20 @@ class FileServiceClient {
 
   // Gets |blob| for |hash_key|.
   // Returns true on success, false on error.
-  bool GetFileBlob(const string& hash_key, FileBlob* blob);
+  bool GetFileBlob(const std::string& hash_key, FileBlob* blob);
 
   // Gets |blobs| for |hash_keys|.
   // Returns true on success, false on error.
   // Even if it returns true, blobs may contain invalid FileBlob, which means
   // missing content for the corresponding hash_key.
-  bool GetFileBlobs(const std::vector<string>& hash_keys,
+  bool GetFileBlobs(const std::vector<std::string>& hash_keys,
                     std::vector<FileBlob*>* blobs);
 
   // Writes |blob| to |filename|.
   // convenient helper for OutputFileBlob().
-  bool WriteFileBlob(const string& filename, int mode, const FileBlob& blob);
+  bool WriteFileBlob(const std::string& filename,
+                     int mode,
+                     const FileBlob& blob);
 
   // OutputFileBlob outputs blob into output.
   // It doesn't take ownership of output.
@@ -113,7 +116,7 @@ class FileServiceClient {
  protected:
   FileReaderFactory* reader_factory_;
   std::unique_ptr<RequesterInfo> requester_info_;
-  string trace_id_;
+  std::string trace_id_;
 
  private:
   bool FinishStoreFileTask(

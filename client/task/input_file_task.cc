@@ -31,11 +31,11 @@ InputFileTask* InputFileTask::NewInputFileTask(
     std::unique_ptr<BlobClient::Uploader> blob_uploader,
     FileHashCache* file_hash_cache,
     const FileStat& file_stat,
-    const string& filename,
+    const std::string& filename,
     bool missed_content,
     bool linking,
     bool is_new_file,
-    const string& old_hash_key,
+    const std::string& old_hash_key,
     CompileTask* task,
     ExecReq_Input* input) {
   DCHECK(file::IsAbsolutePath(filename)) << filename;
@@ -45,8 +45,9 @@ InputFileTask* InputFileTask::NewInputFileTask(
   InputFileTask* input_file_task = nullptr;
   {
     AUTOLOCK(lock, &global_mu_);
-    std::pair<std::unordered_map<string, InputFileTask*>::iterator, bool> p =
-        task_by_filename_->insert(std::make_pair(filename, input_file_task));
+    std::pair<std::unordered_map<std::string, InputFileTask*>::iterator, bool>
+        p = task_by_filename_->insert(
+            std::make_pair(filename, input_file_task));
     if (p.second) {
       p.first->second = new InputFileTask(
           wm, std::move(blob_uploader), file_hash_cache, file_stat, filename,
@@ -93,7 +94,7 @@ void InputFileTask::Run(CompileTask* task, OneshotClosure* closure) {
   }
   bool uploaded_in_side_channel = false;
   // TODO: use string_view in file_hash_cache methods.
-  string hash_key = old_hash_key_;
+  std::string hash_key = old_hash_key_;
   if (need_to_compute_key()) {
     VLOG(1) << task->trace_id() << " (" << num_tasks() << " tasks)"
             << " compute hash key:" << filename_ << " size:" << file_stat_.size;
@@ -178,7 +179,7 @@ void InputFileTask::Run(CompileTask* task, OneshotClosure* closure) {
 
   {
     AUTOLOCK(lock, &global_mu_);
-    std::unordered_map<string, InputFileTask*>::iterator found =
+    std::unordered_map<std::string, InputFileTask*>::iterator found =
         task_by_filename_->find(filename_);
     DCHECK(found != task_by_filename_->end());
     DCHECK(found->second == this);
@@ -284,11 +285,11 @@ InputFileTask::InputFileTask(
     std::unique_ptr<BlobClient::Uploader> blob_uploader,
     FileHashCache* file_hash_cache,
     const FileStat& file_stat,
-    string filename,
+    std::string filename,
     bool missed_content,
     bool linking,
     bool is_new_file,
-    string old_hash_key)
+    std::string old_hash_key)
     : wm_(wm),
       blob_uploader_(std::move(blob_uploader)),
       file_hash_cache_(file_hash_cache),
@@ -315,7 +316,7 @@ void InputFileTask::SetTaskInput(CompileTask* task, ExecReq_Input* input) {
 
 void InputFileTask::InitializeStaticOnce() {
   AUTOLOCK(lock, &global_mu_);
-  task_by_filename_ = new std::unordered_map<string, InputFileTask*>;
+  task_by_filename_ = new std::unordered_map<std::string, InputFileTask*>;
 }
 
 // static
@@ -325,6 +326,7 @@ absl::once_flag InputFileTask::init_once_;
 Lock InputFileTask::global_mu_;
 
 // static
-std::unordered_map<string, InputFileTask*>* InputFileTask::task_by_filename_;
+std::unordered_map<std::string, InputFileTask*>*
+    InputFileTask::task_by_filename_;
 
 }  // namespace devtools_goma

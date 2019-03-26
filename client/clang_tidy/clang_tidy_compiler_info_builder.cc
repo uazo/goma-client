@@ -19,9 +19,9 @@ namespace devtools_goma {
 
 void ClangTidyCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const string& abs_local_compiler_path,
-    const std::vector<string>& compiler_info_envs,
+    const std::string& local_compiler_path,
+    const std::string& abs_local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs,
     CompilerInfoData* data) const {
   // Ensure cxx exists.
   (void)data->mutable_cxx();
@@ -35,7 +35,7 @@ void ClangTidyCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     return;
   }
 
-  string clang_abs_local_compiler_path =
+  std::string clang_abs_local_compiler_path =
       file::JoinPath(file::Dirname(abs_local_compiler_path), "clang");
 
   const ClangTidyFlags& clang_tidy_flags =
@@ -63,20 +63,20 @@ void ClangTidyCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
 
 // static
 bool ClangTidyCompilerInfoBuilder::GetClangTidyVersionTarget(
-    const string& clang_tidy_path,
-    const std::vector<string>& compiler_info_envs,
-    const string& cwd,
-    string* version,
-    string* target) {
-  std::vector<string> argv;
+    const std::string& clang_tidy_path,
+    const std::vector<std::string>& compiler_info_envs,
+    const std::string& cwd,
+    std::string* version,
+    std::string* target) {
+  std::vector<std::string> argv;
   argv.push_back(clang_tidy_path);
   argv.push_back("-version");
 
-  std::vector<string> env(compiler_info_envs);
+  std::vector<std::string> env(compiler_info_envs);
   env.push_back("LC_ALL=C");
 
   int32_t status = 0;
-  string output;
+  std::string output;
   {
     GOMA_COUNTERZ("ReadCommandOutput(version)");
     output = ReadCommandOutput(clang_tidy_path, argv, env, cwd,
@@ -96,13 +96,13 @@ bool ClangTidyCompilerInfoBuilder::GetClangTidyVersionTarget(
 
 // static
 bool ClangTidyCompilerInfoBuilder::ParseClangTidyVersionTarget(
-    const string& output,
-    string* version,
-    string* target) {
+    const std::string& output,
+    std::string* version,
+    std::string* target) {
   static const char kVersion[] = "  LLVM version ";
   static const char kTarget[] = "  Default target: ";
 
-  std::vector<string> lines = ToVector(
+  std::vector<std::string> lines = ToVector(
       absl::StrSplit(output, absl::ByAnyChar("\r\n"), absl::SkipEmpty()));
   if (lines.size() < 4)
     return false;

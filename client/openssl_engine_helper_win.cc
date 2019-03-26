@@ -12,11 +12,9 @@
 #include "certs_resource.h"
 #include "glog/logging.h"
 
-using std::string;
-
 namespace {
 
-bool LoadTrustedRootCertsInResource(string* certs, int resource_id) {
+bool LoadTrustedRootCertsInResource(std::string* certs, int resource_id) {
   // Since we use the current process resource, HMODULE can be nullptr.
   HRSRC resource_info = FindResource(nullptr, MAKEINTRESOURCE(resource_id),
                                      RT_RCDATA);
@@ -52,12 +50,12 @@ bool LoadTrustedRootCertsInResource(string* certs, int resource_id) {
 
 namespace devtools_goma {
 
-bool GetTrustedRootCerts(string* certs) {
-  string roots;
+bool GetTrustedRootCerts(std::string* certs) {
+  std::string roots;
   if (!LoadTrustedRootCertsInResource(&roots, ROOT_CA_NAME)) {
     return false;
   }
-  string dst_root;
+  std::string dst_root;
   if (!LoadTrustedRootCertsInResource(&dst_root, DST_CA_NAME)) {
     return false;
   }

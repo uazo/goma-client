@@ -10,7 +10,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-using std::string;
 
 namespace devtools_goma {
 
@@ -18,10 +17,10 @@ class SHA256HashValue {
  public:
   SHA256HashValue() : data_{} {}
 
-  static bool ConvertFromHexString(const string& hex_string,
+  static bool ConvertFromHexString(const std::string& hex_string,
                                    SHA256HashValue* hash_value);
 
-  string ToHexString() const;
+  std::string ToHexString() const;
 
   unsigned char* mutable_data() { return data_; }
   const unsigned char* data() const { return data_; }
@@ -58,8 +57,8 @@ class SHA256HashValue {
 void ComputeDataHashKeyForSHA256HashValue(absl::string_view data,
                                           SHA256HashValue* hash_value);
 
-void ComputeDataHashKey(absl::string_view data, string* md_str);
-bool GomaSha256FromFile(const string& filename, string* md_str);
+void ComputeDataHashKey(absl::string_view data, std::string* md_str);
+bool GomaSha256FromFile(const std::string& filename, std::string* md_str);
 
 }  // namespace devtools_goma
 

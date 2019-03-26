@@ -41,8 +41,6 @@ MSVC_POP_WARNING()
 #include "worker_thread.h"
 #include "zero_copy_stream_impl.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class HttpRPC::Request : public HttpClient::Request {
@@ -71,8 +69,9 @@ class HttpRPC::CallRequest : public HttpRPC::Request {
  public:
   CallRequest(const google::protobuf::Message* req, HttpRPC::Status* status);
   ~CallRequest() override {}
-  void EnableCompression(EncodingType encoding, int level,
-                         const string& accept_encoding) {
+  void EnableCompression(EncodingType encoding,
+                         int level,
+                         const std::string& accept_encoding) {
     request_encoding_type_ = encoding;
     compression_level_ = level;
     accept_encoding_ = accept_encoding;
@@ -88,7 +87,7 @@ class HttpRPC::CallRequest : public HttpRPC::Request {
  private:
   EncodingType request_encoding_type_ = EncodingType::NO_ENCODING;
   int compression_level_ = 0;
-  string accept_encoding_;
+  std::string accept_encoding_;
   DISALLOW_ASSIGN(CallRequest);
 };
 
@@ -162,7 +161,7 @@ HttpRPC::Options::Options()
       start_compression(false) {
 }
 
-string HttpRPC::Options::DebugString() const {
+std::string HttpRPC::Options::DebugString() const {
   std::ostringstream ss;
   ss << " compression_level=" << compression_level;
   if (start_compression)
@@ -179,10 +178,10 @@ HttpRPC::HttpRPC(HttpClient* client,
       request_encoding_type_(EncodingType::NO_ENCODING) {
   LOG(INFO) << options_.DebugString();
   CHECK(!options_.content_type_for_protobuf.empty());
-  CHECK(options_.content_type_for_protobuf.find_first_of("\r\n")
-        == string::npos)
-        << "content_type_for_protobuf must not contain CR LF:"
-        << options_.content_type_for_protobuf;
+  CHECK(options_.content_type_for_protobuf.find_first_of("\r\n") ==
+        std::string::npos)
+      << "content_type_for_protobuf must not contain CR LF:"
+      << options_.content_type_for_protobuf;
   std::vector<EncodingType> encodings =
       ParseAcceptEncoding(options_.accept_encoding);
   std::vector<EncodingType> capable{EncodingType::GZIP, EncodingType::DEFLATE};
@@ -195,7 +194,7 @@ HttpRPC::~HttpRPC() {
 }
 
 int HttpRPC::Ping(WorkerThreadManager* wm,
-                  const string& path,
+                  const std::string& path,
                   Status* status) {
   std::unique_ptr<Status> ping_status(new Status);
   DCHECK(status);
@@ -244,14 +243,14 @@ int HttpRPC::Ping(WorkerThreadManager* wm,
       WorkerThread::PRIORITY_LOW);
   int status_code = client_->UpdateHealthStatusMessageForPing(
       static_cast<const HttpClient::Status&>(*status), absl::nullopt);
-  const string& health_status = client_->GetHealthStatusMessage();
+  const std::string& health_status = client_->GetHealthStatusMessage();
   if (health_status != "ok") {
     LOG(WARNING) << "Update health status:" << health_status;
   }
   return status_code;
 }
 
-void HttpRPC::DoPing(string path, Status* status) {
+void HttpRPC::DoPing(std::string path, Status* status) {
   CallWithCallback(path, nullptr, nullptr, status, nullptr);
 }
 
@@ -272,9 +271,9 @@ void HttpRPC::PingDone(std::unique_ptr<Status> status,
       << "http response header=" << status->response_header;
   LOG_IF(WARNING, status->err != OK)
       << "http status err=" << status->err;
-  const string old_health_status = client_->GetHealthStatusMessage();
+  const std::string old_health_status = client_->GetHealthStatusMessage();
   client_->UpdateHealthStatusMessageForPing(*status, round_trip_time);
-  const string new_health_status = client_->GetHealthStatusMessage();
+  const std::string new_health_status = client_->GetHealthStatusMessage();
   if (old_health_status != new_health_status) {
     if (new_health_status == "ok") {
       LOG(INFO) << "Update health status:" << old_health_status
@@ -288,7 +287,7 @@ void HttpRPC::PingDone(std::unique_ptr<Status> status,
   client_->DecNumActive();
 }
 
-int HttpRPC::Call(const string& path,
+int HttpRPC::Call(const std::string& path,
                   const google::protobuf::Message* req,
                   google::protobuf::Message* resp,
                   Status* status) {
@@ -302,12 +301,11 @@ void HttpRPC::Wait(Status* status) {
   client_->Wait(static_cast<HttpClient::Status*>(status));
 }
 
-void HttpRPC::CallWithCallback(
-    const string& path,
-    const google::protobuf::Message* req,
-    google::protobuf::Message* resp,
-    Status* status,
-    OneshotClosure* callback) {
+void HttpRPC::CallWithCallback(const std::string& path,
+                               const google::protobuf::Message* req,
+                               google::protobuf::Message* resp,
+                               Status* status,
+                               OneshotClosure* callback) {
   std::unique_ptr<CallRequest> call_req(new CallRequest(req, status));
   if (IsCompressionEnabled()) {
     EncodingType encoding = request_encoding_type();
@@ -354,7 +352,7 @@ void HttpRPC::CallDone(std::unique_ptr<CallData> call) {
   // destructor runs call->callback_
 }
 
-string HttpRPC::DebugString() const {
+std::string HttpRPC::DebugString() const {
   AUTOLOCK(lock, &mu_);
   std::ostringstream ss;
   ss << "Compression:";
@@ -435,7 +433,7 @@ std::unique_ptr<google::protobuf::io::ZeroCopyInputStream>
 HttpRPC::CallRequest::NewStream() const {
   std::vector<std::unique_ptr<google::protobuf::io::ZeroCopyInputStream>>
       streams;
-  std::vector<string> headers;
+  std::vector<std::string> headers;
   if (!accept_encoding_.empty()) {
     headers.push_back(CreateHeader(kAcceptEncoding, accept_encoding_));
   }
@@ -446,53 +444,51 @@ HttpRPC::CallRequest::NewStream() const {
     switch (request_encoding_type_) {
       case EncodingType::DEFLATE:
         {
-          string compressed;
-          SimpleTimer compression_timer;
-          google::protobuf::io::StringOutputStream stream(&compressed);
-          google::protobuf::io::GzipOutputStream::Options options;
-          options.format = google::protobuf::io::GzipOutputStream::ZLIB;
-          options.compression_level = compression_level_;
-          google::protobuf::io::GzipOutputStream gzip_stream(&stream, options);
-          req_->SerializeToZeroCopyStream(&gzip_stream);
-          if (!gzip_stream.Close()) {
-            LOG(ERROR) << "GzipOutputStream error:"
-                       << gzip_stream.ZlibErrorMessage();
-          } else if (compressed.size() > 1 && (compressed[1] >> 5 & 1)) {
-            LOG(WARNING) << "response has FDICT, which should not be supported";
-          } else {
-            headers.push_back(
-                CreateHeader(kContentEncoding,
-                             GetEncodingName(request_encoding_type_)));
-            status_->raw_req_size = gzip_stream.ByteCount();
-            absl::string_view body(compressed);
-            // Omit zlib header (since server assumes no zlib header).
-            body.remove_prefix(2);
-            streams.reserve(2);
-            streams.push_back(
-                absl::make_unique<StringInputStream>(
-                    BuildHeader(headers, body.size())));
-            streams.push_back(
-                absl::make_unique<StringInputStream>(string(body)));
-            return absl::make_unique<ChainedInputStream>(std::move(streams));
-          }
+        std::string compressed;
+        SimpleTimer compression_timer;
+        google::protobuf::io::StringOutputStream stream(&compressed);
+        google::protobuf::io::GzipOutputStream::Options options;
+        options.format = google::protobuf::io::GzipOutputStream::ZLIB;
+        options.compression_level = compression_level_;
+        google::protobuf::io::GzipOutputStream gzip_stream(&stream, options);
+        req_->SerializeToZeroCopyStream(&gzip_stream);
+        if (!gzip_stream.Close()) {
+          LOG(ERROR) << "GzipOutputStream error:"
+                     << gzip_stream.ZlibErrorMessage();
+        } else if (compressed.size() > 1 && (compressed[1] >> 5 & 1)) {
+          LOG(WARNING) << "response has FDICT, which should not be supported";
+        } else {
+          headers.push_back(CreateHeader(
+              kContentEncoding, GetEncodingName(request_encoding_type_)));
+          status_->raw_req_size = gzip_stream.ByteCount();
+          absl::string_view body(compressed);
+          // Omit zlib header (since server assumes no zlib header).
+          body.remove_prefix(2);
+          streams.reserve(2);
+          streams.push_back(absl::make_unique<StringInputStream>(
+              BuildHeader(headers, body.size())));
+          streams.push_back(
+              absl::make_unique<StringInputStream>(std::string(body)));
+          return absl::make_unique<ChainedInputStream>(std::move(streams));
+        }
         }
         break;
 
       case EncodingType::GZIP:
         {
-          string compressed;
-          SimpleTimer compression_timer;
-          google::protobuf::io::StringOutputStream stream(&compressed);
-          google::protobuf::io::GzipOutputStream::Options options;
-          options.format = google::protobuf::io::GzipOutputStream::GZIP;
-          options.compression_level = compression_level_;
-          google::protobuf::io::GzipOutputStream gzip_stream(&stream, options);
-          req_->SerializeToZeroCopyStream(&gzip_stream);
-          if (!gzip_stream.Close()) {
-            LOG(ERROR) << "GzipOutputStream error:"
-                       << gzip_stream.ZlibErrorMessage();
-            break;
-          }
+        std::string compressed;
+        SimpleTimer compression_timer;
+        google::protobuf::io::StringOutputStream stream(&compressed);
+        google::protobuf::io::GzipOutputStream::Options options;
+        options.format = google::protobuf::io::GzipOutputStream::GZIP;
+        options.compression_level = compression_level_;
+        google::protobuf::io::GzipOutputStream gzip_stream(&stream, options);
+        req_->SerializeToZeroCopyStream(&gzip_stream);
+        if (!gzip_stream.Close()) {
+          LOG(ERROR) << "GzipOutputStream error:"
+                     << gzip_stream.ZlibErrorMessage();
+          break;
+        }
           headers.push_back(
               CreateHeader(kContentEncoding,
                            GetEncodingName(request_encoding_type_)));
@@ -516,7 +512,7 @@ HttpRPC::CallRequest::NewStream() const {
   }
 
   // Fallback if compression is not supported or failed.
-  string raw_body;
+  std::string raw_body;
   if (req_) {
     req_->SerializeToString(&raw_body);
   }
@@ -551,7 +547,7 @@ void HttpRPC::Response::ParseBody() {
   return;
 }
 
-ExecServiceClient::ExecServiceClient(HttpRPC* http_rpc, string path)
+ExecServiceClient::ExecServiceClient(HttpRPC* http_rpc, std::string path)
     : http_rpc_(http_rpc), path_(std::move(path)) {}
 
 void ExecServiceClient::ExecAsync(const ExecReq* req, ExecResp* resp,

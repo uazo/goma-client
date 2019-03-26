@@ -6,10 +6,9 @@
 #include "lib/goma_hash.h"
 
 #include "gtest/gtest.h"
-using std::string;
 
 TEST(GomaHashTest, ComputeDataHashKey) {
-  string md_str;
+  std::string md_str;
   devtools_goma::ComputeDataHashKey("", &md_str);
   EXPECT_EQ("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             md_str);
@@ -23,7 +22,7 @@ TEST(GomaHashTest, ComputeDataHashKey) {
 }
 
 TEST(GomaHashTest, SHA256HashValue) {
-  string hex_string =
+  std::string hex_string =
       "38acb15d02d5ac0f2a2789602e9df950c380d2799b4bdb59394e4eeabdd3a662";
 
   devtools_goma::SHA256HashValue hash_value;
@@ -33,7 +32,7 @@ TEST(GomaHashTest, SHA256HashValue) {
 }
 
 TEST(GomaHashTest, SHA256HashValueEmpty) {
-  string hex_string;
+  std::string hex_string;
 
   devtools_goma::SHA256HashValue hash_value;
   EXPECT_FALSE(devtools_goma::SHA256HashValue::ConvertFromHexString(
@@ -41,7 +40,7 @@ TEST(GomaHashTest, SHA256HashValueEmpty) {
 }
 
 TEST(GomaHashTest, SHA256HashValueNonHex) {
-  string hex_string =
+  std::string hex_string =
       "XYacb15d02d5ac0f2a2789602e9df950c380d2799b4bdb59394e4eeabdd3a662";
 
   devtools_goma::SHA256HashValue hash_value;

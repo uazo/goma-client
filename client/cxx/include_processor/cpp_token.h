@@ -14,8 +14,6 @@
 #include "absl/strings/string_view.h"
 #include "glog/logging.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 struct CppToken {
@@ -86,7 +84,7 @@ struct CppToken {
   }
 
   void Append(const char* str, size_t size);
-  void Append(const string& str);
+  void Append(const std::string& str);
   bool IsPuncChar(int c) const;
   bool IsIdentifier(absl::string_view s) const {
     return type == IDENTIFIER && string_value == s;
@@ -100,8 +98,8 @@ struct CppToken {
   void MakeMacroParamVaArgs(size_t param_index);
   void MakeMacroParamVaOpt();
 
-  string DebugString() const;
-  string GetCanonicalString() const;
+  std::string DebugString() const;
+  std::string GetCanonicalString() const;
 
   int ApplyOperator(int v1, int v2) const {
     DCHECK(IsOperator());
@@ -120,7 +118,7 @@ struct CppToken {
   static const int kPrecedenceTable[];
 
   Type type;
-  string string_value;
+  std::string string_value;
 
   // A struct to hold char value(s) for operators and punctuators.
   struct CharValue {
@@ -152,7 +150,7 @@ inline void CppToken::Append(const char* str, size_t size) {
   string_value.append(str, size);
 }
 
-inline void CppToken::Append(const string& str) {
+inline void CppToken::Append(const std::string& str) {
   string_value.append(str);
 }
 
@@ -195,20 +193,20 @@ static_assert(std::is_nothrow_move_constructible<CppToken>::value,
 using TokenList = std::list<CppToken>;
 using ArrayTokenList = std::vector<CppToken>;
 
-template<typename Iter>
-string DebugString(Iter begin, Iter end) {
-  string str;
+template <typename Iter>
+std::string DebugString(Iter begin, Iter end) {
+  std::string str;
   for (auto iter = begin; iter != end; ++iter) {
     str.append(iter->DebugString());
   }
   return str;
 }
 
-inline string DebugString(const TokenList& tokens) {
+inline std::string DebugString(const TokenList& tokens) {
   return DebugString(tokens.begin(), tokens.end());
 }
 
-inline string DebugString(const ArrayTokenList& tokens) {
+inline std::string DebugString(const ArrayTokenList& tokens) {
   return DebugString(tokens.begin(), tokens.end());
 }
 

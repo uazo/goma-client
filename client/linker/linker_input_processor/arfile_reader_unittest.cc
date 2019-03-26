@@ -42,12 +42,12 @@ class StubArFile : public ArFile {
       override {
     LOG(FATAL) << "Not implemented";
   }
-  bool ReadHeader(string* ar_header) const override {
+  bool ReadHeader(std::string* ar_header) const override {
     ar_header->assign(header_);
     return read_header_return_;
   }
 
-  bool ReadEntry(ArFile::EntryHeader* header, string* body) override {
+  bool ReadEntry(ArFile::EntryHeader* header, std::string* body) override {
     if (entries_.empty())
       return false;
 
@@ -58,14 +58,14 @@ class StubArFile : public ArFile {
     return info.return_value;
   }
 
-  void SetReadHeaderReturn(bool return_value, const string& header) {
+  void SetReadHeaderReturn(bool return_value, const std::string& header) {
     read_header_return_ = return_value;
     header_.assign(header);
   }
 
   void AddReadEntryReturn(bool return_value,
                           const ArFile::EntryHeader& header,
-                          const string& body) {
+                          const std::string& body) {
     EntryInfo info;
     info.return_value = return_value;
     info.header = header;
@@ -75,11 +75,11 @@ class StubArFile : public ArFile {
 
  private:
   bool read_header_return_;
-  string header_;
+  std::string header_;
   struct EntryInfo {
     bool return_value;
     ArFile::EntryHeader header;
-    string body;
+    std::string body;
   };
   std::list<EntryInfo> entries_;
 };
@@ -152,9 +152,9 @@ TEST(ArFileReaderTest, Read) {
   expected_entry_header.ar_gid = 0;
   expected_entry_header.ar_mode = 0;
   expected_entry_header.ar_size = strlen(kDummyValue);
-  string entry_header_string;
+  std::string entry_header_string;
   CHECK(expected_entry_header.SerializeToString(&entry_header_string));
-  string expected_out;
+  std::string expected_out;
 
   {
     // 0. Should not read anything if len = 0.
@@ -181,7 +181,7 @@ TEST(ArFileReaderTest, Read) {
     copied = reader->Read(buf, len);
     EXPECT_EQ(len, copied);
     EXPECT_EQ("", reader->read_buffer_);
-    EXPECT_EQ(kDummyValue, string(buf, copied));
+    EXPECT_EQ(kDummyValue, std::string(buf, copied));
   }
 
   {
@@ -199,7 +199,7 @@ TEST(ArFileReaderTest, Read) {
     copied = reader->Read(buf, len);
     EXPECT_EQ(len, copied);
     EXPECT_EQ("", reader->read_buffer_);
-    EXPECT_EQ(expected_out, string(buf, copied));
+    EXPECT_EQ(expected_out, std::string(buf, copied));
   }
 
   {
@@ -229,7 +229,7 @@ TEST(ArFileReaderTest, Read) {
     buf[0] = '\0';
     copied = reader->Read(buf, len);
     EXPECT_EQ(len, copied);
-    EXPECT_EQ(expected_out, string(buf, copied));
+    EXPECT_EQ(expected_out, std::string(buf, copied));
 
     // 3-2. len is middle of the entry header.
     expected_out.assign(kDummyValue);
@@ -240,7 +240,7 @@ TEST(ArFileReaderTest, Read) {
     buf[0] = '\0';
     copied = reader->Read(buf, len);
     EXPECT_EQ(len, copied);
-    EXPECT_EQ(expected_out, string(buf, copied));
+    EXPECT_EQ(expected_out, std::string(buf, copied));
 
     // 3-3. len is end of the entry header.
     expected_out.assign(
@@ -249,7 +249,7 @@ TEST(ArFileReaderTest, Read) {
     buf[0] = '\0';
     copied = reader->Read(buf, len);
     EXPECT_EQ(len, copied);
-    EXPECT_EQ(expected_out, string(buf, copied));
+    EXPECT_EQ(expected_out, std::string(buf, copied));
 
     // 3-4. len is middle of the entry body.
     expected_out.assign(kDummyValue);
@@ -258,7 +258,7 @@ TEST(ArFileReaderTest, Read) {
     buf[0] = '\0';
     copied = reader->Read(buf, len);
     EXPECT_EQ(len, copied);
-    EXPECT_EQ(expected_out, string(buf, copied));
+    EXPECT_EQ(expected_out, std::string(buf, copied));
 
     // 3-5 read the remaining data.
     expected_out.assign(kDummyValue);
@@ -268,7 +268,7 @@ TEST(ArFileReaderTest, Read) {
     copied = reader->Read(buf, len);
     EXPECT_EQ(len, copied);
     EXPECT_EQ("", reader->read_buffer_);
-    EXPECT_EQ(expected_out, string(buf, copied));
+    EXPECT_EQ(expected_out, std::string(buf, copied));
 
     // 3-6 read the remaining data.
     expected_out.assign(entry_header_string);
@@ -278,7 +278,7 @@ TEST(ArFileReaderTest, Read) {
     copied = reader->Read(buf, len);
     EXPECT_EQ(len, copied);
     EXPECT_EQ("", reader->read_buffer_);
-    EXPECT_EQ(expected_out, string(buf, copied));
+    EXPECT_EQ(expected_out, std::string(buf, copied));
   }
 
   {
@@ -295,7 +295,7 @@ TEST(ArFileReaderTest, Read) {
 #ifdef __MACH__
 class StubArFileReader : public ArFileReader {
  public:
-  explicit StubArFileReader(const string& filename)
+  explicit StubArFileReader(const std::string& filename)
       : ArFileReader(filename), valid_(true) {}
 
   bool valid() const override { return valid_; }
@@ -308,7 +308,7 @@ class StubArFileReader : public ArFileReader {
     valid_ = valid;
   }
 
-  void SetReadReturn(ssize_t return_value, const string contents) {
+  void SetReadReturn(ssize_t return_value, const std::string contents) {
     read_return_ = return_value;
     contents_.assign(contents);
   }
@@ -316,7 +316,7 @@ class StubArFileReader : public ArFileReader {
  private:
   bool valid_;
   ssize_t read_return_;
-  string contents_;
+  std::string contents_;
 };
 
 
@@ -349,8 +349,8 @@ class FatArFileReaderTest : public FatArFileReader::ArFileReaderFactory,
   }
 
   // Makes dummy ArFileReader.
-  std::unique_ptr<ArFileReader> CreateArFileReader(
-      const string& filename, off_t offset) override {
+  std::unique_ptr<ArFileReader> CreateArFileReader(const std::string& filename,
+                                                   off_t offset) override {
     CHECK(!arfile_reader_.empty());
     std::unique_ptr<ArFileReader> ret(std::move(arfile_reader_.front()));
     arfile_reader_.pop_front();

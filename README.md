@@ -39,7 +39,8 @@ $ gclient sync
 $ cd client
 ```
 
-We assume the Goma client code is checked out to `${GOMA_SRC}`.
+We assume the Goma client code is checked out to `${GOMA_SRC}`. You can set this
+in your environment, but do not `export` it as it will make `gomacc` complain.
 
 If you want to develop goma client, make goma client source unmanaged by
 gclient. Open `.gclient` file, and check `"managed"` value.
@@ -111,7 +112,7 @@ Goma can be integrated with Chromium/Android development easily.
 2. Start compiler\_proxy
 
 ```
-$ "$GOMA_SRC/client/out/Release/goma_ctl.py" start
+$ "${GOMA_SRC}/client/out/Release/goma_ctl.py" start
 ```
 
 #### For Chromium
@@ -140,7 +141,7 @@ More details are avairable in chromium's build instructions.
 ```shell
 $ source build/envsetup.sh
 $ lunch aosp_arm-eng
-$ GOMA_DIR=${GOMA_SRC}/client/out/Release USE_GOMA=true make -j4
+$ GOMA_DIR="${GOMA_SRC}/client/out/Release" USE_GOMA=true make -j4
 ```
 
 Here, `-j4` is not related to Goma parallelism. Android internally sets

@@ -15,8 +15,6 @@
 
 #include "absl/time/time.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 class DistributionProto;
@@ -30,7 +28,7 @@ class Histogram {
         count_(0), sum_(0), sum_of_squares_(0) {}
   ~Histogram() {}
 
-  void SetName(const string& name);
+  void SetName(const std::string& name);
 
   // Resets statistics values.
   // It preserves logbase_.
@@ -54,14 +52,14 @@ class Histogram {
   int64_t standard_deviation() const;
   int64_t mean() const { return sum_ / count_; }
   int64_t count() const { return count_; }
-  const string& name() const { return name_; }
-  string DebugString() const;
+  const std::string& name() const { return name_; }
+  std::string DebugString() const;
   void DumpToProto(DistributionProto* dist);
 
  private:
-  string ManySharps(int64_t n) const;
+  std::string ManySharps(int64_t n) const;
 
-  string name_;
+  std::string name_;
   float logbase_;
   std::map<int, int64_t> buckets_;
   bool min_max_is_set_;

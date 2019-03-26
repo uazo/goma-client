@@ -11,7 +11,7 @@ namespace devtools_goma {
 TEST(JavacCompilerInfoBuilderTest, GetJavacVersion) {
   static const char kVersionInfo[] = "javac 1.6.0_43\n";
 
-  string version;
+  std::string version;
   JavacCompilerInfoBuilder::ParseJavacVersion(kVersionInfo, &version);
   EXPECT_EQ("1.6.0_43", version);
 }

@@ -23,29 +23,28 @@
 # include "posix_helper_win.h"
 #endif
 
-using std::string;
-
 namespace devtools_goma {
 
 // From clang-tidy --help, compile_commands.json is searched
 // from -p directory (build path). If no build path is specified,
 // the directory in the first input file and its all parent paths.
 // static
-string CompilationDatabaseReader::FindCompilationDatabase(
-    absl::string_view build_path, absl::string_view first_input_file_dir) {
+std::string CompilationDatabaseReader::FindCompilationDatabase(
+    absl::string_view build_path,
+    absl::string_view first_input_file_dir) {
   static const char kCompileCommandsJson[] = "compile_commands.json";
 
   if (!build_path.empty()) {
-    string compdb_path = file::JoinPath(build_path, kCompileCommandsJson);
+    std::string compdb_path = file::JoinPath(build_path, kCompileCommandsJson);
     if (access(compdb_path.c_str(), R_OK) == 0) {
       return compdb_path;
     }
-    return string();
+    return std::string();
   }
 
   absl::string_view dir = first_input_file_dir;
   while (!dir.empty()) {
-    string s = file::JoinPath(dir, kCompileCommandsJson);
+    std::string s = file::JoinPath(dir, kCompileCommandsJson);
 
     if (access(s.c_str(), R_OK) == 0) {
       return s;
@@ -57,15 +56,15 @@ string CompilationDatabaseReader::FindCompilationDatabase(
     dir = file::Dirname(dir);
   }
 
-  return string();
+  return std::string();
 }
 
 // static
 bool CompilationDatabaseReader::MakeClangArgs(
     const ClangTidyFlags& clang_tidy_flags,
     const std::string& compdb_path,
-    std::vector<string>* clang_args,
-    string* build_dir) {
+    std::vector<std::string>* clang_args,
+    std::string* build_dir) {
   // Make clang command from clang-tidy command.
   //
   // If clang command line is specified after '--', we use it.
@@ -90,7 +89,7 @@ bool CompilationDatabaseReader::MakeClangArgs(
 
   // -x lang is set later for IncludeProcessor. So, it would be OK to use
   // clang here.
-  const std::vector<string>& args = clang_tidy_flags.expanded_args();
+  const std::vector<std::string>& args = clang_tidy_flags.expanded_args();
   clang_args->push_back(file::JoinPath(file::Dirname(args[0]), "clang"));
 
   return MakeClangArgsFromCommandLine(
@@ -109,16 +108,15 @@ bool CompilationDatabaseReader::MakeClangArgs(
 // static
 bool CompilationDatabaseReader::MakeClangArgsFromCommandLine(
     bool seen_hyphen_hyphen,
-    const std::vector<string>& args_after_hyphen_hyphen,
-    const string& input_file,
-    const string& cwd,
-    const string& build_path,
-    const std::vector<string>& extra_arg,
-    const std::vector<string>& extra_arg_before,
-    const string& compdb_path,
-    std::vector<string>* clang_args,
-    string* build_dir) {
-
+    const std::vector<std::string>& args_after_hyphen_hyphen,
+    const std::string& input_file,
+    const std::string& cwd,
+    const std::string& build_path,
+    const std::vector<std::string>& extra_arg,
+    const std::vector<std::string>& extra_arg_before,
+    const std::string& compdb_path,
+    std::vector<std::string>* clang_args,
+    std::string* build_dir) {
   // clang_args should have a path to clang only.
   DCHECK_EQ(1U, clang_args->size());
 
@@ -139,10 +137,10 @@ bool CompilationDatabaseReader::MakeClangArgsFromCommandLine(
       clang_args->push_back(arg);
     }
   } else {
-    string source = file::JoinPathRespectAbsolute(cwd, input_file);
+    std::string source = file::JoinPathRespectAbsolute(cwd, input_file);
 
     // TODO: Cache the content.
-    std::vector<string> new_compile_options;
+    std::vector<std::string> new_compile_options;
     bool compdb_successful = AddCompileOptions(
         source, compdb_path, &new_compile_options, build_dir);
     if (!compdb_successful) {
@@ -169,17 +167,17 @@ bool CompilationDatabaseReader::MakeClangArgsFromCommandLine(
 
 // static
 bool CompilationDatabaseReader::AddCompileOptions(
-    const string& source,
-    const string& db_path,
-    std::vector<string>* clang_args,
-    string* build_dir) {
+    const std::string& source,
+    const std::string& db_path,
+    std::vector<std::string>* clang_args,
+    std::string* build_dir) {
   if (db_path.empty()) {
     // compile_commands.json is not found.
     return false;
   }
 
   // TODO: Cache the parsed content.
-  string content;
+  std::string content;
   if (!ReadFileToString(db_path, &content)) {
     // couldn't read compile_commands.json
     return false;
@@ -204,9 +202,9 @@ bool CompilationDatabaseReader::AddCompileOptions(
     return false;
   }
 
-  string resolved_source = PathResolver::ResolvePath(source);
+  std::string resolved_source = PathResolver::ResolvePath(source);
 
-  string command;
+  std::string command;
   for (const auto& v : root) {
     if (!v.isMember("directory") || !v["directory"].isString()
         || !v.isMember("command") || !v["command"].isString()
@@ -214,11 +212,11 @@ bool CompilationDatabaseReader::AddCompileOptions(
       return false;
     }
 
-    const string db_dir = v["directory"].asString();
-    const string db_command = v["command"].asString();
-    const string db_file = v["file"].asString();
+    const std::string db_dir = v["directory"].asString();
+    const std::string db_command = v["command"].asString();
+    const std::string db_file = v["file"].asString();
 
-    string resolved_source_in_db =
+    std::string resolved_source_in_db =
         PathResolver::ResolvePath(file::JoinPath(db_dir, db_file));
 
     if (resolved_source == resolved_source_in_db) {
@@ -234,7 +232,7 @@ bool CompilationDatabaseReader::AddCompileOptions(
     return false;
   }
 
-  std::vector<string> argv;
+  std::vector<std::string> argv;
   ParsePosixCommandLineToArgv(command, &argv);
 
   // When gomacc is used, compilation database might contain gomacc as the first
@@ -248,7 +246,7 @@ bool CompilationDatabaseReader::AddCompileOptions(
 
   size_t init_pos = 1;
   if (!argv.empty()) {
-    string argv0 = string(file::Stem(argv[0]));
+    std::string argv0 = std::string(file::Stem(argv[0]));
     absl::AsciiStrToLower(&argv0);
     if (argv0 == "gomacc") {
       init_pos = 2;

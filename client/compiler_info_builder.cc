@@ -28,8 +28,8 @@ namespace devtools_goma {
 /* static */
 std::unique_ptr<CompilerInfoData> CompilerInfoBuilder::FillFromCompilerOutputs(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const std::vector<string>& compiler_info_envs) {
+    const std::string& local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs) {
   GOMA_COUNTERZ("");
   std::unique_ptr<CompilerInfoData> data(new CompilerInfoData);
   SetLanguageExtension(data.get());
@@ -47,7 +47,7 @@ std::unique_ptr<CompilerInfoData> CompilerInfoBuilder::FillFromCompilerOutputs(
     data->set_cwd(flags.cwd());
   }
 
-  const string& abs_local_compiler_path = PathResolver::ResolvePath(
+  const std::string& abs_local_compiler_path = PathResolver::ResolvePath(
       file::JoinPathRespectAbsolute(flags.cwd(), data->local_compiler_path()));
   VLOG(2) << "FillFromCompilerOutputs:"
           << " abs_local_compiler_path=" << abs_local_compiler_path
@@ -110,14 +110,14 @@ std::unique_ptr<CompilerInfoData> CompilerInfoBuilder::FillFromCompilerOutputs(
 
 void CompilerInfoBuilder::SetCompilerPath(
     const CompilerFlags& flags,
-    const string& local_compiler_path,
-    const std::vector<string>& compiler_info_envs,
+    const std::string& local_compiler_path,
+    const std::vector<std::string>& compiler_info_envs,
     CompilerInfoData* data) const {
   data->set_local_compiler_path(local_compiler_path);
   data->set_real_compiler_path(local_compiler_path);
 }
 
-string CompilerInfoBuilder::GetCompilerName(
+std::string CompilerInfoBuilder::GetCompilerName(
     const CompilerInfoData& data) const {
   // The default implementation is to return compilername from local compiler
   // path.
@@ -151,11 +151,11 @@ void CompilerInfoBuilder::OverrideError(const std::string& message,
 
 /* static */
 bool CompilerInfoBuilder::ResourceInfoFromPath(
-    const string& cwd,
-    const string& path,
+    const std::string& cwd,
+    const std::string& path,
     CompilerInfoData::ResourceType type,
     CompilerInfoData::ResourceInfo* r) {
-  const string abs_path = file::JoinPathRespectAbsolute(cwd, path);
+  const std::string abs_path = file::JoinPathRespectAbsolute(cwd, path);
   FileStat file_stat(abs_path);
   if (!file_stat.IsValid()) {
     return false;
@@ -190,7 +190,7 @@ bool CompilerInfoBuilder::ResourceInfoFromPath(
   }
 #endif
 
-  string hash;
+  std::string hash;
   if (!GomaSha256FromFile(abs_path, &hash)) {
     return false;
   }

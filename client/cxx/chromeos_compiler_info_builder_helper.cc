@@ -26,7 +26,7 @@ bool IsKnownClangInChroot(absl::string_view local_compiler_path) {
          local_compiler_path == "/usr/bin/x86_64-cros-linux-gnu-clang++";
 }
 
-bool ParseEnvdPath(absl::string_view envd_path, string* path) {
+bool ParseEnvdPath(absl::string_view envd_path, std::string* path) {
   // content is like
   //
   // ```
@@ -34,7 +34,7 @@ bool ParseEnvdPath(absl::string_view envd_path, string* path) {
   // ROOTPATH="/usr/x86_64-pc-linux-gnu/x86_64-cros-linux-gnu/gcc-bin/4.9.x"
   // ```
 
-  string content;
+  std::string content;
   if (!ReadFileToString(envd_path, &content)) {
     LOG(ERROR) << "failed to open/read " << envd_path;
     return false;
@@ -44,7 +44,7 @@ bool ParseEnvdPath(absl::string_view envd_path, string* path) {
        absl::StrSplit(content, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
     if (absl::ConsumePrefix(&line, "PATH=\"") &&
         absl::ConsumeSuffix(&line, "\"")) {
-      *path = string(line);
+      *path = std::string(line);
       return true;
     }
   }
@@ -71,10 +71,10 @@ bool ChromeOSCompilerInfoBuilderHelper::IsSimpleChromeClangCommand(
 
 // static
 bool ChromeOSCompilerInfoBuilderHelper::CollectSimpleChromeClangResources(
-    const string& cwd,
+    const std::string& cwd,
     absl::string_view local_compiler_path,
     absl::string_view real_compiler_path,
-    std::vector<string>* resource_paths) {
+    std::vector<std::string>* resource_paths) {
   absl::string_view local_compiler_dir = file::Dirname(local_compiler_path);
 
   int version;
@@ -94,18 +94,18 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectSimpleChromeClangResources(
   }
 
   // Please see --library-path argument in simple Chrome's clang wrapper.
-  const std::vector<string> search_paths = {
+  const std::vector<std::string> search_paths = {
       file::JoinPath(local_compiler_dir, "..", "..", "lib"),
       file::JoinPath(local_compiler_dir, "..", "lib64"),
   };
   // TODO: use relative path real_compiler_path and simplify.
   // Since real_compiler_path is absolute path, we cannot use that here.
-  const string compiler_path = file::JoinPath(
+  const std::string compiler_path = file::JoinPath(
       local_compiler_dir, absl::StrCat("clang-", version, ".elf"));
   // Since the shell script wrapper has --inhibit-rpath '',
   // we should ignore RPATH and RUNPATH specified in ELF.
   ElfDepParser edp(cwd, search_paths, true);
-  absl::flat_hash_set<string> deps;
+  absl::flat_hash_set<std::string> deps;
   if (!edp.GetDeps(compiler_path, &deps)) {
     LOG(ERROR) << "failed to get library dependencies."
                << " cwd=" << cwd
@@ -161,10 +161,10 @@ bool ChromeOSCompilerInfoBuilderHelper::IsClangInChrootEnv(
 
 // static
 bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
-    const string& cwd,
+    const std::string& cwd,
     absl::string_view local_compiler_path,
     absl::string_view real_compiler_path,
-    std::vector<string>* resource_paths) {
+    std::vector<std::string>* resource_paths) {
   constexpr absl::string_view kLdSoConfPath = "/etc/ld.so.conf";
 
   int version;
@@ -174,14 +174,14 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
     return false;
   }
 
-  string content;
+  std::string content;
   if (!ReadFileToString(kLdSoConfPath, &content)) {
     LOG(ERROR) << "failed to open/read " << kLdSoConfPath;
     return false;
   }
   std::vector<std::string> searchpath = ParseLdSoConf(content);
   ElfDepParser edp(cwd, searchpath, false);
-  absl::flat_hash_set<string> deps;
+  absl::flat_hash_set<std::string> deps;
   if (!edp.GetDeps(local_compiler_path, &deps)) {
     LOG(ERROR) << "failed to get library dependencies."
                << " cwd=" << cwd
@@ -206,7 +206,7 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
   resource_paths->push_back("/etc/env.d/gcc/.NATIVE");
   resource_paths->push_back("/etc/env.d/05gcc-x86_64-cros-linux-gnu");
 
-  string path_from_envd;
+  std::string path_from_envd;
   if (!ParseEnvdPath("/etc/env.d/05gcc-x86_64-cros-linux-gnu",
                      &path_from_envd)) {
     return false;

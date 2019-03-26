@@ -35,8 +35,6 @@ MSVC_POP_WARNING()
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-using std::string;
-
 namespace devtools_goma {
 
 class HttpRPCTest : public ::testing::Test {
@@ -133,11 +131,10 @@ class HttpRPCTest : public ::testing::Test {
     cond_.Signal();
   }
 
-  void SerializeCompressToString(
-      const google::protobuf::Message& msg,
-      int compression_level,
-      string* serialized) {
-    string buf;
+  void SerializeCompressToString(const google::protobuf::Message& msg,
+                                 int compression_level,
+                                 std::string* serialized) {
+    std::string buf;
     google::protobuf::io::StringOutputStream stream(&buf);
     google::protobuf::io::GzipOutputStream::Options options;
     options.format = google::protobuf::io::GzipOutputStream::ZLIB;
@@ -150,7 +147,7 @@ class HttpRPCTest : public ::testing::Test {
         << "serialized has FDICT, which should not be supported";
     absl::string_view v(buf);
     v.remove_prefix(2);
-    *serialized = string(v);
+    *serialized = std::string(v);
   }
 
   std::unique_ptr<WorkerThreadManager> wm_;
@@ -458,8 +455,8 @@ TEST_F(HttpRPCTest, PingRejected) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;
@@ -507,8 +504,8 @@ TEST_F(HttpRPCTest, PingOk) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;
@@ -548,7 +545,7 @@ TEST_F(HttpRPCTest, CallLookupFile) {
   int socks[2];
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   LookupFileReq req;
-  string serialized_req;
+  std::string serialized_req;
   req.SerializeToString(&serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /l HTTP/1.1\r\n"
@@ -558,12 +555,12 @@ TEST_F(HttpRPCTest, CallLookupFile) {
          << "Content-Length: " << serialized_req.size() << "\r\n\r\n"
          << serialized_req;
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   LookupFileResp resp;
-  string serialized_resp;
+  std::string serialized_resp;
   resp.SerializeToString(&serialized_resp);
   std::ostringstream resp_ss;
   resp_ss << "HTTP/1.1 200 OK\r\n"
@@ -614,7 +611,7 @@ TEST_F(HttpRPCTest, CallAsyncLookupFile) {
   int socks[2];
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   LookupFileReq req;
-  string serialized_req;
+  std::string serialized_req;
   req.SerializeToString(&serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /l HTTP/1.1\r\n"
@@ -624,12 +621,12 @@ TEST_F(HttpRPCTest, CallAsyncLookupFile) {
          << "Content-Length: " << serialized_req.size() << "\r\n\r\n"
          << serialized_req;
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   LookupFileResp resp;
-  string serialized_resp;
+  std::string serialized_resp;
   resp.SerializeToString(&serialized_resp);
   std::ostringstream resp_ss;
   resp_ss << "HTTP/1.1 200 OK\r\n"
@@ -725,8 +722,8 @@ TEST_F(HttpRPCTest, TLSEnginePingRejected) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;
@@ -779,8 +776,8 @@ TEST_F(HttpRPCTest, TLSEnginePingOk) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;
@@ -824,7 +821,7 @@ TEST_F(HttpRPCTest, TLSEngineCallLookupFile) {
   int socks[2];
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   LookupFileReq req;
-  string serialized_req;
+  std::string serialized_req;
   req.SerializeToString(&serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /l HTTP/1.1\r\n"
@@ -834,12 +831,12 @@ TEST_F(HttpRPCTest, TLSEngineCallLookupFile) {
          << "Content-Length: " << serialized_req.size() << "\r\n\r\n"
          << serialized_req;
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   LookupFileResp resp;
-  string serialized_resp;
+  std::string serialized_resp;
   resp.SerializeToString(&serialized_resp);
   std::ostringstream resp_ss;
   resp_ss << "HTTP/1.1 200 OK\r\n"
@@ -895,7 +892,7 @@ TEST_F(HttpRPCTest, TLSEngineCallLookupFileDeflate) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   const int kCompressionLevel = 3;
   LookupFileReq req;
-  string serialized_req;
+  std::string serialized_req;
   SerializeCompressToString(req, kCompressionLevel, &serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /l HTTP/1.1\r\n"
@@ -907,12 +904,12 @@ TEST_F(HttpRPCTest, TLSEngineCallLookupFileDeflate) {
          << "Content-Encoding: deflate\r\n\r\n"
          << serialized_req;
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   LookupFileResp resp;
-  string serialized_resp;
+  std::string serialized_resp;
   SerializeCompressToString(resp, kCompressionLevel, &serialized_resp);
   LOG(INFO) << "resp length=" << serialized_resp.size()
             << " data=" << serialized_resp;
@@ -973,7 +970,7 @@ TEST_F(HttpRPCTest, TLSEngineCallAsyncLookupFile) {
   int socks[2];
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   LookupFileReq req;
-  string serialized_req;
+  std::string serialized_req;
   req.SerializeToString(&serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /l HTTP/1.1\r\n"
@@ -983,12 +980,12 @@ TEST_F(HttpRPCTest, TLSEngineCallAsyncLookupFile) {
          << "Content-Length: " << serialized_req.size() << "\r\n\r\n"
          << serialized_req;
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   LookupFileResp resp;
-  string serialized_resp;
+  std::string serialized_resp;
   resp.SerializeToString(&serialized_resp);
   std::ostringstream resp_ss;
   resp_ss << "HTTP/1.1 200 OK\r\n"
@@ -1064,8 +1061,8 @@ TEST_F(HttpRPCTest, TLSEngineFailWithTLSErrorAtSetData) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;
@@ -1119,8 +1116,8 @@ TEST_F(HttpRPCTest, TLSEngineFailWithTLSErrorAtRead) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   mock_server_->ServerClose(socks[0]);
@@ -1160,7 +1157,7 @@ TEST_F(HttpRPCTest, TLSEngineFailWithTLSErrorAtRead) {
 TEST_F(HttpRPCTest, TLSEngineFailWithTLSErrorAtWrite) {
   int socks[2];
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
-  string req_buf;
+  std::string req_buf;
   mock_server_->ServerRead(socks[0], &req_buf);
 
   MockSocketFactory::SocketStatus socket_status;
@@ -1208,8 +1205,8 @@ TEST_F(HttpRPCTest, TLSEngineServerTimeoutSendingHeaderShouldBeError) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   mock_server_->ServerWait(absl::Milliseconds(1500));
@@ -1258,8 +1255,8 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutContentLengthShouldBeOk) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;
@@ -1310,8 +1307,8 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseBeforeSendingHeaderShouldBeError) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;
@@ -1394,8 +1391,8 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseBeforeSendingEnoughDataShouldBeError) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;
@@ -1446,8 +1443,8 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutContentLengthShouldNotHangUp) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;
@@ -1498,8 +1495,8 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutEndOfChunkShouldNotHangUp) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;
@@ -1552,8 +1549,8 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutAllChunksShouldNotHangUp) {
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
 
-  const string req_expected = req_ss.str();
-  string req_buf;
+  const std::string req_expected = req_ss.str();
+  std::string req_buf;
   req_buf.resize(req_expected.size());
   mock_server_->ServerRead(socks[0], &req_buf);
   std::ostringstream resp_ss;

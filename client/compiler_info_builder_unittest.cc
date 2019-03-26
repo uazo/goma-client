@@ -21,19 +21,20 @@ class CompilerInfoBuilderTest : public testing::Test {
  protected:
   void SetUp() override { CheckTempDirectory(GetGomaTmpDir()); }
 
-  void AppendPredefinedMacros(const string& macro, CompilerInfoData* cid) {
+  void AppendPredefinedMacros(const std::string& macro, CompilerInfoData* cid) {
     cid->mutable_cxx()->set_predefined_macros(cid->cxx().predefined_macros() +
                                               macro);
   }
 
-  int FindValue(const std::unordered_map<string, int>& map, const string& key) {
+  int FindValue(const std::unordered_map<std::string, int>& map,
+                const std::string& key) {
     const auto& it = map.find(key);
     if (it == map.end())
       return 0;
     return it->second;
   }
 
-  string TestDir() {
+  std::string TestDir() {
     // This module is in out\Release.
     const std::string parent_dir = file::JoinPath(GetMyDirectory(), "..");
     const std::string top_dir = file::JoinPath(parent_dir, "..");
@@ -75,16 +76,16 @@ TEST_F(CompilerInfoBuilderTest, DependsOnCwd) {
 }
 
 TEST_F(CompilerInfoBuilderTest, FillFromCompilerOutputsShouldUseProperPath) {
-  std::vector<string> envs;
+  std::vector<std::string> envs;
 #ifdef _WIN32
-  const string clang = file::JoinPath(TestDir(), "clang.bat");
+  const std::string clang = file::JoinPath(TestDir(), "clang.bat");
   InstallReadCommandOutputFunc(ReadCommandOutputByRedirector);
   envs.emplace_back("PATHEXT=" + GetEnv("PATHEXT"));
 #else
-  const string clang = file::JoinPath(TestDir(), "clang");
+  const std::string clang = file::JoinPath(TestDir(), "clang");
   InstallReadCommandOutputFunc(ReadCommandOutputByPopen);
 #endif
-  std::vector<string> args = {
+  std::vector<std::string> args = {
       clang,
   };
   envs.emplace_back("PATH=" + GetEnv("PATH"));
@@ -137,7 +138,7 @@ TEST_F(CompilerInfoBuilderTest, GccSmoke) {
   InstallReadCommandOutputFunc(ReadCommandOutputByPopen);
 
   // Assuming testcases[i][0] is a path to gcc.
-  const std::vector<std::vector<string>> testcases = {
+  const std::vector<std::vector<std::string>> testcases = {
       {
           "/usr/bin/gcc",
       },
@@ -149,7 +150,7 @@ TEST_F(CompilerInfoBuilderTest, GccSmoke) {
       {"/usr/bin/g++", "-xc"},
       {"/usr/bin/g++", "-xc++"},
   };
-  const std::vector<string> envs;
+  const std::vector<std::string> envs;
 
   for (const auto& args : testcases) {
     std::unique_ptr<CompilerFlags> flags(
@@ -166,24 +167,27 @@ TEST_F(CompilerInfoBuilderTest, GccSmoke) {
 // Checks we can take CompilerInfo from
 // third_party/llvm-build/Release+Assets/bin/clang etc.
 TEST_F(CompilerInfoBuilderTest, ClangSmoke) {
-  string source_root_path =
-      string(file::Dirname(file::Dirname(devtools_goma::GetMyDirectory())));
+  std::string source_root_path = std::string(
+      file::Dirname(file::Dirname(devtools_goma::GetMyDirectory())));
 
 #ifdef _WIN32
   InstallReadCommandOutputFunc(ReadCommandOutputByRedirector);
-  const std::vector<string> envs{
-      "PATH=" + GetEnv("PATH"), "PATHEXT=" + GetEnv("PATHEXT"),
+  const std::vector<std::string> envs{
+      "PATH=" + GetEnv("PATH"),
+      "PATHEXT=" + GetEnv("PATHEXT"),
   };
 #else
   InstallReadCommandOutputFunc(ReadCommandOutputByPopen);
-  const std::vector<string> envs;
+  const std::vector<std::string> envs;
 #endif
 
-  string clang_path = GetClangPath();
+  std::string clang_path = GetClangPath();
   ASSERT_TRUE(!clang_path.empty());
 
-  const std::vector<std::vector<string>> testcases = {
-      {clang_path}, {clang_path, "-xc"}, {clang_path, "-xc++"},
+  const std::vector<std::vector<std::string>> testcases = {
+      {clang_path},
+      {clang_path, "-xc"},
+      {clang_path, "-xc++"},
   };
 
   for (const auto& args : testcases) {

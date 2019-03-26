@@ -10,8 +10,6 @@
 
 #include "prototmp/deps_cache_data.pb.h"
 
-using std::string;
-
 namespace devtools_goma {
 
 TEST(FilenameIdTableTest, SaveLoad) {
