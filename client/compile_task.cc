@@ -3043,7 +3043,7 @@ void CompileTask::ModifyRequestEnvs() {
       envs.push_back(env);
     }
   }
-  if (envs.size() == (size_t)req_->env_size()) {
+  if (envs.size() == static_cast<size_t>(req_->env_size())) {
     return;
   }
 
