@@ -602,7 +602,7 @@ GOMA_DEFINE_bool(
     "EXPERIMENTAL. Enable all flags related to arbitrary toolchain support, "
     "regardless of their explicit setting. Currently "
     "GOMA_SEND_EXPECTED_OUTPUTS, GOMA_SEND_COMPILER_BINARY_AS_INPUT "
-    "and USE_USER_SPECIFIED_PATH_FOR_SUBPROGRAMS.");
+    "and GOMA_USE_USER_SPECIFIED_PATH_FOR_SUBPROGRAMS.");
 
 #if HAVE_HEAP_PROFILER
 GOMA_DEFINE_string(COMPILER_PROXY_HEAP_PROFILE_FILE, "goma_compiler_proxy_heapz",
