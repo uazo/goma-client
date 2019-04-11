@@ -1582,6 +1582,8 @@ void CompileTask::ProcessFinished(const std::string& msg) {
     return;
   }
 
+  // Unlike want_fallback_ = false case,
+  // we won't start subprocs for GOMA_FALLBACK=false, we can reply here.
   if (!requester_env_.fallback()) {
     VLOG(1) << trace_id_ << " goma finished and no fallback.";
     CHECK(subproc_ == nullptr);
@@ -2683,7 +2685,7 @@ void CompileTask::FillCompilerInfoDone(
     // In this case, it found local compiler, but failed to get necessary
     // information, such as system include paths.
     // It would happen when multiple -arch options are used.
-    if (requester_env_.fallback()) {
+    if (want_fallback_) {
       // Force to fallback mode to handle this case.
       should_fallback_ = true;
       service_->RecordForcedFallbackInSetup(
@@ -2698,7 +2700,7 @@ void CompileTask::FillCompilerInfoDone(
   if (compiler_info_state_.disabled()) {
     // In this case, it found local compiler, but not in server side
     // (by past compile task).
-    if (service_->hermetic_fallback() || requester_env_.fallback()) {
+    if (want_fallback_) {
       should_fallback_ = true;
       service_->RecordForcedFallbackInSetup(CompileService::kCompilerDisabled);
     }

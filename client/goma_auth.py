@@ -12,6 +12,7 @@ import argparse
 import copy
 import json
 import os
+import re
 import string
 import subprocess
 import sys
@@ -39,8 +40,6 @@ OAUTH_SCOPES = 'https://www.googleapis.com/auth/userinfo.email'
 OAUTH_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 TOKEN_INFO_ENDPOINT = 'https://oauth2.googleapis.com/tokeninfo'
 OOB_CALLBACK_URN = 'urn:ietf:wg:oauth:2.0:oob'
-
-GOMA_URI = 'https://goma.chromium.org/cxx-compiler-service/ping'
 
 DEFAULT_GOMA_OAUTH2_CONFIG_FILE_NAME = '.goma_client_oauth2_config'
 
@@ -350,15 +349,28 @@ def CheckPing():
   Returns:
     true if user is ready to use Goma.
   """
-  uri = GOMA_URI + os.environ.get('GOMA_RPC_EXTRA_PARAMS', '')
-  cmd = [GOMA_FETCH, '--auth', uri]
+  server = os.environ.get('GOMA_SERVER_HOST', 'goma.chromium.org')
+  port = os.environ.get('GOMA_SERVER_PORT', '443')
+  use_ssl = re.match('[tTyY1]', os.environ.get('GOMA_USE_SSL', 'True'))
+  scheme = 'https' if use_ssl else 'http'
+  server_url = '%s://%s' % (scheme, server)
+  need_port = (use_ssl and port != '443') or (not use_ssl and port != '80')
+  if need_port:
+    server_url = '%s:%s' % (server_url, port)
+
+  # e.g. url='https://goma.chromium.org/cxx-compiler-service/ping'
+  url = '%s%s/ping%s' % (
+      server_url,
+      os.environ.get('GOMA_URL_PATH_PREFIX', '/cxx-compiler-service'),
+      os.environ.get('GOMA_RPC_EXTRA_PARAMS', ''))
+  cmd = [GOMA_FETCH, '--auth', url]
   try:
     subprocess.check_output(cmd, stderr=subprocess.STDOUT)  # discard outputs.
-    print('Ready to use Goma')
+    print('Ready to use Goma service at %s' % server_url)
     return True
   except subprocess.CalledProcessError:
-    print('Current user is not registered with Goma service. '
-          'Unable to use Goma')
+    print(('Current user is not registered with Goma service at %s. ' +
+          'Unable to use Goma') % server_url)
   return False
 
 

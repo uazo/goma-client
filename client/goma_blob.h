@@ -64,7 +64,7 @@ class BlobClient {
   class Downloader {
    public:
     // Describes the output of a file download operation. The file data can be
-    // downloaded to either a file (|tmp_file_name| != "") or stored directly in
+    // downloaded to either a file (|tmp_filename| != "") or stored directly in
     // |content|.
     struct OutputFileInfo {
       // actual output filename.

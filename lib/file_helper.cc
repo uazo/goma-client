@@ -69,15 +69,15 @@ bool ReadFileToString(absl::string_view filename, std::string* OUTPUT) {
   return true;
 }
 
-bool WriteStringToFile(absl::string_view data, absl::string_view file_name) {
+bool WriteStringToFile(absl::string_view data, absl::string_view filename) {
   devtools_goma::ScopedFd fd(
-      devtools_goma::ScopedFd::Create(std::string(file_name), 0600));
+      devtools_goma::ScopedFd::Create(std::string(filename), 0600));
   if (!fd.valid()) {
-    LOG(ERROR) << "GOMA: failed to open " << file_name;
+    LOG(ERROR) << "GOMA: failed to open " << filename;
     return false;
   }
   if (fd.Write(data.data(), data.size()) == -1) {
-    LOG(ERROR) << "write " << file_name;
+    LOG(ERROR) << "write " << filename;
     return false;
   }
   return true;

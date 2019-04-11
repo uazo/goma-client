@@ -12,8 +12,8 @@
 
 namespace devtools_goma {
 
-bool ReadFileToString(absl::string_view file_name, std::string* OUTPUT);
-bool WriteStringToFile(absl::string_view data, absl::string_view file_name);
+bool ReadFileToString(absl::string_view filename, std::string* OUTPUT);
+bool WriteStringToFile(absl::string_view data, absl::string_view filename);
 
 }  // namespace devtools_goma
 

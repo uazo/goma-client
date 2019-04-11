@@ -128,7 +128,7 @@ class CompilerFlags {
   static bool ExpandPosixArgs(
       const std::string& cwd,
       const std::vector<std::string>& args,
-      std::vector<std::string>* expand_args,
+      std::vector<std::string>* expanded_args,
       std::vector<std::string>* optional_input_filenames);
 
  protected:

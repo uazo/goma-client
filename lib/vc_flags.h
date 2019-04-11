@@ -61,7 +61,7 @@ class VCFlags : public CxxFlags {
   friend class VCFlagsTest;
   // Compose output file path
   static std::string ComposeOutputFilePath(
-      const std::string& input_file_name,
+      const std::string& input_filename,
       const std::string& output_file_or_dir,
       const std::string& output_file_ext);
 

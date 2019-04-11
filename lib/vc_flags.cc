@@ -670,10 +670,10 @@ bool VCFlags::ExpandArgs(const std::string& cwd,
 
 // static
 std::string VCFlags::ComposeOutputFilePath(
-    const std::string& input_file_name,
+    const std::string& input_filename,
     const std::string& output_file_or_dir,
     const std::string& output_file_ext) {
-  std::string input_file = NormalizeWin32Path(input_file_name);
+  std::string input_file = NormalizeWin32Path(input_filename);
   std::string output_target = NormalizeWin32Path(output_file_or_dir);
 
   bool output_is_dir = false;
@@ -689,7 +689,7 @@ std::string VCFlags::ComposeOutputFilePath(
   size_t begin = input_file.find_last_of("/\\");
   size_t end = input_file.rfind('.');
   begin = (begin == std::string::npos) ? 0 : begin + 1;
-  end = (end == std::string::npos) ? input_file_name.size() : end;
+  end = (end == std::string::npos) ? input_filename.size() : end;
   std::string new_output;
   if (end > begin) {
     new_output = input_file.substr(begin, end - begin);
