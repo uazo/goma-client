@@ -258,47 +258,64 @@ ClangCompilerInfoBuilderHelper::ParseResourceOutput(
     return ParseStatus::kNotParsed;
   }
 
+  absl::string_view gcc_install;
+
   for (absl::string_view line : absl::StrSplit(
            display_output, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
     // Silently upload crtbegin.o.
     // clang uses crtbegin.o in GCC installation directory as a marker to
     // understand local gcc version etc.  We need to upload it to goma server
     // to make clang in server behave like local clang.
-    // See Also:
+    // See also:
     // https://github.com/llvm-mirror/clang/blob/69f63a0cc21da9f587125760f10610146c8c47c3/lib/Driver/ToolChains/Gnu.cpp#L1444
+
     if (absl::ConsumePrefix(&line, "Selected GCC installation: ")) {
-      const auto compiler_install_path = line;
-      // TODO: consider supporting IAMCU?
-      std::string crtbegin_path =
-          file::JoinPath(compiler_install_path, "crtbegin.o");
+      gcc_install = line;
+      continue;
+    } else if (absl::ConsumePrefix(&line, "Selected multilib: ")) {
+      // We expect to find a "Selected GCC installation: " line and then
+      // sometime later a "Selected multilib: " line. Reference:
+      // https://github.com/llvm-mirror/clang/blob/69f63a0cc21da9f587125760f10610146c8c47c3/lib/Driver/ToolChains/Gnu.cpp#L1747
+
+      // The form of this line is:
+      // clang-format off
+      // "Selected multilib: <dir inside the GCC install with the chosen crtbegin.o>;<details of the ABI>"
+      // clang-format on
+
+      if (gcc_install.empty()) {
+        LOG(ERROR) << "Expected to find a \"Selected GCC installation:\" line "
+                      "before \"Selected multilib:\"";
+        return ParseStatus::kFail;
+      }
+
+      std::vector<absl::string_view> m =
+          absl::StrSplit(line, absl::MaxSplits(';', 1));
+      if (m.empty()) {
+        LOG(ERROR) << "unable to parse \"Selected multilib\" value, unable to "
+                      "find crtbegin.o: "
+                   << line;
+        return ParseStatus::kFail;
+      }
+
+      std::string crtbegin_path;
+      if (m[0] != ".") {
+        crtbegin_path = file::JoinPath(gcc_install, m[0], "crtbegin.o");
+      } else {
+        crtbegin_path = file::JoinPath(gcc_install, "crtbegin.o");
+      }
       const std::string abs_crtbegin_path =
           file::JoinPathRespectAbsolute(cwd, crtbegin_path);
+
       if (access(abs_crtbegin_path.c_str(), R_OK) == 0) {
         paths->emplace_back(std::move(crtbegin_path),
                             CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER);
-        // Also look for some common multilib crtbegin.o markers.
-        std::string crtbegin_32_path =
-            file::JoinPath(compiler_install_path, "32", "crtbegin.o");
-        const std::string abs_crtbegin_32_path =
-            file::JoinPathRespectAbsolute(cwd, crtbegin_32_path);
-        if (access(abs_crtbegin_32_path.c_str(), R_OK) == 0) {
-          paths->emplace_back(std::move(crtbegin_32_path),
-                              CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER);
-        }
-
-        std::string crtbegin_x32_path =
-            file::JoinPath(compiler_install_path, "x32", "crtbegin.o");
-        const std::string abs_crtbegin_x32_path =
-            file::JoinPathRespectAbsolute(cwd, crtbegin_x32_path);
-        if (access(abs_crtbegin_x32_path.c_str(), R_OK) == 0) {
-          paths->emplace_back(std::move(crtbegin_x32_path),
-                              CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER);
-        }
       } else {
         LOG(ERROR) << "specified crtbegin.o not found."
                    << " argv0=" << argv0 << " cwd=" << cwd
                    << " crtbegin_path=" << crtbegin_path;
+        return ParseStatus::kFail;
       }
+
       continue;
     }
     if (!absl::StartsWith(line, " ")) {

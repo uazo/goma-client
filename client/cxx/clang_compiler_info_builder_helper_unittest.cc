@@ -112,11 +112,7 @@ clang -cc1 version 8.0.0 based upon LLVM 8.0.0svn default target x86_64-unknown-
                 "/third_party/llvm-build/Release+Asserts/bin/clang",
                 tmpdir.realcwd(), kDummyClangOutput, &resource));
   std::vector<ClangCompilerInfoBuilderHelper::ResourceList> expected = {
-      {"gcc/x86_64-linux-gnu/7.3.0/crtbegin.o",
-       CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER},
       {"gcc/x86_64-linux-gnu/7.3.0/32/crtbegin.o",
-       CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER},
-      {"gcc/x86_64-linux-gnu/7.3.0/x32/crtbegin.o",
        CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER},
   };
   EXPECT_EQ(expected, resource);
