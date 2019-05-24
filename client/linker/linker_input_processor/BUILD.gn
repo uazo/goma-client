@@ -20,9 +20,8 @@ static_library("arfile_reader_lib") {
     "arfile_reader.h",
   ]
   if (os == "mac") {
-    sources += [
-      "mach_o_parser.cc",
-      "mach_o_parser.h",
+    deps = [
+      ":mach_o_parser",
     ]
   }
   public_deps = [
@@ -74,6 +73,27 @@ static_library("linker_input_processor_lib") {
 
   if (os == "linux") {
     deps += [ ":elf_parser_lib" ]
+  }
+
+  if (os == "mac") {
+    deps += [ ":mach_o_parser" ]
+  }
+}
+
+if (os == "mac") {
+  static_library("mach_o_parser") {
+    sources = [
+      "mach_o_parser.cc",
+      "mach_o_parser.h",
+    ]
+    public_deps = [
+      "//base",
+      "//lib",
+    ]
+    deps = [
+      "//third_party:glog",
+      "//third_party/abseil",
+    ]
   }
 }
 
@@ -152,6 +172,9 @@ executable("arfile_reader_unittest") {
     "//client:common",
     "//client:goma_test_lib",
   ]
+  if (os == "mac") {
+    deps += [ ":mach_o_parser" ]
+  }
 }
 
 executable("library_path_resolver_unittest") {

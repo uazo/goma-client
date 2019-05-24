@@ -10,9 +10,9 @@ deps = {
      "client/third_party/protobuf/protobuf":
      "https://github.com/google/protobuf.git@48cb18e5c419ddd23d9badcfe4e9df7bde1979b2",
 
-     # google-glog
+     # google-glog v0.4.0
      "client/third_party/glog":
-     "https://github.com/google/glog.git@2063b387080c1e7adffd33ca07adff0eb346ff1a",
+     "https://github.com/google/glog.git@96a2f23dca4cc7180821ca5f32e526314395d26a",
 
      # googletest 1.8.1
      "client/third_party/gtest":
@@ -37,7 +37,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@a4af5f85bdbb67ed037292bc9dff1faae31050f9",
+     "https://boringssl.googlesource.com/boringssl@79ab5e8faa04871e13542e35374657185adee5c8",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -57,7 +57,7 @@ deps = {
      # chromium's buildtools containing libc++, libc++abi, clang_format and gn.
      "client/buildtools":
      Var("chromium_git") + "/chromium/src/buildtools@" +
-         "6b05562fca005bb3c7131fece22cc5530938b7d8",
+         "d5c58b84d50d256968271db459cd29b22bff1ba2",
 
      # libFuzzer
      "client/third_party/libFuzzer/src":
@@ -125,40 +125,6 @@ hooks = [
                   '-o', 'client/build/util/LASTCHANGE'],
      },
 
-     # Pull GN binaries.
-     {
-       "name": "gn_win",
-       "pattern": ".",
-       "action": [ "download_from_google_storage",
-                   "--no_resume",
-                   "--platform=win32",
-                   "--no_auth",
-                   "--bucket", "chromium-gn",
-                   "-s", "client/buildtools/win/gn.exe.sha1",
-       ],
-     },
-     {
-       "name": "gn_mac",
-       "pattern": ".",
-       "action": [ "download_from_google_storage",
-                   "--no_resume",
-                   "--platform=darwin",
-                   "--no_auth",
-                   "--bucket", "chromium-gn",
-                   "-s", "client/buildtools/mac/gn.sha1",
-       ],
-     },
-     {
-       "name": "gn_linux64",
-       "pattern": ".",
-       "action": [ "download_from_google_storage",
-                   "--no_resume",
-                   "--platform=linux*",
-                   "--no_auth",
-                   "--bucket", "chromium-gn",
-                   "-s", "client/buildtools/linux64/gn.sha1",
-       ],
-     },
      # Pull clang-format binaries using checked-in hashes.
      {
          'name': 'clang_format_win',

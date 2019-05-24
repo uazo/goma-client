@@ -145,9 +145,9 @@ class Stream {
   absl::string_view Ensure(size_t size) {
     absl::string_view buf(*non_chunk_data_);
     buf.remove_prefix(offset_);
-    VLOG(3) << "need=" << size << " buf:" << CEscape(buf);
+    VLOG(3) << "need=" << size << " buf:" << absl::CEscape(buf);
     if (size <= buf.size()) {
-      VLOG(3) << "buf:" << CEscape(buf);
+      VLOG(3) << "buf:" << absl::CEscape(buf);
       return buf;
     }
     size_t need = offset_ + size - non_chunk_data_->size();
@@ -158,7 +158,7 @@ class Stream {
       buf = *non_chunk_data_;
       buf.remove_prefix(offset_);
       CHECK_LE(size, buf.size());
-      VLOG(3) << "buf:" << CEscape(buf);
+      VLOG(3) << "buf:" << absl::CEscape(buf);
       return buf;
     }
     *non_chunk_data_ += std::string(*input_);

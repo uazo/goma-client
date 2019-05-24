@@ -68,6 +68,67 @@ TEST(ElfDepParserTest, ParseReadElf) {
   EXPECT_EQ(expected_rpaths, rpaths);
 }
 
+TEST(ElfDepParserTest, ParseReadElfRunPath) {
+  static constexpr absl::string_view kExampleOutput =
+      "Dynamic section at offset 0x1e3ca20 contains 33 entries:\n"
+      "  Tag        Type                         Name/Value\n"
+      " 0x0000000000000003 (PLTGOT)             0x1e3dfe8\n"
+      " 0x0000000000000002 (PLTRELSZ)           37584 (bytes)\n"
+      " 0x0000000000000017 (JMPREL)             0x3be3f8\n"
+      " 0x0000000000000014 (PLTREL)             RELA\n"
+      " 0x0000000000000007 (RELA)               0x226e60\n"
+      " 0x0000000000000008 (RELASZ)             1668504 (bytes)\n"
+      " 0x0000000000000009 (RELAENT)            24 (bytes)\n"
+      " 0x000000006ffffff9 (RELACOUNT)          66125\n"
+      " 0x0000000000000015 (DEBUG)              0x0\n"
+      " 0x0000000000000006 (SYMTAB)             0x298\n"
+      " 0x000000000000000b (SYMENT)             24 (bytes)\n"
+      " 0x0000000000000005 (STRTAB)             0x84ef8\n"
+      " 0x000000000000000a (STRSZ)              1500329 (bytes)\n"
+      " 0x000000006ffffef5 (GNU_HASH)           0x1f33a8\n"
+      " 0x0000000000000001 (NEEDED)             Shared library: "
+      "[libpthread.so.0]\n"
+      " 0x0000000000000001 (NEEDED)             Shared library: "
+      "[libLLVM-4.0.so.1]\n"
+      " 0x0000000000000001 (NEEDED)             Shared library: "
+      "[libjsoncpp.so.1]\n"
+      " 0x0000000000000001 (NEEDED)             Shared library: "
+      "[libstdc++.so.6]\n"
+      " 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]\n"
+      " 0x0000000000000001 (NEEDED)             Shared library: "
+      "[libgcc_s.so.1]\n"
+      " 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]\n"
+      " 0x0000000000000001 (NEEDED)             Shared library: "
+      "[ld-linux-x86-64.so.2]\n"
+      " 0x000000000000000c (INIT)               0x3c76c8\n"
+      " 0x000000000000000d (FINI)               0x193dbbc\n"
+      " 0x000000000000001a (FINI_ARRAY)         0x1e02c20\n"
+      " 0x000000000000001c (FINI_ARRAYSZ)       8 (bytes)\n"
+      " 0x0000000000000019 (INIT_ARRAY)         0x1e02c28\n"
+      " 0x000000000000001b (INIT_ARRAYSZ)       200 (bytes)\n"
+      " 0x000000000000001d (RUNPATH)            Library runpath: "
+      "[$ORIGIN/../lib]\n"
+      " 0x000000006ffffff0 (VERSYM)             0x21bba4\n"
+      " 0x000000006ffffffe (VERNEED)            0x226cac\n"
+      " 0x000000006fffffff (VERNEEDNUM)         7\n"
+      " 0x0000000000000000 (NULL)               0x0\n";
+
+  std::vector<absl::string_view> libs;
+  std::vector<absl::string_view> rpaths;
+  EXPECT_TRUE(ElfDepParser::ParseReadElf(kExampleOutput, &libs, &rpaths));
+  std::vector<absl::string_view> expected_libs = {
+      "libpthread.so.0", "libLLVM-4.0.so.1",
+      "libjsoncpp.so.1", "libstdc++.so.6",
+      "libm.so.6",       "libgcc_s.so.1",
+      "libc.so.6",       "ld-linux-x86-64.so.2",
+  };
+  std::vector<absl::string_view> expected_rpaths = {
+      "$ORIGIN/../lib",
+  };
+  EXPECT_EQ(expected_libs, libs);
+  EXPECT_EQ(expected_rpaths, rpaths);
+}
+
 // TODO: write test for GetDeps.
 //
 TEST(ElfUtilTest, ParseLdSoConf) {

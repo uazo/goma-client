@@ -505,35 +505,6 @@ TEST(GomaccArgvTest, BuildGomaccArgvNoCompiler) {
 
 #ifdef _WIN32
 
-TEST(GomaccArgvTest, FanOutArgsByInput) {
-  std::vector<std::string> args;
-  args.push_back("cl");
-  args.push_back("/c");
-  args.push_back("/DFOO");
-  args.push_back("/Ic:\\vc\\include");
-  args.push_back("/Fo..\\obj\\");
-  args.push_back("/Fdfoo.pdb");
-  args.push_back("foo.cpp");
-  args.push_back("bar.cpp");
-  args.push_back("baz.cpp");
-  args.push_back("/MP");
-
-  std::set<std::string> input_filenames;
-  input_filenames.insert("foo.cpp");
-  input_filenames.insert("bar.cpp");
-  input_filenames.insert("baz.cpp");
-
-  std::vector<std::string> args_no_input;
-  FanOutArgsByInput(args, input_filenames, &args_no_input);
-  EXPECT_EQ(6U, args_no_input.size());
-  EXPECT_EQ("/c", args_no_input[0]);
-  EXPECT_EQ("/DFOO", args_no_input[1]);
-  EXPECT_EQ("/Ic:\\vc\\include", args_no_input[2]);
-  EXPECT_EQ("/Fo..\\obj\\", args_no_input[3]);
-  EXPECT_EQ("/Fdfoo.pdb", args_no_input[4]);
-  EXPECT_EQ("/MP", args_no_input[5]);
-}
-
 TEST(GomaccArgvTest, BuildArgsForInput) {
   std::vector<std::string> args_no_input;
   args_no_input.push_back("/c");

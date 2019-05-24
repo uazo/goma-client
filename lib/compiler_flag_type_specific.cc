@@ -16,6 +16,8 @@
 #include "lib/gcc_flags.h"
 #include "lib/java_execreq_normalizer.h"
 #include "lib/java_flags.h"
+#include "lib/rustc_execreq_normalizer.h"
+#include "lib/rustc_flags.h"
 #include "lib/vc_execreq_normalizer.h"
 #include "lib/vc_flags.h"
 
@@ -40,6 +42,9 @@ CompilerFlagType CompilerFlagTypeFromArg(absl::string_view arg) {
   }
   if (ClangTidyFlags::IsClangTidyCommand(arg)) {
     return CompilerFlagType::ClangTidy;
+  }
+  if (RustcFlags::IsRustcCommand(arg)) {
+    return CompilerFlagType::Rustc;
   }
   if (FakeFlags::IsFakeCommand(arg)) {
     return CompilerFlagType::Fake;
@@ -77,6 +82,8 @@ std::unique_ptr<CompilerFlags> CompilerFlagTypeSpecific::NewCompilerFlags(
       return absl::make_unique<JavacFlags>(args, cwd);
     case CompilerFlagType::Java:
       return absl::make_unique<JavaFlags>(args, cwd);
+    case CompilerFlagType::Rustc:
+      return absl::make_unique<RustcFlags>(args, cwd);
     case CompilerFlagType::Fake:
       return absl::make_unique<FakeFlags>(args, cwd);
   }
@@ -97,6 +104,8 @@ std::string CompilerFlagTypeSpecific::GetCompilerName(
       return JavacFlags::GetCompilerName(arg);
     case CompilerFlagType::Java:
       return JavaFlags::GetCompilerName(arg);
+    case CompilerFlagType::Rustc:
+      return RustcFlags::GetCompilerName(arg);
     case CompilerFlagType::Fake:
       return FakeFlags::GetCompilerName(arg);
   }
@@ -117,6 +126,8 @@ CompilerFlagTypeSpecific::NewExecReqNormalizer() const {
       return absl::make_unique<JavacExecReqNormalizer>();
     case CompilerFlagType::Java:
       return absl::make_unique<JavaExecReqNormalizer>();
+    case CompilerFlagType::Rustc:
+      return absl::make_unique<RustcExecReqNormalizer>();
     case CompilerFlagType::Fake:
       return absl::make_unique<FakeExecReqNormalizer>();
   }

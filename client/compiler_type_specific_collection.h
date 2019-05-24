@@ -12,6 +12,7 @@
 #include "cxx/vc_compiler_type_specific.h"
 #include "fake/fake_compiler_type_specific.h"
 #include "java/java_compiler_type_specific.h"
+#include "rust/rustc_compiler_type_specific.h"
 
 namespace devtools_goma {
 
@@ -30,6 +31,7 @@ class CompilerTypeSpecificCollection {
   ClangTidyCompilerTypeSpecific clang_tidy_;
   JavacCompilerTypeSpecific javac_;
   JavaCompilerTypeSpecific java_;
+  RustcCompilerTypeSpecific rustc_;
   FakeCompilerTypeSpecific fake_;
 };
 

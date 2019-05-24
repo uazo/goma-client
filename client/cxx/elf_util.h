@@ -39,6 +39,7 @@ class ElfDepParser {
 
  private:
   FRIEND_TEST(ElfDepParserTest, ParseReadElf);
+  FRIEND_TEST(ElfDepParserTest, ParseReadElfRunPath);
 
   // Returns relative library path name if succeeds.
   // Otherwise, empty string will be returned.

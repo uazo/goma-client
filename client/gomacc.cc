@@ -67,9 +67,6 @@ GOMA_DECLARE_string(VERIFY_COMMAND);
 GOMA_DECLARE_string(LOAD_AVERAGE_LIMIT);
 GOMA_DECLARE_int32(MAX_SLEEP_TIME);
 #endif
-#ifdef _WIN32
-GOMA_DECLARE_bool(FAN_OUT_EXEC_REQ);
-#endif
 
 using devtools_goma::CompilerFlags;
 using devtools_goma::CompilerFlagsParser;

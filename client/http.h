@@ -59,37 +59,36 @@ class SocketFactory;
 class HttpClient {
  public:
   struct Options {
-    Options();
     std::string dest_host_name;
-    int dest_port;
+    int dest_port = 0;
     std::string proxy_host_name;
-    int proxy_port;
+    int proxy_port = 0;
     std::string extra_params;
     std::string authorization;
     std::string cookie;
-    bool capture_response_header;
+    bool capture_response_header = false;
     std::string url_path_prefix;
-    bool use_ssl;
+    bool use_ssl = false;
     std::string ssl_extra_cert;
     std::string ssl_extra_cert_data;
     absl::optional<absl::Duration> ssl_crl_max_valid_duration;
-    absl::Duration socket_read_timeout;
-    absl::Duration min_retry_backoff;
-    absl::Duration max_retry_backoff;
+    absl::Duration socket_read_timeout = absl::Seconds(1);
+    absl::Duration min_retry_backoff = absl::Milliseconds(500);
+    absl::Duration max_retry_backoff = absl::Seconds(5);
 
     OAuth2Config oauth2_config;
     std::string gce_service_account;
     std::string service_account_json_filename;
     LuciContextAuth luci_context_auth;
 
-    bool fail_fast;
+    bool fail_fast = false;
     absl::Duration network_error_margin;
-    int network_error_threshold_percent;
+    int network_error_threshold_percent = 30;
 
     // Allows throttling if this is true.
-    bool allow_throttle;
+    bool allow_throttle = true;
 
-    bool reuse_connection;
+    bool reuse_connection = true;
 
     bool InitFromURL(absl::string_view url);
 

@@ -149,23 +149,24 @@ CompilerInfo::CompilerInfo(std::unique_ptr<CompilerInfoData> data)
   }
 }
 
-bool CompilerInfo::IsUpToDate(const std::string& local_compiler_path) const {
-  FileStat cur_local(local_compiler_path);
+bool CompilerInfo::IsUpToDate(
+    const std::string& abs_local_compiler_path) const {
+  FileStat cur_local(abs_local_compiler_path);
   if (cur_local != local_compiler_stat_) {
     LOG(INFO) << "compiler id is not matched:"
-              << " path=" << local_compiler_path
+              << " path=" << abs_local_compiler_path
               << " local_compiler_stat=" << local_compiler_stat_.DebugString()
               << " cur_local=" << cur_local.DebugString();
     return false;
   }
-  if (local_compiler_path != data_->real_compiler_path()) {
-    // Since |local_compiler_path| != |real_compiler_path|,
+  if (abs_local_compiler_path != abs_real_compiler_path()) {
+    // Since |abs_local_compiler_path| != |abs_real_compiler_path|,
     // We need to check that the real compiler is also the same.
-    FileStat cur_real(data_->real_compiler_path());
+    FileStat cur_real(abs_real_compiler_path());
     if (cur_real != real_compiler_stat_) {
       LOG(INFO) << "real compiler id is not matched:"
-                << " local_compiler_path=" << local_compiler_path
-                << " real_compiler_path=" << data_->real_compiler_path()
+                << " abs_local_compiler_path=" << abs_local_compiler_path
+                << " abs_real_compiler_path=" << abs_real_compiler_path()
                 << " local_compiler_stat=" << local_compiler_stat_.DebugString()
                 << " real_compiler_stat=" << real_compiler_stat_.DebugString()
                 << " cur_real=" << cur_real.DebugString();
@@ -177,7 +178,7 @@ bool CompilerInfo::IsUpToDate(const std::string& local_compiler_path) const {
     FileStat file_stat(subprog.abs_path);
     if (file_stat != subprog.file_stat) {
       LOG(INFO) << "subprogram is not matched:"
-                << " local_compiler_path=" << local_compiler_path
+                << " abs_local_compiler_path=" << abs_local_compiler_path
                 << " subprogram=" << subprog.abs_path
                 << " subprogram_file_stat=" << subprog.file_stat.DebugString()
                 << " file_stat=" << file_stat.DebugString();
@@ -189,7 +190,7 @@ bool CompilerInfo::IsUpToDate(const std::string& local_compiler_path) const {
     std::string error_reason;
     if (!r.IsUpToDate(data_->cwd(), &error_reason)) {
       LOG(INFO) << "resource file is not matched:"
-                << " local_compiler_path=" << local_compiler_path << " "
+                << " abs_local_compiler_path=" << abs_local_compiler_path << " "
                 << error_reason;
       return false;
     }
@@ -206,28 +207,27 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
   if (!sha256_cache->GetHashFromCacheOrFile(abs_local_compiler_path(),
                                             &local_hash)) {
     LOG(WARNING) << "calculating local compiler hash failed: "
-                 << "path=" << local_compiler_path();
+                 << "path=" << abs_local_compiler_path();
     return false;
   }
   if (local_hash != local_compiler_hash()) {
     LOG(INFO) << "local compiler hash didn't match:"
-              << " path=" << local_compiler_path()
-              << " prev=" << local_compiler_hash()
-              << " current=" << local_hash;
+              << " path=" << abs_local_compiler_path()
+              << " prev=" << local_compiler_hash() << " current=" << local_hash;
     return false;
   }
 
   std::string real_hash;
-  if (!sha256_cache->GetHashFromCacheOrFile(real_compiler_path(), &real_hash)) {
+  if (!sha256_cache->GetHashFromCacheOrFile(abs_real_compiler_path(),
+                                            &real_hash)) {
     LOG(WARNING) << "calculating real compiler hash failed: "
-                 << "path=" << real_compiler_path();
+                 << "path=" << abs_real_compiler_path();
     return false;
   }
   if (real_hash != real_compiler_hash()) {
     LOG(INFO) << "real compiler hash didn't match:"
-              << " path=" << real_compiler_path()
-              << " prev=" << real_compiler_hash()
-              << " current=" << real_hash;
+              << " path=" << abs_real_compiler_path()
+              << " prev=" << real_compiler_hash() << " current=" << real_hash;
     return false;
   }
 
@@ -241,7 +241,7 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
     }
     if (subprogram_hash != subprog.hash) {
       LOG(INFO) << "subprogram hash didn't match:"
-                << " path=" << real_compiler_path()
+                << " path=" << abs_real_compiler_path()
                 << " subprogram=" << subprog.abs_path
                 << " prev=" << subprog.hash << " current=" << subprogram_hash;
       return false;
@@ -251,7 +251,7 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
   if (subprograms().size() !=
       static_cast<size_t>(data_->subprograms().size())) {
     LOG(ERROR) << "CompilerInfo subprograms and data subprograms size differs: "
-               << " Inconsistent state: " << data_->real_compiler_path();
+               << " Inconsistent state: " << abs_real_compiler_path();
     return false;
   }
 
@@ -261,7 +261,7 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
     if (subprog.user_specified_path != data_subprog.user_specified_path() ||
         subprog.abs_path != data_subprog.abs_path()) {
       LOG(ERROR) << "CompilerInfo subprogram and its data subprograms"
-                 << " is inconsistent: compiler=" << data_->real_compiler_path()
+                 << " is inconsistent: compiler=" << abs_real_compiler_path()
                  << " inconsistent subprogram: "
                  << " user_specified_path: " << subprog.user_specified_path
                  << " vs " << data_subprog.user_specified_path()
@@ -330,10 +330,8 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
     }
     if (r_hash != r.hash) {
       LOG(INFO) << "file hash didn't match:"
-                << " path=" << real_compiler_path()
-                << " name=" << r.name
-                << " prev=" << r.hash
-                << " current=" << r_hash;
+                << " path=" << abs_real_compiler_path() << " name=" << r.name
+                << " prev=" << r.hash << " current=" << r_hash;
       return false;
     }
   }
@@ -341,7 +339,7 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
   if (resource_.size() !=
       static_cast<size_t>(data_->resource().size())) {
     LOG(ERROR) << "CompilerInfo resource and data resource size differs: "
-               << " Inconsistent state: " << data_->real_compiler_path();
+               << " Inconsistent state: " << abs_real_compiler_path();
     return false;
   }
 
@@ -350,9 +348,9 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
     const auto& data_r = data_->resource(i);
     if (r.name != data_r.name()) {
       LOG(ERROR) << "CompilerInfo resource and its data resource"
-                 << " is inconsistent: compiler=" << data_->real_compiler_path()
-                 << " inconsistent resource: "
-                 << r.name << " != " << data_r.name();
+                 << " is inconsistent: compiler=" << abs_real_compiler_path()
+                 << " inconsistent resource: " << r.name
+                 << " != " << data_r.name();
       return false;
     }
   }
@@ -368,12 +366,12 @@ bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
     SetFileStatToData(cur_local, data_->mutable_local_compiler_stat());
   }
 
-  // When |local_compiler_path| == |real_compiler_path|,
+  // When |abs_local_compiler_path| == |abs_real_compiler_path|,
   // local_compiler_stat and real_compiler_stat should be the same.
-  // Otherwise, we take FileStat for real_compiler_path().
+  // Otherwise, we take FileStat for abs_real_compiler_path().
   FileStat cur_real(cur_local);
-  if (local_compiler_path() != real_compiler_path()) {
-    cur_real = FileStat(real_compiler_path());
+  if (abs_local_compiler_path() != abs_real_compiler_path()) {
+    cur_real = FileStat(abs_real_compiler_path());
   }
   if (cur_real != real_compiler_stat_) {
     LOG(INFO) << "real_compiler_stat_ is updated:"
@@ -460,6 +458,11 @@ bool CompilerInfo::DependsOnCwd(const std::string& cwd) const {
 std::string CompilerInfo::abs_local_compiler_path() const {
   return file::JoinPathRespectAbsolute(
       data_->cwd(), data_->local_compiler_path());
+}
+
+std::string CompilerInfo::abs_real_compiler_path() const {
+  return file::JoinPathRespectAbsolute(data_->cwd(),
+                                       data_->real_compiler_path());
 }
 
 const std::string& CompilerInfo::request_compiler_hash() const {

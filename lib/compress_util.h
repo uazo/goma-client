@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"

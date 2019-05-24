@@ -12,6 +12,8 @@ CompilerTypeSpecific* CompilerTypeSpecificCollection::Get(
   switch (type) {
     case CompilerFlagType::Unknown:
       return nullptr;
+    case CompilerFlagType::Rustc:
+      return &rustc_;
     case CompilerFlagType::Gcc:
       return &gcc_;
     case CompilerFlagType::Clexe:

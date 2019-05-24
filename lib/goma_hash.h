@@ -9,6 +9,7 @@
 #include <ostream>
 #include <string>
 
+#include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
 
 namespace devtools_goma {

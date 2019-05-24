@@ -278,9 +278,9 @@ ClangCompilerInfoBuilderHelper::ParseResourceOutput(
       // https://github.com/llvm-mirror/clang/blob/69f63a0cc21da9f587125760f10610146c8c47c3/lib/Driver/ToolChains/Gnu.cpp#L1747
 
       // The form of this line is:
-      // clang-format off
-      // "Selected multilib: <dir inside the GCC install with the chosen crtbegin.o>;<details of the ABI>"
-      // clang-format on
+      // "Selected multilib: <*1>;<*2>"
+      // *1: dir inside the GCC install with the chosen crtbegin.o.
+      // *2: details of the ABI.
 
       if (gcc_install.empty()) {
         LOG(ERROR) << "Expected to find a \"Selected GCC installation:\" line "

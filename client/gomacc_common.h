@@ -19,8 +19,6 @@ namespace devtools_goma {
 class CompilerFlags;
 class ExecReq;
 class ExecResp;
-class MultiExecReq;
-class MultiExecResp;
 
 // Returns the port where http server is running.
 // Returns -1 when compiler proxy is not ready.
@@ -72,11 +70,6 @@ class GomaClient {
   }
 
  private:
-#ifdef _WIN32
-  bool PrepareMultiExecRequest(MultiExecReq* req);
-  void OutputMultiExecResp(MultiExecResp* resp);
-#endif
-
   bool PrepareExecRequest(const CompilerFlags& flags, ExecReq* req);
   void OutputExecResp(ExecResp* resp);
 #ifndef _WIN32
@@ -93,7 +86,6 @@ class GomaClient {
   std::vector<std::string> envs_;
 #ifdef _WIN32
   std::vector<ScopedFd*> optional_files_;
-  std::unique_ptr<MultiExecResp> multi_exec_resp_;
   std::vector<std::pair<std::string, ScopedFd*>> rsp_files_;
 #endif
   std::unique_ptr<ExecResp> exec_resp_;

@@ -9,7 +9,7 @@ package devtools_goma;
 
 // CompilerInfoData is a serializable format of CompilerInfo.
 //
-// NEXT ID TO USE: 41
+// NEXT ID TO USE: 42
 message CompilerInfoData {
   // Type of file in ResouceInfo.
   enum ResourceType {
@@ -151,6 +151,8 @@ message CompilerInfoData {
     JavaCompilerInfoData java = 39;
     // Fake extension
     FakeCompilerInfoData fake = 40;
+    // Rustc extension
+    RustcCompilerInfoData rustc = 41;
   }
 
   reserved 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 26, 27, 31, 33;
@@ -208,6 +210,12 @@ message JavaCompilerInfoData {
 // FakeCompilerInfoData contains Fake related CompilerInfoData.
 // NEXT ID TO USE: 1
 message FakeCompilerInfoData {
+  // currently no extension
+}
+
+// RustcCompilerInfoData contains Rustc related CompilerInfoData.
+// NEXT ID TO USE: 1
+message RustcCompilerInfoData {
   // currently no extension
 }
 

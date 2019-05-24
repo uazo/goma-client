@@ -455,14 +455,4 @@ TEST_F(OpenSSLEngineTest, VerifyError) {
   EXPECT_FALSE(Communicate(s_ctx.get()));
 }
 
-TEST(OpenSSLContext, IsHostnameMatched) {
-  EXPECT_TRUE(
-      OpenSSLContext::IsHostnameMatched(
-          "clients5.google.com", "clients5.google.com"));
-  EXPECT_TRUE(OpenSSLContext::IsHostnameMatched("foo.a.com", "*.a.com"));
-  EXPECT_FALSE(OpenSSLContext::IsHostnameMatched("bar.foo.a.com", "*.a.com"));
-  EXPECT_TRUE(OpenSSLContext::IsHostnameMatched("foo.com", "f*.com"));
-  EXPECT_FALSE(OpenSSLContext::IsHostnameMatched("bar.com", "f*.com"));
-}
-
 }  // namespace devtools_goma

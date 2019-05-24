@@ -125,23 +125,6 @@ GOMA_DEFINE_bool(FALLBACK_CONFTEST, true,
                  "Force local fallback for conftest source.");
 GOMA_DEFINE_string(IMPLICIT_INPUT_FILES, "",
                    "Comma separated list of files to send to goma.");
-#ifdef _WIN32
-// TODO: I am going to deprecate the multiple inputs on Windows
-//                    in the future. (b/129375169).
-//
-// devenv or msbuild would run cl.exe with multiple inputs.
-// gomacc emits ExecReq per input file.
-GOMA_DEFINE_bool(FAN_OUT_EXEC_REQ,
-                 // Change the default to false to disable multiple inputs
-                 // support. The user who need the feature notices before we
-                 // actually deprecate this.
-                 false,
-                 "(deprecated) "
-                 "If true, gomacc do the fan-out compile request per "
-                 "input filenames. "
-                 "In this mode, verify flags are disabled.");
-#endif
-
 GOMA_DEFINE_bool(START_COMPILER_PROXY, false,
                  "If true, start compiler proxy when gomacc cannot find it.");
 #ifndef _WIN32

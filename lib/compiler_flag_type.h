@@ -17,6 +17,7 @@ enum class CompilerFlagType {
   ClangTidy,  // clang_tidy
   Javac,      // javac
   Java,       // java
+  Rustc,      // rustc
 };
 
 // Add operator<< for glog and gtest.

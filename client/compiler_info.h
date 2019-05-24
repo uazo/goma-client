@@ -30,6 +30,7 @@ enum class CompilerInfoType {
   Cxx,
   Javac,
   Java,
+  Rustc,
   Fake,
 };
 
@@ -41,6 +42,8 @@ inline std::ostream& operator<<(std::ostream& os, CompilerInfoType type) {
       return os << "javac";
     case CompilerInfoType::Java:
       return os << "java";
+    case CompilerInfoType::Rustc:
+      return os << "rustc";
     case CompilerInfoType::Fake:
       return os << "fake";
   }
@@ -112,9 +115,9 @@ class CompilerInfo {
 
   std::string DebugString() const;
 
-  // Returns true if |local_compiler_path| is up to date.
-  // i.e. FileStat of |local_compiler_path| matches |local_compiler_stat|.
-  bool IsUpToDate(const std::string& local_compiler_path) const;
+  // Returns true if |abs_local_compiler_path| is up to date.
+  // i.e. FileStat of |abs_local_compiler_path| matches |local_compiler_stat|.
+  bool IsUpToDate(const std::string& abs_local_compiler_path) const;
 
   // Updates FileStat to the current FileStat when hash is matched.
   // Returns false if hash doesn't match.
@@ -142,7 +145,7 @@ class CompilerInfo {
     return data_->local_compiler_path();
   }
   // Absolute path of local_compiler_path. Joined with cwd if
-  // local_compiler_path() is relative.
+  // local_compiler_path() is relative and resolve.
   std::string abs_local_compiler_path() const;
   // See field's comment below.
   const std::string& local_compiler_hash() const {
@@ -151,12 +154,13 @@ class CompilerInfo {
 
   // See field's comment below.
   const FileStat& real_compiler_stat() const { return real_compiler_stat_; }
-  // The path to real compiler.
-  // For the difference between real compiler and local compiler, see the field
-  // comment of this class.
+  // See field's comment below.
   const std::string& real_compiler_path() const {
     return data_->real_compiler_path();
   }
+  // Absolute path of real_compiler_path. Joined with cwd if
+  // real_compiler_path() is relative and resolve.
+  std::string abs_real_compiler_path() const;
   // See field's comment below.
   const std::string& real_compiler_hash() const { return data_->hash(); }
 

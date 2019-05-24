@@ -72,7 +72,6 @@ group("deps_no_options") {
     #  deps += [ "//third_party/instrumented_libraries:deps" ]
     #}
     if (use_custom_libcxx) {
-      public_deps += [ "//buildtools/third_party/libc++" ]
       data += [ "$root_out_dir/libc++.so" ]
     }
 

@@ -79,15 +79,6 @@ bool BuildGomaccArgv(int orig_argc,
                      std::string* local_command_path);
 
 #ifdef _WIN32
-// Used for GOMA_FAN_OUT_EXEC_REQ=true (under devenv or msbuild).
-
-// Fans out "args" for each input filename, and sets command line args
-// for each input filename in "args_no_input".
-// Note that "args_no_input" doesn't have argv0.
-void FanOutArgsByInput(const std::vector<std::string>& args,
-                       const std::set<std::string>& input_filenames,
-                       std::vector<std::string>* args_no_input);
-
 // Creates command line per input file as
 //   args_no_input...  input_filename
 // The returned value is expected to be written in rsp_file, and

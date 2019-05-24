@@ -492,35 +492,6 @@ void CompilerProxyHttpHandler::HandleHttpRequest(
       service_.SetCompilerProxyIdPrefix(sss.str());
     }
   }
-#ifdef _WIN32
-  if (path == "/me") {
-    if (!http_server_request->CheckCredential()) {
-      SendErrorMessage(http_server_request, 401, "Unauthorized");
-      return;
-    }
-    MultiRpcController* rpc =
-        new MultiRpcController(service_.wm(), http_server_request);
-    MultiExecReq multi_exec;
-    if (!rpc->ParseRequest(&multi_exec)) {
-      delete rpc;
-      SendErrorMessage(http_server_request, 404, "Bad request");
-      return;
-    }
-    for (int i = 0; i < multi_exec.req_size(); ++i) {
-      if (ShouldTrace()) {
-        VLOG(1) << "Setting Trace on this request";
-        multi_exec.mutable_req(i)->set_trace(true);
-      } else {
-        multi_exec.mutable_req(i)->set_trace(false);
-      }
-      service_.Exec(
-          rpc->rpc(i), multi_exec.req(i), rpc->mutable_resp(i),
-          NewCallback(this, &CompilerProxyHttpHandler::ExecDoneInMulti, rpc,
-                      i));
-    }
-    return;
-  }
-#endif
   if (path == "/e") {
     if (!http_server_request->CheckCredential()) {
       SendErrorMessage(http_server_request, 401, "Unauthorized");
@@ -1281,15 +1252,6 @@ int CompilerProxyHttpHandler::HandleCounterRequest(const HttpServerRequest&,
   ss << json.toStyledString() << std::endl;
   *response = ss.str();
   return 200;
-}
-#endif
-
-#ifdef _WIN32
-void CompilerProxyHttpHandler::ExecDoneInMulti(MultiRpcController* rpc, int i) {
-  if (rpc->ExecDone(i)) {
-    std::unique_ptr<MultiRpcController> rpc_autodeleter(rpc);
-    rpc->SendReply();
-  }
 }
 #endif
 

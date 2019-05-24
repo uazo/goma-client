@@ -651,6 +651,7 @@ void ThreadpoolHttpServer::RequestFromSocket::DoWrite() {
     if (socket_descriptor_->NeedRetry())
       return;
     socket_descriptor_->StopWrite();
+    LOG(INFO) << "Call ThreadpoolHttpServer::RequestFromSocket::Finish";
     wm_->RunClosureInThread(
         FROM_HERE, thread_id_,
         NewCallback(this, &ThreadpoolHttpServer::RequestFromSocket::Finish),
@@ -678,6 +679,8 @@ void ThreadpoolHttpServer::RequestFromSocket::DoTimeout() {
   socket_descriptor_->StopRead();
   socket_descriptor_->StopWrite();
   timed_out_ = true;
+  LOG(WARNING)
+      << "Call ThreadpoolHttpServer::RequestFromSocket::Finish by timeout";
   wm_->RunClosureInThread(
       FROM_HERE, thread_id_,
       NewCallback(this, &ThreadpoolHttpServer::RequestFromSocket::Finish),
@@ -714,6 +717,8 @@ void ThreadpoolHttpServer::RequestFromSocket::DoClosed() {
   }
 
   if (!has_inflight_handle_) {
+    LOG(WARNING)
+        << "Call ThreadpoolHttpServer::RequestFromSocket::Finish by closed";
     wm_->RunClosureInThread(
         FROM_HERE, thread_id_,
         NewCallback(this, &ThreadpoolHttpServer::RequestFromSocket::Finish),
@@ -759,6 +764,8 @@ void ThreadpoolHttpServer::RequestFromSocket::DoReadEOF() {
                  << " fd=" << socket_descriptor_->fd();
   }
   socket_descriptor_->StopRead();
+  LOG(INFO)
+      << "Call ThreadpoolHttpServer::RequestFromSocket::Finish by ReadEOF";
   wm_->RunClosureInThread(
       FROM_HERE, thread_id_,
       NewCallback(this, &ThreadpoolHttpServer::RequestFromSocket::Finish),
@@ -774,6 +781,8 @@ void ThreadpoolHttpServer::RequestFromSocket::Finish() {
 void ThreadpoolHttpServer::RequestFromSocket::SendReply(
     const std::string& response) {
   if (closed_) {  // No need to reply response for the closed socket.
+    LOG(WARNING)
+        << "Call ThreadpoolHttpServer::RequestFromSocket::Finish by closed";
     wm_->RunClosureInThread(
         FROM_HERE, thread_id_,
         NewCallback(this, &ThreadpoolHttpServer::RequestFromSocket::Finish),

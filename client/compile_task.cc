@@ -2722,8 +2722,10 @@ void CompileTask::FillCompilerInfoDone(
   MayUpdateSubprogramSpec();
   UpdateExpandedArgs();
   if (service_->send_expected_outputs()) {
-    SetExpectedOutputs();
+    SetExpectedOutputs(req_.get(), *flags_);
   }
+  SetCompilerResources();
+
   ModifyRequestArgs();
   ModifyRequestEnvs();
   UpdateCommandSpec();
@@ -2951,62 +2953,78 @@ void CompileTask::UpdateExpandedArgs() {
   }
 }
 
-void CompileTask::SetExpectedOutputs() {
-  for (const auto& file : flags_->output_files()) {
-    req_->add_expected_output_files(file);
+void CompileTask::SetExpectedOutputs(ExecReq* req,
+                                     const CompilerFlags& flags) const {
+  for (const auto& file : flags.output_files()) {
+    req->add_expected_output_files(file);
   }
-  for (const auto& dir : flags_->output_dirs()) {
-    req_->add_expected_output_dirs(dir);
+  for (const auto& dir : flags.output_dirs()) {
+    req->add_expected_output_dirs(dir);
+  }
+}
+
+void CompileTask::SetCompilerResources() {
+  DCHECK(compiler_info_state_.get() != nullptr);
+  const bool send_compiler_binary_as_input =
+      service_->send_compiler_binary_as_input();
+  const CompilerInfo& compiler_info = compiler_info_state_.get()->info();
+  bool need_set_toolchain_specs = false;
+  for (const auto& r : compiler_info.resource()) {
+    const std::string& path = r.name;
+    if (r.type == CompilerInfoData::EXECUTABLE_BINARY) {
+      if (!send_compiler_binary_as_input) {
+        continue;
+      }
+      need_set_toolchain_specs = true;
+      if (!r.symlink_path.empty()) {
+        // don't add symlink as input.
+        continue;
+      }
+    }
+    LOG(INFO) << trace_id_ << " input automatically added: " << path;
+    req_->add_input()->set_filename(path);
+  }
+
+  // Set toolchain information (if enabled and found)
+  if (need_set_toolchain_specs) {
+    LOG(INFO) << trace_id_ << " input contains toolchain";
+    SetToolchainSpecs(req_.get(), compiler_info);
+  }
+}
+
+void CompileTask::SetToolchainSpecs(ExecReq* req,
+                                    const CompilerInfo& compiler_info) const {
+  req->set_toolchain_included(true);
+
+  for (const auto& r : compiler_info.resource()) {
+    if (r.type != CompilerInfoData::EXECUTABLE_BINARY) {
+      continue;
+    }
+
+    // Also set toolchains
+    ToolchainSpec* toolchain_spec = req->add_toolchain_specs();
+    toolchain_spec->set_path(r.name);
+    if (r.symlink_path.empty()) {
+      // non symlink case
+      toolchain_spec->set_hash(r.hash);
+      toolchain_spec->set_size(r.file_stat.size);
+      toolchain_spec->set_is_executable(r.is_executable);
+      LOG(INFO) << trace_id_
+                << " toolchain spec automatically added: " << r.name;
+    } else {
+      // symlink case
+      toolchain_spec->set_symlink_path(r.symlink_path);
+      // hash, file_stat, and is_executable are empty/default value.
+      DCHECK(r.hash.empty());
+      DCHECK(!r.file_stat.IsValid());
+      DCHECK(!r.is_executable);
+    }
   }
 }
 
 void CompileTask::ModifyRequestArgs() {
   DCHECK(compiler_info_state_.get() != nullptr);
   const CompilerInfo& compiler_info = compiler_info_state_.get()->info();
-  bool found_executable_binary = false;
-  for (const auto& r : compiler_info.resource()) {
-    if (r.type == CompilerInfoData::EXECUTABLE_BINARY) {
-      found_executable_binary = true;
-      continue;
-    }
-    const std::string& path = r.name;
-    req_->add_input()->set_filename(path);
-    LOG(INFO) << trace_id_ << " input automatically added: " << path;
-  }
-
-  // Set toolchain information (if enabled and found)
-  if (service_->send_compiler_binary_as_input() && found_executable_binary) {
-    LOG(INFO) << trace_id_ << " input contains toolchain";
-    req_->set_toolchain_included(true);
-
-    for (const auto& r : compiler_info.resource()) {
-      if (r.type != CompilerInfoData::EXECUTABLE_BINARY) {
-        continue;
-      }
-
-      // Also set toolchains
-      ToolchainSpec* toolchain_spec = req_->add_toolchain_specs();
-      toolchain_spec->set_path(r.name);
-      if (r.symlink_path.empty()) {
-        // non symlink case
-        toolchain_spec->set_hash(r.hash);
-        toolchain_spec->set_size(r.file_stat.size);
-        toolchain_spec->set_is_executable(r.is_executable);
-
-        // Add it as an input to send to the server.
-        req_->add_input()->set_filename(r.name);
-        LOG(INFO) << trace_id_ << " input automatically added: " << r.name;
-      } else {
-        // symlink case
-        toolchain_spec->set_symlink_path(r.symlink_path);
-        // hash, file_stat, and is_executable are empty/default value.
-        DCHECK(r.hash.empty());
-        DCHECK(!r.file_stat.IsValid());
-        DCHECK(!r.is_executable);
-      }
-    }
-  }
-
   bool modified_args = false;
   bool use_expanded_args = (req_->expanded_arg_size() > 0);
   for (const auto& flag : compiler_info.additional_flags()) {
@@ -4384,6 +4402,12 @@ std::string CompileTask::DumpRequest() const {
     FixCommandSpec(compiler_info, *flags, command_spec);
     FixSystemLibraryPath(system_library_paths_, command_spec);
     MayFixSubprogramSpec(req.mutable_subprogram());
+    if (service_->send_compiler_binary_as_input()) {
+      SetToolchainSpecs(&req, compiler_info);
+    }
+    if (service_->send_expected_outputs()) {
+      SetExpectedOutputs(&req, *flags);
+    }
   } else {
     // If compiler_info_state_ is nullptr, it would be should_fallback_.
     LOG_IF(ERROR, !should_fallback_)
@@ -4391,6 +4415,7 @@ std::string CompileTask::DumpRequest() const {
     filename = "local_exec_req.data";
   }
 
+  // stats_ contains modified version of args, env.
   for (const auto& arg : stats_->arg())
     req.add_arg(arg);
   for (const auto& env : stats_->env())
@@ -4415,6 +4440,9 @@ std::string CompileTask::DumpRequest() const {
   }
 #endif
 
+  // required_files_ contains all input files used in exec req,
+  // including compiler resources, toolchain binaries when
+  // send_compiler_binary_as_input is true.
   for (const auto& input_filename : required_files_) {
     ExecReq_Input* input = req.add_input();
     input->set_filename(input_filename);

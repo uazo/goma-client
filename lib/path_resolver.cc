@@ -22,15 +22,6 @@
 
 namespace {
 
-void trim(std::string* s) {
-  s->erase(s->begin(),
-           std::find_if(s->begin(), s->end(),
-                        std::not1(std::ptr_fun<int, int>(std::isspace))));
-  s->erase(std::find_if(s->rbegin(), s->rend(),
-                        std::not1(std::ptr_fun<int, int>(std::isspace))).base(),
-                        s->end());
-}
-
 // Get the separator position where the UNC/drive letters end and the path
 // part begins.
 std::string::size_type GetDrivePrefixPosition(absl::string_view path) {
@@ -120,10 +111,13 @@ void PathResolver::PlatformConvertToString(
     PathResolver::PathSeparatorType sep_type,
     PathResolver::PathCaseType case_type,
     std::string* OUTPUT) {
+  // TODO: remove this check if we confirm this is removable.
+  DCHECK(!absl::EndsWith(path, " "));
+  DCHECK(!absl::StartsWith(path, " "));
+
   // TODO: use Chrome base FilePath object, which has everything
   //                  we need and is much better than the hack below.
   *OUTPUT = path;
-  trim(OUTPUT);
 
   if (sep_type == PathResolver::kWin32PathSep) {
     std::replace(OUTPUT->begin(), OUTPUT->end(), '/', '\\');

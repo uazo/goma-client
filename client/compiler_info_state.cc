@@ -13,6 +13,7 @@
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
 #include "java/java_compiler_info.h"
+#include "rust/rustc_compiler_info.h"
 
 namespace devtools_goma {
 
@@ -28,6 +29,8 @@ std::unique_ptr<CompilerInfo> CompilerInfoState::MakeCompilerInfo(
       return absl::make_unique<JavaCompilerInfo>(std::move(data));
     case CompilerInfoData::kFake:
       return absl::make_unique<FakeCompilerInfo>(std::move(data));
+    case CompilerInfoData::kRustc:
+      return absl::make_unique<RustcCompilerInfo>(std::move(data));
     case CompilerInfoData::LANGUAGE_EXTENSION_NOT_SET:
       LOG(FATAL) << "CompilerInfoData does not have any language extension";
       // UNREACHABLE.

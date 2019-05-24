@@ -295,12 +295,6 @@ message ExecReq {
   reserved 99;
 }
 
-message MultiExecReq {
-  repeated ExecReq req = 1;
-
-  optional RequesterInfo requester_info = 10;
-}
-
 message ExecResp {
   enum ExecError {
     OK = 0;
@@ -371,13 +365,6 @@ message ExecResp {
 
   // 99 was used in experimental phase.
   reserved 99;
-}
-
-message MultiExecResp {
-  repeated group Response = 1 {
-    optional int32 response_code = 2;
-    optional ExecResp resp = 3;
-  }
 }
 
 // FileService Interface

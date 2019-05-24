@@ -51,8 +51,6 @@ class GomaStats;
 class HttpClient;
 class HttpRPC;
 class LogServiceClient;
-class MultiExecReq;
-class MultiExecResp;
 class MultiFileStore;
 class RpcController;
 

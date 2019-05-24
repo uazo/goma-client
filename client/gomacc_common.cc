@@ -437,26 +437,11 @@ GomaClient::~GomaClient() {
 }
 
 void GomaClient::OutputResp() {
-#ifdef _WIN32
-  if (multi_exec_resp_.get()) {
-    OutputMultiExecResp(multi_exec_resp_.get());
-    return;
-  }
-#endif
   CHECK(exec_resp_.get() != nullptr);
   OutputExecResp(exec_resp_.get());
 }
 
 int GomaClient::retval() const {
-#ifdef _WIN32
-  if (multi_exec_resp_.get()) {
-    for (const auto& it : multi_exec_resp_->response()) {
-      if (it.resp().result().exit_status() != 0)
-        return it.resp().result().exit_status();
-    }
-    return 0;
-  }
-#endif
   CHECK(exec_resp_.get());
   return exec_resp_->result().exit_status();
 }
@@ -464,30 +449,15 @@ int GomaClient::retval() const {
 // Call IPC Request. Return IPC_OK if successful.
 GomaClient::Result GomaClient::CallIPCAsync() {
   std::string request_path;
-  std::unique_ptr<google::protobuf::Message> req;
-
-#ifdef _WIN32
-  if (FLAGS_FAN_OUT_EXEC_REQ && flags_->input_filenames().size() > 1) {
-    std::unique_ptr<MultiExecReq> multi_exec_req(new MultiExecReq);
-    request_path = "/me";
-    PrepareMultiExecRequest(multi_exec_req.get());
-    req = std::move(multi_exec_req);
-    multi_exec_resp_.reset(new MultiExecResp);
-  } else {
-#endif
-    std::unique_ptr<ExecReq> exec_req(new ExecReq);
-    request_path = "/e";
-    PrepareExecRequest(*flags_, exec_req.get());
-    req = std::move(exec_req);
-    exec_resp_ = absl::make_unique<ExecResp>();
-#ifdef _WIN32
-  }
-#endif
+  std::unique_ptr<ExecReq> exec_req = absl::make_unique<ExecReq>();
+  request_path = "/e";
+  PrepareExecRequest(*flags_, exec_req.get());
+  exec_resp_ = absl::make_unique<ExecResp>();
   if (FLAGS_DUMP_REQUEST) {
-    std::cerr << "GOMA:" << name_ << ": " << req->DebugString();
+    std::cerr << "GOMA:" << name_ << ": " << exec_req->DebugString();
   }
   status_ = GomaIPC::Status();
-  ipc_chan_ = goma_ipc_.CallAsync(request_path, req.get(), &status_);
+  ipc_chan_ = goma_ipc_.CallAsync(request_path, exec_req.get(), &status_);
   if (ipc_chan_ == nullptr) {
     if (status_.connect_success == true) {
       if (status_.http_return_code == 401) {
@@ -507,7 +477,7 @@ GomaClient::Result GomaClient::CallIPCAsync() {
     // compiler proxy and retry the request.
     if (StartCompilerProxy()) {
       status_ = GomaIPC::Status();
-      ipc_chan_ = goma_ipc_.CallAsync(request_path, req.get(), &status_);
+      ipc_chan_ = goma_ipc_.CallAsync(request_path, exec_req.get(), &status_);
       if (ipc_chan_ != nullptr) {
         // retry after starting compiler_proxy was successful
         if (FLAGS_DUMP) {
@@ -538,15 +508,8 @@ GomaClient::Result GomaClient::CallIPCAsync() {
 
 GomaClient::Result GomaClient::WaitIPC() {
   DCHECK(ipc_chan_ != nullptr);
-  google::protobuf::Message* resp = nullptr;
-#ifdef _WIN32
-  if (multi_exec_resp_.get())
-    resp = multi_exec_resp_.get();
-#endif
-  if (exec_resp_.get())
-    resp = exec_resp_.get();
 
-  if (goma_ipc_.Wait(std::move(ipc_chan_), resp, &status_) != OK)
+  if (goma_ipc_.Wait(std::move(ipc_chan_), exec_resp_.get(), &status_) != OK)
     return IPC_FAIL;
 
   absl::Duration req_send_time = status_.req_send_time;
@@ -555,7 +518,7 @@ GomaClient::Result GomaClient::WaitIPC() {
 
   SimpleTimer timer;
   if (FLAGS_DUMP_RESPONSE) {
-    std::cerr << "GOMA:" << name_ << ": " << resp->DebugString();
+    std::cerr << "GOMA:" << name_ << ": " << exec_resp_->DebugString();
   }
   if (FLAGS_OUTPUT_EXEC_RESP) {
     OutputResp();
@@ -611,59 +574,6 @@ GomaClient::Result GomaClient::CallIPC() {
     return r;
   return WaitIPC();
 }
-
-#ifdef _WIN32
-bool GomaClient::PrepareMultiExecRequest(MultiExecReq* req) {
-  const std::string tmpdir = devtools_goma::GetGomaTmpDir();
-  pid_t pid = Getpid();
-
-  std::set<std::string> input_filenames(flags_->input_filenames().begin(),
-                                        flags_->input_filenames().end());
-  std::vector<std::string> args_no_input;  // args other than input filenames.
-  // Input filenames may be in @rsp file, so scan expanded_args here.
-  const std::vector<std::string>& expanded_args =
-      (flags_->expanded_args().empty() ? flags_->args()
-                                       : flags_->expanded_args());
-  FanOutArgsByInput(expanded_args, input_filenames, &args_no_input);
-
-  int nth = 0;
-  for (std::set<std::string>::const_iterator iter = input_filenames.begin();
-       iter != input_filenames.end(); ++iter, ++nth) {
-    const std::string& input_filename = *iter;
-    const std::string cmdline =
-        BuildArgsForInput(args_no_input, input_filename);
-    std::stringstream fname;
-    fname << file::Basename(input_filename)
-          << "." << pid << "." << nth << ".rsp";
-    const std::string rsp_filename = file::JoinPath(tmpdir, fname.str());
-    if (!WriteStringToFile(cmdline, rsp_filename)) {
-      LOG(ERROR) << "GOMA: Failed to create " << rsp_filename;
-      return false;
-    }
-    // Keeps handle open, so that the rsp_file are not removed by tmp cleaner
-    // while gomacc is running.
-    rsp_files_.emplace_back(rsp_filename,
-                            new ScopedFd(ScopedFd::OpenForRead(rsp_filename)));
-    std::vector<std::string> args_of_input;
-    args_of_input.push_back(flags_->args()[0]);
-    args_of_input.push_back("@" + rsp_filename);
-    std::unique_ptr<CompilerFlags> flags_of_input(
-        CompilerFlagsParser::MustNew(args_of_input, "."));
-    if (!PrepareExecRequest(*flags_of_input, req->add_req())) {
-      LOG(ERROR) << "GOMA: failed to create ExecReq for " << input_filename;
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void GomaClient::OutputMultiExecResp(MultiExecResp* resp) {
-  for (auto& exec_resp : *resp->mutable_response()) {
-    OutputExecResp(exec_resp.mutable_resp());
-  }
-}
-#endif
 
 bool GomaClient::PrepareExecRequest(const CompilerFlags& flags, ExecReq* req) {
   req->mutable_command_spec()->set_name(

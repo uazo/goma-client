@@ -43,7 +43,7 @@ std::string FindLibInternal(const std::string& cwd,
     return std::string();
   }
   std::string path = file::JoinPathRespectAbsolute(dir, lib_filename);
-  if (access(file::JoinPathRespectAbsolute(cwd, path).c_str(), X_OK) == 0) {
+  if (access(file::JoinPathRespectAbsolute(cwd, path).c_str(), R_OK) == 0) {
     return path;
   }
   return std::string();
@@ -138,6 +138,7 @@ bool ElfDepParser::ParseReadElf(absl::string_view content,
 
   static constexpr absl::string_view kSharedLibrary = "Shared library:";
   static constexpr absl::string_view kLibraryRPath = "Library rpath:";
+  static constexpr absl::string_view kLibraryRunPath = "Library runpath:";
 
   for (absl::string_view line :
        absl::StrSplit(content, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
@@ -148,7 +149,8 @@ bool ElfDepParser::ParseReadElf(absl::string_view content,
         return false;
       }
       libs->push_back(std::move(lib));
-    } else if (absl::StrContains(line, kLibraryRPath)) {
+    } else if (absl::StrContains(line, kLibraryRPath) ||
+               absl::StrContains(line, kLibraryRunPath)) {
       absl::string_view rpath = GetContentInBrackets(line);
       if (rpath.empty()) {
         LOG(ERROR) << "unexpected rpath line found: " << line;

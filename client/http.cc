@@ -79,8 +79,6 @@ constexpr absl::Duration kRampUpDuration = absl::Minutes(10);
 
 constexpr int kMaxConnectionFailure = 5;
 
-constexpr int kDefaultErrorThresholdPercent = 30;
-
 template <typename T>
 Json::Value VectorToJson(const std::vector<T>& vec) {
   Json::Value v;
@@ -155,18 +153,6 @@ absl::Duration RandomizeBackoff(absl::Duration backoff) {
 }
 
 }  // namespace
-
-HttpClient::Options::Options()
-    : dest_port(0), proxy_port(0),
-      capture_response_header(false),
-      use_ssl(false),
-      socket_read_timeout(absl::Seconds(1)),
-      min_retry_backoff(absl::Milliseconds(500)),
-      max_retry_backoff(absl::Seconds(5)),
-      fail_fast(false),
-      network_error_threshold_percent(kDefaultErrorThresholdPercent),
-      allow_throttle(true), reuse_connection(true) {
-}
 
 bool HttpClient::Options::InitFromURL(absl::string_view url) {
   URL u;

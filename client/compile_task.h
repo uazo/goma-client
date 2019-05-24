@@ -251,7 +251,9 @@ class CompileTask {
   bool MakeWeakRelativeInArgv();
 #endif
   void UpdateExpandedArgs();
-  void SetExpectedOutputs();
+  void SetExpectedOutputs(ExecReq* req, const CompilerFlags& flags) const;
+  void SetCompilerResources();
+  void SetToolchainSpecs(ExecReq* req, const CompilerInfo& compiler_info) const;
   void ModifyRequestArgs();
   void ModifyRequestEnvs();
   void UpdateCommandSpec();

@@ -38,6 +38,7 @@ MSVC_POP_WARNING()
 #include "openssl/crypto.h"
 #include "openssl/err.h"
 #include "openssl/ssl.h"
+#include "openssl/x509.h"
 #include "openssl/x509v3.h"
 #include "openssl_engine_helper.h"
 #include "path.h"
@@ -586,140 +587,6 @@ ScopedX509CRL ParseCrl(const std::string& crl_str) {
   return ScopedX509CRL(d2i_X509_CRL(nullptr, &p, crl_str.size()));
 }
 
-std::string GetSubjectCommonName(X509* x509) {
-  static const size_t kMaxHostname = 1024;
-
-  X509_NAME* subject = X509_get_subject_name(x509);
-  char buf[kMaxHostname];
-  if (X509_NAME_get_text_by_NID(subject, NID_commonName, buf, sizeof(buf))
-      != -1) {
-    return buf;
-  }
-  return "";
-}
-
-std::vector<std::string> GetAltDNSNames(X509* x509) {
-  int index = X509_get_ext_by_NID(x509, NID_subject_alt_name, -1);
-  if (index < 0) {
-    LOG(INFO) << "cert has no subject alt name";
-    return std::vector<std::string>();
-  }
-  X509_EXTENSION* subject_alt_name_extension = X509_get_ext(x509, index);
-  if (!subject_alt_name_extension) {
-    LOG(INFO) << "cert has no subject alt name extension";
-    return std::vector<std::string>();
-  }
-
-  GENERAL_NAMES* subject_alt_names = reinterpret_cast<GENERAL_NAMES*>(
-      X509V3_EXT_d2i(subject_alt_name_extension));
-  if (!subject_alt_names) {
-    LOG(INFO) << "unable to get subject alt name extension";
-    return std::vector<std::string>();
-  }
-  VLOG(1) << "subject alt names=" << sk_GENERAL_NAME_num(subject_alt_names);
-
-  std::vector<std::string> names;
-  for (size_t i = 0; i < sk_GENERAL_NAME_num(subject_alt_names); ++i) {
-    GENERAL_NAME* subject_alt_name =
-        sk_GENERAL_NAME_value(subject_alt_names, i);
-    switch (subject_alt_name->type) {
-      case GEN_DNS:
-        {
-          unsigned char* dns_name =
-              ASN1_STRING_data(subject_alt_name->d.dNSName);
-          if (!dns_name)
-            continue;
-          int len = ASN1_STRING_length(subject_alt_name->d.dNSName);
-          std::string name =
-              std::string(reinterpret_cast<char*>(dns_name), len);
-          VLOG(1) << "subject alt name[" << i << "]=" << name;
-          names.push_back(name);
-        }
-        break;
-
-      case GEN_IPADD:
-        VLOG(1) << "ignore ip address";
-        break;
-
-      default:
-        LOG(INFO) << "unsupported alt name type:" << subject_alt_name->type;
-        break;
-    }
-  }
-  sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
-  return names;
-}
-
-bool MatchAltIPAddress(X509* x509, int af, void* ap) {
-  int index = X509_get_ext_by_NID(x509, NID_subject_alt_name, -1);
-  if (index < 0) {
-    LOG(INFO) << "cert has no subject alt name";
-    return false;
-  }
-  X509_EXTENSION* subject_alt_name_extension = X509_get_ext(x509, index);
-  if (!subject_alt_name_extension) {
-    LOG(INFO) << "cert has no subject alt name extension";
-    return false;
-  }
-
-  GENERAL_NAMES* subject_alt_names = reinterpret_cast<GENERAL_NAMES*>(
-      X509V3_EXT_d2i(subject_alt_name_extension));
-  if (!subject_alt_names) {
-    LOG(INFO) << "unable to get subject alt name extension";
-    return false;
-  }
-  VLOG(1) << "subject alt names=" << sk_GENERAL_NAME_num(subject_alt_names);
-
-  bool matched = false;
-  for (size_t i = 0; i < sk_GENERAL_NAME_num(subject_alt_names); ++i) {
-    GENERAL_NAME* subject_alt_name =
-        sk_GENERAL_NAME_value(subject_alt_names, i);
-    switch (subject_alt_name->type) {
-      case GEN_DNS:
-        VLOG(1) << "ignore dns name";
-        break;
-
-      case GEN_IPADD:
-        {
-          // ASN1_OCTET_STRING *iPAddress;
-          unsigned char* ipaddr =
-              ASN1_STRING_data(subject_alt_name->d.iPAddress);
-          if (!ipaddr)
-            continue;
-          int len = ASN1_STRING_length(subject_alt_name->d.iPAddress);
-          switch (len) {
-            case 4:
-              if (af == AF_INET) {
-                if (memcmp(ipaddr, ap, len) == 0) {
-                  matched = true;
-                }
-              }
-              break;
-            case 16:
-              if (af == AF_INET6) {
-                if (memcmp(ipaddr, ap, len) == 0) {
-                  matched = true;
-                }
-              }
-              break;
-            default:
-              LOG(WARNING) << "invalid IP address: length=" << len;
-          }
-        }
-        break;
-
-      default:
-        LOG(INFO) << "unsupported alt name type:" << subject_alt_name->type;
-        break;
-    }
-    if (matched) {
-      break;
-    }
-  }
-  sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
-  return matched;
-}
-
 // URL should be http (not https).
 void DownloadCrl(
     ScopedSocket* sock,
@@ -1152,52 +1019,30 @@ bool OpenSSLContext::IsRevoked(STACK_OF(X509)* x509s) {
 }
 
 /* static */
-bool OpenSSLContext::IsHostnameMatched(
-    absl::string_view hostname, absl::string_view pattern) {
-  absl::string_view::size_type pos = pattern.find("*");
-  if (pos == absl::string_view::npos && pattern == hostname) {
-    return true;
-  }
-
-  absl::string_view prefix = pattern.substr(0, pos);
-  absl::string_view suffix = pattern.substr(pos + 1);  // skip "*".
-  VLOG(1) << "prefix=" << prefix;
-  VLOG(1) << "suffix=" << suffix;
-  if (!prefix.empty() && !absl::StartsWith(hostname, prefix)) {
-    return false;
-  }
-  if (!suffix.empty() && !absl::EndsWith(hostname, suffix)) {
-    return false;
-  }
-  absl::string_view wildcard_part = hostname.substr(
-      prefix.length(),
-      hostname.length() - prefix.length() - suffix.length());
-  if (wildcard_part.find(".") != absl::string_view::npos) {
-    return false;
-  }
-  return true;
-}
-
 bool OpenSSLContext::IsValidServerIdentity(X509* cert) {
   AUTOLOCK(lock, &mu_);
-  struct in_addr in4;
+  uint8_t in4[4];
   if (inet_pton(AF_INET, hostname_.c_str(), &in4) == 1) {
     // hostname is IPv4 addr.
-    if (MatchAltIPAddress(cert, AF_INET, &in4)) {
+    int status = X509_check_ip(cert, in4, sizeof(in4),
+                               X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT);
+    if (status == 1) {
       LOG(INFO) << "ctx:" << this << ": Hostname matches with IPv4 address:"
                 << " hostname=" << hostname_;
       return true;
     }
     LOG(INFO) << "ctx:" << this
-              <<  ": Hostname(IPv4) didn't match with certificate:"
-              << " hostname=" << hostname_;
+              << ": Hostname(IPv4) didn't match with certificate:"
+              << " status=" << status << " hostname=" << hostname_;
     return false;
   }
 
-  struct in6_addr in6;
+  uint8_t in6[16];
   if (inet_pton(AF_INET6, hostname_.c_str(), &in6) == 1) {
     // hostname is IPv6 addr.
-    if (MatchAltIPAddress(cert, AF_INET6, &in6)) {
+    int status = X509_check_ip(cert, in6, sizeof(in6),
+                               X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT);
+    if (status == 1) {
       LOG(INFO) << "ctx:" << this
                 << ": Hostname matches with IPv6 address:"
                 << " hostname=" << hostname_;
@@ -1205,41 +1050,24 @@ bool OpenSSLContext::IsValidServerIdentity(X509* cert) {
     }
     LOG(INFO) << "ctx:" << this
               << ": Hostname(IPv6) didn't match with certificate:"
-              << " hostname=" << hostname_;
+              << " status=" << status << " hostname=" << hostname_;
     return false;
   }
 
-  const std::vector<std::string>& sans = GetAltDNSNames(cert);
-  if (sans.empty()) {
-    // Subject common name is used only when dNSName is not available.
-    //
-    // See: http://tools.ietf.org/html/rfc2818#section-3.1
-    // > If a subjectAltName extension of type dNSName is present, that MUST
-    // > be used as the identity. Otherwise, the (most specific) Common Name
-    // > field in the Subject field of the certificate MUST be used.
-    const std::string& cn = GetSubjectCommonName(cert);
-    if (OpenSSLContext::IsHostnameMatched(hostname_, cn)) {
-      LOG(INFO) << "ctx:" << this
-                << ": Hostname matches with common name:"
-                << " hostname=" << hostname_
-                << " cn=" << cn;
-      return true;
-    }
-    LOG(INFO) << "ctx:" << this
-              << ": Hostname didn't match with common name:"
-              << " hostname=" << hostname_
-              << " cn=" << cn;
-    return false;
+  int status;
+  char* peer;
+  status = X509_check_host(cert, hostname_.c_str(), hostname_.size(),
+                           X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT, &peer);
+  if (status == 1) {
+    LOG(INFO) << "ctx:" << this << ": Hostname matches:"
+              << " hostname=" << hostname_ << " peer=" << peer;
+    OPENSSL_free(peer);
+    return true;
+  } else if (status < 0) {  // i.e. error
+    LOG(WARNING) << "ctx:" << this << ": Error on X509_check_host."
+                 << " status=" << status << " hostname=" << hostname_;
   }
-  for (const auto& san : sans) {
-    if (OpenSSLContext::IsHostnameMatched(hostname_, san)) {
-      LOG(INFO) << "ctx:" << this
-                << ": Hostname matches with subject alternative names:"
-                << " hostname=" << hostname_
-                << " san=" << san;
-      return true;
-    }
-  }
+
   LOG(ERROR) << "ctx:" << this
              << ": Hostname did not match with certificate:"
              << " hostname=" << hostname_;

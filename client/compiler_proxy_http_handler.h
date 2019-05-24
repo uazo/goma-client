@@ -22,10 +22,6 @@ namespace devtools_goma {
 class RpcController;
 class WorkerThreadManager;
 
-#ifdef _WIN32
-class MultiRpcController;
-#endif
-
 // This class is used to handle for every HTTP request to compiler_proxy.
 class CompilerProxyHttpHandler : public ThreadpoolHttpServer::HttpHandler,
                                  public ThreadpoolHttpServer::Monitor {
@@ -168,10 +164,6 @@ class CompilerProxyHttpHandler : public ThreadpoolHttpServer::HttpHandler,
 
 #ifdef HAVE_COUNTERZ
   int HandleCounterRequest(const HttpServerRequest&, std::string* response);
-#endif
-
-#ifdef _WIN32
-  void ExecDoneInMulti(MultiRpcController* rpc, int i);
 #endif
 
   void ExecDone(RpcController* rpc, ExecResp* resp);

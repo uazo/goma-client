@@ -47,14 +47,19 @@ std::unique_ptr<CompilerInfoData> CompilerInfoBuilder::FillFromCompilerOutputs(
     data->set_cwd(flags.cwd());
   }
 
-  const std::string& abs_local_compiler_path = PathResolver::ResolvePath(
+  const std::string abs_local_compiler_path = PathResolver::ResolvePath(
       file::JoinPathRespectAbsolute(flags.cwd(), data->local_compiler_path()));
   VLOG(2) << "FillFromCompilerOutputs:"
           << " abs_local_compiler_path=" << abs_local_compiler_path
           << " cwd=" << flags.cwd()
           << " local_compiler_path=" << data->local_compiler_path();
-  data->set_real_compiler_path(PathResolver::ResolvePath(
-      file::JoinPathRespectAbsolute(flags.cwd(), data->real_compiler_path())));
+
+  const std::string abs_real_compiler_path = PathResolver::ResolvePath(
+      file::JoinPathRespectAbsolute(flags.cwd(), data->real_compiler_path()));
+  VLOG(2) << "FillFromCompilerOutputs:"
+          << " abs_real_compiler_path=" << abs_real_compiler_path
+          << " cwd=" << flags.cwd()
+          << " real_compiler_path=" << data->real_compiler_path();
 
   if (!hash_cache_.GetHashFromCacheOrFile(
           abs_local_compiler_path, data->mutable_local_compiler_hash())) {
@@ -64,10 +69,10 @@ std::unique_ptr<CompilerInfoData> CompilerInfoBuilder::FillFromCompilerOutputs(
     return data;
   }
 
-  if (!hash_cache_.GetHashFromCacheOrFile(data->real_compiler_path(),
+  if (!hash_cache_.GetHashFromCacheOrFile(abs_real_compiler_path,
                                           data->mutable_hash())) {
     LOG(ERROR) << "Could not open real compiler file "
-               << data->real_compiler_path();
+               << abs_real_compiler_path;
     data->set_found(false);
     return data;
   }
@@ -92,10 +97,10 @@ std::unique_ptr<CompilerInfoData> CompilerInfoBuilder::FillFromCompilerOutputs(
 
   data->set_found(true);
 
-  if (abs_local_compiler_path != data->real_compiler_path()) {
-    FileStat real_compiler_stat(data->real_compiler_path());
+  if (abs_local_compiler_path != abs_real_compiler_path) {
+    FileStat real_compiler_stat(abs_real_compiler_path);
     if (!real_compiler_stat.IsValid()) {
-      LOG(ERROR) << "Failed to get file id of " << data->real_compiler_path();
+      LOG(ERROR) << "Failed to get file stat of " << abs_real_compiler_path;
       data->set_found(false);
       return data;
     }

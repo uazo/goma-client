@@ -93,16 +93,6 @@ bool BuildGomaccArgv(int orig_argc,
 
 #ifdef _WIN32
 
-void FanOutArgsByInput(const std::vector<std::string>& args,
-                       const std::set<std::string>& input_filenames,
-                       std::vector<std::string>* args_no_input) {
-  for (size_t i = 1; i < args.size(); ++i) {
-    if (input_filenames.count(args[i]))
-      continue;
-    args_no_input->push_back(args[i]);
-  }
-}
-
 std::string BuildArgsForInput(const std::vector<std::string>& args_no_input,
                               const std::string& input_filename) {
   std::ostringstream rsp;

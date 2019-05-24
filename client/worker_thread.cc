@@ -24,7 +24,39 @@
 # include "socket_helper_win.h"
 #endif
 
+#define LOG_EVERY_SEC_CONCAT(base, line) base##line
+#define LOG_EVERY_SEC_VARNAME(base, line) LOG_EVERY_SEC_CONCAT(base, line)
+
+#define LOG_EVERY_SEC_NEXT_LOG_TIME \
+  LOG_EVERY_SEC_VARNAME(last_log_time_, __LINE__)
+#define LOG_EVERY_SEC_NEXT_LOG_TIME_MU \
+  LOG_EVERY_SEC_VARNAME(last_log_time_mu_, __LINE__)
+
+// Used for LOG at most once per second.
+// This will be useful to log inside high frequency loop.
+#define LOG_EVERY_SEC(severity)                              \
+  static absl::Time LOG_EVERY_SEC_NEXT_LOG_TIME;             \
+  static devtools_goma::Lock LOG_EVERY_SEC_NEXT_LOG_TIME_MU; \
+  if (update_log_time(&LOG_EVERY_SEC_NEXT_LOG_TIME,          \
+                      &LOG_EVERY_SEC_NEXT_LOG_TIME_MU))      \
+  LOG(severity)
+
 namespace devtools_goma {
+
+namespace {
+
+// This function returns true at most one per second,
+// used to decide whether LOG_EVERY_SEC logs or not.
+bool update_log_time(absl::Time* t, devtools_goma::Lock* mu) {
+  AUTOLOCK(lock, mu);
+  const auto now = absl::Now();
+  if (*t > now)
+    return false;
+  *t = now + absl::Seconds(1);
+  return true;
+}
+
+}  // namespace
 
 WorkerThread::ClosureData::ClosureData(
     const char* const location,
@@ -209,6 +241,9 @@ bool WorkerThread::Dispatch() {
   VLOG(2) << "Loop closure=" << current_closure_data_->closure_ << " " << name_;
   const Timestamp start = timer_.GetDuration();
   current_closure_data_->closure_->Run();
+  LOG_EVERY_SEC(INFO) << "dispatched closure location:"
+                      << current_closure_data_->location_;
+
   absl::Duration duration = timer_.GetDuration() - start;
   if (duration > absl::Minutes(1)) {
     LOG(WARNING) << id_ << " closure run too long: " << duration
@@ -471,6 +506,9 @@ bool WorkerThread::NextClosure() {
   while (!delayed_pendings_.empty() &&
          (delayed_pendings_.top()->time() < NowCached() || shutting_down_)) {
     DelayedClosureImpl* delayed_closure = delayed_pendings_.top();
+    LOG_EVERY_SEC(INFO) << "delayed_closure location:"
+                        << delayed_closure->location()
+                        << " time:" << delayed_closure->time();
     delayed_pendings_.pop();
     AddClosure(delayed_closure->location(), PRIORITY_IMMEDIATE,
                NewCallback(delayed_closure, &DelayedClosureImpl::Run));
@@ -481,6 +519,8 @@ bool WorkerThread::NextClosure() {
     PermanentClosure* closure = periodic_closure->GetClosure(NowCached());
     if (closure != nullptr) {
       VLOG(3) << "periodic=" << closure;
+      LOG_EVERY_SEC(INFO) << "periodic_closure location:"
+                          << periodic_closure->location();
       AddClosure(periodic_closure->location(),
                  PRIORITY_IMMEDIATE, closure);
     }

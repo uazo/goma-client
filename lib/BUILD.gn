@@ -145,6 +145,18 @@ static_library("java_specific") {
   ]
 }
 
+static_library("rust_specific") {
+  sources = [
+    "rustc_execreq_normalizer.cc",
+    "rustc_execreq_normalizer.h",
+    "rustc_flags.cc",
+    "rustc_flags.h",
+  ]
+  deps = [
+    ":lib",
+  ]
+}
+
 static_library("fake_specific") {
   sources = [
     "fake_execreq_normalizer.cc",
@@ -170,6 +182,7 @@ static_library("compiler_flag_type_specific") {
     ":gcc_specific",
     ":java_specific",
     ":lib",
+    ":rust_specific",
     ":vc_specific",
   ]
 }
@@ -526,6 +539,22 @@ executable("path_util_unittest") {
     ":lib",
     "//base:goma_unittest",
     "//build/config:exe_and_shlib_deps",
+    "//third_party:gtest",
+  ]
+}
+
+executable("rustc_flags_unittest") {
+  testonly = true
+  sources = [
+    "rustc_flags_unittest.cc",
+  ]
+  deps = [
+    ":compiler_flag_type_specific",
+    ":lib",
+    ":rust_specific",
+    "//base:goma_unittest",
+    "//build/config:exe_and_shlib_deps",
+    "//third_party:glog",
     "//third_party:gtest",
   ]
 }

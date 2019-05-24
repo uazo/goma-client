@@ -319,6 +319,7 @@ static_library("compiler_proxy_base_lib") {
     "//lib:clang_tidy_specific",
     "//lib:java_specific",
     "//lib:fake_specific",
+    "//lib:rust_specific",
   ]
 }
 
@@ -484,6 +485,9 @@ static_library("compiler_proxy_lib") {
     "//client/linker/linker_input_processor:arfile_reader_lib",
     "//client/linker/linker_input_processor:linker_input_processor_lib",
     "//client/linker/linker_input_processor:thinlto_import_processor_lib",
+    "//client/rust:rustc_compiler_info_builder_lib",
+    "//client/rust:rustc_compiler_info_lib",
+    "//client/rust:rustc_compiler_type_specific",
     "//lib:compiler_flag_type_specific",
     "//third_party:zlib",
     "//third_party/abseil",
