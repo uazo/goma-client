@@ -183,7 +183,7 @@ message RequesterInfo {
   // e.g. "os":"linux".
   //
   // Inspired from swarming bot dimensions.
-  // https://cs.chromium.org/chromium/infra/luci/appengine/swarming/proto/bots.proto
+  // https://chromium.googlesource.com/infra/luci/luci-py/+/effbcfcafa96e0840189a98ac485586ba2c2ceb6/appengine/swarming/proto/config/bots.proto
   repeated string dimensions = 10;
 
   // Implementation Note: `WINDOWS` is defined on Win, so we have to add
