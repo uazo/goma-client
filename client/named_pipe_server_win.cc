@@ -7,6 +7,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
 #include "autolock_timer.h"
 #include "callback.h"
 #include "config_win.h"
@@ -505,7 +506,18 @@ void NamedPipeServer::Run(std::string name) {
   events[1] = watch_closed_.handle();
   events[2] = reply_.handle();
   events[3] = shutdown_.handle();
+
+  auto loopstart = absl::Now();
+  int loopcnt = 0;
+
   for (;;) {
+    ++loopcnt;
+    if (absl::Now() - loopstart > absl::Minutes(1)) {
+      LOG(INFO) << "loop frequency per minutes: " << loopcnt;
+      loopstart = absl::Now();
+      loopcnt = 0;
+    }
+
     DWORD w = WaitForMultipleObjectsEx(
         4, events,
         FALSE,  // wait all
@@ -719,7 +731,18 @@ void NamedPipeServer::Flusher() {
   HANDLE events[2];
   events[0] = flush_.handle();
   events[1] = shutdown_.handle();
+
+  auto loopstart = absl::Now();
+  int loopcnt = 0;
+
   for (;;) {
+    ++loopcnt;
+    if (absl::Now() - loopstart > absl::Minutes(1)) {
+      LOG(INFO) << "loop frequency per minutes: " << loopcnt;
+      loopstart = absl::Now();
+      loopcnt = 0;
+    }
+
     DWORD w = WaitForMultipleObjectsEx(
         2, events,
         FALSE,  // wait all

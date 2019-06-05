@@ -107,6 +107,8 @@ namespace {
 
 class ServerThread : public devtools_goma::PlatformThread::Delegate {
  public:
+  ServerThread(const ServerThread&) = delete;
+  ServerThread& operator=(const ServerThread&) = delete;
   // Creates |*listener| socket and starts listen at |*listener| on |*port|.
   // Returns WSA error code.  If success, returns 0.
   // |*port| is allocated from available port by system.
@@ -230,14 +232,14 @@ class ServerThread : public devtools_goma::PlatformThread::Delegate {
   SOCKET listener_;
   SOCKET* accept_;
   int result_;
-
-  DISALLOW_COPY_AND_ASSIGN(ServerThread);
 };
 
 class ClientThread : public devtools_goma::PlatformThread::Delegate {
  public:
   explicit ClientThread(SOCKET* client, int port)
       : client_(client), port_(port), result_(WSAETIMEDOUT) {}
+  ClientThread(const ClientThread&) = delete;
+  ClientThread& operator=(const ClientThread&) = delete;
 
   void ThreadMain() override {
     *client_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -304,8 +306,6 @@ class ClientThread : public devtools_goma::PlatformThread::Delegate {
   SOCKET* client_;
   int port_;
   int result_;
-
-  DISALLOW_COPY_AND_ASSIGN(ClientThread);
 };
 
 }  // namespace

@@ -11,6 +11,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+#include "basictypes.h"
 #include "compiler_flags.h"
 #include "compiler_specific.h"
 #include "sha256_hash_cache.h"

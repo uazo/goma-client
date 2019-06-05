@@ -28,6 +28,10 @@ class FileReader;
 
 class FileReaderFactory {
  public:
+  // Enforce the class singleton.
+  FileReaderFactory(const FileReaderFactory&) = delete;
+  FileReaderFactory& operator=(const FileReaderFactory&) = delete;
+
   // A type to create an FileReader instance.
   // It returns NULL if it cannot handle the given |filename|.
   typedef std::unique_ptr<FileReader> (*CreateFunction)(
@@ -43,6 +47,7 @@ class FileReaderFactory {
   static FileReaderFactory* GetInstance();
 
  private:
+  // Enforce the class singleton.
   FileReaderFactory() {}
 
   // Deletes the singleton instance to be called by atexit.
@@ -50,8 +55,6 @@ class FileReaderFactory {
 
   std::vector<CreateFunction> creators_;
   static FileReaderFactory* factory_;
-
-  DISALLOW_COPY_AND_ASSIGN(FileReaderFactory);
 };
 
 // Wrapper class of ScopedFd.
@@ -59,6 +62,9 @@ class FileReaderFactory {
 class FileReader {
  public:
   virtual ~FileReader() {}
+
+  FileReader(const FileReader&) = delete;
+  FileReader& operator=(const FileReader&) = delete;
 
   // Wrapper of ScopedFd's Read.
   // If |len| == 0, returns 0.
@@ -106,7 +112,6 @@ class FileReader {
   ScopedFd fd_;
 
   friend class FileReaderFactory;
-  DISALLOW_COPY_AND_ASSIGN(FileReader);
 };
 
 }  // namespace devtools_goma

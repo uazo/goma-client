@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 
+#include "basictypes.h"
 #include "goma_file.h"
 
 namespace devtools_goma {

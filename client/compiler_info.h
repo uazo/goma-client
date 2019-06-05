@@ -11,6 +11,7 @@
 
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+#include "basictypes.h"
 #include "compiler_specific.h"
 #include "file_stat.h"
 #include "lockhelper.h"

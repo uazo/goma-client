@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 
-#include "base/basictypes.h"
 #include "lib/file_reader.h"
 #include "prototmp/goma_data.pb.h"
 
@@ -39,6 +38,8 @@ class FileServiceClient {
    public:
     AsyncTask() {}
     virtual ~AsyncTask() {}
+    AsyncTask(const AsyncTask&) = delete;
+    AsyncTask& operator=(const AsyncTask&) = delete;
     const Req& req() const { return req_; }
     Req* mutable_req() { return &req_; }
     const Resp& resp() const { return resp_; }
@@ -51,14 +52,13 @@ class FileServiceClient {
    protected:
     Req req_;
     Resp resp_;
-
-   private:
-    DISALLOW_COPY_AND_ASSIGN(AsyncTask);
   };
 
   FileServiceClient()
       : reader_factory_(FileReaderFactory::GetInstance()) {}
   virtual ~FileServiceClient() {}
+  FileServiceClient(const FileServiceClient&) = delete;
+  FileServiceClient& operator=(const FileServiceClient&) = delete;
 
   // Create |blob| for |filename|.
   // If failed to open |filename|, it will set FileBlob::FILE as blob_type
@@ -136,8 +136,6 @@ class FileServiceClient {
       std::unique_ptr<AsyncTask<LookupFileReq, LookupFileResp>> task,
       FileDataOutput* output);
   bool OutputFileChunks(const FileBlob& blob, FileDataOutput* output);
-
-  DISALLOW_COPY_AND_ASSIGN(FileServiceClient);
 };
 
 }  // namespace devtools_goma

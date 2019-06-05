@@ -101,6 +101,8 @@ class FileOutputImpl : public FileDataOutput {
       remove(filename_.c_str());
     }
   }
+  FileOutputImpl(const FileOutputImpl&) = delete;
+  FileOutputImpl& operator=(const FileOutputImpl&) = delete;
 
   bool IsValid() const override { return fd_.valid(); }
   bool WriteAt(off_t offset, const std::string& content) override {
@@ -138,7 +140,6 @@ class FileOutputImpl : public FileDataOutput {
   const std::string filename_;
   devtools_goma::ScopedFd fd_;
   bool error_;
-  DISALLOW_COPY_AND_ASSIGN(FileOutputImpl);
 };
 
 class StringOutputImpl : public FileDataOutput {
@@ -146,6 +147,8 @@ class StringOutputImpl : public FileDataOutput {
   StringOutputImpl(std::string name, std::string* buf)
       : name_(std::move(name)), buf_(buf), size_(0UL) {}
   ~StringOutputImpl() override {}
+  StringOutputImpl(const StringOutputImpl&) = delete;
+  StringOutputImpl& operator=(const StringOutputImpl&) = delete;
 
   bool IsValid() const override { return buf_ != nullptr; }
   bool WriteAt(off_t offset, const std::string& content) override {
@@ -171,7 +174,6 @@ class StringOutputImpl : public FileDataOutput {
   const std::string name_;
   std::string* buf_;
   size_t size_;
-  DISALLOW_COPY_AND_ASSIGN(StringOutputImpl);
 };
 
 }  // anonymous namespace

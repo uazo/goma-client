@@ -967,7 +967,18 @@ int ThreadpoolHttpServer::Loop() {
     cond_.Broadcast();
   }
   LOG(INFO) << "listen on port " << ntohs(sa.sin_port);
+
+  auto loopstart = absl::Now();
+  int loopcnt = 0;
+
   for (;;) {
+    ++loopcnt;
+    if (absl::Now() - loopstart > absl::Minutes(1)) {
+      LOG(INFO) << "loop frequency per minutes: " << loopcnt;
+      loopstart = absl::Now();
+      loopcnt = 0;
+    }
+
     if (http_handler_->shutting_down()) {
       LOG(INFO) << "Shutting down...";
       un_socket_.reset(-1);
@@ -999,6 +1010,14 @@ int ThreadpoolHttpServer::Loop() {
       }
       continue;
     }
+
+#ifdef _WIN32
+    if (r == SOCKET_ERROR) {
+      LOG(ERROR) << "select error: " << WSAGetLastError();
+      continue;
+    }
+#endif
+
     if (r == -1) {
       PLOG(WARNING) << "select";
       continue;

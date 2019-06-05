@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "basictypes.h"
 #include "scoped_fd.h"
 #include "simple_timer.h"
 #include "spawner.h"

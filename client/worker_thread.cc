@@ -531,6 +531,7 @@ bool WorkerThread::NextClosure() {
     Priority io_priority = iter.first;
     std::deque<OneshotClosure*>& pendings = iter.second;
     while (!pendings.empty()) {
+      LOG_EVERY_SEC(INFO) << "io closure: " << pendings.front();
       // TODO: use original location
       AddClosure(FROM_HERE, io_priority, pendings.front());
       pendings.pop_front();

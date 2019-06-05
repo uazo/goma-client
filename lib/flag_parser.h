@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "base/basictypes.h"
 #include "absl/container/flat_hash_map.h"
 
 class FlagParser {
@@ -44,15 +43,17 @@ class FlagParser {
    public:
     Callback() {}
     virtual ~Callback() {}
+    Callback(const Callback&) = delete;
+    Callback& operator=(const Callback&) = delete;
     // Returns parsed flag value of value for flag.
     virtual std::string ParseFlagValue(const Flag& flag,
                                        const std::string& value) = 0;
-
-   private:
-    DISALLOW_COPY_AND_ASSIGN(Callback);
   };
   class Flag {
    public:
+    Flag(const Flag&) = delete;
+    Flag& operator=(const Flag&) = delete;
+
     // Uses seen_output to store boolean whether the flag is seen or not.
     // Should be called before calling FlagParser::Parse().
     // *seen_output will be updated in FlagParser::Parse().
@@ -133,11 +134,12 @@ class FlagParser {
     std::vector<std::string>* values_output_;
     Callback* parse_callback_;
     absl::flat_hash_map<int, std::string> parsed_args_;
-    DISALLOW_COPY_AND_ASSIGN(Flag);
   };
 
   FlagParser();
   ~FlagParser();
+  FlagParser(const FlagParser&) = delete;
+  FlagParser& operator=(const FlagParser&) = delete;
 
   FlagParser::Options* mutable_options() {
     return &opts_;
@@ -182,8 +184,6 @@ class FlagParser {
   std::vector<std::string> unknown_flag_args_;
 
   std::vector<Flag*> parsed_flags_;
-
-  DISALLOW_COPY_AND_ASSIGN(FlagParser);
 };
 
 #endif  // DEVTOOLS_GOMA_LIB_FLAG_PARSER_H_

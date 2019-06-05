@@ -26,6 +26,9 @@ config("protobuf_warnings") {
       "-Wno-unused-function",
 
       "-Wno-inconsistent-missing-override",
+
+      # This is for `friend class DynamicMessage` in map_field.h
+      "-Wno-microsoft-unqualified-friend",
     ]
   }
 }
@@ -65,6 +68,9 @@ config("using_proto") {
       "-Wno-sign-compare",
       "-Wno-unused-local-typedef",
       "-Wno-unused-parameter",
+
+      # This is for `friend class DynamicMessage` in map_field.h
+      "-Wno-microsoft-unqualified-friend",
     ]
   }
 }
@@ -82,7 +88,6 @@ nobase_include_headers = [
   "protobuf/src/google/protobuf/stubs/once.h",
   "protobuf/src/google/protobuf/stubs/platform_macros.h",
   "protobuf/src/google/protobuf/stubs/port.h",
-  "protobuf/src/google/protobuf/stubs/singleton.h",
   "protobuf/src/google/protobuf/stubs/status.h",
   "protobuf/src/google/protobuf/stubs/stl_util.h",
   "protobuf/src/google/protobuf/stubs/stringpiece.h",
@@ -131,7 +136,6 @@ nobase_include_headers = [
   "protobuf/src/google/protobuf/unknown_field_set.h",
   "protobuf/src/google/protobuf/wire_format.h",
   "protobuf/src/google/protobuf/wire_format_lite.h",
-  "protobuf/src/google/protobuf/wire_format_lite_inl.h",
   "protobuf/src/google/protobuf/wrappers.pb.h",
   "protobuf/src/google/protobuf/io/coded_stream.h",
   "protobuf/src/google/protobuf/io/printer.h",
@@ -171,14 +175,25 @@ nobase_include_headers = [
 
 # libprotobuf_lite_la_SOURCES of Makefile.am in protobuf/protobuf/src.
 protobuf_lite_sources = [
+  "protobuf/src/google/protobuf/any_lite.cc",
+  "protobuf/src/google/protobuf/arena.cc",
+  "protobuf/src/google/protobuf/extension_set.cc",
+  "protobuf/src/google/protobuf/generated_message_table_driven_lite.cc",
+  "protobuf/src/google/protobuf/generated_message_table_driven_lite.h",
+  "protobuf/src/google/protobuf/generated_message_util.cc",
+  "protobuf/src/google/protobuf/implicit_weak_message.cc",
+  "protobuf/src/google/protobuf/io/coded_stream.cc",
+  "protobuf/src/google/protobuf/io/coded_stream_inl.h",
+  "protobuf/src/google/protobuf/io/zero_copy_stream.cc",
+  "protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.cc",
+  "protobuf/src/google/protobuf/message_lite.cc",
+  "protobuf/src/google/protobuf/repeated_field.cc",
   "protobuf/src/google/protobuf/stubs/bytestream.cc",
   "protobuf/src/google/protobuf/stubs/bytestream.h",
   "protobuf/src/google/protobuf/stubs/common.cc",
   "protobuf/src/google/protobuf/stubs/hash.h",
   "protobuf/src/google/protobuf/stubs/int128.cc",
   "protobuf/src/google/protobuf/stubs/int128.h",
-  "protobuf/src/google/protobuf/stubs/io_win32.cc",
-  "protobuf/src/google/protobuf/stubs/io_win32.h",
   "protobuf/src/google/protobuf/stubs/map_util.h",
   "protobuf/src/google/protobuf/stubs/mathutil.h",
   "protobuf/src/google/protobuf/stubs/status.cc",
@@ -189,15 +204,6 @@ protobuf_lite_sources = [
   "protobuf/src/google/protobuf/stubs/stringpiece.cc",
   "protobuf/src/google/protobuf/stubs/stringpiece.h",
   "protobuf/src/google/protobuf/stubs/stringprintf.cc",
-  "protobuf/src/google/protobuf/arena.cc",
-  "protobuf/src/google/protobuf/arenastring.cc",
-  "protobuf/src/google/protobuf/extension_set.cc",
-  "protobuf/src/google/protobuf/generated_message_table_driven_lite.cc",
-  "protobuf/src/google/protobuf/generated_message_table_driven_lite.h",
-  "protobuf/src/google/protobuf/generated_message_util.cc",
-  "protobuf/src/google/protobuf/implicit_weak_message.cc",
-  "protobuf/src/google/protobuf/message_lite.cc",
-  "protobuf/src/google/protobuf/repeated_field.cc",
   "protobuf/src/google/protobuf/stubs/stringprintf.h",
   "protobuf/src/google/protobuf/stubs/structurally_valid.cc",
   "protobuf/src/google/protobuf/stubs/strutil.cc",
@@ -205,10 +211,6 @@ protobuf_lite_sources = [
   "protobuf/src/google/protobuf/stubs/time.cc",
   "protobuf/src/google/protobuf/stubs/time.h",
   "protobuf/src/google/protobuf/wire_format_lite.cc",
-  "protobuf/src/google/protobuf/io/coded_stream.cc",
-  "protobuf/src/google/protobuf/io/coded_stream_inl.h",
-  "protobuf/src/google/protobuf/io/zero_copy_stream.cc",
-  "protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.cc",
 ]
 
 protobuf_lite_cflags = []
@@ -286,6 +288,7 @@ static_library("protobuf_full") {
     "protobuf/src/google/protobuf/generated_message_table_driven.cc",
     "protobuf/src/google/protobuf/generated_message_table_driven_lite.h",
     "protobuf/src/google/protobuf/io/gzip_stream.cc",
+    "protobuf/src/google/protobuf/io/io_win32.cc",
     "protobuf/src/google/protobuf/io/printer.cc",
     "protobuf/src/google/protobuf/io/strtod.cc",
     "protobuf/src/google/protobuf/io/tokenizer.cc",
@@ -467,10 +470,6 @@ static_library("protoc_lib") {
     "protobuf/src/google/protobuf/compiler/java/java_generator_factory.h",
     "protobuf/src/google/protobuf/compiler/java/java_helpers.cc",
     "protobuf/src/google/protobuf/compiler/java/java_helpers.h",
-    "protobuf/src/google/protobuf/compiler/java/java_lazy_message_field.cc",
-    "protobuf/src/google/protobuf/compiler/java/java_lazy_message_field.h",
-    "protobuf/src/google/protobuf/compiler/java/java_lazy_message_field_lite.cc",
-    "protobuf/src/google/protobuf/compiler/java/java_lazy_message_field_lite.h",
     "protobuf/src/google/protobuf/compiler/java/java_map_field.cc",
     "protobuf/src/google/protobuf/compiler/java/java_map_field.h",
     "protobuf/src/google/protobuf/compiler/java/java_map_field_lite.cc",

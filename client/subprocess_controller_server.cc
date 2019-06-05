@@ -96,7 +96,18 @@ bool SubProcessControllerServer::Loop() {
 #ifndef _WIN32
   DCHECK(signal_fd_.valid());
 #endif
+
+  auto loopstart = absl::Now();
+  int loopcnt = 0;
+
   for (;;) {
+    ++loopcnt;
+    if (absl::Now() - loopstart > absl::Minutes(1)) {
+      LOG(INFO) << "loop frequency per minutes: " << loopcnt;
+      loopstart = absl::Now();
+      loopcnt = 0;
+    }
+
     if (!sock_fd_.valid()) {
       VLOG(1) << "sock_fd closed";
       break;

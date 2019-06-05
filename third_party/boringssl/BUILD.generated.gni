@@ -127,6 +127,7 @@ crypto_sources = [
   "src/crypto/fipsmodule/ec/internal.h",
   "src/crypto/fipsmodule/ec/p256-x86_64-table.h",
   "src/crypto/fipsmodule/ec/p256-x86_64.h",
+  "src/crypto/fipsmodule/fips_shared_support.c",
   "src/crypto/fipsmodule/is_fips.c",
   "src/crypto/fipsmodule/md5/internal.h",
   "src/crypto/fipsmodule/modes/internal.h",
@@ -274,6 +275,15 @@ crypto_sources = [
   "src/third_party/fiat/internal.h",
   "src/third_party/fiat/p256_32.h",
   "src/third_party/fiat/p256_64.h",
+  "src/third_party/sike/P503.c",
+  "src/third_party/sike/asm/fp_generic.c",
+  "src/third_party/sike/fpx.c",
+  "src/third_party/sike/fpx.h",
+  "src/third_party/sike/isogeny.c",
+  "src/third_party/sike/isogeny.h",
+  "src/third_party/sike/sike.c",
+  "src/third_party/sike/sike.h",
+  "src/third_party/sike/utils.h",
 ]
 
 crypto_headers = [

@@ -14,7 +14,6 @@
 //       It should be safe to ignore those warnings.
 
 #pragma once
-#include "basictypes.h"
 #include "compiler_specific.h"
 #include "config_win.h"
 #include <winsock2.h>
@@ -33,12 +32,12 @@ class WinsockHelper {
  public:
   WinsockHelper();
   ~WinsockHelper();
+  WinsockHelper(const WinsockHelper&) = delete;
+  WinsockHelper& operator=(const WinsockHelper&) = delete;
   bool initialized() const { return initialized_; }
 
  private:
   bool initialized_;
-
-  DISALLOW_COPY_AND_ASSIGN(WinsockHelper);
 };
 
 #endif  // _WIN32

@@ -23,6 +23,8 @@ class BasicLockTestThread : public PlatformThread::Delegate {
  public:
   explicit BasicLockTestThread(Lock* lock) : lock_(lock), acquired_(0) {
   }
+  BasicLockTestThread(const BasicLockTestThread&) = delete;
+  BasicLockTestThread& operator=(const BasicLockTestThread&) = delete;
 
   void ThreadMain() override {
     for (int i = 0; i < 10; i++) {
@@ -50,8 +52,6 @@ class BasicLockTestThread : public PlatformThread::Delegate {
  private:
   Lock* lock_;
   int acquired_;
-
-  DISALLOW_COPY_AND_ASSIGN(BasicLockTestThread);
 };
 
 bool BasicLockTest() {
@@ -101,6 +101,8 @@ class TryLockTestThread : public PlatformThread::Delegate {
  public:
   explicit TryLockTestThread(Lock* lock) : lock_(lock), got_lock_(false) {
   }
+  TryLockTestThread(const TryLockTestThread&) = delete;
+  TryLockTestThread& operator=(const TryLockTestThread&) = delete;
 
   void ThreadMain() override {
     if (lock_->Try()) {
@@ -116,8 +118,6 @@ class TryLockTestThread : public PlatformThread::Delegate {
  private:
   Lock* lock_;
   bool got_lock_;
-
-  DISALLOW_COPY_AND_ASSIGN(TryLockTestThread);
 };
 
 bool TryLockTest() {
@@ -166,6 +166,8 @@ bool TryLockTest() {
 class MutexLockTestThread : public PlatformThread::Delegate {
  public:
   MutexLockTestThread(Lock* lock, int* value) : lock_(lock), value_(value) {}
+  MutexLockTestThread(const MutexLockTestThread&) = delete;
+  MutexLockTestThread& operator=(const MutexLockTestThread&) = delete;
 
   // Static helper which can also be called from the main thread.
   static void DoStuff(Lock* lock, int* value) {
@@ -185,8 +187,6 @@ class MutexLockTestThread : public PlatformThread::Delegate {
  private:
   Lock* lock_;
   int* value_;
-
-  DISALLOW_COPY_AND_ASSIGN(MutexLockTestThread);
 };
 
 bool MutexTwoThreads() {
@@ -247,6 +247,9 @@ class ConditionVariableTestThread : public PlatformThread::Delegate {
                               Data* data)
       : id_(id), lock_(lock), cond_(cond), data_(data) {
   }
+  ConditionVariableTestThread(const ConditionVariableTestThread&) = delete;
+  ConditionVariableTestThread& operator=(const ConditionVariableTestThread&) =
+      delete;
 
   void ThreadMain() override {
     if (id_ == 1) {
@@ -305,8 +308,6 @@ class ConditionVariableTestThread : public PlatformThread::Delegate {
   Lock* lock_;
   ConditionVariable* cond_;
   Data* data_;
-
-  DISALLOW_COPY_AND_ASSIGN(ConditionVariableTestThread);
 };
 
 bool ConditionVar() {
@@ -340,6 +341,9 @@ class ReadWriteLockBasicTestThread : public PlatformThread::Delegate {
       : lock_(lock),
         num_(num) {
   }
+  ReadWriteLockBasicTestThread(const ReadWriteLockBasicTestThread&) = delete;
+  ReadWriteLockBasicTestThread& operator=(const ReadWriteLockBasicTestThread&) =
+      delete;
 
   void ThreadMain() override {
     for (int i = 0; i < 10; i++) {
@@ -364,8 +368,6 @@ class ReadWriteLockBasicTestThread : public PlatformThread::Delegate {
  private:
   ReadWriteLock* lock_;
   int* num_;
-
-  DISALLOW_COPY_AND_ASSIGN(ReadWriteLockBasicTestThread);
 };
 
 bool ReadWriteLockBasicTest() {
@@ -396,6 +398,10 @@ class ReadWriteLockAcquireExclusiveThread : public PlatformThread::Delegate {
       num_(num),
       started_(false) {
   }
+  ReadWriteLockAcquireExclusiveThread(
+      const ReadWriteLockAcquireExclusiveThread&) = delete;
+  ReadWriteLockAcquireExclusiveThread& operator=(
+      const ReadWriteLockAcquireExclusiveThread&) = delete;
 
   void ThreadMain() override {
     SetStarted();
@@ -419,8 +425,6 @@ class ReadWriteLockAcquireExclusiveThread : public PlatformThread::Delegate {
 
   mutable Lock mu_;
   bool started_;
-
-  DISALLOW_COPY_AND_ASSIGN(ReadWriteLockAcquireExclusiveThread);
 };
 
 bool ReadWriteLockAcquireExclusiveTest1() {
@@ -491,6 +495,10 @@ class ReadWriteLockAcquireSharedThread : public PlatformThread::Delegate {
       gotten_num_(0),
       started_(false) {
   }
+  ReadWriteLockAcquireSharedThread(const ReadWriteLockAcquireSharedThread&) =
+      delete;
+  ReadWriteLockAcquireSharedThread& operator=(
+      const ReadWriteLockAcquireSharedThread&) = delete;
 
   void ThreadMain() override {
     SetStarted();
@@ -519,8 +527,6 @@ class ReadWriteLockAcquireSharedThread : public PlatformThread::Delegate {
 
   mutable Lock mu_;
   bool started_;
-
-  DISALLOW_COPY_AND_ASSIGN(ReadWriteLockAcquireSharedThread);
 };
 
 

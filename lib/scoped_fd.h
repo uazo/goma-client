@@ -21,7 +21,6 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "base/basictypes.h"
 
 namespace devtools_goma {
 
@@ -46,6 +45,9 @@ class ScopedFd {
   explicit ScopedFd(FileDescriptor fd);
   ScopedFd(ScopedFd&& other) : fd_(other.release()) {}
   ~ScopedFd();
+
+  ScopedFd(const ScopedFd&) = delete;
+  ScopedFd& operator=(const ScopedFd&) = delete;
 
   ScopedFd& operator=(ScopedFd&& other) {
     if (this == &other) {
@@ -94,8 +96,6 @@ class ScopedFd {
 
  private:
   FileDescriptor fd_;
-
-  DISALLOW_COPY_AND_ASSIGN(ScopedFd);
 };
 
 enum Errno {
@@ -144,6 +144,9 @@ class ScopedSocket : public IOChannel {
   explicit ScopedSocket(int fd) : fd_(fd) {}
   ScopedSocket(ScopedSocket&& other) : fd_(other.release()) {}
   ~ScopedSocket() override;
+
+  ScopedSocket(const ScopedSocket&) = delete;
+  ScopedSocket& operator=(const ScopedSocket&) = delete;
 
   ScopedSocket& operator=(ScopedSocket&& other) {
     if (this == &other) {
@@ -196,8 +199,6 @@ class ScopedSocket : public IOChannel {
 #else
   int fd_;
 #endif
-
-  DISALLOW_COPY_AND_ASSIGN(ScopedSocket);
 };
 
 }  // namespace devtools_goma

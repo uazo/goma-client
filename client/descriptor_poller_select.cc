@@ -124,7 +124,14 @@ class SelectDescriptorPoller : public DescriptorPollerBase {
 
   int PollEventsInternal(absl::Duration timeout) override {
     struct timeval tv = absl::ToTimeval(timeout);
-    return select(max_fd_ + 1, &read_fd_, &write_fd_, nullptr, &tv);
+    int r = select(max_fd_ + 1, &read_fd_, &write_fd_, nullptr, &tv);
+#ifdef _WIN32
+    if (r == SOCKET_ERROR) {
+      LOG(ERROR) << "select error: " << WSAGetLastError();
+    }
+#endif
+
+    return r;
   }
 
   class SelectEventEnumerator : public DescriptorPollerBase::EventEnumerator {

@@ -8,6 +8,7 @@
 
 #include <string>
 
+#include "basictypes.h"
 #include "scoped_fd.h"
 
 namespace devtools_goma {

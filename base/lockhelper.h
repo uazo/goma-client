@@ -7,7 +7,6 @@
 #define DEVTOOLS_GOMA_BASE_LOCKHELPER_H_
 
 #include "absl/base/thread_annotations.h"
-#include "basictypes.h"
 
 #ifdef __MACH__
 # include <libkern/OSAtomic.h>
@@ -33,6 +32,8 @@ class LOCKABLE Lock {
  public:
   Lock();
   ~Lock();
+  Lock(const Lock&) = delete;
+  Lock& operator=(const Lock&) = delete;
 
   // If the lock is not held, take it and return true.  If the lock is already
   // held by something else, immediately return false.
@@ -51,7 +52,6 @@ class LOCKABLE Lock {
   friend class WinVistaCondVar;
 #endif
   OSLockType os_lock_;
-  DISALLOW_COPY_AND_ASSIGN(Lock);
 };
 
 #ifdef __MACH__
@@ -89,6 +89,8 @@ class LOCKABLE ReadWriteLock {
  public:
   ReadWriteLock();
   ~ReadWriteLock();
+  ReadWriteLock(const ReadWriteLock&) = delete;
+  ReadWriteLock& operator=(const ReadWriteLock&) = delete;
 
   void AcquireShared() SHARED_LOCK_FUNCTION();
   void ReleaseShared() UNLOCK_FUNCTION();
@@ -102,7 +104,6 @@ class LOCKABLE ReadWriteLock {
 #else
   OSRWLockType os_rwlock_;
 #endif
-  DISALLOW_COPY_AND_ASSIGN(ReadWriteLock);
 };
 
 class SCOPED_LOCKABLE AutoLock {
@@ -118,9 +119,11 @@ class SCOPED_LOCKABLE AutoLock {
     lock_->Release();
   }
 
+  AutoLock(const AutoLock&) = delete;
+  AutoLock& operator=(const AutoLock&) = delete;
+
  private:
   Lock* lock_;
-  DISALLOW_COPY_AND_ASSIGN(AutoLock);
 };
 
 class SCOPED_LOCKABLE AutoFastLock {
@@ -156,9 +159,11 @@ class SCOPED_LOCKABLE AutoExclusiveLock {
     lock_->ReleaseExclusive();
   }
 
+  AutoExclusiveLock(const AutoExclusiveLock&) = delete;
+  AutoExclusiveLock& operator=(const AutoExclusiveLock&) = delete;
+
  private:
   ReadWriteLock* lock_;
-  DISALLOW_COPY_AND_ASSIGN(AutoExclusiveLock);
 };
 
 class SCOPED_LOCKABLE AutoSharedLock {
@@ -174,9 +179,11 @@ class SCOPED_LOCKABLE AutoSharedLock {
     lock_->ReleaseShared();
   }
 
+  AutoSharedLock(const AutoSharedLock&) = delete;
+  AutoSharedLock& operator=(const AutoSharedLock&) = delete;
+
  private:
   ReadWriteLock* lock_;
-  DISALLOW_COPY_AND_ASSIGN(AutoSharedLock);
 };
 
 // POSIX conditional variable
@@ -184,6 +191,8 @@ class ConditionVariable {
  public:
   ConditionVariable();
   ~ConditionVariable();
+  ConditionVariable(const ConditionVariable&) = delete;
+  ConditionVariable& operator=(const ConditionVariable&) = delete;
 
   void Wait(Lock* lock);
   void Signal();
@@ -195,7 +204,6 @@ class ConditionVariable {
 #else  // Assume POSIX
   pthread_cond_t condition_;
 #endif
-  DISALLOW_COPY_AND_ASSIGN(ConditionVariable);
 };
 
 }  // namespace devtools_goma

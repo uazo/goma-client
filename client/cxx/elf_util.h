@@ -62,6 +62,9 @@ class ElfDepParser {
 // The returned value would be used by ElfDepParser.
 std::vector<std::string> ParseLdSoConf(absl::string_view content);
 
+// Returns true if the file is ELF formatted file.
+bool IsElfFile(const std::string& filename);
+
 }  // namespace devtools_goma
 
 #endif  // DEVTOOLS_GOMA_CLIENT_CXX_ELF_UTIL_H_

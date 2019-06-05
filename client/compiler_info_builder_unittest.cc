@@ -4,6 +4,7 @@
 
 #include "compiler_info_builder.h"
 
+#include "basictypes.h"
 #include "compiler_flags_parser.h"
 #include "compiler_info.h"
 #include "compiler_type_specific_collection.h"

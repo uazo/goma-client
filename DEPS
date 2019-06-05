@@ -3,12 +3,12 @@ vars = {
 }
 
 deps = {
-     # protobuf 3.6.1
+     # protobuf 3.8.0
      # Note: When you update protobuf, you will need to update
      # test/goma_data.pb.{h,cc}. Copying them from your output directory should
      # work.
      "client/third_party/protobuf/protobuf":
-     "https://github.com/google/protobuf.git@48cb18e5c419ddd23d9badcfe4e9df7bde1979b2",
+     "https://github.com/google/protobuf.git@09745575a923640154bcf307fba8aedff47f240a",
 
      # google-glog v0.4.0
      "client/third_party/glog":
@@ -37,7 +37,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@79ab5e8faa04871e13542e35374657185adee5c8",
+     "https://boringssl.googlesource.com/boringssl@c37e64cba55256dff3ca4575dfcac1cfb2aa111e",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":

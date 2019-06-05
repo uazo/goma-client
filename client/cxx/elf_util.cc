@@ -4,6 +4,7 @@
 
 #include "elf_util.h"
 
+#include "absl/base/macros.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
@@ -12,6 +13,7 @@
 #include "glog/stl_logging.h"
 #include "path.h"
 #include "path_resolver.h"
+#include "scoped_fd.h"
 #include "util.h"
 
 namespace devtools_goma {
@@ -182,6 +184,23 @@ std::vector<std::string> ParseLdSoConf(absl::string_view content) {
     ret.push_back(std::string(line));
   }
   return ret;
+}
+
+bool IsElfFile(const std::string& filename) {
+  // TODO: better to use elf.h?
+  static constexpr char kELFMagic[] = {0x7f, 'E', 'L', 'F'};
+  ScopedFd fd(ScopedFd::OpenForRead(filename));
+  if (!fd.valid()) {
+    LOG(WARNING) << "failed to open " << filename;
+    return false;
+  }
+  char buf[ABSL_ARRAYSIZE(kELFMagic)];
+  if (fd.Read(buf, sizeof(buf)) != sizeof(buf)) {
+    LOG(WARNING) << "failed to read possibly ELF file."
+                 << " filename=" << filename;
+    return false;
+  }
+  return memcmp(buf, kELFMagic, ABSL_ARRAYSIZE(kELFMagic)) == 0;
 }
 
 }  // namespace devtools_goma

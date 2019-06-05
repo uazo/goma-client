@@ -40,6 +40,9 @@ class SocketPairTestThread : public PlatformThread::Delegate {
     CloseHandle(signal_);
   }
 
+  SocketPairTestThread(const SocketPairTestThread&) = delete;
+  SocketPairTestThread& operator=(const SocketPairTestThread&) = delete;
+
   void ThreadMain() override {
     bool terminate_signaled = false;
     for (; !terminate_signaled; ) {
@@ -123,7 +126,6 @@ class SocketPairTestThread : public PlatformThread::Delegate {
   std::string message_;
   HANDLE signal_;
   int socket_;
-  DISALLOW_COPY_AND_ASSIGN(SocketPairTestThread);
 };
 
 TEST(SocketHelperWin, BlockingSocketPair) {

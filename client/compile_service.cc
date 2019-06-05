@@ -88,6 +88,10 @@ namespace devtools_goma {
 
 namespace {
 
+// TODO: set proper dimensions instead.
+//                    e.g. compilers may not work if libc in remote image is
+//                    older than that of the requested compiler especially for
+//                    Linux.
 void SetDefaultOSSpecificRequesterInfo(RequesterInfo* info) {
 #ifdef _WIN32
   info->add_dimensions("os:win");

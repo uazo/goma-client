@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "base/basictypes.h"
 
 namespace devtools_goma {
 
@@ -28,6 +27,9 @@ class PathResolver {
 
   PathResolver();
   ~PathResolver();
+
+  PathResolver(const PathResolver&) = delete;
+  PathResolver& operator=(const PathResolver&) = delete;
 
   // Convert path to platform specific format of running platform.
   static std::string PlatformConvert(const std::string& path);
@@ -77,8 +79,6 @@ class PathResolver {
 
  private:
   std::vector<std::string> system_paths_;
-
-  DISALLOW_COPY_AND_ASSIGN(PathResolver);
 };
 
 };  // namespace devtools_goma

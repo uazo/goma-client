@@ -19,11 +19,21 @@ namespace devtools_goma {
 
 namespace {
 
-bool IsKnownClangInChroot(absl::string_view local_compiler_path) {
-  return local_compiler_path == "/usr/bin/clang" ||
-         local_compiler_path == "/usr/bin/clang++" ||
-         local_compiler_path == "/usr/bin/x86_64-cros-linux-gnu-clang" ||
-         local_compiler_path == "/usr/bin/x86_64-cros-linux-gnu-clang++";
+constexpr absl::string_view kClang = "/usr/bin/clang";
+constexpr absl::string_view kClangxx = "/usr/bin/clang++";
+
+bool IsClangWrapperInChroot(const absl::string_view local_compiler_path) {
+  if (file::Dirname(local_compiler_path) != "/usr/bin") {
+    return false;
+  }
+  absl::string_view basename = file::Basename(local_compiler_path);
+  return absl::EndsWith(basename, "-clang") ||
+         absl::EndsWith(basename, "-clang++");
+}
+
+bool IsKnownClangInChroot(const absl::string_view local_compiler_path) {
+  return local_compiler_path == kClang || local_compiler_path == kClangxx ||
+         IsClangWrapperInChroot(local_compiler_path);
 }
 
 bool ParseEnvdPath(absl::string_view envd_path, std::string* path) {
@@ -159,21 +169,14 @@ bool ChromeOSCompilerInfoBuilderHelper::IsClangInChrootEnv(
   return true;
 }
 
-// static
-bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
-    const std::string& cwd,
-    absl::string_view local_compiler_path,
-    absl::string_view real_compiler_path,
-    std::vector<std::string>* resource_paths) {
+namespace {
+
+bool SetChrootClangResourcePaths(const std::string& cwd,
+                                 const std::vector<std::string>& files,
+                                 absl::string_view local_compiler_path,
+                                 absl::string_view real_compiler_path,
+                                 std::vector<std::string>* resource_paths) {
   constexpr absl::string_view kLdSoConfPath = "/etc/ld.so.conf";
-
-  int version;
-  if (!EstimateClangMajorVersion(real_compiler_path, &version)) {
-    LOG(ERROR) << "failed to estimate clang major version"
-               << " real_compiler_path=" << real_compiler_path;
-    return false;
-  }
-
   std::string content;
   if (!ReadFileToString(kLdSoConfPath, &content)) {
     LOG(ERROR) << "failed to open/read " << kLdSoConfPath;
@@ -181,68 +184,134 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
   }
   std::vector<std::string> searchpath = ParseLdSoConf(content);
   ElfDepParser edp(cwd, searchpath, false);
-  absl::flat_hash_set<std::string> deps;
-  if (!edp.GetDeps(local_compiler_path, &deps)) {
-    LOG(ERROR) << "failed to get library dependencies."
-               << " cwd=" << cwd
-               << " local_compiler_path=" << local_compiler_path
-               << " real_compiler_path=" << real_compiler_path;
-    return false;
+
+  absl::flat_hash_set<std::string> exec_deps;
+  for (const auto& file : files) {
+    if (file != local_compiler_path && file != real_compiler_path) {
+      resource_paths->push_back(file);
+    }
+    if (!IsElfFile(file)) {
+      continue;
+    }
+    if (!edp.GetDeps(file, &exec_deps)) {
+      LOG(ERROR) << "failed to get library dependencies for executable."
+                 << " file=" << file << " cwd=" << cwd;
+      return false;
+    }
   }
-  constexpr absl::string_view kClang = "/usr/bin/clang";
-  if (local_compiler_path != kClang && !edp.GetDeps(kClang, &deps)) {
-    LOG(ERROR) << "failed to get library dependencies for clang."
-               << " cwd=" << cwd;
-    return false;
-  }
-  for (const auto& path : deps) {
+  for (const auto& path : exec_deps) {
     resource_paths->push_back(path);
   }
-
-  // TODO: Currently support only target = x86_64.
-  // for target=arm, we need to use other resources.
-  // check local_compiler_path, and if compiler name looks like arm,
-  // we have to use arm-like resources.
-  resource_paths->push_back("/etc/env.d/gcc/.NATIVE");
-  resource_paths->push_back("/etc/env.d/05gcc-x86_64-cros-linux-gnu");
-
-  std::string path_from_envd;
-  if (!ParseEnvdPath("/etc/env.d/05gcc-x86_64-cros-linux-gnu",
-                     &path_from_envd)) {
-    return false;
-  }
-
-  if (local_compiler_path == "/usr/bin/x86_64-cros-linux-gnu-clang") {
-    // Actually /usr/bin/clang is called.
-    // /usr/x86_64-pc-linux-gnu/x86_64-cros-linux-gnu/gcc-bin/4.9.x/x86_64-cros-linux-gnu-clang
-    // is wrapper.
-    resource_paths->push_back("/usr/bin/clang");
-    resource_paths->push_back(
-        file::JoinPath(path_from_envd, "x86_64-cros-linux-gnu-clang"));
-  } else if (local_compiler_path == "/usr/bin/x86_64-cros-linux-gnu-clang++") {
-    // Actually /usr/bin/clang++ is called, and /usr/bin/clang can also be
-    // called. The latter 2 binaries are both wrapper.
-    resource_paths->push_back("/usr/bin/clang");
-    resource_paths->push_back("/usr/bin/clang++");
-    resource_paths->push_back(
-        file::JoinPath(path_from_envd, "x86_64-cros-linux-gnu-clang"));
-    resource_paths->push_back(
-        file::JoinPath(path_from_envd, "x86_64-cros-linux-gnu-clang++"));
-  }
-
   return true;
+}
+
+}  // namespace
+
+// static
+bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
+    const std::string& cwd,
+    absl::string_view local_compiler_path,
+    absl::string_view real_compiler_path,
+    std::vector<std::string>* resource_paths) {
+  std::vector<std::string> resources = {
+      std::string(local_compiler_path),
+      std::string(real_compiler_path),
+  };
+
+  if (!IsClangWrapperInChroot(local_compiler_path)) {
+    return SetChrootClangResourcePaths(cwd, resources, local_compiler_path,
+                                       real_compiler_path, resource_paths);
+  }
+
+  //
+  // Code below list up files needed to run the wrapper.
+  //
+  if (IsElfFile(std::string(local_compiler_path))) {
+    // Assuming |local_compiler_path| is a program to detect a position of
+    // the wrapper, and execute.
+    // Then, we need to upload files to decide wrapper positions (.NATIVE
+    // and 05gcc-*), and the wrapper script itself.
+    resources.emplace_back("/etc/env.d/gcc/.NATIVE");
+    absl::string_view compile_target = file::Stem(local_compiler_path);
+    if (!absl::ConsumeSuffix(&compile_target, "-clang") &&
+        !absl::ConsumeSuffix(&compile_target, "-clang++")) {
+      PLOG(ERROR) << "compiler name seems not be expected."
+                  << " local_compiler_path=" << local_compiler_path;
+      return false;
+    }
+    const std::string envfilename =
+        absl::StrCat("/etc/env.d/05gcc-", compile_target);
+    if (access(envfilename.c_str(), R_OK) != 0) {
+      LOG(ERROR) << "env file not found."
+                 << " envfilename=" << envfilename
+                 << " local_compiler_path=" << local_compiler_path
+                 << " real_compiler_path=" << real_compiler_path;
+      return false;
+    }
+    resources.push_back(envfilename);
+    std::string path_from_envd;
+    if (!ParseEnvdPath(envfilename, &path_from_envd)) {
+      LOG(ERROR) << "Failed to parse env file."
+                 << " envfilename=" << envfilename
+                 << " local_compiler_path=" << local_compiler_path
+                 << " real_compiler_path=" << real_compiler_path;
+      return false;
+    }
+
+    // Even if <basename> ends with clang++, we also need clang ones.
+    absl::string_view base_compiler_path = file::Basename(local_compiler_path);
+    resources.push_back(file::JoinPath(path_from_envd, base_compiler_path));
+    if (absl::EndsWith(base_compiler_path, "clang++")) {
+      resources.push_back(file::JoinPath(
+          path_from_envd, absl::StripSuffix(base_compiler_path, "++")));
+    }
+  }
+  // Actually /usr/bin/clang{,++} is called from the wrapper.
+  if (absl::EndsWith(local_compiler_path, "clang++")) {
+    resources.emplace_back(kClangxx);
+  } else {
+    resources.emplace_back(kClang);
+  }
+
+  // We also need python2 for wrapper.
+  // TODO: better way to handle python library usage change.
+  std::vector<std::string> python2_deps = {
+      "/usr/lib64/python2.7/_abcoll.py",
+      "/usr/lib64/python2.7/abc.py",
+      "/usr/lib64/python2.7/codecs.py",
+      "/usr/lib64/python2.7/copy_reg.py",
+      "/usr/lib64/python2.7/encodings/aliases.py",
+      "/usr/lib64/python2.7/encodings/__init__.py",
+      "/usr/lib64/python2.7/encodings/utf_8.py",
+      "/usr/lib64/python2.7/__future__.py",
+      "/usr/lib64/python2.7/genericpath.py",
+      "/usr/lib64/python2.7/linecache.py",
+      "/usr/lib64/python2.7/os.py",
+      "/usr/lib64/python2.7/posixpath.py",
+      "/usr/lib64/python2.7/stat.py",
+      "/usr/lib64/python2.7/types.py",
+      "/usr/lib64/python2.7/UserDict.py",
+      "/usr/lib64/python2.7/warnings.py",
+      "/usr/lib64/python2.7/_weakrefset.py",
+      // "lib-dynload" is needed for detecting EXEC_PREFIX in python.
+      // The following code make it created in remote.
+      "/usr/lib64/python2.7/lib-dynload/../../../bin/python2",
+  };
+  resources.insert(resources.end(),
+                   std::make_move_iterator(python2_deps.begin()),
+                   std::make_move_iterator(python2_deps.end()));
+
+  return SetChrootClangResourcePaths(cwd, resources, local_compiler_path,
+                                     real_compiler_path, resource_paths);
 }
 
 // static
 void ChromeOSCompilerInfoBuilderHelper::SetAdditionalFlags(
     absl::string_view local_compiler_path,
     google::protobuf::RepeatedPtrField<std::string>* additional_flags) {
-  if (local_compiler_path == "/usr/bin/x86_64-cros-linux-gnu-clang" ||
-      local_compiler_path == "/usr/bin/x86_64-cros-linux-gnu-clang++") {
+  if (IsClangWrapperInChroot(local_compiler_path)) {
     // Wrapper tries to set up ccache, but it's meaningless in goma.
     // we have to set -noccache.
-    // TODO: chromeos toolchain should have -noccache by default
-    // if goma is enabled.
     additional_flags->Add("-noccache");
   }
 }

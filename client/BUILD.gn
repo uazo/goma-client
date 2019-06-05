@@ -79,6 +79,7 @@ static_library("common") {
     ]
 
     public_deps += [ ":rand_util_lib" ]  # posix_helper_win always require this
+    deps += [ "//third_party/abseil" ]
   }
 
   if (os == "linux") {

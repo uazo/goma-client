@@ -10,8 +10,6 @@
 #include <memory>
 #include <string>
 
-#include "base/basictypes.h"
-
 namespace devtools_goma {
 
 // TODO: provide Input too.
@@ -20,6 +18,10 @@ class FileDataOutput {
  public:
   FileDataOutput() {}
   virtual ~FileDataOutput() {}
+
+  FileDataOutput(const FileDataOutput&) = delete;
+  FileDataOutput& operator=(const FileDataOutput&) = delete;
+
   // IsValid returns true if this output is valid to use.
   virtual bool IsValid() const = 0;
   // WriteAt writes content at offset in output.
@@ -45,9 +47,6 @@ class FileDataOutput {
   static std::unique_ptr<FileDataOutput> NewStringOutput(
       const std::string& name,
       std::string* buf);
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(FileDataOutput);
 };
 
 }  // namespace devtools_goma
