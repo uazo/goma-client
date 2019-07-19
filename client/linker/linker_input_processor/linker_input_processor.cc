@@ -35,7 +35,6 @@
 #include "compiler_info.h"
 #include "compiler_specific.h"
 #include "content.h"
-#include "elf_parser.h"
 #include "framework_path_resolver.h"
 #include "gcc_flags.h"
 #include "ioutil.h"
@@ -51,13 +50,13 @@ MSVC_POP_WARNING()
 #ifdef __linux
 // TODO: port elf.h in MacOSX and eliminate this ifdef.
 // we want to run android cross compile (which uses ELF) on MacOSX.
-# include "elf_parser.h"
+#include "binutils/elf_parser.h"
 #endif
 
 #ifdef __MACH__
-# include "mach_o_parser.h"
-# include <mach-o/fat.h>
-# include <mach-o/loader.h>
+#include <mach-o/fat.h>
+#include <mach-o/loader.h>
+#include "binutils/mach_o_parser.h"
 #endif
 
 #ifndef ELFMAG
@@ -442,8 +441,9 @@ void LinkerInputProcessor::TryParseElfNeeded(
     std::vector<std::string>* input_paths) {
 #ifdef __linux__
   std::unique_ptr<ElfParser> elf(ElfParser::NewElfParser(filename));
-  if (elf == nullptr || !elf->valid())
+  if (elf == nullptr) {
     return;
+  }
   std::vector<std::string> needed;
   if (!elf->ReadDynamicNeeded(&needed))
     return;

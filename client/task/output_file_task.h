@@ -8,7 +8,6 @@
 #include <memory>
 #include <string>
 
-#include "base/basictypes.h"
 #include "goma_blob.h"
 #include "simple_timer.h"
 
@@ -31,6 +30,8 @@ class OutputFileTask {
                  const ExecResult_Output& output,
                  OutputFileInfo* info);
   ~OutputFileTask();
+  OutputFileTask(const OutputFileTask&) = delete;
+  OutputFileTask& operator=(const OutputFileTask&) = delete;
 
   void Run(OneshotClosure* closure);
 
@@ -60,8 +61,6 @@ class OutputFileTask {
   OutputFileInfo* info_;
   SimpleTimer timer_;
   bool success_;
-
-  DISALLOW_COPY_AND_ASSIGN(OutputFileTask);
 };
 
 }  // namespace devtools_goma

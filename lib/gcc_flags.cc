@@ -637,21 +637,39 @@ bool GCCFlags::IsClientImportantEnv(const char* env) const {
     return true;
   }
 
-  // Allow WINEDEBUG= only in client.
-  if (absl::StartsWith(env, "WINEDEBUG=")) {
-    return true;
+  static const char* kClientImportantEnvs[] = {
+      // Allow WINEDEBUG= only in client.
+      "WINDEBUG=",
+
+      // Allow DEVELOPER_DIR only in client.
+      "DEVELOPER_DIR=",
+
+      // environments used by vpython.
+      "VPYTHON_VIRTUALENV_ROOT=",
+      "LUCI_CONTEXT=",
+      "CIPD_CACHE_DIR=",
+  };
+  for (const char* e : kClientImportantEnvs) {
+    if (absl::StartsWith(env, e)) {
+      return true;
+    }
   }
 
-  // These are used for nacl on Win.
-  // Don't send this to server.
-  if ((absl::StartsWithIgnoreCase(env, "PATHEXT=")) ||
-      (absl::StartsWithIgnoreCase(env, "SystemRoot="))) {
-    return true;
-  }
+  static const char* kClientImportantEnvsIgnoreCase[] = {
+      // These are used for nacl on Win.
+      // Don't send this to server.
+      "PATHEXT=",
+      "SystemRoot=",
 
-  // Allow DEVELOPER_DIR only in client.
-  if (absl::StartsWith(env, "DEVELOPER_DIR=")) {
-    return true;
+      // environments used by vpython.
+      "HOMEDRIVE=",
+      "HOMEPATH=",
+      "USERPROFILE=",
+  };
+  for (const char* e : kClientImportantEnvsIgnoreCase) {
+    if (absl::StartsWithIgnoreCase(env, e)) {
+      return true;
+    }
   }
 
   return false;

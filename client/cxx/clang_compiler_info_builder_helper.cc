@@ -438,6 +438,7 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
   size_t index = 0;
   int expected_index = -1;
   for (const auto& line : lines) {
+    VLOG(10) << "line:" << line;
     {
       absl::string_view line_view(line);
       if ((absl::ConsumePrefix(&line_view, "# ") ||
@@ -477,10 +478,15 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
 
     // The result is 0 or 1 in most cases.
     // __has_cpp_attribute(xxx) can be 200809, 201309, though.
+    // also some value has L suffix like "201603L"
     // Anyway, we remember the value that is all digit.
 
     bool all_digit = true;
     for (char c : line) {
+      // allow L suffix.
+      if (c == 'L') {
+        continue;
+      }
       if (!isdigit(c)) {
         all_digit = false;
         break;
@@ -507,6 +513,7 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
           compiler_info->mutable_cxx()->add_has_feature();
       m->set_key(features.first[current_index]);
       m->set_value(value);
+      VLOG(3) << "feature:" << m->DebugString();
       continue;
     }
     current_index -= features.second;
@@ -515,6 +522,7 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
           compiler_info->mutable_cxx()->add_has_extension();
       m->set_key(extensions.first[current_index]);
       m->set_value(value);
+      VLOG(3) << "extension:" << m->DebugString();
       continue;
     }
     current_index -= extensions.second;
@@ -523,6 +531,7 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
           compiler_info->mutable_cxx()->add_has_attribute();
       m->set_key(attributes.first[current_index]);
       m->set_value(value);
+      VLOG(3) << "attribute:" << m->DebugString();
       continue;
     }
     current_index -= attributes.second;
@@ -531,6 +540,7 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
           compiler_info->mutable_cxx()->add_has_cpp_attribute();
       m->set_key(cpp_attributes.first[current_index]);
       m->set_value(value);
+      VLOG(3) << "cpp_attribute:" << m->DebugString();
       continue;
     }
     current_index -= cpp_attributes.second;
@@ -539,6 +549,7 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
           compiler_info->mutable_cxx()->add_has_declspec_attribute();
       m->set_key(declspec_attributes.first[current_index]);
       m->set_value(value);
+      VLOG(3) << "desclspec_attribute:" << m->DebugString();
       continue;
     }
     current_index -= declspec_attributes.second;
@@ -547,6 +558,7 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
           compiler_info->mutable_cxx()->add_has_builtin();
       m->set_key(builtins.first[current_index]);
       m->set_value(value);
+      VLOG(3) << "builtin:" << m->DebugString();
       continue;
     }
 
@@ -696,6 +708,7 @@ bool ClangCompilerInfoBuilderHelper::GetPredefinedFeaturesAndExtensions(
   argv.push_back(lang_flag);
   argv.push_back("-E");
   argv.push_back(tmp_file.filename());
+  VLOG(1) << "argv=" << argv;
 
   std::vector<std::string> env;
   env.push_back("LC_ALL=C");

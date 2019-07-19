@@ -10,6 +10,8 @@
 #include "lib/clang_tidy_execreq_normalizer.h"
 #include "lib/clang_tidy_flags.h"
 #include "lib/compiler_flags.h"
+#include "lib/dart_analyzer_execreq_normalizer.h"
+#include "lib/dart_analyzer_flags.h"
 #include "lib/fake_execreq_normalizer.h"
 #include "lib/fake_flags.h"
 #include "lib/gcc_execreq_normalizer.h"
@@ -45,6 +47,9 @@ CompilerFlagType CompilerFlagTypeFromArg(absl::string_view arg) {
   }
   if (RustcFlags::IsRustcCommand(arg)) {
     return CompilerFlagType::Rustc;
+  }
+  if (DartAnalyzerFlags::IsDartAnalyzerCommand(arg)) {
+    return CompilerFlagType::DartAnalyzer;
   }
   if (FakeFlags::IsFakeCommand(arg)) {
     return CompilerFlagType::Fake;
@@ -84,6 +89,8 @@ std::unique_ptr<CompilerFlags> CompilerFlagTypeSpecific::NewCompilerFlags(
       return absl::make_unique<JavaFlags>(args, cwd);
     case CompilerFlagType::Rustc:
       return absl::make_unique<RustcFlags>(args, cwd);
+    case CompilerFlagType::DartAnalyzer:
+      return absl::make_unique<DartAnalyzerFlags>(args, cwd);
     case CompilerFlagType::Fake:
       return absl::make_unique<FakeFlags>(args, cwd);
   }
@@ -106,6 +113,8 @@ std::string CompilerFlagTypeSpecific::GetCompilerName(
       return JavaFlags::GetCompilerName(arg);
     case CompilerFlagType::Rustc:
       return RustcFlags::GetCompilerName(arg);
+    case CompilerFlagType::DartAnalyzer:
+      return DartAnalyzerFlags::GetCompilerName(arg);
     case CompilerFlagType::Fake:
       return FakeFlags::GetCompilerName(arg);
   }
@@ -128,6 +137,8 @@ CompilerFlagTypeSpecific::NewExecReqNormalizer() const {
       return absl::make_unique<JavaExecReqNormalizer>();
     case CompilerFlagType::Rustc:
       return absl::make_unique<RustcExecReqNormalizer>();
+    case CompilerFlagType::DartAnalyzer:
+      return absl::make_unique<DartAnalyzerExecReqNormalizer>();
     case CompilerFlagType::Fake:
       return absl::make_unique<FakeExecReqNormalizer>();
   }

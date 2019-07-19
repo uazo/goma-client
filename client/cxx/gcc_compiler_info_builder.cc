@@ -397,6 +397,22 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
 
     ChromeOSCompilerInfoBuilderHelper::SetAdditionalFlags(
         local_compiler_path, data->mutable_additional_flags());
+    data->add_dimensions("os:linux-hermetic");
+  }
+  if (ChromeOSCompilerInfoBuilderHelper::IsAndroidClang(data->version())) {
+    if (!ChromeOSCompilerInfoBuilderHelper::CollectAndroidClangResources(
+            flags.cwd(), local_compiler_path, data->real_compiler_path(),
+            &resource_paths_to_collect)) {
+      // HACK: we should not affect people not using ATS.
+      if (FLAGS_SEND_COMPILER_BINARY_AS_INPUT) {
+        AddErrorMessage("failed to add android clang resources", data);
+      }
+      LOG(ERROR)
+          << "failed to add android clang resources: local_compiler_path="
+          << local_compiler_path
+          << " real_compiler_path=" << data->real_compiler_path();
+      return;
+    }
   }
 #endif  // __linux__
 

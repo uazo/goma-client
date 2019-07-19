@@ -8,9 +8,12 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/strip.h"
-#include "elf_util.h"
+#include "binutils/elf_dep_parser.h"
+#include "binutils/elf_parser.h"
+#include "binutils/elf_util.h"
 #include "glog/logging.h"
 #include "lib/file_helper.h"
+#include "lib/gcc_flags.h"
 #include "path.h"
 
 #include <unistd.h>
@@ -157,7 +160,8 @@ bool ChromeOSCompilerInfoBuilderHelper::EstimateClangMajorVersion(
 // static
 bool ChromeOSCompilerInfoBuilderHelper::IsClangInChrootEnv(
     absl::string_view local_compiler_path) {
-  if (!IsKnownClangInChroot(local_compiler_path)) {
+  if (!IsKnownClangInChroot(local_compiler_path) &&
+      !GCCFlags::IsClangCommand(local_compiler_path)) {
     return false;
   }
 
@@ -177,6 +181,8 @@ bool SetChrootClangResourcePaths(const std::string& cwd,
                                  absl::string_view real_compiler_path,
                                  std::vector<std::string>* resource_paths) {
   constexpr absl::string_view kLdSoConfPath = "/etc/ld.so.conf";
+  constexpr absl::string_view kLdSoCachePath = "/etc/ld.so.cache";
+  resource_paths->emplace_back(kLdSoCachePath);
   std::string content;
   if (!ReadFileToString(kLdSoConfPath, &content)) {
     LOG(ERROR) << "failed to open/read " << kLdSoConfPath;
@@ -190,7 +196,7 @@ bool SetChrootClangResourcePaths(const std::string& cwd,
     if (file != local_compiler_path && file != real_compiler_path) {
       resource_paths->push_back(file);
     }
-    if (!IsElfFile(file)) {
+    if (!ElfParser::IsElf(file)) {
       continue;
     }
     if (!edp.GetDeps(file, &exec_deps)) {
@@ -218,6 +224,82 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
       std::string(real_compiler_path),
   };
 
+  if (GCCFlags::IsPNaClClangCommand(local_compiler_path)) {
+    std::vector<std::string> pnacl_deps = {
+        "/bin/sh",
+        "/etc/env.d/python/config",
+        "/usr/bin/python",
+        "/usr/bin/python2",
+        "/usr/lib64/python2.7/_abcoll.py",
+        "/usr/lib64/python2.7/abc.py",
+        "/usr/lib64/python2.7/atexit.py",
+        "/usr/lib64/python2.7/codecs.py",
+        "/usr/lib64/python2.7/collections.py",
+        "/usr/lib64/python2.7/copy_reg.py",
+        "/usr/lib64/python2.7/encodings/aliases.py",
+        "/usr/lib64/python2.7/encodings/__init__.py",
+        "/usr/lib64/python2.7/encodings/utf_8.py",
+        "/usr/lib64/python2.7/functools.py",
+        "/usr/lib64/python2.7/__future__.py",
+        "/usr/lib64/python2.7/genericpath.py",
+        "/usr/lib64/python2.7/hashlib.py",
+        "/usr/lib64/python2.7/heapq.py",
+        "/usr/lib64/python2.7/io.py",
+        "/usr/lib64/python2.7/keyword.py",
+        "/usr/lib64/python2.7/lib-dynload/binascii.so",
+        "/usr/lib64/python2.7/lib-dynload/_collections.so",
+        "/usr/lib64/python2.7/lib-dynload/cPickle.so",
+        "/usr/lib64/python2.7/lib-dynload/cStringIO.so",
+        "/usr/lib64/python2.7/lib-dynload/fcntl.so",
+        "/usr/lib64/python2.7/lib-dynload/_functools.so",
+        "/usr/lib64/python2.7/lib-dynload/_hashlib.so",
+        "/usr/lib64/python2.7/lib-dynload/_heapq.so",
+        "/usr/lib64/python2.7/lib-dynload/_io.so",
+        "/usr/lib64/python2.7/lib-dynload/itertools.so",
+        "/usr/lib64/python2.7/lib-dynload/_locale.so",
+        "/usr/lib64/python2.7/lib-dynload/math.so",
+        "/usr/lib64/python2.7/lib-dynload/_multiprocessing.so",
+        "/usr/lib64/python2.7/lib-dynload/operator.so",
+        "/usr/lib64/python2.7/lib-dynload/_random.so",
+        "/usr/lib64/python2.7/lib-dynload/select.so",
+        "/usr/lib64/python2.7/lib-dynload/strop.so",
+        "/usr/lib64/python2.7/lib-dynload/_struct.so",
+        "/usr/lib64/python2.7/lib-dynload/time.so",
+        "/usr/lib64/python2.7/linecache.py",
+        "/usr/lib64/python2.7/multiprocessing/__init__.py",
+        "/usr/lib64/python2.7/multiprocessing/process.py",
+        "/usr/lib64/python2.7/multiprocessing/util.py",
+        "/usr/lib64/python2.7/os.py",
+        "/usr/lib64/python2.7/pickle.py",
+        "/usr/lib64/python2.7/platform.py",
+        "/usr/lib64/python2.7/posixpath.py",
+        "/usr/lib64/python2.7/random.py",
+        "/usr/lib64/python2.7/re.py",
+        "/usr/lib64/python2.7/shlex.py",
+        "/usr/lib64/python2.7/site.py",
+        "/usr/lib64/python2.7/sre_compile.py",
+        "/usr/lib64/python2.7/sre_constants.py",
+        "/usr/lib64/python2.7/sre_parse.py",
+        "/usr/lib64/python2.7/stat.py",
+        "/usr/lib64/python2.7/string.py",
+        "/usr/lib64/python2.7/struct.py",
+        "/usr/lib64/python2.7/subprocess.py",
+        "/usr/lib64/python2.7/_sysconfigdata.py",
+        "/usr/lib64/python2.7/sysconfig.py",
+        "/usr/lib64/python2.7/tempfile.py",
+        "/usr/lib64/python2.7/threading.py",
+        "/usr/lib64/python2.7/traceback.py",
+        "/usr/lib64/python2.7/types.py",
+        "/usr/lib64/python2.7/UserDict.py",
+        "/usr/lib64/python2.7/warnings.py",
+        "/usr/lib64/python2.7/weakref.py",
+        "/usr/lib64/python2.7/_weakrefset.py",
+    };
+    resources.insert(resources.end(),
+                     std::make_move_iterator(pnacl_deps.begin()),
+                     std::make_move_iterator(pnacl_deps.end()));
+  }
+
   if (!IsClangWrapperInChroot(local_compiler_path)) {
     return SetChrootClangResourcePaths(cwd, resources, local_compiler_path,
                                        real_compiler_path, resource_paths);
@@ -226,7 +308,7 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
   //
   // Code below list up files needed to run the wrapper.
   //
-  if (IsElfFile(std::string(local_compiler_path))) {
+  if (ElfParser::IsElf(std::string(local_compiler_path))) {
     // Assuming |local_compiler_path| is a program to detect a position of
     // the wrapper, and execute.
     // Then, we need to upload files to decide wrapper positions (.NATIVE
@@ -314,6 +396,33 @@ void ChromeOSCompilerInfoBuilderHelper::SetAdditionalFlags(
     // we have to set -noccache.
     additional_flags->Add("-noccache");
   }
+}
+
+// static
+bool ChromeOSCompilerInfoBuilderHelper::IsAndroidClang(
+    absl::string_view gcc_version) {
+  return absl::StrContains(gcc_version, "[Android ");
+}
+
+// static
+bool ChromeOSCompilerInfoBuilderHelper::CollectAndroidClangResources(
+    const std::string& cwd,
+    absl::string_view local_compiler_path,
+    absl::string_view real_compiler_path,
+    std::vector<std::string>* resource_paths) {
+  // TODO: dynamically find this instead of hard-code.
+  std::string real_clang = absl::StrCat(local_compiler_path, ".real");
+  if (access(real_clang.c_str(), X_OK) != 0) {
+    LOG(INFO) << "real clang seems not executable: " << real_clang;
+    return false;
+  }
+  resource_paths->push_back(std::move(real_clang));
+  std::string libcxx = file::JoinPath(file::Dirname(local_compiler_path), "..",
+                                      "lib64", "libc++.so");
+  if (access(libcxx.c_str(), R_OK) == 0) {
+    resource_paths->push_back(std::move(libcxx));
+  }
+  return true;
 }
 
 }  // namespace devtools_goma

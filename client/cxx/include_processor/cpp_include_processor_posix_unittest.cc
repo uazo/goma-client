@@ -238,7 +238,8 @@ class CppIncludeProcessorPosixTest : public testing::Test {
     VLOG(1) << "expected_files: " << expected_files
             << " actual_files: " << actual_files;
 
-    CompareFiles(expected_files, actual_files, allowed_extra_files);
+    CompareFiles(bare_gcc, include_file, expected_files, actual_files,
+                 allowed_extra_files);
   }
 
   void RunTest(const std::string& bare_gcc,

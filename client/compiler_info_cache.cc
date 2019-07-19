@@ -465,7 +465,6 @@ void CompilerInfoCache::UpdateOlderCompilerInfoUnlocked() {
   // Check CompilerInfo validity. Obsolete CompilerInfo will be removed.
   // Since calculating sha256 is slow, we need cache. Otherwise, we will
   // need more than 2 seconds to check.
-  SHA256HashCache sha256_cache;
   std::vector<std::string> keys_to_remove;
   const absl::Time now = absl::Now();
   for (const auto& entry : compiler_info_) {
@@ -491,7 +490,7 @@ void CompilerInfoCache::UpdateOlderCompilerInfoUnlocked() {
       continue;
     }
 
-    if (state->compiler_info_->UpdateFileStatIfHashMatch(&sha256_cache)) {
+    if (state->compiler_info_->UpdateFileStatIfHashMatch()) {
       LOG(INFO) << "compiler filestat didn't match, but hash matched: "
                 << abs_local_compiler_path;
       continue;

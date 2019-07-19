@@ -4,14 +4,121 @@
 
 #include "gcc_compiler_info_builder.h"
 
+#ifdef __linux__
+#include <unistd.h>
+#endif
+
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "base/path.h"
+#include "client/mypath.h"
+#include "client/subprocess.h"
+#include "client/unittest_util.h"
+#include "client/util.h"
+#include "glog/logging.h"
+#include "google/protobuf/repeated_field.h"
 #include "gtest/gtest.h"
-#include "mypath.h"
-#include "path.h"
-#include "subprocess.h"
-#include "unittest_util.h"
-#include "util.h"
+#include "lib/path_util.h"
 
 namespace devtools_goma {
+
+namespace {
+
+#ifdef __linux__
+bool HasHermeticDimensions(
+    const google::protobuf::RepeatedPtrField<std::string>& dimensions) {
+  for (const auto& d : dimensions) {
+    if (absl::StrContains(d, "-hermetic")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool FollowSymlinks(const std::string& path,
+                    std::vector<std::string>* paths,
+                    int follow_count) {
+  if (follow_count <= 0) {
+    LOG(ERROR) << "reached max follow count."
+               << " path=" << path;
+    return false;
+  }
+
+  // TODO: merge the code with code in CompilerInfoBuilder?
+  struct stat st;
+  if (lstat(path.c_str(), &st) < 0) {
+    PLOG(WARNING) << "failed to lstat."
+                  << " path=" << path;
+    return false;
+  }
+  if (S_ISLNK(st.st_mode)) {
+    auto symlink_path(absl::make_unique<char[]>(st.st_size + 1));
+    ssize_t size = readlink(path.c_str(), symlink_path.get(), st.st_size + 1);
+    if (size < 0) {
+      // failed to read symlink
+      PLOG(WARNING) << "failed readlink: " << path;
+      return false;
+    }
+    if (size != st.st_size) {
+      PLOG(WARNING) << "unexpected symlink size: path=" << path
+                    << " actual=" << size << " expected=" << st.st_size;
+      return false;
+    }
+    symlink_path[size] = '\0';
+    if (!FollowSymlinks(file::JoinPathRespectAbsolute(file::Dirname(path),
+                                                      symlink_path.get()),
+                        paths, follow_count - 1)) {
+      return false;
+    }
+  }
+  paths->push_back(path);
+  return true;
+}
+
+bool AppendLibraries(const std::string& compiler,
+                     std::vector<std::string>* expected_executable_binaries) {
+  int32_t status = 0;
+  std::vector<std::string> cmd = {
+      "/usr/bin/ldd",
+      compiler,
+  };
+  const std::string output =
+      ReadCommandOutput(cmd[0], cmd, std::vector<std::string>(), ".",
+                        MERGE_STDOUT_STDERR, &status);
+  EXPECT_EQ(static_cast<uint32_t>(0), status);
+  for (auto&& line :
+       absl::StrSplit(output, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
+    // expecting line like:
+    // libpthread.so.0 => /lib64/libpthread.so.0 (0x00abcdef)
+    absl::string_view::size_type allow_pos = line.find("=>");
+    if (allow_pos == absl::string_view::npos) {
+      allow_pos = 0;
+    } else {
+      allow_pos += 2;
+    }
+    absl::string_view::size_type paren_pos = line.rfind("(");
+    // npos
+    absl::string_view libname = absl::StripAsciiWhitespace(
+        line.substr(allow_pos, paren_pos - allow_pos));
+    if (!libname.empty() && IsPosixAbsolutePath(libname)) {
+      // On Linux, MAX_NESTED_LINKS is 8.
+      constexpr int kMaxNestedLinks = 8;
+      if (!FollowSymlinks(std::string(libname), expected_executable_binaries,
+                          kMaxNestedLinks)) {
+        return false;
+      }
+    }
+  }
+  expected_executable_binaries->emplace_back("/etc/ld.so.cache");
+
+  return true;
+}
+
+#endif  // __linux__
+
+}  // namespace
 
 class GCCCompilerInfoBuilderTest : public testing::Test {
  protected:
@@ -225,6 +332,11 @@ TEST_F(GCCCompilerInfoBuilderTest, BuildWithRealClang) {
       clangxx,
       clang,
   };
+#ifdef __linux__
+  if (HasHermeticDimensions(data->dimensions())) {
+    AppendLibraries(clangxx, &expected_executable_binaries);
+  }
+#endif
 
   if (access(lib_find_bad_constructs_so.c_str(), R_OK) == 0) {
     expected_executable_binaries.push_back(lib_find_bad_constructs_so);

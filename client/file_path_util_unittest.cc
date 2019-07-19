@@ -51,8 +51,7 @@ std::string LocateExecutable(const char* cwd_in,
 
   std::string exec_path;
   if (devtools_goma::GetRealExecutablePath(nullptr, cmd_in, cwd_in, path,
-                                           pathext, &exec_path, nullptr,
-                                           nullptr)) {
+                                           pathext, &exec_path, nullptr)) {
     return exec_path;
   }
   return "";

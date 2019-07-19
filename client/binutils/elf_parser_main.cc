@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "elf_parser.h"
-
 #include <cstdlib>
 #include <iostream>
 
+#include "binutils/elf_parser.h"
 #include "glog/logging.h"
 #include "goma_init.h"
 
@@ -21,7 +20,6 @@ int main(int argc, char* argv[]) {
 
   std::unique_ptr<ElfParser> elf = ElfParser::NewElfParser(argv[1]);
   CHECK(elf != nullptr);
-  CHECK(elf->valid());
   std::vector<std::string> needed, rpath;
   if (!elf->ReadDynamicNeededAndRpath(&needed, &rpath)) {
     LOG(FATAL) << "ReadDynamicNeededAndRpath";

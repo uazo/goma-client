@@ -37,8 +37,7 @@ static const std::string GetArchName(cpu_type_t type, cpu_subtype_t subtype) {
     return "powerpc";
   } else {
     LOG(ERROR) << "unknown CPU type or subtype found:"
-                 << " cpu_type=" << type
-                 << " cpu_subtype=" << subtype;
+               << " cpu_type=" << type << " cpu_subtype=" << subtype;
     return "";
   }
 }
@@ -68,8 +67,7 @@ bool GetFatArchs(const ScopedFd& fd,
   } else {
     // Since we may ask GetFatArch to read the file, it won't be error.
     VLOG(1) << "not a FAT file magic: "
-            << " fd=" << fd
-            << " magic=" << std::hex << header.magic;
+            << " fd=" << fd << " magic=" << std::hex << header.magic;
     return false;
   }
 
@@ -81,8 +79,7 @@ bool GetFatArchs(const ScopedFd& fd,
     fat_arch arch;
     if (fd.Read(&arch, sizeof(arch)) != sizeof(arch)) {
       PLOG(WARNING) << "read fat arch:"
-                    << " entry_id=" << i
-                    << " fd=" << fd;
+                    << " entry_id=" << i << " fd=" << fd;
       return false;
     }
     if (raw != nullptr)
@@ -102,16 +99,15 @@ bool GetFatHeader(const ScopedFd& fd, MacFatHeader* fheader) {
   if (!GetFatArchs(fd, &archs, &fheader->raw))
     return false;
 
-  for (std::vector<fat_arch>::iterator it = archs.begin();
-       it != archs.end(); ++it) {
+  for (std::vector<fat_arch>::iterator it = archs.begin(); it != archs.end();
+       ++it) {
     MacFatArch arch;
     arch.arch_name = GetArchName(it->cputype, it->cpusubtype);
     arch.offset = it->offset;
     arch.size = it->size;
     fheader->archs.push_back(arch);
     VLOG(1) << "fat:"
-            << " arch=" << arch.arch_name
-            << " offset=" << arch.offset
+            << " arch=" << arch.arch_name << " offset=" << arch.offset
             << " size=" << arch.size;
   }
 
@@ -124,19 +120,15 @@ MachO::MachO(const std::string& filename) : filename_(filename) {
   std::vector<fat_arch> archs;
   if (!GetFatArchs(fd_, &archs, nullptr)) {
     LOG(WARNING) << "Cannot read FAT header:"
-                 << " filename=" << filename
-                 << " fd=" << fd_;
+                 << " filename=" << filename << " fd=" << fd_;
   }
-  for (std::vector<fat_arch>::iterator it = archs.begin();
-       it != archs.end(); ++it) {
-    archs_.insert(make_pair(
-         GetArchName(it->cputype, it->cpusubtype),
-         *it));
+  for (std::vector<fat_arch>::iterator it = archs.begin(); it != archs.end();
+       ++it) {
+    archs_.insert(make_pair(GetArchName(it->cputype, it->cpusubtype), *it));
   }
 }
 
-MachO::~MachO() {
-}
+MachO::~MachO() {}
 
 bool MachO::GetDylibs(const std::string& cpu_type,
                       std::vector<DylibEntry>* dylibs) {
@@ -149,16 +141,13 @@ bool MachO::GetDylibs(const std::string& cpu_type,
   const size_t offset = found->second.offset;
   const size_t len = found->second.size;
   VLOG(1) << "mmap "
-          << " len=" << len
-          << " offset=" << offset;
+          << " len=" << len << " offset=" << offset;
   char* mmapped = reinterpret_cast<char*>(
       mmap(nullptr, len, PROT_READ, MAP_PRIVATE, fd_.fd(), offset));
   if (mmapped == MAP_FAILED) {
     LOG(ERROR) << "mmap failed:"
-               << " filename=" << filename_
-               << " fd=" << fd_.fd()
-               << " len=" << len
-               << " offset=" << offset;
+               << " filename=" << filename_ << " fd=" << fd_.fd()
+               << " len=" << len << " offset=" << offset;
     return false;
   }
   const mach_header* header = reinterpret_cast<const mach_header*>(mmapped);
@@ -173,19 +162,16 @@ bool MachO::GetDylibs(const std::string& cpu_type,
       LOG(WARNING) << "Mach object with non-supported endian.";
     }
     LOG(WARNING) << "strange magic: "
-                 << " filename=" << filename_
-                 << " magic=" << std::hex << header->magic;
+                 << " filename=" << filename_ << " magic=" << std::hex
+                 << header->magic;
     munmap(mmapped, len);
     return false;
   }
   VLOG(1) << "mach header info:"
-          << " magic=" << header->magic
-          << " cputype=" << header->cputype
+          << " magic=" << header->magic << " cputype=" << header->cputype
           << " cpusubtype=" << header->cpusubtype
-          << " filetype=" << header->filetype
-          << " ncmds=" << header->ncmds
-          << " sizeofcmds=" << header->sizeofcmds
-          << " flags=" << header->flags;
+          << " filetype=" << header->filetype << " ncmds=" << header->ncmds
+          << " sizeofcmds=" << header->sizeofcmds << " flags=" << header->flags;
   CHECK_EQ(header->cputype, found->second.cputype);
   CHECK_EQ(header->cpusubtype, found->second.cpusubtype);
 
@@ -206,33 +192,31 @@ bool MachO::GetDylibs(const std::string& cpu_type,
         ABSL_FALLTHROUGH_INTENDED;
       case LC_LOAD_WEAK_DYLIB:
         ABSL_FALLTHROUGH_INTENDED;
-      case LC_REEXPORT_DYLIB:
-        {
-          dylib_command* dycom = reinterpret_cast<dylib_command*>(command);
-          if (dycom->dylib.name.offset < command->cmdsize) {
-            DylibEntry entry;
-            entry.name = std::string(reinterpret_cast<char*>(command) +
-                                     dycom->dylib.name.offset);
-            entry.timestamp = dycom->dylib.timestamp;
-            entry.current_version = dycom->dylib.current_version;
-            entry.compatibility_version = dycom->dylib.compatibility_version;
-            dylibs->push_back(entry);
-          } else {
-            LOG(WARNING) << "dylib command broken:"
-                         << " cmd=" << command->cmd
-                         << " cmdsize=" << command->cmdsize
-                         << " dylib.name.offset=" << dycom->dylib.name.offset;
-          }
+      case LC_REEXPORT_DYLIB: {
+        dylib_command* dycom = reinterpret_cast<dylib_command*>(command);
+        if (dycom->dylib.name.offset < command->cmdsize) {
+          DylibEntry entry;
+          entry.name = std::string(reinterpret_cast<char*>(command) +
+                                   dycom->dylib.name.offset);
+          entry.timestamp = dycom->dylib.timestamp;
+          entry.current_version = dycom->dylib.current_version;
+          entry.compatibility_version = dycom->dylib.compatibility_version;
+          dylibs->push_back(entry);
+        } else {
+          LOG(WARNING) << "dylib command broken:"
+                       << " cmd=" << command->cmd
+                       << " cmdsize=" << command->cmdsize
+                       << " dylib.name.offset=" << dycom->dylib.name.offset;
         }
-        break;
+      } break;
       default:
         VLOG(2) << "command is skipped:"
                 << " type=" << std::hex << command->cmd
                 << " size=" << command->cmdsize;
         break;
     }
-    command = reinterpret_cast<load_command*>(
-        reinterpret_cast<char*>(command) + command->cmdsize);
+    command = reinterpret_cast<load_command*>(reinterpret_cast<char*>(command) +
+                                              command->cmdsize);
     CHECK_GT(reinterpret_cast<char*>(command), mmapped);
     CHECK_LT(reinterpret_cast<char*>(command), mmapped + len);
   }

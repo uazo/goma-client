@@ -467,6 +467,8 @@ class GomaDriver(object):
         'stat': self._PrintStatistics,
         'status': self._CheckStatus,
         'stop': self._ShutdownCompilerProxy,
+        'version': self._PrintVersion,
+        'update_hook': self._UpdateHook,
     }
     self._version = 0
     self._manifest = {}
@@ -673,6 +675,30 @@ class GomaDriver(object):
     print('Killing compiler proxy.')
     reply = self._env.ControlCompilerProxy('/quitquitquit')
     print('compiler proxy status: %(url)s %(message)s' % reply)
+
+  def _PrintVersion(self):
+    """Print binary/running version of goma. """
+    binary_version = self._env.GetDiskCompilerProxyVersion()
+    print('compiler_proxy binary %s' % binary_version)
+    versionz = self._env.ControlCompilerProxy('/versionz', check_running=True)
+    if versionz['status']:
+      running_version = versionz['message'].strip()
+      print('running compiler_proxy version %s' % running_version)
+      if binary_version != running_version:
+        print('WARNING: binary was updated. restart required')
+    else:
+      print('no running compiler_proxy')
+
+  def _UpdateHook(self):
+    """Restart compiler_proxy if binary is updated."""
+    binary_version = self._env.GetDiskCompilerProxyVersion()
+    versionz = self._env.ControlCompilerProxy('/versionz', check_running=True)
+    if versionz['status']:
+      running_version =  versionz['message'].strip()
+      if binary_version != running_version:
+        print('update %s -> %s' % (running_version, binary_version))
+        # TODO: preserve flag?
+        self._env.RestartCompilerProxy()
 
   def _GetLatestVersion(self):
     """Get latest version of goma.
@@ -1154,6 +1180,8 @@ class GomaDriver(object):
     print('  stat                  show statistics')
     print('  status                get compiler proxy status')
     print('  stop                  asynchronous stop of compiler proxy')
+    print('  version               show binary/running version')
+    print('  update_hook           restart if binary is updated.')
 
 
   def _DefaultAction(self):
@@ -2367,7 +2395,7 @@ class GomaEnvPosix(GomaEnv):
       if not self._lsof_path:
         raise Error('lsof command not found. '
                     'Please install lsof command, or put it in PATH.')
-    lsof_command = [self._lsof_path, '-F', 'pun', '-P']
+    lsof_command = [self._lsof_path, '-F', 'pun', '-P', '-n']
     if cmd['type'] == 'process':
       lsof_command.extend(['-p', cmd['name']])
     elif cmd['type'] == 'file':

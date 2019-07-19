@@ -32,6 +32,7 @@ enum class CompilerInfoType {
   Javac,
   Java,
   Rustc,
+  DartAnalyzer,
   Fake,
 };
 
@@ -45,6 +46,8 @@ inline std::ostream& operator<<(std::ostream& os, CompilerInfoType type) {
       return os << "java";
     case CompilerInfoType::Rustc:
       return os << "rustc";
+    case CompilerInfoType::DartAnalyzer:
+      return os << "dart_analyzer";
     case CompilerInfoType::Fake:
       return os << "fake";
   }
@@ -122,7 +125,7 @@ class CompilerInfo {
 
   // Updates FileStat to the current FileStat when hash is matched.
   // Returns false if hash doesn't match.
-  bool UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache);
+  bool UpdateFileStatIfHashMatch();
 
   // Returns true if CompilerInfo has some error.
   bool HasError() const { return data_->has_error_message(); }
@@ -210,6 +213,8 @@ class CompilerInfo {
 
   bool found() const { return data_->found(); }
 
+  const std::vector<std::string>& dimensions() const { return dimensions_; }
+
   bool IsSameCompiler(const CompilerInfo& ci) const {
     return data_->target() == ci.data_->target()
         && data_->version() == ci.data_->version()
@@ -259,6 +264,10 @@ class CompilerInfo {
   // e.g. clang with address sanizier will use
   // "<resource_dir>/share/asan_blacklist.txt" during a compile.
   std::vector<ResourceInfo> resource_;
+
+  // Dimensions specific to compilers.
+  // If not empty, this value is used as-is for dimensions in RequesterInfo.
+  std::vector<std::string> dimensions_;
 
   // Protects data_->last_used_at.
   mutable ReadWriteLock last_used_at_mu_;

@@ -37,7 +37,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@c37e64cba55256dff3ca4575dfcac1cfb2aa111e",
+     "https://boringssl.googlesource.com/boringssl@09050cb498336655883157c6e6055db9e5542857",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -92,6 +92,10 @@ deps = {
      "client/third_party/subprocess32":
      "https://github.com/google/python-subprocess32@" +
      "0a814da4a033875880534fd488770e2d97febe2f",
+
+     # libyaml dist-0.2.2
+     "client/third_party/libyaml/src":
+     "https://github.com/yaml/libyaml.git@d407f6b1cccbf83ee182144f39689babcb220bd6",
 }
 
 hooks = [

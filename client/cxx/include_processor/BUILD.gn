@@ -156,6 +156,7 @@ static_library("cpp_include_processor_unittest_helper_lib") {
   ]
   deps = [
     "//client:goma_test_lib",
+    "//lib",
     "//third_party:glog",
     "//third_party/abseil",
   ]

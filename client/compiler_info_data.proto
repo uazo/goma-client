@@ -9,7 +9,7 @@ package devtools_goma;
 
 // CompilerInfoData is a serializable format of CompilerInfo.
 //
-// NEXT ID TO USE: 42
+// NEXT ID TO USE: 44
 message CompilerInfoData {
   // Type of file in ResouceInfo.
   enum ResourceType {
@@ -153,7 +153,12 @@ message CompilerInfoData {
     FakeCompilerInfoData fake = 40;
     // Rustc extension
     RustcCompilerInfoData rustc = 41;
+    // DartAnalyzer extension
+    DartAnalyzerCompilerInfoData dart_analyzer = 42;
   }
+
+  // Dimensions to be used in RequsterInfo.
+  repeated string dimensions = 43;
 
   reserved 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 26, 27, 31, 33;
 };
@@ -216,6 +221,12 @@ message FakeCompilerInfoData {
 // RustcCompilerInfoData contains Rustc related CompilerInfoData.
 // NEXT ID TO USE: 1
 message RustcCompilerInfoData {
+  // currently no extension
+}
+
+// DartAnalyzerCompilerInfoData contains DartAnalyzer related CompilerInfoData.
+// NEXT ID TO USE: 1
+message DartAnalyzerCompilerInfoData {
   // currently no extension
 }
 

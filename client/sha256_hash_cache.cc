@@ -4,10 +4,18 @@
 
 #include "sha256_hash_cache.h"
 
-#include "autolock_timer.h"
-#include "goma_hash.h"
+#include "absl/base/call_once.h"
+#include "client/autolock_timer.h"
+#include "glog/logging.h"
+#include "lib/goma_hash.h"
 
 namespace devtools_goma {
+
+namespace {
+
+absl::once_flag g_init_once;
+
+}  // namespace
 
 bool SHA256HashCache::GetHashFromCacheOrFile(const std::string& path,
                                              std::string* hash) {
@@ -40,5 +48,26 @@ bool SHA256HashCache::GetHashFromCacheOrFile(const std::string& path,
   cache_[path] = std::make_pair(filestat, *hash);
   return true;
 }
+
+// static
+SHA256HashCache* SHA256HashCache::instance() {
+  absl::call_once(g_init_once, SHA256HashCache::Init);
+  return instance_;
+}
+
+// static
+void SHA256HashCache::Init() {
+  CHECK(!instance_);
+  instance_ = new SHA256HashCache();
+  atexit(SHA256HashCache::Quit);
+}
+
+// static
+void SHA256HashCache::Quit() {
+  delete instance_;
+  instance_ = nullptr;
+}
+
+SHA256HashCache* SHA256HashCache::instance_ = nullptr;
 
 }  // namespace devtools_goma

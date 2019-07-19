@@ -11,10 +11,13 @@
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
 #include "gtest/gtest.h"
+#include "lib/file_helper.h"
 
 namespace devtools_goma {
 
-void CompareFiles(const std::set<std::string>& expected_files,
+void CompareFiles(const std::string& compiler,
+                  const std::string& include_file,
+                  const std::set<std::string>& expected_files,
                   const std::set<std::string>& actual_files,
                   const std::set<std::string>& allowed_extra_files) {
   std::vector<std::string> matched_files;
@@ -47,13 +50,28 @@ void CompareFiles(const std::set<std::string>& expected_files,
   LOG_IF(INFO, !missing_files.empty())
       << "missing files: " << absl::StrJoin(missing_files, ", ");
 
-  EXPECT_EQ(0U, missing_files.size()) << missing_files;
+  std::string test_contents;
+  if (missing_files.size() != 0 || !nonallowed_extra_files.empty()) {
+    ReadFileToString(include_file, &test_contents);
+  }
+  EXPECT_EQ(0U, missing_files.size())
+      << "missing inputs found:"
+      << " source=" << include_file << " compiler=" << compiler
+      << " test_contents=" << test_contents << " files=" << missing_files;
 
 #ifdef __MACH__
   // See: b/26573474
-  LOG_IF(WARNING, !nonallowed_extra_files.empty()) << nonallowed_extra_files;
+  LOG_IF(WARNING, !nonallowed_extra_files.empty())
+      << "nonallowed_extra_files found:"
+      << " source=" << include_file << " compiler=" << compiler
+      << " test_contents=" << test_contents
+      << " files=" << nonallowed_extra_files;
 #else
-  EXPECT_TRUE(nonallowed_extra_files.empty()) << nonallowed_extra_files;
+  EXPECT_TRUE(nonallowed_extra_files.empty())
+      << "nonallowed_extra_files found:"
+      << " source=" << include_file << " compiler=" << compiler
+      << " test_contents=" << test_contents
+      << " files=" << nonallowed_extra_files;
 #endif
 }
 

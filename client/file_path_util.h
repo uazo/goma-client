@@ -26,14 +26,11 @@ bool IsGomacc(const std::string& candidate_path,
 // Find a real path name of |cmd| from |path_env|.
 // It avoids to choose the file having same FileStat with |gomacc_filestat|.
 // It returns true on success, and |local_compiler_path| (real compiler path)
-// and |no_goma_path| (PATH env. without gomacc) are set.
+// and |no_goma_path_env| (PATH env. without gomacc) are set.
 // On Windows, |pathext_env| is used as PATHEXT parameter.
 // Other platform should set empty |pathext_env| or fatal error.
 // |cwd| represents current working directory.
-// If returned |local_compiler_path| depends on the current working directory,
-// |is_in_relative_path| become true.
-// Note: you can use NULL to |no_goma_path_env| and |is_in_relative_path|
-// if you do not need them.
+// Note: you can use NULL to |no_goma_path_env| if you do not need them.
 // Note: You MUST call InstallReadCommandOuptutFunc beforehand if you
 //       use gomacc_filestat.
 bool GetRealExecutablePath(const FileStat* gomacc_filestat,
@@ -42,8 +39,7 @@ bool GetRealExecutablePath(const FileStat* gomacc_filestat,
                            const std::string& path_env,
                            const std::string& pathext_env,
                            std::string* local_compiler_path,
-                           std::string* no_goma_path_env,
-                           bool* is_in_relative_path);
+                           std::string* no_goma_path_env);
 
 // Remove duplicate filepath from |filenames|
 // for files normalized by JoinPathRepectAbsolute with |cwd|.

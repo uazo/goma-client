@@ -88,25 +88,6 @@ namespace devtools_goma {
 
 namespace {
 
-// TODO: set proper dimensions instead.
-//                    e.g. compilers may not work if libc in remote image is
-//                    older than that of the requested compiler especially for
-//                    Linux.
-void SetDefaultOSSpecificRequesterInfo(RequesterInfo* info) {
-#ifdef _WIN32
-  info->add_dimensions("os:win");
-  info->set_path_style(RequesterInfo::WINDOWS_STYLE);
-#elif defined(__MACH__)
-  info->add_dimensions("os:mac");
-  info->set_path_style(RequesterInfo::POSIX_STYLE);
-#elif defined(__linux__)
-  info->add_dimensions("os:linux");
-  info->set_path_style(RequesterInfo::POSIX_STYLE);
-#else
-#error "unsupported platform"
-#endif
-}
-
 // Fills out various fields of |stats| prior to running the associated task.
 void InitCompileStatsForTask(const CompileService& service,
                              const ExecReq& req,
@@ -280,8 +261,6 @@ void CompileService::Exec(
     }
     task_req->mutable_requester_info()->set_compiler_proxy_id(
         absl::StrCat(compiler_proxy_id_prefix(), task_id));
-
-    SetDefaultOSSpecificRequesterInfo(task_req->mutable_requester_info());
 
     task->Init(rpc, std::move(task_req), resp, callback);
 
@@ -1089,13 +1068,13 @@ bool CompileService::FindLocalCompilerPathAndUpdate(
     return false;
   }
 
-  bool is_relative;
   std::string no_goma_path_env;
   if (GetRealExecutablePath(&gomacc_filestat, basename, cwd, local_path,
-                            pathext, local_compiler_path, &no_goma_path_env,
-                            &is_relative)) {
-    if (is_relative)
+                            pathext, local_compiler_path, &no_goma_path_env)) {
+    if (!file::IsAbsolutePath(*local_compiler_path)) {
       local_compiler_key = key_cwd;
+    }
+
     no_goma_local_path->assign(no_goma_path_env);
     local_compiler_paths_.insert(
         std::make_pair(local_compiler_key,

@@ -311,8 +311,8 @@ bool StartCompilerProxy() {
   CHECK(!path_env.empty()) << "No PATH env. found.";
   std::string command_path;
   // Note: "" to use the Windows default pathext.
-  if (!GetRealExecutablePath(
-      nullptr, "cmd.exe", "", path_env, "", &command_path, nullptr, nullptr)) {
+  if (!GetRealExecutablePath(nullptr, "cmd.exe", "", path_env, "",
+                             &command_path, nullptr)) {
     std::cerr << "GOMA: failed to find cmd.exe: "
               << " path_env=" << path_env
               << std::endl;

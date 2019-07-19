@@ -321,6 +321,7 @@ static_library("compiler_proxy_base_lib") {
     "//lib:java_specific",
     "//lib:fake_specific",
     "//lib:rust_specific",
+    "//lib:dart_analyzer_specific",
   ]
 }
 
@@ -476,6 +477,9 @@ static_library("compiler_proxy_lib") {
     "//client/cxx/include_processor:cpp_include_processor_lib",
     "//client/cxx/include_processor:directive_filter_lib",
     "//client/cxx/include_processor:include_cache_lib",
+    "//client/dart_analyzer:dart_analyzer_compiler_info_builder_lib",
+    "//client/dart_analyzer:dart_analyzer_compiler_info_lib",
+    "//client/dart_analyzer:dart_analyzer_compiler_type_specific",
     "//client/fake:fake_compiler_info_builder_lib",
     "//client/fake:fake_compiler_info_lib",
     "//client/fake:fake_compiler_type_specific",
@@ -610,6 +614,7 @@ static_library("sha256_hash_cache_lib") {
   public_deps = [
     ":common",
     "//base",
+    "//third_party/abseil",
   ]
 }
 

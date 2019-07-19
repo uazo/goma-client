@@ -14,6 +14,7 @@
 #include "ioutil.h"
 #include "path.h"
 #include "scoped_tmp_file.h"
+#include "sha256_hash_cache.h"
 #include "util.h"
 
 namespace devtools_goma {
@@ -179,7 +180,7 @@ bool CxxCompilerInfoBuilder::SubprogramInfoFromPath(
     return false;
   }
   std::string hash;
-  if (!GomaSha256FromFile(GetRealSubprogramPath(abs_path), &hash)) {
+  if (!SHA256HashCache::instance()->GetHashFromCacheOrFile(abs_path, &hash)) {
     return false;
   }
   s->set_abs_path(abs_path);

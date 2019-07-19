@@ -1,0 +1,31 @@
+config("libyaml_config") {
+  include_dirs = [ "src/include" ]
+
+  cflags = [
+    "-D_GNU_SOURCE",
+    "-DYAML_DECLARE_STATIC",
+    "-DYAML_VERSION_STRING=\"0.2.2\"",
+    "-DYAML_VERSION_MAJOR=0",
+    "-DYAML_VERSION_MINOR=2",
+    "-DYAML_VERSION_PATCH=2",
+  ]
+}
+
+static_library("libyaml") {
+  sources = [
+    "src/include/yaml.h",
+    "src/src/api.c",
+    "src/src/dumper.c",
+    "src/src/emitter.c",
+    "src/src/loader.c",
+    "src/src/parser.c",
+    "src/src/reader.c",
+    "src/src/scanner.c",
+    "src/src/writer.c",
+    "src/src/yaml_private.h",
+  ]
+
+  configs -= [ "//build/config/compiler:goma_code" ]
+  configs += [ "//build/config/compiler:no_goma_code" ]
+  public_configs = [ ":libyaml_config" ]
+}

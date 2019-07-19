@@ -229,6 +229,8 @@ void CppParser::AddMacro(const Macro* macro) {
     } else {
       Error("macro is already defined:", existing_macro->name);
     }
+  } else {
+    VLOG(1) << "#DEFINE " << macro->DebugString(this);
   }
 }
 
@@ -829,6 +831,7 @@ CppParser::Token CppParser::ProcessHasCheckMacro(
 
   if (tokens.empty()) {
     Error(name + " expects an identifier");
+    VLOG(1) << "ProcessHasCheckMacro " << name << ": expects an identifier";
     return Token(0);
   }
 
@@ -836,6 +839,8 @@ CppParser::Token CppParser::ProcessHasCheckMacro(
       CppMacroExpander(this).Expand(tokens, SpaceHandling::kSkip);
   if (expanded.empty()) {
     Error(name + " expects an identifier");
+    VLOG(1) << "ProcessHasCheckMacro " << name
+            << ": expects an identifier (expanded)";
     return Token(0);
   }
 
@@ -858,6 +863,8 @@ CppParser::Token CppParser::ProcessHasCheckMacro(
         ident += ':';
       } else {
         Error(name + " expects an identifier");
+        VLOG(1) << "ProcessHasCheckMacro " << name
+                << ": expects an identifier (allow :)";
         return Token(0);
       }
     }
@@ -865,6 +872,8 @@ CppParser::Token CppParser::ProcessHasCheckMacro(
     Token token = expanded.front();
     if (token.type != Token::IDENTIFIER) {
       Error(name + " expects an identifier");
+      VLOG(1) << "ProcessHasCheckMacro " << name << ": expects an identifier "
+              << token;
       return Token(0);
     }
     ident = token.string_value;
@@ -879,8 +888,13 @@ CppParser::Token CppParser::ProcessHasCheckMacro(
   }
 
   const auto& iter = has_check_macro.find(ident);
-  if (iter == has_check_macro.end())
+  if (iter == has_check_macro.end()) {
+    VLOG(1) << "ProcessHasCheckMacro " << name << " ident=" << ident
+            << " not found";
     return Token(0);
+  }
+  VLOG(1) << "ProcessHasCheckMacro " << name << " ident=" << ident << "=>"
+          << iter->second;
   return Token(iter->second);
 }
 

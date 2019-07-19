@@ -1,0 +1,120 @@
+# Copyright 2019 The Goma Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+if (os == "linux") {
+  static_library("elf_parser_lib") {
+    sources = [
+      "elf_parser.cc",
+      "elf_parser.h",
+    ]
+
+    deps = [
+      "//base",
+      "//lib",
+      "//third_party:glog",
+      "//third_party/abseil",
+    ]
+  }
+
+  executable("elf_parser_unittest") {
+    testonly = true
+    sources = [
+      "elf_parser_unittest.cc",
+    ]
+    deps = [
+      ":elf_parser_lib",
+      "//build/config:exe_and_shlib_deps",
+      "//client:compiler_proxy_lib",
+      "//client:goma_test_lib",
+      "//client:subprocess_lib",
+    ]
+  }
+
+  executable("elf_parser") {
+    sources = [
+      "elf_parser_main.cc",
+    ]
+    deps = [
+      ":elf_parser_lib",
+      "//build/config:exe_and_shlib_deps",
+      "//client:compiler_proxy_lib",
+    ]
+  }
+
+  static_library("elf_util_lib") {
+    sources = [
+      "elf_util.cc",
+      "elf_util.h",
+    ]
+
+    deps = [
+      "//third_party:glog",
+      "//third_party/abseil",
+    ]
+  }
+
+  static_library("elf_dep_parser_lib") {
+    sources = [
+      "elf_dep_parser.cc",
+      "elf_dep_parser.h",
+    ]
+
+    deps = [
+      ":elf_parser_lib",
+      "//base",
+      "//lib",
+      "//third_party:glog",
+    ]
+
+    public_deps = [
+      "//third_party:gtest_prod",
+      "//third_party/abseil",
+    ]
+  }
+
+  executable("elf_util_unittest") {
+    testonly = true
+    sources = [
+      "elf_util_unittest.cc",
+    ]
+
+    deps = [
+      ":elf_util_lib",
+      "//build/config:exe_and_shlib_deps",
+      "//client:goma_test_lib",
+    ]
+  }
+
+  executable("elf_dep_parser_unittest") {
+    testonly = true
+    sources = [
+      "elf_dep_parser_unittest.cc",
+    ]
+
+    deps = [
+      ":elf_dep_parser_lib",
+      "//base",
+      "//build/config:exe_and_shlib_deps",
+      "//client:common",
+      "//client:goma_test_lib",
+    ]
+  }
+}
+
+if (os == "mac") {
+  static_library("mach_o_parser") {
+    sources = [
+      "mach_o_parser.cc",
+      "mach_o_parser.h",
+    ]
+    public_deps = [
+      "//base",
+      "//lib",
+    ]
+    deps = [
+      "//third_party:glog",
+      "//third_party/abseil",
+    ]
+  }
+}

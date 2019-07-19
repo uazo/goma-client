@@ -12,6 +12,7 @@
 #include "glog/logging.h"
 #include "path.h"
 #include "path_util.h"
+#include "sha256_hash_cache.h"
 
 #ifndef _WIN32
 #include <errno.h>
@@ -147,6 +148,10 @@ CompilerInfo::CompilerInfo(std::unique_ptr<CompilerInfoData> data)
   for (const auto& data : data_->resource()) {
     resource_.emplace_back(ResourceInfo::FromData(data));
   }
+
+  for (const auto& d : data_->dimensions()) {
+    dimensions_.push_back(d);
+  }
 }
 
 bool CompilerInfo::IsUpToDate(
@@ -199,9 +204,11 @@ bool CompilerInfo::IsUpToDate(
   return true;
 }
 
-bool CompilerInfo::UpdateFileStatIfHashMatch(SHA256HashCache* sha256_cache) {
+bool CompilerInfo::UpdateFileStatIfHashMatch() {
   // Checks real compiler hash and subprogram hash.
   // If they are all matched, we update FileStat.
+
+  SHA256HashCache* sha256_cache = SHA256HashCache::instance();
 
   std::string local_hash;
   if (!sha256_cache->GetHashFromCacheOrFile(abs_local_compiler_path(),

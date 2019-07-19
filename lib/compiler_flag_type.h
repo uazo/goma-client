@@ -10,14 +10,15 @@
 namespace devtools_goma {
 
 enum class CompilerFlagType {
-  Unknown,    // unknown type
-  Fake,       // fake compiler
-  Gcc,        // gcc or clang
-  Clexe,      // cl.exe or clang-cl.exe
-  ClangTidy,  // clang_tidy
-  Javac,      // javac
-  Java,       // java
-  Rustc,      // rustc
+  Unknown,       // unknown type
+  Fake,          // fake compiler
+  Gcc,           // gcc or clang
+  Clexe,         // cl.exe or clang-cl.exe
+  ClangTidy,     // clang_tidy
+  Javac,         // javac
+  Java,          // java
+  Rustc,         // rustc
+  DartAnalyzer,  // dartanalyzer
 };
 
 // Add operator<< for glog and gtest.

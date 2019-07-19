@@ -17,3 +17,4 @@ protobuf/protobuf
 subprocess32
 xz
 zlib
+libyaml/src

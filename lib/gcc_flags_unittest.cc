@@ -1494,28 +1494,39 @@ TEST_F(GCCFlagsTest, IsImportantEnvGCC) {
     const char* env;
     const bool client_important;
     const bool server_important;
-  } kTestCases[] {
-    { "LIBRARY_PATH=../libsupp", true, true },
-    { "CPATH=.:/special/include", true, true },
-    { "C_INCLUDE_PATH=.:/include", true, true },
-    { "CPLUS_INCLUDE_PATH=.:/include", true, true },
-    { "DEPENDENCIES_OUTPUT=/tmp/to", true, true },
-    { "SUNPRO_DEPENDENCIES=/tmp/to", true, true },
-    { "MACOSX_DEPLOYMENT_TARGET=/tmp/to", true, true },
-    { "SDKROOT=/tmp/to", true, true },
-    { "PWD=/tmp/to", true, true },
+  } kTestCases[]{
+      {"LIBRARY_PATH=../libsupp", true, true},
+      {"CPATH=.:/special/include", true, true},
+      {"C_INCLUDE_PATH=.:/include", true, true},
+      {"CPLUS_INCLUDE_PATH=.:/include", true, true},
+      {"DEPENDENCIES_OUTPUT=/tmp/to", true, true},
+      {"SUNPRO_DEPENDENCIES=/tmp/to", true, true},
+      {"MACOSX_DEPLOYMENT_TARGET=/tmp/to", true, true},
+      {"SDKROOT=/tmp/to", true, true},
+      {"PWD=/tmp/to", true, true},
 
-    { "PATHEXT=.EXE", true, false },
-    { "pathext=.EXE", true, false },
-    { "SystemRoot=C:\\Windows", true, false },
-    { "systemroot=C:\\Windows", true, false },
+      {"DEVELOPER_DIR=/tmp/to", true, false},
 
-    { "DEVELOPER_DIR=/tmp/to", true, false },
+      {"VPYTHON_VIRTUALENV_ROOT=/tmp/root", true, false},
+      {"LUCI_CONTEXT=/tmp/luci_context", true, false},
+      {"CIPD_CACHE_DIR=/tmp/cache", true, false},
 
-    { "SystemDrive=C:", false, false },
-    { "systemdrive=C:", false, false },
-    { "LD_PRELOAD=foo.so", false, false },
-    { "ld_preload=foo.so", false, false },
+      {"PATHEXT=.EXE", true, false},
+      {"pathext=.EXE", true, false},
+      {"SystemRoot=C:\\Windows", true, false},
+      {"systemroot=C:\\Windows", true, false},
+
+      {"HOMEDRIVE=C:", true, false},
+      {"HomeDrive=C:", true, false},
+      {"HOMEPATH=\\Users\\GomaUser", true, false},
+      {"HomePath=\\Users\\GomaUser", true, false},
+      {"USERPROFILE=C:\\Users\\GomaUser", true, false},
+      {"UserProfile=C:\\Users\\GomaUser", true, false},
+
+      {"SystemDrive=C:", false, false},
+      {"systemdrive=C:", false, false},
+      {"LD_PRELOAD=foo.so", false, false},
+      {"ld_preload=foo.so", false, false},
   };
 
   std::vector<std::string> args{

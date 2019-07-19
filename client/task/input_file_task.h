@@ -10,7 +10,6 @@
 
 #include "absl/memory/memory.h"
 #include "absl/time/time.h"
-#include "base/basictypes.h"
 #include "base/lockhelper.h"
 #include "compile_task.h"
 #include "file_hash_cache.h"
@@ -23,6 +22,9 @@ namespace devtools_goma {
 
 class InputFileTask {
  public:
+  InputFileTask(const InputFileTask&) = delete;
+  InputFileTask& operator=(const InputFileTask&) = delete;
+
   // Gets InputFileTask for the filename.
   // If an InputFileTask for the same filename already exists, use the same
   // InputFileTask.
@@ -138,8 +140,6 @@ class InputFileTask {
   static Lock global_mu_;
   static std::unordered_map<std::string, InputFileTask*>* task_by_filename_
       GUARDED_BY(global_mu_);
-
-  DISALLOW_COPY_AND_ASSIGN(InputFileTask);
 };
 
 }  // namespace devtools_goma

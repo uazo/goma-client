@@ -8,7 +8,6 @@ config("base_config") {
 
 static_library("base") {
   sources = [
-    "basictypes.h",
     "compiler_specific.h",
     "file_dir.cc",
     "file_dir.h",

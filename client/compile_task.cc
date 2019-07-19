@@ -1050,6 +1050,7 @@ void CompileTask::ProcessCallExecDone() {
   exec_resp_.reset();
   std::string retry_reason;
   for (const auto& msg : resp_->error_message()) {
+    LOG(WARNING) << trace_id_ << " server error:" << msg;
     exec_error_message_.push_back(msg);
     if (!retry_reason.empty()) {
       retry_reason += "\n";
@@ -2729,6 +2730,7 @@ void CompileTask::FillCompilerInfoDone(
   ModifyRequestArgs();
   ModifyRequestEnvs();
   UpdateCommandSpec();
+  UpdateRequesterInfo();
   stats_->set_command_version(req_->command_spec().version());
   stats_->set_command_target(req_->command_spec().target());
 
@@ -3079,6 +3081,38 @@ void CompileTask::UpdateCommandSpec() {
     return;
   const CompilerInfo& compiler_info = compiler_info_state_.get()->info();
   FixCommandSpec(compiler_info, *flags_, command_spec);
+}
+
+void CompileTask::UpdateRequesterInfo() {
+  CHECK_EQ(SETUP, state_);
+  RequesterInfo* info = req_->mutable_requester_info();
+
+#ifdef _WIN32
+  info->set_path_style(RequesterInfo::WINDOWS_STYLE);
+#else
+  info->set_path_style(RequesterInfo::POSIX_STYLE);
+#endif
+
+  LOG_IF(WARNING, info->dimensions_size() != 0)
+      << trace_id_
+      << " somebody has already set dimensions:" << info->DebugString();
+  for (const auto& d : compiler_info_state_.get()->info().dimensions()) {
+    info->add_dimensions(d);
+  }
+  // If dimensions are set by compiler_info, we do not modify.
+  if (info->dimensions_size() != 0) {
+    return;
+  }
+  // Set default dimensions if nothing given.
+#ifdef _WIN32
+  info->add_dimensions("os:win");
+#elif defined(__MACH__)
+  info->add_dimensions("os:mac");
+#elif defined(__linux__)
+  info->add_dimensions("os:linux");
+#else
+#error "unsupported platform"
+#endif
 }
 
 void CompileTask::MayFixSubprogramSpec(

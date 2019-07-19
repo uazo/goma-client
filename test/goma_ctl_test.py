@@ -3204,6 +3204,117 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
       with open(os.path.join(latest_dir, f)) as f:
         self.assertNotEqual(f.read(), msg)
 
+  def testVersionNotRunning(self):
+    class SpyGomaEnv(FakeGomaEnv):
+      """Spy GomaEnv for not running compiler_proxy"""
+      def __init__(self):
+        super(SpyGomaEnv, self).__init__()
+
+      def GetDiskCompilerProxyVersion(self):
+        return 'versionhash@time'
+
+      def ControlCompilerProxy(self, command, check_running=True,
+                               needs_pids=False):
+        return {'status': False, 'message': 'goma is not running.', 'url': ''}
+
+      def CompilerProxyRunning(self):
+        return False
+    driver = self._module.GomaDriver(SpyGomaEnv(), FakeGomaBackend())
+    driver._PrintVersion()
+
+  def testVersionRunning(self):
+    class SpyGomaEnv(FakeGomaEnv):
+      """Spy GomaEnv for running compiler_proxy"""
+      def __init__(self):
+        super(SpyGomaEnv, self).__init__()
+
+      def GetDiskCompilerProxyVersion(self):
+        return 'versionhash@time'
+
+      def ControlCompilerProxy(self, command, check_running=True,
+                               needs_pids=False):
+        if command == '/versionz':
+          return {'status': True, 'message': 'versionhash@time', 'url': ''}
+        return super(SpyGomaEnv, self).ControlCompilerProxy(command,
+                                                            check_running,
+                                                            need_pids)
+    driver = self._module.GomaDriver(SpyGomaEnv(), FakeGomaBackend())
+    driver._PrintVersion()
+
+  def testUpdateHookNotRunning(self):
+    class SpyGomaEnv(FakeGomaEnv):
+      """Spy GomaEnv for update check"""
+      def __init__(self):
+        super(SpyGomaEnv, self).__init__()
+        self.restarted = False
+
+      def GetDiskCompilerProxyVersion(self):
+        return 'versionhash@time'
+
+      def ControlCompilerProxy(self, command, check_running=True,
+                               needs_pids=False):
+        return {'status': False, 'message': 'goma is not running.', 'url': ''}
+
+      def CompilerProxyRunning(self):
+        return False
+
+      def RestartCompilerProxy(self):
+        self.restarted = True
+
+    env = SpyGomaEnv()
+    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver._UpdateHook()
+    self.assertFalse(env.restarted)
+
+  def testUpdateHookRunningNoChange(self):
+    class SpyGomaEnv(FakeGomaEnv):
+      """Spy GomaEnv for update check"""
+      def __init__(self):
+        super(SpyGomaEnv, self).__init__()
+        self.restarted = False
+
+      def GetDiskCompilerProxyVersion(self):
+        return 'versionhash@time'
+
+      def ControlCompilerProxy(self, command, check_running=True,
+                               needs_pids=False):
+        return {'status': True, 'message': 'versionhash@time', 'url': ''}
+
+      def CompilerProxyRunning(self):
+        return False
+
+      def RestartCompilerProxy(self):
+        self.restarted = True
+
+    env = SpyGomaEnv()
+    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver._UpdateHook()
+    self.assertFalse(env.restarted)
+
+  def testUpdateHookRunningChange(self):
+    class SpyGomaEnv(FakeGomaEnv):
+      """Spy GomaEnv for update check"""
+      def __init__(self):
+        super(SpyGomaEnv, self).__init__()
+        self.restarted = False
+
+      def GetDiskCompilerProxyVersion(self):
+        return 'versionhash@time'
+
+      def ControlCompilerProxy(self, command, check_running=True,
+                               needs_pids=False):
+        return {'status': True, 'message': 'newversionhash@time', 'url': ''}
+
+      def CompilerProxyRunning(self):
+        return False
+
+      def RestartCompilerProxy(self):
+        self.restarted = True
+
+    env = SpyGomaEnv()
+    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver._UpdateHook()
+    self.assertTrue(env.restarted)
 
 class GomaCtlLargeClients5Test(GomaCtlLargeTestCommon):
   """Large Clients5 tests for goma_ctl.py."""

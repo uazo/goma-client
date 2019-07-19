@@ -21,27 +21,12 @@ static_library("arfile_reader_lib") {
   ]
   if (os == "mac") {
     deps = [
-      ":mach_o_parser",
+      "//client/binutils:mach_o_parser",
     ]
   }
   public_deps = [
     ":arfile_lib",
   ]
-}
-
-if (os == "linux") {
-  static_library("elf_parser_lib") {
-    sources = [
-      "elf_parser.cc",
-      "elf_parser.h",
-    ]
-
-    deps = [
-      "//base",
-      "//lib",
-      "//third_party:glog",
-    ]
-  }
 }
 
 static_library("linker_input_processor_lib") {
@@ -72,28 +57,11 @@ static_library("linker_input_processor_lib") {
   ]
 
   if (os == "linux") {
-    deps += [ ":elf_parser_lib" ]
+    deps += [ "//client/binutils:elf_parser_lib" ]
   }
 
   if (os == "mac") {
-    deps += [ ":mach_o_parser" ]
-  }
-}
-
-if (os == "mac") {
-  static_library("mach_o_parser") {
-    sources = [
-      "mach_o_parser.cc",
-      "mach_o_parser.h",
-    ]
-    public_deps = [
-      "//base",
-      "//lib",
-    ]
-    deps = [
-      "//third_party:glog",
-      "//third_party/abseil",
-    ]
+    deps += [ "//client/binutils:mach_o_parser" ]
   }
 }
 
@@ -131,20 +99,6 @@ if (os != "win") {
   }
 }
 
-if (os == "linux") {
-  executable("elf_parser") {
-    sources = [
-      "elf_parser_main.cc",
-    ]
-    include_dirs = [ "." ]
-    deps = [
-      ":elf_parser_lib",
-      "//build/config:exe_and_shlib_deps",
-      "//client:compiler_proxy_lib",
-    ]
-  }
-}
-
 if (os != "win") {
   executable("arfile_unittest") {
     testonly = true
@@ -173,7 +127,7 @@ executable("arfile_reader_unittest") {
     "//client:goma_test_lib",
   ]
   if (os == "mac") {
-    deps += [ ":mach_o_parser" ]
+    deps += [ "//client/binutils:mach_o_parser" ]
   }
 }
 
@@ -222,20 +176,4 @@ executable("linker_script_parser_unittest") {
   ]
 
   configs += [ "//client:client_config" ]
-}
-
-if (os == "linux") {
-  executable("elf_parser_unittest") {
-    testonly = true
-    sources = [
-      "elf_parser_unittest.cc",
-    ]
-    deps = [
-      ":elf_parser_lib",
-      "//build/config:exe_and_shlib_deps",
-      "//client:compiler_proxy_lib",
-      "//client:goma_test_lib",
-      "//client:subprocess_lib",
-    ]
-  }
 }

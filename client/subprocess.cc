@@ -70,7 +70,7 @@ bool GetRealPrognameAndEnvs(const FileStat* gomacc_filestat,
   if (!GetRealExecutablePath(
           gomacc_filestat, prog, ".",
           GetEnvFromEnvIter(envs->begin(), envs->end(), kPath),
-          GetPathExt(*envs), real_progname, &no_goma_env_path, nullptr)) {
+          GetPathExt(*envs), real_progname, &no_goma_env_path)) {
     LOG(ERROR) << "failed to get executable path."
                << " prog=" << prog << " path="
                << GetEnvFromEnvIter(envs->begin(), envs->end(), kPath)

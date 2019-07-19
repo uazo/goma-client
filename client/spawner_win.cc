@@ -106,7 +106,7 @@ std::string PrepareCommandLine(const char* cwd,
   CHECK(!pathext_spec.empty()) << "PATHEXT env. should be set.";
   std::string command_line;
   if (!GetRealExecutablePath(nullptr, prog, cwd, path_spec, pathext_spec,
-                             &command_line, nullptr, nullptr)) {
+                             &command_line, nullptr)) {
     LOG(ERROR) << "Failed GetRealExecutablePath prog=" << prog << " cwd=" << cwd
                << " path_spec=" << path_spec
                << " pathext_spec=" << pathext_spec;

@@ -10,7 +10,9 @@
 
 namespace devtools_goma {
 
-void CompareFiles(const std::set<std::string>& expected_files,
+void CompareFiles(const std::string& compiler,
+                  const std::string& include_file,
+                  const std::set<std::string>& expected_files,
                   const std::set<std::string>& actual_files,
                   const std::set<std::string>& allowed_extra_files);
 

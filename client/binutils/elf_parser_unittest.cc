@@ -74,10 +74,9 @@ TEST_F(ElfParserTest, GetObjdumpOutput) {
 }
 
 TEST_F(ElfParserTest, ReadDynamicNeeded) {
-  std::unique_ptr<ElfParser> parser(ElfParser::NewElfParser(
-      file::JoinPath(data_dir_, "libdl.so")));
+  std::unique_ptr<ElfParser> parser(
+      ElfParser::NewElfParser(file::JoinPath(data_dir_, "libdl.so")));
   ASSERT_TRUE(parser != nullptr);
-  EXPECT_TRUE(parser->valid());
   std::vector<std::string> needed;
   EXPECT_TRUE(parser->ReadDynamicNeeded(&needed));
   EXPECT_EQ(2U, needed.size());
@@ -118,7 +117,6 @@ TEST_F(ElfParserTest, UsrLib) {
     timer.Start();
     std::unique_ptr<ElfParser> parser(ElfParser::NewElfParser(fullname));
     ASSERT_TRUE(parser != nullptr) << fullname;
-    EXPECT_TRUE(parser->valid()) << fullname;
     parser->UseProgramHeader(true);
     EXPECT_TRUE(parser->ReadDynamicNeeded(&p_needed)) << fullname;
     elf_parser_p_time += timer.GetDuration();
@@ -127,7 +125,6 @@ TEST_F(ElfParserTest, UsrLib) {
     timer.Start();
     parser = ElfParser::NewElfParser(fullname);
     ASSERT_TRUE(parser != nullptr) << fullname;
-    EXPECT_TRUE(parser->valid()) << fullname;
     parser->UseProgramHeader(false);
     EXPECT_TRUE(parser->ReadDynamicNeeded(&s_needed)) << fullname;
     elf_parser_s_time += timer.GetDuration();
@@ -144,8 +141,7 @@ TEST_F(ElfParserTest, UsrLib) {
   EXPECT_GT(num, 0);
   LOG(INFO) << "check elf files:" << num;
   LOG(INFO) << "time"
-            << " p:" << elf_parser_p_time
-            << " s:" << elf_parser_s_time
+            << " p:" << elf_parser_p_time << " s:" << elf_parser_s_time
             << " objdump:" << objdump_time;
 }
 
@@ -163,7 +159,6 @@ TEST_F(ElfParserTest, ReadDynamicNeededAndRpath) {
 
   std::unique_ptr<ElfParser> parser(ElfParser::NewElfParser("/tmp/null.so"));
   ASSERT_TRUE(parser != nullptr);
-  EXPECT_TRUE(parser->valid());
   std::vector<std::string> needed, rpath;
   EXPECT_TRUE(parser->ReadDynamicNeededAndRpath(&needed, &rpath));
   EXPECT_EQ(1U, needed.size());

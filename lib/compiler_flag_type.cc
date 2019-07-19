@@ -24,6 +24,8 @@ std::ostream& operator<<(std::ostream& os, CompilerFlagType type) {
       return os << "java";
     case CompilerFlagType::Rustc:
       return os << "rustc";
+    case CompilerFlagType::DartAnalyzer:
+      return os << "dartanalyzer";
   }
 }
 

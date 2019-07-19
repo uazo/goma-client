@@ -17,10 +17,11 @@
 #include <string>
 #include <vector>
 
-#include <glog/logging.h>
-#include <glog/stl_logging.h>
-
-#include "scoped_fd.h"
+#include "absl/memory/memory.h"
+#include "glog/logging.h"
+#include "glog/stl_logging.h"
+#include "lib/path_util.h"
+#include "lib/scoped_fd.h"
 
 namespace devtools_goma {
 
@@ -50,8 +51,8 @@ class ElfParserImpl : public ElfParser {
     valid_ = (memcmp(elfIdent, ELFMAG, SELFMAG) == 0);
     if (valid_) {
       valid_ = elfIdent[EI_DATA] == ELFDATA2LSB;
-      LOG_IF(ERROR, !valid_) << "unsupported data encoding:"
-                             << elfIdent[EI_DATA];
+      LOG_IF(ERROR, !valid_)
+          << "unsupported data encoding:" << elfIdent[EI_DATA];
     }
     CheckIdent();
   }
@@ -61,6 +62,8 @@ class ElfParserImpl : public ElfParser {
     for (size_t i = 0; i < shdrs_.size(); ++i)
       delete shdrs_[i];
   }
+  ElfParserImpl(const ElfParserImpl&) = delete;
+  ElfParserImpl& operator=(const ElfParserImpl&) = delete;
 
   bool valid() const override { return valid_; }
   void UseProgramHeader(bool use_program_header) override {
@@ -154,8 +157,8 @@ class ElfParserImpl : public ElfParser {
       switch (phdr->p_type) {
         case PT_DYNAMIC:
           LOG_IF(ERROR, dynamic_phdr_ != nullptr)
-              << filename_ << " PT_DYNAMIC "
-              << DumpPhdr(*dynamic_phdr_) << " " << DumpPhdr(*phdr);
+              << filename_ << " PT_DYNAMIC " << DumpPhdr(*dynamic_phdr_) << " "
+              << DumpPhdr(*phdr);
           dynamic_phdr_ = phdr;
           break;
         case PT_LOAD:
@@ -202,11 +205,12 @@ class ElfParserImpl : public ElfParser {
           break;
         case SHT_DYNAMIC:
           LOG_IF(ERROR, dynamic_shdr_ != nullptr)
-              << filename_ << " SHT_DYNAMIC "
-              << DumpShdr(*dynamic_shdr_) << " " << DumpShdr(*shdr);
+              << filename_ << " SHT_DYNAMIC " << DumpShdr(*dynamic_shdr_) << " "
+              << DumpShdr(*shdr);
           dynamic_shdr_ = shdr;
           break;
-        default: break;
+        default:
+          break;
       }
     }
     if (strtab_shdr_ != nullptr)
@@ -376,21 +380,20 @@ class ElfParserImpl : public ElfParser {
   std::string dyntab_;
   std::string dt_strtab_;
   size_t text_offset_;
-  DISALLOW_COPY_AND_ASSIGN(ElfParserImpl);
 };
 
-template<>
-void ElfParserImpl<Elf32_Ehdr,
-                   Elf32_Phdr, Elf32_Shdr, Elf32_Dyn>::CheckIdent() {
+template <>
+void ElfParserImpl<Elf32_Ehdr, Elf32_Phdr, Elf32_Shdr, Elf32_Dyn>::
+    CheckIdent() {
   if (valid_) {
     valid_ = (ehdr_.e_ident[EI_CLASS] == ELFCLASS32);
     LOG_IF(ERROR, !valid_) << "not elf class32";
   }
 }
 
-template<>
-void ElfParserImpl<Elf64_Ehdr,
-                   Elf64_Phdr, Elf64_Shdr, Elf64_Dyn>::CheckIdent() {
+template <>
+void ElfParserImpl<Elf64_Ehdr, Elf64_Phdr, Elf64_Shdr, Elf64_Dyn>::
+    CheckIdent() {
   if (valid_) {
     valid_ = (ehdr_.e_ident[EI_CLASS] = ELFCLASS64);
     LOG_IF(ERROR, !valid_) << "not elf class64";
@@ -418,25 +421,33 @@ static ScopedFd OpenElf(const std::string& filename, char* elfIdent) {
 /* static */
 std::unique_ptr<ElfParser> ElfParser::NewElfParser(
     const std::string& filename) {
+  DCHECK(IsPosixAbsolutePath(filename));
   char elfIdent[EI_NIDENT];
   ScopedFd fd(OpenElf(filename.c_str(), elfIdent));
   if (!fd.valid()) {
     PLOG(ERROR) << "open elf:" << filename;
     return nullptr;
   }
+  std::unique_ptr<ElfParser> parser;
   switch (elfIdent[EI_CLASS]) {
     case ELFCLASS32:
-      return std::unique_ptr<ElfParser>(
-          new ElfParserImpl<Elf32_Ehdr, Elf32_Phdr, Elf32_Shdr, Elf32_Dyn>(
-              filename, std::move(fd), elfIdent));
+      parser = absl::make_unique<
+          ElfParserImpl<Elf32_Ehdr, Elf32_Phdr, Elf32_Shdr, Elf32_Dyn>>(
+          filename, std::move(fd), elfIdent);
+      break;
     case ELFCLASS64:
-      return std::unique_ptr<ElfParser>(
-          new ElfParserImpl<Elf64_Ehdr, Elf64_Phdr, Elf64_Shdr, Elf64_Dyn>(
-              filename, std::move(fd), elfIdent));
+      parser = absl::make_unique<
+          ElfParserImpl<Elf64_Ehdr, Elf64_Phdr, Elf64_Shdr, Elf64_Dyn>>(
+          filename, std::move(fd), elfIdent);
+      break;
     default:
       LOG(ERROR) << "Unknown elf class:" << elfIdent[EI_CLASS];
       return nullptr;
   }
+  if (!parser->valid()) {
+    return nullptr;
+  }
+  return parser;
 }
 
 /* static */

@@ -411,7 +411,7 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseFeatures) {
       "# 16\n"
       "0\n"
       "# 17\n"
-      "201301\n"
+      "201301L\n"
       "# 18\n"
       "0\n"
       "# 19\n"  // declspec attributes.
@@ -529,7 +529,7 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseFeatures) {
       "#line 16\n"
       "0\n"
       "#line 17\n"
-      "201301\n"
+      "201301L\n"
       "#line 18\n"
       "0\n"
       "#line 19\n"  // declspec attributes.

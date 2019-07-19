@@ -261,7 +261,8 @@ class CppIncludeProcessorWinTest : public testing::Test {
     LOG(INFO) << "# of actual_files=" << actual_files.size();
     VLOG(1) << "expected_files: " << expected_files
             << " actual_files: " << actual_files;
-    CompareFiles(expected_files, actual_files, std::set<std::string>());
+    CompareFiles("cl.exe", include_file, expected_files, actual_files,
+                 std::set<std::string>());
   }
 
   std::string CreateTmpFile(const std::string& content,

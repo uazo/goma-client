@@ -8,7 +8,6 @@
 #include <memory>
 #include <string>
 
-#include "base/basictypes.h"
 #include "file_stat.h"
 #include "goma_blob.h"
 #include "simple_timer.h"
@@ -29,6 +28,8 @@ class LocalOutputFileTask {
                       CompileTask* task,
                       std::string filename);
   ~LocalOutputFileTask();
+  LocalOutputFileTask(const LocalOutputFileTask&) = delete;
+  LocalOutputFileTask& operator=(const LocalOutputFileTask&) = delete;
 
   void Run(OneshotClosure* closure);
 
@@ -48,8 +49,6 @@ class LocalOutputFileTask {
   const std::string filename_;
   SimpleTimer timer_;
   bool success_;
-
-  DISALLOW_COPY_AND_ASSIGN(LocalOutputFileTask);
 };
 
 }  // namespace devtools_goma

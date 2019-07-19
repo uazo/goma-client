@@ -128,8 +128,7 @@ bool GetRealExecutablePath(const FileStat* gomacc_filestat,
                            const std::string& path_env,
                            const std::string& pathext_env,
                            std::string* local_executable_path,
-                           std::string* no_goma_path_env,
-                           bool* is_in_relative_path) {
+                           std::string* no_goma_path_env) {
   CHECK(local_executable_path);
 #ifndef _WIN32
   DCHECK(pathext_env.empty());
@@ -163,8 +162,6 @@ bool GetRealExecutablePath(const FileStat* gomacc_filestat,
         file::JoinPathRespectAbsolute(cwd, candidate_path);
 #endif
     const FileStat candidate_filestat(candidate_fullpath);
-    if (is_in_relative_path)
-      *is_in_relative_path = !file::IsAbsolutePath(cmd);
 
     if (!candidate_filestat.IsValid()) {
       LOG(ERROR) << "invalid filestats candidate_path=" << candidate_path
@@ -192,9 +189,6 @@ bool GetRealExecutablePath(const FileStat* gomacc_filestat,
       dir = absl::string_view(path_env.c_str() + pos, next_pos - pos);
       ++next_pos;
     }
-
-    if (is_in_relative_path)
-      *is_in_relative_path = !file::IsAbsolutePath(dir);
 
     // Empty paths should be treated as the current directory.
     if (dir.empty()) {

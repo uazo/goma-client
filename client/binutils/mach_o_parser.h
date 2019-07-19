@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 
-#ifndef DEVTOOLS_GOMA_CLIENT_LINKER_LINKER_INPUT_PROCESSOR_MACH_O_PARSER_H_
-#define DEVTOOLS_GOMA_CLIENT_LINKER_LINKER_INPUT_PROCESSOR_MACH_O_PARSER_H_
+#ifndef DEVTOOLS_GOMA_CLIENT_BINUTILS_MACH_O_PARSER_H_
+#define DEVTOOLS_GOMA_CLIENT_BINUTILS_MACH_O_PARSER_H_
 
 #include <sys/types.h>
 
@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "basictypes.h"
 #include "scoped_fd.h"
 
 struct fat_arch;
@@ -45,6 +44,9 @@ class MachO {
   };
   explicit MachO(const std::string& filename);
   ~MachO();
+  MachO(const MachO&) = delete;
+  MachO& operator=(const MachO&) = delete;
+
   bool GetDylibs(const std::string& cpu_type, std::vector<DylibEntry>* dylibs);
   bool valid() const;
 
@@ -52,10 +54,8 @@ class MachO {
   std::map<std::string, fat_arch> archs_;
   std::string filename_;
   ScopedFd fd_;
-
-  DISALLOW_COPY_AND_ASSIGN(MachO);
 };
 
 }  // namespace devtools_goma
 
-#endif  // DEVTOOLS_GOMA_CLIENT_LINKER_LINKER_INPUT_PROCESSOR_MACH_O_PARSER_H_
+#endif  // DEVTOOLS_GOMA_CLIENT_BINUTILS_MACH_O_PARSER_H_

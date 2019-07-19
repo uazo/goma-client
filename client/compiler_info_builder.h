@@ -14,7 +14,6 @@
 #include "basictypes.h"
 #include "compiler_flags.h"
 #include "compiler_specific.h"
-#include "sha256_hash_cache.h"
 
 MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 #include "prototmp/compiler_info_data.pb.h"
@@ -27,6 +26,8 @@ namespace devtools_goma {
 class CompilerInfoBuilder {
  public:
   virtual ~CompilerInfoBuilder() = default;
+  CompilerInfoBuilder(const CompilerInfoBuilder&) = delete;
+  CompilerInfoBuilder& operator=(const CompilerInfoBuilder&) = delete;
 
   // Creates new CompilerInfoData* from compiler outputs.
   // if found is true and error_message in it is empty,
@@ -77,11 +78,6 @@ class CompilerInfoBuilder {
 
  protected:
   CompilerInfoBuilder() = default;
-
- private:
-  SHA256HashCache hash_cache_;
-
-  DISALLOW_COPY_AND_ASSIGN(CompilerInfoBuilder);
 };
 
 }  // namespace devtools_goma

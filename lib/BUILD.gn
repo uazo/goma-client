@@ -145,6 +145,18 @@ static_library("java_specific") {
   ]
 }
 
+static_library("dart_analyzer_specific") {
+  sources = [
+    "dart_analyzer_execreq_normalizer.cc",
+    "dart_analyzer_execreq_normalizer.h",
+    "dart_analyzer_flags.cc",
+    "dart_analyzer_flags.h",
+  ]
+  deps = [
+    ":lib",
+  ]
+}
+
 static_library("rust_specific") {
   sources = [
     "rustc_execreq_normalizer.cc",
@@ -178,6 +190,7 @@ static_library("compiler_flag_type_specific") {
   ]
   public_deps = [
     ":clang_tidy_specific",
+    ":dart_analyzer_specific",
     ":fake_specific",
     ":gcc_specific",
     ":java_specific",
@@ -539,6 +552,22 @@ executable("path_util_unittest") {
     ":lib",
     "//base:goma_unittest",
     "//build/config:exe_and_shlib_deps",
+    "//third_party:gtest",
+  ]
+}
+
+executable("dart_analyzer_flags_unittest") {
+  testonly = true
+  sources = [
+    "dart_analyzer_flags_unittest.cc",
+  ]
+  deps = [
+    ":compiler_flag_type_specific",
+    ":dart_analyzer_specific",
+    ":lib",
+    "//base:goma_unittest",
+    "//build/config:exe_and_shlib_deps",
+    "//third_party:glog",
     "//third_party:gtest",
   ]
 }

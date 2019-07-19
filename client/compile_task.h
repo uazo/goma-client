@@ -257,6 +257,7 @@ class CompileTask {
   void ModifyRequestArgs();
   void ModifyRequestEnvs();
   void UpdateCommandSpec();
+  void UpdateRequesterInfo();
   // Updates SubprogramSpec if send_subprogram_spec is enabled.
   void MayUpdateSubprogramSpec();
   // Fix SubprogramSpec if send_subprogram_spec is enabled.

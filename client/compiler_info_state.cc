@@ -9,6 +9,7 @@
 #include "autolock_timer.h"
 #include "compiler_info_builder.h"
 #include "cxx/cxx_compiler_info.h"
+#include "dart_analyzer/dart_analyzer_compiler_info.h"
 #include "fake/fake_compiler_info.h"
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
@@ -31,6 +32,8 @@ std::unique_ptr<CompilerInfo> CompilerInfoState::MakeCompilerInfo(
       return absl::make_unique<FakeCompilerInfo>(std::move(data));
     case CompilerInfoData::kRustc:
       return absl::make_unique<RustcCompilerInfo>(std::move(data));
+    case CompilerInfoData::kDartAnalyzer:
+      return absl::make_unique<DartAnalyzerCompilerInfo>(std::move(data));
     case CompilerInfoData::LANGUAGE_EXTENSION_NOT_SET:
       LOG(FATAL) << "CompilerInfoData does not have any language extension";
       // UNREACHABLE.

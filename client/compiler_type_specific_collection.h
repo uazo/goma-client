@@ -10,6 +10,7 @@
 #include "compiler_type_specific.h"
 #include "cxx/gcc_compiler_type_specific.h"
 #include "cxx/vc_compiler_type_specific.h"
+#include "dart_analyzer/dart_analyzer_compiler_type_specific.h"
 #include "fake/fake_compiler_type_specific.h"
 #include "java/java_compiler_type_specific.h"
 #include "rust/rustc_compiler_type_specific.h"
@@ -32,6 +33,7 @@ class CompilerTypeSpecificCollection {
   JavacCompilerTypeSpecific javac_;
   JavaCompilerTypeSpecific java_;
   RustcCompilerTypeSpecific rustc_;
+  DartAnalyzerCompilerTypeSpecific dart_analyzer_;
   FakeCompilerTypeSpecific fake_;
 };
 

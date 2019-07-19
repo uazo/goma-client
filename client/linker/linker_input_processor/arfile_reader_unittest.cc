@@ -15,7 +15,7 @@
 #include "gtest/gtest.h"
 
 #ifdef __MACH__
-#include "mach_o_parser.h"
+#include "binutils/mach_o_parser.h"
 #endif
 
 namespace {

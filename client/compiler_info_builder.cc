@@ -12,6 +12,7 @@
 #include "goma_hash.h"
 #include "path.h"
 #include "path_resolver.h"
+#include "sha256_hash_cache.h"
 
 #ifdef _WIN32
 #include "posix_helper_win.h"
@@ -61,7 +62,7 @@ std::unique_ptr<CompilerInfoData> CompilerInfoBuilder::FillFromCompilerOutputs(
           << " cwd=" << flags.cwd()
           << " real_compiler_path=" << data->real_compiler_path();
 
-  if (!hash_cache_.GetHashFromCacheOrFile(
+  if (!SHA256HashCache::instance()->GetHashFromCacheOrFile(
           abs_local_compiler_path, data->mutable_local_compiler_hash())) {
     LOG(ERROR) << "Could not open local compiler file "
                << abs_local_compiler_path;
@@ -69,8 +70,8 @@ std::unique_ptr<CompilerInfoData> CompilerInfoBuilder::FillFromCompilerOutputs(
     return data;
   }
 
-  if (!hash_cache_.GetHashFromCacheOrFile(abs_real_compiler_path,
-                                          data->mutable_hash())) {
+  if (!SHA256HashCache::instance()->GetHashFromCacheOrFile(
+          abs_real_compiler_path, data->mutable_hash())) {
     LOG(ERROR) << "Could not open real compiler file "
                << abs_real_compiler_path;
     data->set_found(false);
@@ -196,7 +197,7 @@ bool CompilerInfoBuilder::ResourceInfoFromPath(
 #endif
 
   std::string hash;
-  if (!GomaSha256FromFile(abs_path, &hash)) {
+  if (!SHA256HashCache::instance()->GetHashFromCacheOrFile(abs_path, &hash)) {
     return false;
   }
   r->set_hash(std::move(hash));
