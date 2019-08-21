@@ -3210,11 +3210,11 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
       def __init__(self):
         super(SpyGomaEnv, self).__init__()
 
-      def GetDiskCompilerProxyVersion(self):
-        return 'versionhash@time'
+      def GetCompilerProxyVersion(self):
+        return 'GOMA version versionhash@time'
 
       def ControlCompilerProxy(self, command, check_running=True,
-                               needs_pids=False):
+                               need_pids=False):
         return {'status': False, 'message': 'goma is not running.', 'url': ''}
 
       def CompilerProxyRunning(self):
@@ -3228,11 +3228,11 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
       def __init__(self):
         super(SpyGomaEnv, self).__init__()
 
-      def GetDiskCompilerProxyVersion(self):
-        return 'versionhash@time'
+      def GetCompilerProxyVersion(self):
+        return 'GOMA version versionhash@time'
 
       def ControlCompilerProxy(self, command, check_running=True,
-                               needs_pids=False):
+                               need_pids=False):
         if command == '/versionz':
           return {'status': True, 'message': 'versionhash@time', 'url': ''}
         return super(SpyGomaEnv, self).ControlCompilerProxy(command,
@@ -3248,11 +3248,11 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
         super(SpyGomaEnv, self).__init__()
         self.restarted = False
 
-      def GetDiskCompilerProxyVersion(self):
-        return 'versionhash@time'
+      def GetCompilerProxyVersion(self):
+        return 'GOMA version versionhash@time'
 
       def ControlCompilerProxy(self, command, check_running=True,
-                               needs_pids=False):
+                               need_pids=False):
         return {'status': False, 'message': 'goma is not running.', 'url': ''}
 
       def CompilerProxyRunning(self):
@@ -3273,11 +3273,11 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
         super(SpyGomaEnv, self).__init__()
         self.restarted = False
 
-      def GetDiskCompilerProxyVersion(self):
-        return 'versionhash@time'
+      def GetCompilerProxyVersion(self):
+        return 'GOMA version versionhash@time'
 
       def ControlCompilerProxy(self, command, check_running=True,
-                               needs_pids=False):
+                               need_pids=False):
         return {'status': True, 'message': 'versionhash@time', 'url': ''}
 
       def CompilerProxyRunning(self):
@@ -3298,11 +3298,11 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
         super(SpyGomaEnv, self).__init__()
         self.restarted = False
 
-      def GetDiskCompilerProxyVersion(self):
-        return 'versionhash@time'
+      def GetCompilerProxyVersion(self):
+        return 'GOMA version versionhash@time'
 
       def ControlCompilerProxy(self, command, check_running=True,
-                               needs_pids=False):
+                               need_pids=False):
         return {'status': True, 'message': 'newversionhash@time', 'url': ''}
 
       def CompilerProxyRunning(self):

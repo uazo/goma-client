@@ -53,6 +53,8 @@ ConfigurableExecReqNormalizer::Config VCExecReqNormalizer::Configure(
   FlagParser::Flag* flag_fdiagnostics_absolute_paths =
       flag_parser.AddBoolFlag("fdiagnostics-absolute-paths");
   FlagParser::Flag* flag_show_include = flag_parser.AddBoolFlag("showIncludes");
+  FlagParser::Flag* flag_fdebug_compilation_dir =
+      flag_parser.AddBoolFlag("fdebug-compilation-dir");
   flag_parser.Parse(args);
 
   if (flag_show_include->seen()) {
@@ -80,9 +82,17 @@ ConfigurableExecReqNormalizer::Config VCExecReqNormalizer::Configure(
   }
 
   absl::optional<std::string> fdebug_compilation_dir;
-  if (is_clang_cl && !(keep_cwd & kAsIs)) {
+  {
     ClangFlagsHelper clang_flags_helper(args);
-    fdebug_compilation_dir = clang_flags_helper.fdebug_compilation_dir();
+    if (clang_flags_helper.fdebug_compilation_dir() &&
+        flag_fdebug_compilation_dir->seen()) {
+      // Ignore -fdebug-compilation-dir if it is specified w/ and w/o -Xclang.
+      LOG(ERROR) << "-fdebug-compilation-dir is specified w/ and w/o -Xclang";
+    } else if (is_clang_cl && flag_fdebug_compilation_dir->seen()) {
+      fdebug_compilation_dir = flag_fdebug_compilation_dir->GetLastValue();
+    } else if (is_clang_cl && !(keep_cwd & kAsIs)) {
+      fdebug_compilation_dir = clang_flags_helper.fdebug_compilation_dir();
+    }
   }
 
   if (flag_z7->seen() || flag_zi->seen() || flag_zI->seen()) {

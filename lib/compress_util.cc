@@ -199,7 +199,7 @@ bool LZMAInputStream::Skip(int count) {
   return ok;
 }
 
-int64 LZMAInputStream::ByteCount() const {
+google::protobuf::io::ByteCountInt64 LZMAInputStream::ByteCount() const {
   int ret = byte_count_ + lzma_context_.total_out;
   if (lzma_context_.next_out != nullptr && output_position_ != nullptr) {
     // GzipInputStream adds followings but I think we need to remove.
@@ -306,7 +306,7 @@ void LZMAOutputStream::BackUp(int count) {
   lzma_context_.avail_in -= count;
 }
 
-int64 LZMAOutputStream::ByteCount() const {
+google::protobuf::io::ByteCountInt64 LZMAOutputStream::ByteCount() const {
   return lzma_context_.total_in + lzma_context_.avail_in;
 }
 

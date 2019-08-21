@@ -678,7 +678,7 @@ class GomaDriver(object):
 
   def _PrintVersion(self):
     """Print binary/running version of goma. """
-    binary_version = self._env.GetDiskCompilerProxyVersion()
+    binary_version = self._GetDiskCompilerProxyVersion()
     print('compiler_proxy binary %s' % binary_version)
     versionz = self._env.ControlCompilerProxy('/versionz', check_running=True)
     if versionz['status']:
@@ -691,7 +691,7 @@ class GomaDriver(object):
 
   def _UpdateHook(self):
     """Restart compiler_proxy if binary is updated."""
-    binary_version = self._env.GetDiskCompilerProxyVersion()
+    binary_version = self._GetDiskCompilerProxyVersion()
     versionz = self._env.ControlCompilerProxy('/versionz', check_running=True)
     if versionz['status']:
       running_version =  versionz['message'].strip()

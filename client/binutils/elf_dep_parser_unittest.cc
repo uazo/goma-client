@@ -4,16 +4,18 @@
 
 #include "elf_dep_parser.h"
 
+#include "absl/container/flat_hash_set.h"
+#include "absl/strings/match.h"
 #include "base/path.h"
+#include "client/binutils/elf_util.h"
 #include "client/mypath.h"
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 namespace devtools_goma {
 
-// TODO: write test for GetDeps.
-//
 TEST(ElfDepParserTest, GetElfHeader) {
-  const std::string test_dir = file::JoinPath(GetMyDirectory(), "../../test");
+  const std::string test_dir =
+      file::JoinPath(GetMyDirectory(), "..", "..", "test");
   absl::optional<ElfDepParser::ElfHeader> elf_header =
       ElfDepParser::GetElfHeader(file::JoinPath(test_dir, "libc.so"));
   EXPECT_FALSE(elf_header.has_value());
@@ -27,6 +29,17 @@ TEST(ElfDepParserTest, GetElfHeader) {
 
   EXPECT_TRUE(elf_header.has_value());
   EXPECT_EQ(expected_elf_header, *elf_header);
+}
+
+// This test confirms that ElfDepParser uses cwd parameter given to
+// the constructor.  This is regression test for b/137909009.
+TEST(ElfDepParserTest, GetDepsSmokeWithDifferentCwd) {
+  std::vector<std::string> searchpath = LoadLdSoConf("/etc/ld.so.conf");
+  ElfDepParser edp(file::JoinPath(GetMyDirectory(), "..", "..", "test"),
+                   searchpath, true);
+  absl::flat_hash_set<std::string> deps;
+  EXPECT_TRUE(edp.GetDeps("libdl.so", &deps));
+  EXPECT_THAT(deps, ::testing::Contains(::testing::HasSubstr("/libc.so.")));
 }
 
 }  // namespace devtools_goma

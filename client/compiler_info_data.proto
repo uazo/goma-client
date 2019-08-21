@@ -5,6 +5,8 @@
 
 syntax = "proto2";
 
+import "google/protobuf/timestamp.proto";
+
 package devtools_goma;
 
 // CompilerInfoData is a serializable format of CompilerInfo.
@@ -42,9 +44,10 @@ message CompilerInfoData {
 
   // FileStat of the compiler, subprogram or other resource files.
   message FileStat {
-    optional int64 mtime = 1;
+    optional int64 DEPRECATED_mtime = 1 [deprecated = true];
     optional int64 size = 2;
     optional bool is_directory = 3;
+    optional google.protobuf.Timestamp mtime_ts = 4;
   };
 
   message SubprogramInfo {

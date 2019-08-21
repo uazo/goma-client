@@ -38,7 +38,7 @@ bool ParseDartAnalyzerVersion(absl::string_view compiler_output,
   if (!absl::ConsumePrefix(&compiler_output, "dartanalyzer version ")) {
     return false;
   }
-  *version = std::string(compiler_output);
+  *version = std::string(absl::StripAsciiWhitespace(compiler_output));
   return true;
 }
 

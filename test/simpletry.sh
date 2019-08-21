@@ -127,161 +127,6 @@ function is_cros_gcc() {
       ;;
   esac
 }
-
-# Note: all code in this script is expected to be executed from $goma_top_dir.
-cd $goma_top_dir
-
-FLAGS_wait=0
-FLAGS_kill=0
-FLAGS_port=8100
-FLAGS_dump=
-while getopts kwp:d: opt; do
- case $opt in
- k) FLAGS_kill=1 ;;
- w) FLAGS_wait=1 ;;
- p) FLAGS_port="$OPTARG";;
- d) FLAGS_dump="$OPTARG";;
- ?) echo "Usage: $0 [-w] [-k] [-p port] [-d tgz] [goma_dir]\n" >&2; exit 1;;
- esac
-done
-shift $(($OPTIND - 1))
-
-set_goma_dirs "$1"
-
-# Flags for gomacc
-export GOMA_STORE_ONLY=true
-export GOMA_DUMP=true
-export GOMA_RETRY=false
-export GOMA_FALLBACK=false
-export GOMA_USE_LOCAL=false
-export GOMA_START_COMPILER_PROXY=false
-export GOMA_STORE_LOCAL_RUN_OUTPUT=true
-export GOMA_ENABLE_REMOTE_LINK=true
-export GOMA_HERMETIC=error
-export GOMA_FALLBACK_INPUT_FILES=""
-
-# Set service account JSON file if exists.
-CRED="/creds/service_accounts/service-account-goma-client.json"
-if [ -z "$GOMA_SERVICE_ACCOUNT_JSON_FILE" -a -f "$CRED" ]; then
-  export GOMA_SERVICE_ACCOUNT_JSON_FILE="$CRED"
-fi
-if [ -n "$GOMA_SERVICE_ACCOUNT_JSON_FILE" -a \
-  ! -f "$GOMA_SERVICE_ACCOUNT_JSON_FILE" ]; then
-  echo "GOMA_SERVICE_ACCOUNT_JSON_FILE $GOMA_SERVICE_ACCOUNT_JSON_FILE " \
-    "not found." >&2
-  unset GOMA_SERVICE_ACCOUNT_JSON_FILE
-fi
-
-# on buildslave:/b/build/slave/$builddir/build/client
-# api key can be found at /b/build/goma/goma.key
-if [ -d "$goma_top_dir/../../../../goma" ]; then
-  bot_goma_dir=$(cd "$goma_top_dir/../../../../goma"; pwd)
-  GOMA_API_KEY_FILE=${GOMA_API_KEY_FILE:-$bot_goma_dir/goma.key}
-fi
-if [ -n "$GOMA_SERVICE_ACCOUNT_JSON_FILE" ]; then
-  echo "Use GOMA_SERVICE_ACCOUNT_JSON_FILE=$GOMA_SERVICE_ACCOUNT_JSON_FILE"
-  unset GOMA_API_KEY_FILE
-elif [ -f "$GOMA_API_KEY_FILE" ]; then
-  echo "Use GOMA_API_KEY_FILE=$GOMA_API_KEY_FILE"
-  export GOMA_API_KEY_FILE
-elif [ -n "$GOMA_API_KEY_FILE" ]; then
-  echo "GOMA_API_KEY_FILE $GOMA_API_KEY_FILE not found." >&2
-  unset GOMA_API_KEY_FILE
-fi
-
-if [ "$GOMATEST_USE_RUNNING_COMPILER_PROXY" = ""  ]; then
-  # --exec_compiler_proxy is deprecated. Use GOMA_COMPILER_PROXY_BINARY instead.
-  if ! [ -x ${GOMA_COMPILER_PROXY_BINARY} ]; then
-    echo "compiler_proxy($GOMA_COMPILER_PROXY_BINARY) is not executable" >&2
-    exit 1
-  fi
-  echo "Starting $GOMA_COMPILER_PROXY_BINARY..."
-
-  trap at_exit exit sighup sigpipe
-  export GOMA_COMPILER_PROXY_PORT=$FLAGS_port
-
-  if [ "$FLAGS_kill" = 1 ]; then
-    echo Kill any remaining compiler proxy
-    killall compiler_proxy
-  else
-    echo "GOMA_TMP_DIR: $tmpdir"
-    export GOMA_TMP_DIR=$tmpdir
-    export TMPDIR=$tmpdir
-    export GLOG_log_dir=$tmpdir
-    export GOMA_DEPS_CACHE_FILE=deps_cache
-    export GOMA_COMPILER_PROXY_SOCKET_NAME=$tmpdir/goma.ipc
-    export GOMA_GOMACC_LOCK_FILENAME=$tmpdir/gomacc.lock
-    export GOMA_COMPILER_PROXY_LOCK_FILENAME=$tmpdir/goma_compiler_proxy.lock
-    # Test uses SSL by default.
-    export GOMA_USE_SSL=true
-    export GOMA_SERVER_PORT=443
-  fi
-  (cd /tmp && ${GOMA_COMPILER_PROXY_BINARY} & )
-  update_compiler_proxy_port $(dirname $GOMA_COMPILER_PROXY_BINARY) 10
-  watch_healthz localhost ${GOMA_COMPILER_PROXY_PORT} /healthz \
-     ${GOMA_COMPILER_PROXY_BINARY}
-fi
-
-if [ "$CLANG_PATH" = "" ]; then
-  clang_path="$goma_top_dir/third_party/llvm-build/Release+Asserts/bin"
-  if [ -d "$clang_path" ]; then
-     if "$clang_path/clang" -v; then
-       CLANG_PATH="$clang_path"
-     else
-       echo "clang is not runnable, disable clang test" 1>&2
-     fi
-  fi
-fi
-
-if [ -n "${GLOG_log_dir:-}" ]; then
-  echo "removing gomacc logs."
-  rm -f "${GLOG_log_dir}/gomacc.*"
-fi
-
-# if build env doesn't not use hermetic gcc,
-# set HERMETIC_GCC=FAIL_ for workaround.
-HERMETIC_GCC=
-
-DEFAULT_CC=gcc
-DEFAULT_CXX=g++
-if [ "$(uname)" = "Darwin" ]; then
-  # recent macosx uses llvm-gcc as gcc, but goma doesn't support it.
-  # test with chromium clang by default.
-  DEFAULT_CC=clang
-  DEFAULT_CXX=clang++
-  if [ "$GOMATEST_USE_SYSTEM_CLANG" = "" ]; then
-    PATH=$CLANG_PATH:$PATH
-    GOMATEST_USE_CHROMIUM_CLANG=1
-  fi
-  # Should set SDKROOT if we use non system clang.
-  export SDKROOT="$("$goma_top_dir"/build/mac/find_sdk.py \
-    --print_sdk_path 10.7 | head -1)"
-fi
-
-CC=${CC:-$DEFAULT_CC}
-CXX=${CXX:-$DEFAULT_CXX}
-
-LOCAL_CC=$(command -v ${CC})
-LOCAL_CXX=$(command -v ${CXX})
-LOCAL_CXX_DIR=$(dirname ${LOCAL_CXX})
-GOMA_CC=${goma_bin_dir}/${CC}
-GOMA_CXX=${goma_bin_dir}/${CXX}
-GOMACC=$goma_bin_dir/gomacc
-
-# Build determinism is broken on ChromeOS gcc, and since ChromeOS uses
-# clang as a default compiler (b/31105358), I do not think we need to
-# guarantee build determinism for it.  (b/64499036)
-if [[ "$CC" =~ ^g(cc|\+\+)$ && "$(is_cros_gcc $CC)" = "yes" ]]; then
-  HERMETIC_GCC="FAIL_"
-fi
-
-echo_title "CC=${CC} CXX=${CXX}"
-echo_title "LOCAL CC=${LOCAL_CC} CXX=${LOCAL_CXX}"
-echo_title "GOMA CC=${GOMA_CC} CXX=${GOMA_CXX}"
-
-${GOMACC} --goma-verify-command ${LOCAL_CC} -v
-TASK_ID=1
-
 # keep the list of failed tests in an array
 FAIL=()
 KNOWN_FAIL=()
@@ -374,6 +219,165 @@ function expect_failure() {
   dump_request "$cmd"
   rm -f cmd_out cmd_err
 }
+
+# Note: all code in this script is expected to be executed from $goma_top_dir.
+cd $goma_top_dir
+
+FLAGS_wait=0
+FLAGS_kill=0
+FLAGS_port=8100
+FLAGS_dump=
+while getopts kwp:d: opt; do
+ case $opt in
+ k) FLAGS_kill=1 ;;
+ w) FLAGS_wait=1 ;;
+ p) FLAGS_port="$OPTARG";;
+ d) FLAGS_dump="$OPTARG";;
+ ?) echo "Usage: $0 [-w] [-k] [-p port] [-d tgz] [goma_dir]\n" >&2; exit 1;;
+ esac
+done
+shift $(($OPTIND - 1))
+
+set_goma_dirs "$1"
+
+# Flags for gomacc
+export GOMA_STORE_ONLY=true
+export GOMA_DUMP=true
+export GOMA_RETRY=false
+export GOMA_FALLBACK=false
+export GOMA_USE_LOCAL=false
+export GOMA_START_COMPILER_PROXY=false
+export GOMA_STORE_LOCAL_RUN_OUTPUT=true
+export GOMA_ENABLE_REMOTE_LINK=true
+export GOMA_HERMETIC=error
+export GOMA_FALLBACK_INPUT_FILES=""
+
+# Set service account JSON file if exists.
+CRED="/creds/service_accounts/service-account-goma-client.json"
+if [ -z "$GOMA_SERVICE_ACCOUNT_JSON_FILE" -a -f "$CRED" ]; then
+  export GOMA_SERVICE_ACCOUNT_JSON_FILE="$CRED"
+fi
+if [ -n "$GOMA_SERVICE_ACCOUNT_JSON_FILE" -a \
+  ! -f "$GOMA_SERVICE_ACCOUNT_JSON_FILE" ]; then
+  echo "GOMA_SERVICE_ACCOUNT_JSON_FILE $GOMA_SERVICE_ACCOUNT_JSON_FILE " \
+    "not found." >&2
+  unset GOMA_SERVICE_ACCOUNT_JSON_FILE
+fi
+GOMACC=$goma_bin_dir/gomacc
+
+# on buildslave:/b/build/slave/$builddir/build/client
+# api key can be found at /b/build/goma/goma.key
+if [ -d "$goma_top_dir/../../../../goma" ]; then
+  bot_goma_dir=$(cd "$goma_top_dir/../../../../goma"; pwd)
+  GOMA_API_KEY_FILE=${GOMA_API_KEY_FILE:-$bot_goma_dir/goma.key}
+fi
+if [ -n "$GOMA_SERVICE_ACCOUNT_JSON_FILE" ]; then
+  echo "Use GOMA_SERVICE_ACCOUNT_JSON_FILE=$GOMA_SERVICE_ACCOUNT_JSON_FILE"
+  unset GOMA_API_KEY_FILE
+elif [ -f "$GOMA_API_KEY_FILE" ]; then
+  echo "Use GOMA_API_KEY_FILE=$GOMA_API_KEY_FILE"
+  export GOMA_API_KEY_FILE
+elif [ -n "$GOMA_API_KEY_FILE" ]; then
+  echo "GOMA_API_KEY_FILE $GOMA_API_KEY_FILE not found." >&2
+  unset GOMA_API_KEY_FILE
+fi
+
+if [ "$GOMATEST_USE_RUNNING_COMPILER_PROXY" = ""  ]; then
+  # --exec_compiler_proxy is deprecated. Use GOMA_COMPILER_PROXY_BINARY instead.
+  if ! [ -x ${GOMA_COMPILER_PROXY_BINARY} ]; then
+    echo "compiler_proxy($GOMA_COMPILER_PROXY_BINARY) is not executable" >&2
+    exit 1
+  fi
+  echo "Starting $GOMA_COMPILER_PROXY_BINARY..."
+
+  trap at_exit exit sighup sigpipe
+  export GOMA_COMPILER_PROXY_PORT=$FLAGS_port
+
+  if [ "$FLAGS_kill" = 1 ]; then
+    echo Kill any remaining compiler proxy
+    killall compiler_proxy
+  else
+    echo "GOMA_TMP_DIR: $tmpdir"
+    export GOMA_TMP_DIR=$tmpdir
+    export TMPDIR=$tmpdir
+    export GLOG_log_dir=$tmpdir
+    export GOMA_DEPS_CACHE_FILE=deps_cache
+    export GOMA_COMPILER_PROXY_SOCKET_NAME=$tmpdir/goma.ipc
+    export GOMA_GOMACC_LOCK_FILENAME=$tmpdir/gomacc.lock
+    export GOMA_COMPILER_PROXY_LOCK_FILENAME=$tmpdir/goma_compiler_proxy.lock
+    # Test uses SSL by default.
+    export GOMA_USE_SSL=true
+    export GOMA_SERVER_PORT=443
+  fi
+  expect_failure "gomacc_port_no_compiler_proxy" "$GOMACC port"
+  (cd /tmp && ${GOMA_COMPILER_PROXY_BINARY} & )
+  update_compiler_proxy_port $(dirname $GOMA_COMPILER_PROXY_BINARY) 10
+  watch_healthz localhost ${GOMA_COMPILER_PROXY_PORT} /healthz \
+    ${GOMA_COMPILER_PROXY_BINARY}
+
+  expect_success "gomacc_port" "$GOMACC port"
+  expect_success "gomacc_port_500" \
+    "for i in $(seq 0 500); do $GOMACC port > /dev/null & done; wait"
+fi
+
+if [ "$CLANG_PATH" = "" ]; then
+  clang_path="$goma_top_dir/third_party/llvm-build/Release+Asserts/bin"
+  if [ -d "$clang_path" ]; then
+     if "$clang_path/clang" -v; then
+       CLANG_PATH="$clang_path"
+     else
+       echo "clang is not runnable, disable clang test" 1>&2
+     fi
+  fi
+fi
+
+if [ -n "${GLOG_log_dir:-}" ]; then
+  echo "removing gomacc logs."
+  rm -f "${GLOG_log_dir}/gomacc.*"
+fi
+
+# if build env doesn't not use hermetic gcc,
+# set HERMETIC_GCC=FAIL_ for workaround.
+HERMETIC_GCC=
+
+DEFAULT_CC=gcc
+DEFAULT_CXX=g++
+if [ "$(uname)" = "Darwin" ]; then
+  # recent macosx uses llvm-gcc as gcc, but goma doesn't support it.
+  # test with chromium clang by default.
+  DEFAULT_CC=clang
+  DEFAULT_CXX=clang++
+  if [ "$GOMATEST_USE_SYSTEM_CLANG" = "" ]; then
+    PATH=$CLANG_PATH:$PATH
+    GOMATEST_USE_CHROMIUM_CLANG=1
+  fi
+  # Should set SDKROOT if we use non system clang.
+  export SDKROOT="$("$goma_top_dir"/build/mac/find_sdk.py \
+    --print_sdk_path 10.7 | head -1)"
+fi
+
+CC=${CC:-$DEFAULT_CC}
+CXX=${CXX:-$DEFAULT_CXX}
+
+LOCAL_CC=$(command -v ${CC})
+LOCAL_CXX=$(command -v ${CXX})
+LOCAL_CXX_DIR=$(dirname ${LOCAL_CXX})
+GOMA_CC=${goma_bin_dir}/${CC}
+GOMA_CXX=${goma_bin_dir}/${CXX}
+
+# Build determinism is broken on ChromeOS gcc, and since ChromeOS uses
+# clang as a default compiler (b/31105358), I do not think we need to
+# guarantee build determinism for it.  (b/64499036)
+if [[ "$CC" =~ ^g(cc|\+\+)$ && "$(is_cros_gcc $CC)" = "yes" ]]; then
+  HERMETIC_GCC="FAIL_"
+fi
+
+echo_title "CC=${CC} CXX=${CXX}"
+echo_title "LOCAL CC=${LOCAL_CC} CXX=${LOCAL_CXX}"
+echo_title "GOMA CC=${GOMA_CC} CXX=${GOMA_CXX}"
+
+${GOMACC} --goma-verify-command ${LOCAL_CC} -v
+TASK_ID=1
 
 function objcmp() {
  local want=$1

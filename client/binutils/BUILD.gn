@@ -49,6 +49,8 @@ if (os == "linux") {
     ]
 
     deps = [
+      "//base",
+      "//lib",
       "//third_party:glog",
       "//third_party/abseil",
     ]
@@ -94,10 +96,12 @@ if (os == "linux") {
 
     deps = [
       ":elf_dep_parser_lib",
+      ":elf_util_lib",
       "//base",
       "//build/config:exe_and_shlib_deps",
       "//client:common",
       "//client:goma_test_lib",
+      "//third_party/abseil",
     ]
   }
 }

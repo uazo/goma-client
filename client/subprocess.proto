@@ -32,9 +32,7 @@ message SubProcessState {
     NUM_STATE = 5;
   };
 
-  enum Pid {
-    kInvalidPid = -1;
-  };
+  enum Pid { kInvalidPid = -1; };
 }
 
 message SubProcessReq {
@@ -65,7 +63,7 @@ message SubProcessReq {
   optional string stdin_filename = 14;
   optional string stdout_filename = 15;
   optional string stderr_filename = 16;
-  optional OutputOption output_option = 17 [default=MERGE_STDOUT_STDERR];
+  optional OutputOption output_option = 17 [default = MERGE_STDOUT_STDERR];
   optional int32 umask = 18 [default = -1];
 
   optional Priority priority = 20;
@@ -139,5 +137,4 @@ message SubProcessTerminated {
 };
 
 // Shutdown subprocess controller server.
-message SubProcessShutdown {
-};
+message SubProcessShutdown {};

@@ -421,7 +421,7 @@ static ScopedFd OpenElf(const std::string& filename, char* elfIdent) {
 /* static */
 std::unique_ptr<ElfParser> ElfParser::NewElfParser(
     const std::string& filename) {
-  DCHECK(IsPosixAbsolutePath(filename));
+  DCHECK(IsPosixAbsolutePath(filename)) << "not absolute path: " << filename;
   char elfIdent[EI_NIDENT];
   ScopedFd fd(OpenElf(filename.c_str(), elfIdent));
   if (!fd.valid()) {
@@ -453,6 +453,7 @@ std::unique_ptr<ElfParser> ElfParser::NewElfParser(
 /* static */
 bool ElfParser::IsElf(const std::string& filename) {
   char elfIdent[EI_NIDENT];
+  DCHECK(IsPosixAbsolutePath(filename)) << "not absolute path: " << filename;
   ScopedFd fd(OpenElf(filename.c_str(), elfIdent));
   return fd.valid();
 }

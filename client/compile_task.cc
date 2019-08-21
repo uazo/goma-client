@@ -133,7 +133,7 @@ void LogCompilerOutput(const std::string& trace_id,
                        absl::string_view out) {
   LOG(INFO) << trace_id << " " << name << ": size=" << out.size();
   static const int kMaxLines = 32;
-  static const size_t kMaxCols = 200;
+  static const size_t kMaxCols = 512;
   static const char* kClExeShowIncludePrefix = "Note: including file:";
   if (out.size() == 0)
     return;
@@ -3085,8 +3085,12 @@ void CompileTask::UpdateCommandSpec() {
 
 void CompileTask::UpdateRequesterInfo() {
   CHECK_EQ(SETUP, state_);
-  RequesterInfo* info = req_->mutable_requester_info();
+  FixRequesterInfo(compiler_info_state_.get()->info(),
+                   req_->mutable_requester_info());
+}
 
+void CompileTask::FixRequesterInfo(const CompilerInfo& compiler_info,
+                                   RequesterInfo* info) const {
 #ifdef _WIN32
   info->set_path_style(RequesterInfo::WINDOWS_STYLE);
 #else
@@ -3096,7 +3100,7 @@ void CompileTask::UpdateRequesterInfo() {
   LOG_IF(WARNING, info->dimensions_size() != 0)
       << trace_id_
       << " somebody has already set dimensions:" << info->DebugString();
-  for (const auto& d : compiler_info_state_.get()->info().dimensions()) {
+  for (const auto& d : compiler_info.dimensions()) {
     info->add_dimensions(d);
   }
   // If dimensions are set by compiler_info, we do not modify.
@@ -4458,6 +4462,10 @@ std::string CompileTask::DumpRequest() const {
     req.add_expanded_arg(expanded_arg);
   req.set_cwd(stats_->cwd());
   *req.mutable_requester_info() = requester_info_;
+  if (compiler_info_state_.get() != nullptr) {
+    FixRequesterInfo(compiler_info_state_.get()->info(),
+                     req.mutable_requester_info());
+  }
 
   std::ostringstream ss;
   ss << "task_request_" << id_;

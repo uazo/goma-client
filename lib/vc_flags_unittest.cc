@@ -904,8 +904,10 @@ TEST_F(VCFlagsTest, VCImplicitMacros) {
   std::unique_ptr<CompilerFlags> flags1(
       CompilerFlagsParser::MustNew(args, "C:\\src\\sfntly\\cpp\\build"));
   EXPECT_EQ(args, flags1->args());
-  EXPECT_EQ("#define __cplusplus\n",
-            static_cast<const VCFlags&>(*flags1).implicit_macros());
+  EXPECT_EQ(
+      "#define __cplusplus\n"
+      "#define _MSVC_LANG 201402L\n",
+      static_cast<const VCFlags&>(*flags1).implicit_macros());
 
   // Simple C file
   args.clear();
@@ -940,9 +942,38 @@ TEST_F(VCFlagsTest, VCImplicitMacros) {
   EXPECT_TRUE(macro.find("__MSVC_RUNTIME_CHECKS") != std::string::npos);
   EXPECT_TRUE(macro.find("_NATIVE_WCHAR_T_DEFINED") != std::string::npos);
   EXPECT_TRUE(macro.find("_WCHAR_T_DEFINED") != std::string::npos);
+  EXPECT_TRUE(macro.find("_MSVC_LANG 201402L\n") != std::string::npos);
 
   EXPECT_EQ(CompilerFlagType::Clexe, flags3->type());
   VCFlags* vc_flags = static_cast<VCFlags*>(flags3.get());
+  EXPECT_TRUE(vc_flags->require_mspdbserv());
+
+  // /std:c++17
+  args.clear();
+  args.push_back("cl");
+  args.push_back("/nologo");
+  args.push_back("/std:c++17");
+  args.push_back("/D");
+  args.push_back("_DEBUG");
+  args.push_back("/RTC");
+  args.push_back("/MDd");
+  args.push_back("/Zc:wchar_t");
+  args.push_back("/ZI");
+  args.push_back("/c");
+  args.push_back("C:\\src\\sfntly\\cpp\\src\\sfntly\\font.cc");
+  std::unique_ptr<CompilerFlags> flags4(
+      CompilerFlagsParser::MustNew(args, "C:\\src\\sfntly\\cpp\\build"));
+  EXPECT_EQ(args, flags4->args());
+  macro = static_cast<const VCFlags&>(*flags4).implicit_macros();
+  EXPECT_TRUE(macro.find("__cplusplus") != std::string::npos);
+  EXPECT_TRUE(macro.find("_VC_NODEFAULTLIB") != std::string::npos);
+  EXPECT_TRUE(macro.find("__MSVC_RUNTIME_CHECKS") != std::string::npos);
+  EXPECT_TRUE(macro.find("_NATIVE_WCHAR_T_DEFINED") != std::string::npos);
+  EXPECT_TRUE(macro.find("_WCHAR_T_DEFINED") != std::string::npos);
+  EXPECT_TRUE(macro.find("_MSVC_LANG 201703L\n") != std::string::npos);
+
+  EXPECT_EQ(CompilerFlagType::Clexe, flags4->type());
+  vc_flags = static_cast<VCFlags*>(flags4.get());
   EXPECT_TRUE(vc_flags->require_mspdbserv());
 }
 

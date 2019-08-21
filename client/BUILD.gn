@@ -157,6 +157,8 @@ proto_library("compiler_info_data_proto") {
   sources = [
     "compiler_info_data.proto",
   ]
+
+  import_dir = [ "//third_party/protobuf/protobuf/src" ]
 }
 
 proto_library("counterz_proto") {
@@ -169,6 +171,8 @@ proto_library("deps_cache_proto") {
   sources = [
     "deps_cache_data.proto",
   ]
+
+  import_dir = [ "//third_party/protobuf/protobuf/src" ]
 }
 
 proto_library("error_notice") {
@@ -185,7 +189,7 @@ proto_library("local_output_cache_proto") {
 
 proto_library("subprocess_proto") {
   sources = [
-    "subprocess.protodevel",
+    "subprocess.proto",
   ]
 }
 
@@ -653,6 +657,7 @@ static_library("compiler_info_lib") {
 
   public_deps = [
     ":compiler_info_data_proto",
+    ":proto_util",
     "//lib",
     "//third_party:gtest_prod",
     "//third_party/abseil",
@@ -693,6 +698,17 @@ static_library("ioutil_lib") {
     "//lib",
     "//third_party:glog",
     "//third_party:zlib",
+  ]
+}
+
+static_library("proto_util") {
+  sources = [
+    "proto_util.cc",
+    "proto_util.h",
+  ]
+  public_deps = [
+    "//third_party/abseil",
+    "//third_party/protobuf:protobuf_lite",
   ]
 }
 
@@ -755,6 +771,7 @@ static_library("deps_cache_lib") {
     ":content_lib",
     ":deps_cache_proto",
     ":gen_compiler_proxy_info",
+    ":proto_util",
     "//client/cxx:cxx_compiler_info_lib",
     "//client/cxx/include_processor:directive_filter_lib",
     "//client/cxx/include_processor:include_cache_lib",
@@ -945,7 +962,7 @@ copy("copy_goma_ctl_py") {
 
 copy("copy_vpython") {
   sources = [
-    ".vpython",
+    "//.vpython",
   ]
   outputs = [
     "$root_out_dir/{{source_file_part}}",
@@ -1194,6 +1211,7 @@ static_library("goma_test_lib") {
     "//third_party:glog",
   ]
   public_deps = [
+    "//third_party:gmock",
     "//third_party:gtest",
     "//third_party/abseil",
   ]
@@ -1721,6 +1739,18 @@ executable("openssl_engine_unittest") {
   if (os == "win") {
     deps += [ "//client/certs:certs_resource" ]
   }
+}
+
+executable("proto_util_unittest") {
+  testonly = true
+  sources = [
+    "proto_util_unittest.cc",
+  ]
+  deps = [
+    ":goma_test_lib",
+    ":proto_util",
+    "//build/config:exe_and_shlib_deps",
+  ]
 }
 
 executable("rand_util_unittest") {

@@ -162,6 +162,9 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
   parser.AddFlag("std")->SetOutput(&compiler_info_flags_);
   parser.AddFlag("-std")->SetOutput(&compiler_info_flags_);
   parser.AddPrefixFlag("f")->SetOutput(&compiler_info_flags_);
+  // Avoid to add -ftrivial-auto-var-init=.. to compiler_info_flags_.
+  // See b/138157691.
+  parser.AddPrefixFlag("ftrivial-auto-var-init=");
   parser.AddBoolFlag("pthread")->SetOutput(&compiler_info_flags_);
   parser.AddBoolFlag("undef")->SetOutput(&compiler_info_flags_);
   // If pnacl-clang, it need to support --pnacl-bias and --pnacl-*-bias.
@@ -785,6 +788,7 @@ void GCCFlags::DefineFlags(FlagParser* parser) {
       {"v", kBool},    // Show commands to run and use verbose output
       {"w", kBool},    // Inhibit all warning messages.
       {"x", kNormal},  // specify language
+      {"fdebug-compilation-dir", kNormal},
 
       // darwin options
       {"-serialize-diagnostics", kNormal},

@@ -31,6 +31,7 @@
 #include "goma_hash.h"
 #include "path.h"
 #include "path_resolver.h"
+#include "proto_util.h"
 #include "util.h"
 #include "vc_flags.h"
 
@@ -402,8 +403,10 @@ bool DepsCache::LoadGomaDeps() {
       }
 
       FileStat file_stat;
-      file_stat.mtime = absl::FromTimeT(record.mtime());
-      file_stat.size = record.size();
+      if (record.has_mtime_ts()) {
+        file_stat.mtime = ProtoToTime(record.mtime_ts());
+        file_stat.size = record.size();
+      }
 
       deps_hash_id_map[record.filename_id()] =
           std::make_pair(file_stat, record.directive_hash());
@@ -565,10 +568,11 @@ bool DepsCache::SaveGomaDeps() {
         continue;
       GomaDepsIdTableRecord* record = table->add_record();
       record->set_filename_id(entry.first);
-      // TODO: Use protobuf/timestamp.
-      record->set_mtime(
-          entry.second.first.IsValid() ?
-              absl::ToTimeT(*entry.second.first.mtime) : 0);
+
+      if (entry.second.first.IsValid()) {
+        *record->mutable_mtime_ts() = TimeToProto(*entry.second.first.mtime);
+      }
+
       record->set_size(entry.second.first.size);
       record->set_directive_hash(entry.second.second.ToHexString());
     }

@@ -183,12 +183,8 @@ bool SetChrootClangResourcePaths(const std::string& cwd,
   constexpr absl::string_view kLdSoConfPath = "/etc/ld.so.conf";
   constexpr absl::string_view kLdSoCachePath = "/etc/ld.so.cache";
   resource_paths->emplace_back(kLdSoCachePath);
-  std::string content;
-  if (!ReadFileToString(kLdSoConfPath, &content)) {
-    LOG(ERROR) << "failed to open/read " << kLdSoConfPath;
-    return false;
-  }
-  std::vector<std::string> searchpath = ParseLdSoConf(content);
+  std::vector<std::string> searchpath = LoadLdSoConf(kLdSoConfPath);
+  LOG_IF(WARNING, searchpath.empty()) << "empty serach path:" << kLdSoConfPath;
   ElfDepParser edp(cwd, searchpath, false);
 
   absl::flat_hash_set<std::string> exec_deps;
@@ -196,7 +192,8 @@ bool SetChrootClangResourcePaths(const std::string& cwd,
     if (file != local_compiler_path && file != real_compiler_path) {
       resource_paths->push_back(file);
     }
-    if (!ElfParser::IsElf(file)) {
+    const std::string abs_file = file::JoinPathRespectAbsolute(cwd, file);
+    if (!ElfParser::IsElf(abs_file)) {
       continue;
     }
     if (!edp.GetDeps(file, &exec_deps)) {
@@ -223,6 +220,8 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
       std::string(local_compiler_path),
       std::string(real_compiler_path),
   };
+  const std::string abs_local_compiler_path =
+      file::JoinPathRespectAbsolute(cwd, local_compiler_path);
 
   if (GCCFlags::IsPNaClClangCommand(local_compiler_path)) {
     std::vector<std::string> pnacl_deps = {
@@ -308,7 +307,7 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
   //
   // Code below list up files needed to run the wrapper.
   //
-  if (ElfParser::IsElf(std::string(local_compiler_path))) {
+  if (ElfParser::IsElf(abs_local_compiler_path)) {
     // Assuming |local_compiler_path| is a program to detect a position of
     // the wrapper, and execute.
     // Then, we need to upload files to decide wrapper positions (.NATIVE
@@ -396,33 +395,6 @@ void ChromeOSCompilerInfoBuilderHelper::SetAdditionalFlags(
     // we have to set -noccache.
     additional_flags->Add("-noccache");
   }
-}
-
-// static
-bool ChromeOSCompilerInfoBuilderHelper::IsAndroidClang(
-    absl::string_view gcc_version) {
-  return absl::StrContains(gcc_version, "[Android ");
-}
-
-// static
-bool ChromeOSCompilerInfoBuilderHelper::CollectAndroidClangResources(
-    const std::string& cwd,
-    absl::string_view local_compiler_path,
-    absl::string_view real_compiler_path,
-    std::vector<std::string>* resource_paths) {
-  // TODO: dynamically find this instead of hard-code.
-  std::string real_clang = absl::StrCat(local_compiler_path, ".real");
-  if (access(real_clang.c_str(), X_OK) != 0) {
-    LOG(INFO) << "real clang seems not executable: " << real_clang;
-    return false;
-  }
-  resource_paths->push_back(std::move(real_clang));
-  std::string libcxx = file::JoinPath(file::Dirname(local_compiler_path), "..",
-                                      "lib64", "libc++.so");
-  if (access(libcxx.c_str(), R_OK) == 0) {
-    resource_paths->push_back(std::move(libcxx));
-  }
-  return true;
 }
 
 }  // namespace devtools_goma

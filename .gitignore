@@ -20,3 +20,4 @@ out
 /buildtools
 /build/util/LASTCHANGE*
 !/build/util/LASTCHANGE.dummy
+/.clangd

@@ -6,6 +6,7 @@
 #ifndef DEVTOOLS_GOMA_LIB_COMPRESS_UTIL_H_
 #define DEVTOOLS_GOMA_LIB_COMPRESS_UTIL_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -23,7 +24,6 @@
 
 namespace devtools_goma {
 
-using google::protobuf::int64;
 using google::protobuf::io::ArrayInputStream;
 using google::protobuf::io::ConcatenatingInputStream;
 using google::protobuf::io::ZeroCopyInputStream;
@@ -72,7 +72,7 @@ class LZMAInputStream : public ZeroCopyInputStream {
   bool Next(const void** data, int* size) override;
   void BackUp(int count) override;
   bool Skip(int size) override;
-  int64 ByteCount() const override;
+  google::protobuf::io::ByteCountInt64 ByteCount() const override;
 
  private:
   lzma_ret Decode();
@@ -104,7 +104,7 @@ class LZMAInputStream : public ZeroCopyInputStream {
   std::unique_ptr<uint8_t[]> output_buffer_;
   size_t output_buffer_size_;
   uint8_t* output_position_;
-  int64 byte_count_;
+  std::int64_t byte_count_;
 };
 
 // LZMAOutputStream is an ZeroCopyOutputStream that compresses data to
@@ -141,7 +141,7 @@ class LZMAOutputStream : public ZeroCopyOutputStream {
   // implements ZeroCopyOutputStream ---
   bool Next(void** data, int* size) override;
   void BackUp(int count) override;
-  int64 ByteCount() const override;
+  google::protobuf::io::ByteCountInt64 ByteCount() const override;
 
  private:
   void Init(std::unique_ptr<ZeroCopyOutputStream> sub_stream,
@@ -201,7 +201,7 @@ class InflateInputStream : public ZeroCopyInputStream {
   bool Skip(int size) override {
     return zlib_stream_->Skip(size);
   }
-  int64 ByteCount() const override {
+  google::protobuf::io::ByteCountInt64 ByteCount() const override {
     return zlib_stream_->ByteCount();
   }
 

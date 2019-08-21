@@ -8,18 +8,21 @@
 #include <unistd.h>
 #endif
 
+#include "absl/algorithm/container.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "base/path.h"
+#include "client/binutils/elf_util.h"
 #include "client/mypath.h"
 #include "client/subprocess.h"
 #include "client/unittest_util.h"
 #include "client/util.h"
 #include "glog/logging.h"
+#include "gmock/gmock.h"
 #include "google/protobuf/repeated_field.h"
-#include "gtest/gtest.h"
+#include "lib/path_resolver.h"
 #include "lib/path_util.h"
 
 namespace devtools_goma {
@@ -77,7 +80,14 @@ bool FollowSymlinks(const std::string& path,
   return true;
 }
 
-bool AppendLibraries(const std::string& compiler,
+enum class LibSelectionPolicy {
+  kUseSystemLibs,
+  kOmitSystemLibs,
+};
+
+bool AppendLibraries(const std::string& cwd,
+                     const std::string& compiler,
+                     LibSelectionPolicy policy,
                      std::vector<std::string>* expected_executable_binaries) {
   int32_t status = 0;
   std::vector<std::string> cmd = {
@@ -85,9 +95,11 @@ bool AppendLibraries(const std::string& compiler,
       compiler,
   };
   const std::string output =
-      ReadCommandOutput(cmd[0], cmd, std::vector<std::string>(), ".",
+      ReadCommandOutput(cmd[0], cmd, std::vector<std::string>(), cwd,
                         MERGE_STDOUT_STDERR, &status);
   EXPECT_EQ(static_cast<uint32_t>(0), status);
+  constexpr absl::string_view kLdSoConfPath = "/etc/ld.so.conf";
+  std::vector<std::string> searchpath = LoadLdSoConf(kLdSoConfPath);
   for (auto&& line :
        absl::StrSplit(output, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
     // expecting line like:
@@ -103,6 +115,10 @@ bool AppendLibraries(const std::string& compiler,
     absl::string_view libname = absl::StripAsciiWhitespace(
         line.substr(allow_pos, paren_pos - allow_pos));
     if (!libname.empty() && IsPosixAbsolutePath(libname)) {
+      if (policy == LibSelectionPolicy::kOmitSystemLibs &&
+          devtools_goma::IsInSystemLibraryPath(libname, searchpath)) {
+        continue;
+      }
       // On Linux, MAX_NESTED_LINKS is 8.
       constexpr int kMaxNestedLinks = 8;
       if (!FollowSymlinks(std::string(libname), expected_executable_binaries,
@@ -111,7 +127,9 @@ bool AppendLibraries(const std::string& compiler,
       }
     }
   }
-  expected_executable_binaries->emplace_back("/etc/ld.so.cache");
+  if (policy == LibSelectionPolicy::kUseSystemLibs) {
+    expected_executable_binaries->emplace_back("/etc/ld.so.cache");
+  }
 
   return true;
 }
@@ -280,15 +298,14 @@ TEST_F(GCCCompilerInfoBuilderTest, GetCompilerNameUnsupportedCase) {
 TEST_F(GCCCompilerInfoBuilderTest, BuildWithRealClang) {
   InstallReadCommandOutputFunc(ReadCommandOutputByPopen);
 
-  TmpdirUtil tmpdir("build_with_real_clang");
-  tmpdir.SetCwd("");
+  const std::string cwd = GetMyDirectory();
 
   // clang++ is usually a symlink to clang.
   // To check a symlink is correctly working, use clang++ instead of clang.
 
-  const std::string clang = GetClangPath();
+  const std::string clang = PathResolver::WeakRelativePath(GetClangPath(), cwd);
   // TODO: unittest_util should have GetClangXXPath()?
-  const std::string clangxx = GetClangPath() + "++";
+  const std::string clangxx = clang + "++";
 
   // Needs to use real .so otherwise clang fails to read the file.
   // Linux has .so, and mac has .dylib.
@@ -314,7 +331,7 @@ TEST_F(GCCCompilerInfoBuilderTest, BuildWithRealClang) {
   }
 
   const std::vector<std::string> envs;
-  GCCFlags flags(args, tmpdir.realcwd());
+  GCCFlags flags(args, cwd);
 
   GCCCompilerInfoBuilder builder;
   std::unique_ptr<CompilerInfoData> data =
@@ -334,20 +351,72 @@ TEST_F(GCCCompilerInfoBuilderTest, BuildWithRealClang) {
   };
 #ifdef __linux__
   if (HasHermeticDimensions(data->dimensions())) {
-    AppendLibraries(clangxx, &expected_executable_binaries);
+    AppendLibraries(cwd, clangxx, LibSelectionPolicy::kUseSystemLibs,
+                    &expected_executable_binaries);
+  } else {
+    AppendLibraries(cwd, clangxx, LibSelectionPolicy::kOmitSystemLibs,
+                    &expected_executable_binaries);
   }
+  absl::c_for_each(expected_executable_binaries, [&cwd](std::string& s) {
+    s = PathResolver::WeakRelativePath(s, cwd);
+  });
 #endif
 
   if (access(lib_find_bad_constructs_so.c_str(), R_OK) == 0) {
     expected_executable_binaries.push_back(lib_find_bad_constructs_so);
   }
 
-  std::sort(expected_executable_binaries.begin(),
-            expected_executable_binaries.end());
-  std::sort(actual_executable_binaries.begin(),
-            actual_executable_binaries.end());
-  EXPECT_EQ(expected_executable_binaries, actual_executable_binaries);
+  EXPECT_THAT(actual_executable_binaries,
+              testing::UnorderedElementsAreArray(expected_executable_binaries));
 }
+
+#ifdef __linux__
+// The code should work even if the wrapper is used behind the clang.
+// b/138603858
+TEST_F(GCCCompilerInfoBuilderTest, ClangWrapper) {
+  InstallReadCommandOutputFunc(ReadCommandOutputByPopen);
+
+  const std::string wrapper_clang =
+      file::JoinPath("..", "..", "test", "wrapper-clang");
+  const std::string cwd = GetMyDirectory();
+  std::vector<std::string> args{
+      wrapper_clang,
+      "-c",
+      "hello.cc",
+  };
+  const std::string& clang = GetClangPath();
+  const std::vector<std::string> envs = {
+      "GOMATEST_CLANG_PATH=" + clang,
+  };
+  GCCFlags flags(args, cwd);
+
+  GCCCompilerInfoBuilder builder;
+  std::unique_ptr<CompilerInfoData> data =
+      builder.FillFromCompilerOutputs(flags, wrapper_clang, envs);
+
+  ASSERT_NE(data.get(), nullptr);
+  std::vector<std::string> actual_executable_binaries;
+  for (const auto& resource : data->resource()) {
+    if (resource.type() == CompilerInfoData_ResourceType_EXECUTABLE_BINARY) {
+      actual_executable_binaries.push_back(resource.name());
+    }
+  }
+  std::vector<std::string> expected_executable_binaries{
+      wrapper_clang,
+      clang,
+  };
+  if (HasHermeticDimensions(data->dimensions())) {
+    AppendLibraries(cwd, clang, LibSelectionPolicy::kUseSystemLibs,
+                    &expected_executable_binaries);
+  } else {
+    AppendLibraries(cwd, clang, LibSelectionPolicy::kOmitSystemLibs,
+                    &expected_executable_binaries);
+  }
+  EXPECT_THAT(actual_executable_binaries,
+              testing::UnorderedElementsAreArray(expected_executable_binaries));
+}
+#endif  // __linux__
+
 #endif
 
 }  // namespace devtools_goma

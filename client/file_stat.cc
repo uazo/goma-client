@@ -89,7 +89,12 @@ bool FileStat::CanBeNewerThan(const FileStat& old) const {
 std::string FileStat::DebugString() const {
   std::stringstream ss;
   ss << "{";
-  ss << " mtime=" << (mtime.has_value() ? absl::ToTimeT(*mtime) : 0);
+  ss << " mtime=";
+  if (mtime) {
+    ss << *mtime;
+  } else {
+    ss << "not set";
+  }
   ss << " size=" << size;
   ss << " is_directory=" << is_directory;
   ss << "}";

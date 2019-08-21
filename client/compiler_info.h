@@ -15,6 +15,7 @@
 #include "compiler_specific.h"
 #include "file_stat.h"
 #include "lockhelper.h"
+#include "proto_util.h"
 #include "sha256_hash_cache.h"
 
 MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
@@ -277,8 +278,9 @@ class CompilerInfo {
 
 inline void SetFileStatToData(const FileStat& file_stat,
                               CompilerInfoData::FileStat* data) {
-  // TODO: Use protobuf/timestamp.
-  data->set_mtime(file_stat.mtime ? absl::ToTimeT(*file_stat.mtime) : 0);
+  if (file_stat.mtime) {
+    *data->mutable_mtime_ts() = TimeToProto(*file_stat.mtime);
+  }
   data->set_size(file_stat.size);
   data->set_is_directory(file_stat.is_directory);
 }
@@ -291,7 +293,8 @@ inline void SetFileStatToData(const FileStat& file_stat,
 // CompilerInfoData::FileStat really exists.
 inline void GetFileStatFromData(const CompilerInfoData::FileStat& data,
                                 FileStat* file_stat) {
-  file_stat->mtime = absl::FromTimeT(data.mtime());
+  auto ts = data.mtime_ts();
+  file_stat->mtime = ProtoToTime(ts);
   file_stat->size = data.size();
   file_stat->is_directory = data.is_directory();
 }

@@ -21,6 +21,7 @@
 #include "compiler_info_state.h"
 #include "cxx/gcc_compiler_info_builder.h"
 #include "path.h"
+#include "proto_util.h"
 #include "subprocess.h"
 #include "unittest_util.h"
 #include "util.h"
@@ -658,8 +659,9 @@ TEST_F(CompilerInfoCacheTest, UpdateOlderCompilerInfo)
     cid->set_last_used_at(absl::ToTimeT(absl::Now()));
     cid->set_found(true);
     ASSERT_TRUE(valid_filestat.mtime.has_value());
-    cid->mutable_local_compiler_stat()->set_mtime(
-        absl::ToTimeT(*valid_filestat.mtime));
+
+    *cid->mutable_local_compiler_stat()->mutable_mtime_ts() =
+        TimeToProto(*valid_filestat.mtime);
     cid->mutable_local_compiler_stat()->set_size(valid_filestat.size);
     cid->set_local_compiler_hash(valid_hash);
     cid->set_hash(valid_hash);
@@ -676,8 +678,9 @@ TEST_F(CompilerInfoCacheTest, UpdateOlderCompilerInfo)
     cid->set_last_used_at(absl::ToTimeT(absl::Now() - absl::Hours(24 * 31)));
     cid->set_found(true);
     ASSERT_TRUE(valid_filestat.mtime.has_value());
-    cid->mutable_local_compiler_stat()->set_mtime(
-        absl::ToTimeT(*valid_filestat.mtime));
+
+    *cid->mutable_local_compiler_stat()->mutable_mtime_ts() =
+        TimeToProto(*valid_filestat.mtime);
     cid->mutable_local_compiler_stat()->set_size(valid_filestat.size);
     cid->set_local_compiler_hash(valid_hash);
     cid->set_hash(valid_hash);

@@ -50,6 +50,9 @@
 #   deps (optional)
 #       Additional dependencies.
 #
+#   import_dir (optional)
+#       Import directories.
+#
 # Parameters for compiling the generated code:
 #
 #   component_build_force_source_set (Default=false)
@@ -115,19 +118,18 @@ template("proto_library") {
       ]
     }
 
-    args += [
-      "--proto-in-dir",
-      "{{source_dir}}",
-      "--proto-in-file",
-      "{{source_file_part}}",
-
-      # TODO support system protobuf compiler.
-      "--use-system-protobuf=0",
-    ]
+    if (defined(invoker.import_dir)) {
+      foreach(dir, invoker.import_dir) {
+        args += [
+          "--import-dir",
+          rebase_path(dir),
+        ]
+      }
+    }
 
     protoc_label = "//third_party/protobuf:protoc($host_toolchain)"
     args += [
-      "--",
+      "--protoc",
 
       # Prepend with "./" so this will never pick up the system one (normally
       # when not cross-compiling, protoc's output directory will be the same
@@ -143,7 +145,7 @@ template("proto_library") {
 
       outputs += [ "$py_out_dir/{{source_name_part}}_pb2.py" ]
       args += [
-        "--python_out",
+        "--py-out-dir",
         rel_py_out_dir,
       ]
     }
@@ -162,7 +164,7 @@ template("proto_library") {
         "$out_dir/{{source_name_part}}.pb.h",
       ]
       args += [
-        "--cpp_out",
+        "--cc-out-dir",
         "$cc_generator_options$rel_out_dir",  # Separated by colon.
       ]
     }
@@ -199,6 +201,12 @@ template("proto_library") {
         "$generator_plugin_options$rel_out_dir",  # Separated by colon.
       ]
     }
+
+    args += [
+      "--proto-in-dir",
+      "{{source_dir}}",
+      "{{source_file_part}}",
+    ]
 
     deps = [
       protoc_label,

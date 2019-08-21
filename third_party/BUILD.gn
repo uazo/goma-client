@@ -106,17 +106,12 @@ config("has_rtti_config") {
     "GTEST_HAS_RTTI=0",
   ]
 }
-config("use_own_tr1_tuple_config") {
-  defines = [
-    # We want gtest features that use tr1::tuple, but we currently
-    # don't support the variadic templates used by libstdc++'s
-    # implementation. gtest supports this scenario by providing its
-    # own implementation but we must opt in to it.
-    "GTEST_USE_OWN_TR1_TUPLE=1",
-  ]
-}
+
 config("unittest_config") {
-  defines = [ "UNIT_TEST" ]
+  defines = [
+    "UNIT_TEST",
+    "GTEST_HAS_ABSL",
+  ]
 
   # So that gtest headers can find themselves.
   include_dirs = [ "gtest/googletest/include" ]
@@ -129,10 +124,6 @@ config("unittest_config") {
   }
 }
 
-# http://stackoverflow.com/questions/12558327/google-test-in-visual-studio-2012
-config("variadix_max_config") {
-  defines = [ "_VARIADIC_MAX=10" ]
-}
 static_library("gtest") {
   testonly = true
   sources = [
@@ -179,15 +170,12 @@ static_library("gtest") {
   if (is_posix) {
     public_configs += [ ":has_rtti_config" ]
   }
-  if (is_clang && os != "win") {
-    public_configs += [ ":use_own_tr1_tuple_config" ]
-  }
-  if (os == "win") {
-    # http://stackoverflow.com/questions/12558327/google-test-in-visual-studio-2012
-    public_configs += [ ":variadix_max_config" ]
-  }
 
   public_configs += [ ":unittest_config" ]
+
+  public_deps = [
+    "//third_party/abseil",
+  ]
 
   configs -= [ "//build/config/compiler:goma_code" ]
   configs += [ "//build/config/compiler:no_goma_code" ]
@@ -216,6 +204,54 @@ static_library("gtest_main") {
 
   configs -= [ "//build/config/compiler:goma_code" ]
   configs += [ "//build/config/compiler:no_goma_code" ]
+}
+
+config("gmock_config") {
+  include_dirs = [ "gtest/googlemock/include" ]
+}
+
+source_set("gmock_internal") {
+  sources = [
+    "gtest/googlemock/include/gmock/internal/gmock-generated-internal-utils.h",
+    "gtest/googlemock/include/gmock/internal/gmock-internal-utils.h",
+    "gtest/googlemock/include/gmock/internal/gmock-port.h",
+  ]
+}
+
+static_library("gmock") {
+  testonly = true
+  sources = [
+    "gtest/googlemock/include/gmock/gmock-actions.h",
+    "gtest/googlemock/include/gmock/gmock-cardinalities.h",
+    "gtest/googlemock/include/gmock/gmock-generated-actions.h",
+    "gtest/googlemock/include/gmock/gmock-generated-function-mockers.h",
+    "gtest/googlemock/include/gmock/gmock-generated-matchers.h",
+    "gtest/googlemock/include/gmock/gmock-generated-nice-strict.h",
+    "gtest/googlemock/include/gmock/gmock-matchers.h",
+    "gtest/googlemock/include/gmock/gmock-more-actions.h",
+    "gtest/googlemock/include/gmock/gmock-more-matchers.h",
+    "gtest/googlemock/include/gmock/gmock-spec-builders.h",
+    "gtest/googlemock/include/gmock/gmock.h",
+    "gtest/googlemock/src/gmock-all.cc",
+  ]
+
+  include_dirs = [
+    "gtest/googlemock/include",
+    "gtest/googlemock",
+  ]
+
+  public_deps = [
+    ":gtest",
+    "//third_party/abseil",
+  ]
+
+  deps = [
+    ":gmock_internal",
+  ]
+
+  configs -= [ "//build/config/compiler:goma_code" ]
+  configs += [ "//build/config/compiler:no_goma_code" ]
+  public_configs = [ ":gmock_config" ]
 }
 
 config("liblzma_config") {

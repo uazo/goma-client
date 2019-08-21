@@ -1,0 +1,5 @@
+#!/bin/bash
+test_dir=$(cd $(dirname $0); pwd)
+goma_top_dir=${test_dir}/..
+GOMATEST_CLANG_PATH="${GOMATEST_CLANG_PATH:-"$goma_top_dir/third_party/llvm-build/Release+Asserts/bin/clang"}"
+"$GOMATEST_CLANG_PATH" $@

@@ -45,17 +45,6 @@ class ChromeOSCompilerInfoBuilderHelper {
   static void SetAdditionalFlags(
       absl::string_view local_compiler_path,
       google::protobuf::RepeatedPtrField<std::string>* additional_flags);
-
-  // Since this is for ARC++, we put the code inside
-  // ChromeOSCompilerInfoBuilderHelper.
-  // Returns true if version tells the clang is clang bundled with Android.
-  static bool IsAndroidClang(absl::string_view gcc_version);
-  // Collects Android clang resources for arbitrary toolchain support.
-  static bool CollectAndroidClangResources(
-      const std::string& cwd,
-      absl::string_view local_compiler_path,
-      absl::string_view real_compiler_path,
-      std::vector<std::string>* resource_paths);
 };
 
 }  // namespace devtools_goma

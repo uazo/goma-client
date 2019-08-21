@@ -2782,4 +2782,21 @@ TEST_F(GCCFlagsTest, XClangEmitModuleEvil) {
   EXPECT_EQ("", gcc_flags->clang_module_file().second);
 }
 
+TEST_F(GCCFlagsTest, ClangFtrivialAutoVarInitShouldBeIgnored) {
+  std::vector<std::string> args = {
+      "clang++",
+      "-ftrivial-auto-var-init=zero",
+      "-enable-trivial-auto-var-init-zero-"
+      "knowing-it-will-be-removed-from-clang",
+      "-c",
+      "hello.cc",
+  };
+  GCCFlags flags(args, "/usr/src/chrome/src");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_TRUE(flags.compiler_info_flags().empty());
+}
+
 }  // namespace devtools_goma

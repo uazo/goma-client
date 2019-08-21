@@ -138,6 +138,7 @@ bool HandleHttpPortRequest(int argc, char* argv[]) {
               << " " << status.error_message
               << ", http_return_code: " << status.http_return_code
               << std::endl;
+    exit(1);
   } else {
     std::cout << port << std::endl;
   }

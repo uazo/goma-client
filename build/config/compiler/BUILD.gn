@@ -110,6 +110,12 @@ config("compiler") {
     # Treat warnings as errors.
     cflags += [ "/WX" ]
 
+    if (is_debug) {
+      # Disable -Winvalid-offsetof warning, which is triggered by
+      # third_party/protobuf on Windows debug builds (crbug.com/991377).
+      cflags += [ "-Wno-invalid-offsetof" ]
+    }
+
     # clang does not support /ZI.
     # goma does not support /Zi (PDB) or /ZI (PDB + edit and continue)
     # clang-cl.exe's /Zi is the alias of /Z7 (It does not produce PDB).

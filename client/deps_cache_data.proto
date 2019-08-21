@@ -5,6 +5,8 @@
 
 syntax = "proto2";
 
+import "google/protobuf/timestamp.proto";
+
 package devtools_goma;
 
 // GomaDeps contains all information for DepsCache.
@@ -54,9 +56,12 @@ message GomaDepsIdTableRecord {
   required uint32 filename_id = 1;
   optional uint64 DEPRECATED_dev = 2 [deprecated = true];
   optional uint64 DEPRECATED_inode = 3 [deprecated = true];
-  required int64 mtime = 4;
+  optional google.protobuf.Timestamp mtime_ts = 7;
   required int64 size = 5;
   required string directive_hash = 6;
+
+  reserved 4;
+  reserved "mtime";
 }
 
 // GomaDependencyTable is a map record

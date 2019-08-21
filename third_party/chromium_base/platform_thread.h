@@ -30,6 +30,8 @@
 
 #include <stdint.h>
 
+#include "absl/strings/string_view.h"
+
 namespace devtools_goma {
 
 #if defined (_WIN32)
@@ -80,6 +82,10 @@ class PlatformThread {
   // the caller until the designated thread exits.  This will invalidate
   // |thread_handle|.
   static void Join(PlatformThreadHandle thread_handle);
+
+  // Sets the thread name, used by debuggers and profilers to identify threads.
+  static void SetName(PlatformThreadHandle thread_handle,
+                      absl::string_view name);
 
  private:
   PlatformThread();

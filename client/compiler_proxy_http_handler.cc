@@ -1329,7 +1329,8 @@ void CompilerProxyHttpHandler::TrackMemory() LOCKS_EXCLUDED(memory_mu_) {
   if (memory_byte >= warning_threshold) {
     LOG(WARNING) << "memory tracking: consuming memory = " << memory_byte
                  << " bytes, which is higher than "
-                 << "warning threshold " << warning_threshold << " bytes";
+                 << "warning threshold " << warning_threshold << " bytes"
+                 << ", virutal = " << virtual_memory_byte << " bytes";
   } else {
     LOG(INFO) << "memory tracking: consuming memory = " << memory_byte
               << " bytes, virtual = " << virtual_memory_byte << " bytes";

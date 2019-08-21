@@ -33,6 +33,7 @@ static_library("platform_thread") {
 
   deps = [
     "//third_party:glog",
+    "//third_party/abseil",
   ]
 
   public_configs = [ ":chromium_base_config" ]

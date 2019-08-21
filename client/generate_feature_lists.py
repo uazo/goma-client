@@ -14,6 +14,7 @@ See: http://clang.llvm.org/docs/LanguageExtensions.html#feature-checking-macros
 
 
 
+import datetime
 import re
 import urllib.request, urllib.error, urllib.parse
 
@@ -21,6 +22,7 @@ BASE_URL = 'http://llvm.org/svn/llvm-project/cfe/trunk'
 ATTR_URL = BASE_URL + '/include/clang/Basic/Attr.td'
 PPMACRO_EXPANSION_URL = BASE_URL + '/lib/Lex/PPMacroExpansion.cpp'
 BUILTINS_URL = BASE_URL + '/include/clang/Basic/Builtins.def'
+FEATURES_URL = BASE_URL + '/include/clang/Basic/Features.def'
 CASE_NAME_PATTERN = re.compile(r'Case\("(.*?)"')
 ATTR_NAME_IN_BRACKETS_PATTERN = re.compile(r'(.*?)<"(.*?)">')
 CPP_ATTR_NAME_IN_BRACKETS_PATTERN = re.compile(
@@ -28,7 +30,9 @@ CPP_ATTR_NAME_IN_BRACKETS_PATTERN = re.compile(
 DECLSPEC_NAME_IN_BRACKETS_PATTERN = re.compile(r'Declspec<"(.*?)">')
 SPELLINGS_PATTERN = re.compile(r'let Spellings = \[(.*?)\];',
                                re.MULTILINE | re.DOTALL)
-BUILTINS_PATTERN = re.compile(r'BUILTIN\((\w+),')
+BUILTINS_PATTERN = re.compile(r'^[A-Z_]*BUILTIN\((\w+),', re.MULTILINE)
+FEATURE_PATTERN = re.compile(r'^FEATURE\((\w+),', re.MULTILINE)
+EXTENSION_PATTERN = re.compile(r'^EXTENSION\((\w+),', re.MULTILINE)
 
 class Error(Exception):
   pass
@@ -61,31 +65,32 @@ ppmacro_expansion = urllib.request.urlopen(
     PPMACRO_EXPANSION_URL).read().decode('utf-8')
 attr_td = urllib.request.urlopen(ATTR_URL).read().decode('utf-8')
 builtins_def = urllib.request.urlopen(BUILTINS_URL).read().decode('utf-8')
+features_def = urllib.request.urlopen(FEATURES_URL).read().decode('utf-8')
 
+print('// Copyright %d Google Inc. All Rights Reserved.' %
+      datetime.date.today().year)
 print('// This is auto-generated file from generate_feature_list.py.')
 print('// Clang revision: %s.' % revision)
 print('// *** DO NOT EDIT ***')
 
 # __has_feature
-featureFunc = ScrapeFunction(ppmacro_expansion, 'HasFeature')
-features = CASE_NAME_PATTERN.findall(featureFunc)
+features = list(set(re.findall(FEATURE_PATTERN, features_def)))
 features.sort()
 print()
 print('static const char* KNOWN_FEATURES[] = {')
 for feature in features:
-  print('  "%s",' % feature)
+  print('    "%s",' % feature)
 print('};')
 print('static const unsigned long NUM_KNOWN_FEATURES =')
 print('    sizeof(KNOWN_FEATURES) / sizeof(KNOWN_FEATURES[0]);')
 
 # __has_extension
-extensionFunc = ScrapeFunction(ppmacro_expansion, 'HasExtension')
-extensions = CASE_NAME_PATTERN.findall(extensionFunc)
+extensions = list(set(re.findall(EXTENSION_PATTERN, features_def)))
 extensions.sort()
 print()
 print('static const char* KNOWN_EXTENSIONS[] = {')
 for extension in extensions:
-  print('  "%s",' % extension)
+  print('    "%s",' % extension)
 print('};')
 print('static const unsigned long NUM_KNOWN_EXTENSIONS =')
 print('    sizeof(KNOWN_EXTENSIONS) / sizeof(KNOWN_EXTENSIONS[0]);')
@@ -109,7 +114,7 @@ attributes = list(attributes)
 attributes.sort()
 print()
 print('static const char* KNOWN_ATTRIBUTES[] = {')
-print('\n'.join(['  "%s",' % attr for attr in attributes]))
+print('\n'.join(['    "%s",' % attr for attr in attributes]))
 print('};')
 print('static const unsigned long NUM_KNOWN_ATTRIBUTES =')
 print('    sizeof(KNOWN_ATTRIBUTES) / sizeof(KNOWN_ATTRIBUTES[0]);')
@@ -130,7 +135,7 @@ cpp_attributes = list(cpp_attributes)
 cpp_attributes.sort()
 print()
 print('static const char* KNOWN_CPP_ATTRIBUTES[] = {')
-print('\n'.join(['  "%s",' % attr for attr in cpp_attributes]))
+print('\n'.join(['    "%s",' % attr for attr in cpp_attributes]))
 print('};')
 print('static const unsigned long NUM_KNOWN_CPP_ATTRIBUTES =')
 print('    sizeof(KNOWN_CPP_ATTRIBUTES) / sizeof(KNOWN_CPP_ATTRIBUTES[0]);')
@@ -144,7 +149,7 @@ declspec_attributes = list(declspec_attributes)
 declspec_attributes.sort()
 print()
 print('static const char* KNOWN_DECLSPEC_ATTRIBUTES[] = {')
-print('\n'.join(['  "%s",' % attr for attr in attributes]))
+print('\n'.join(['    "%s",' % attr for attr in attributes]))
 print('};')
 print('static const unsigned long NUM_KNOWN_DECLSPEC_ATTRIBUTES =')
 print('    sizeof(KNOWN_DECLSPEC_ATTRIBUTES) /')
@@ -155,7 +160,7 @@ builtins = list(set(re.findall(BUILTINS_PATTERN, builtins_def)))
 builtins.sort()
 print()
 print('static const char* KNOWN_BUILTINS[] = {')
-print('\n'.join(['  "%s",' % builtin for builtin in builtins]))
+print('\n'.join(['    "%s",' % builtin for builtin in builtins]))
 print('};')
 print('static const unsigned long NUM_KNOWN_BUILTINS =')
 print('    sizeof(KNOWN_BUILTINS) /')

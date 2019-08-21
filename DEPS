@@ -1,14 +1,18 @@
+# Copyright 2019 Google Inc. All Rights Reserved.
+
 vars = {
      "chromium_git": "https://chromium.googlesource.com",
 }
 
 deps = {
-     # protobuf 3.8.0
+     # protobuf > 3.9.1
+     # TODO: use released proto including
+     # https://github.com/protocolbuffers/protobuf/blob/ee4f2492ea4e7ff120f68a792af870ee30435aa5/src/google/protobuf/io/zero_copy_stream.h#L122
      # Note: When you update protobuf, you will need to update
      # test/goma_data.pb.{h,cc}. Copying them from your output directory should
      # work.
      "client/third_party/protobuf/protobuf":
-     "https://github.com/google/protobuf.git@09745575a923640154bcf307fba8aedff47f240a",
+     "https://github.com/google/protobuf.git@7bff8393cab939bfbb9b5c69b3fe76b4d83c41ee",
 
      # google-glog v0.4.0
      "client/third_party/glog":
@@ -32,12 +36,14 @@ deps = {
      Var("chromium_git") + '/external/github.com/open-source-parsers/jsoncpp.git@f572e8e42e22cfcf5ab0aea26574f408943edfa4', # from svn 248
 
      # chrome's tools/clang
+     # TODO: remove fixed revision after next clang roll.
      "client/tools/clang":
-     "https://chromium.googlesource.com/chromium/src/tools/clang.git",
+     "https://chromium.googlesource.com/chromium/src/tools/clang.git" +
+     "@4327557d191c3a676ee8340939638836560aedde",
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@09050cb498336655883157c6e6055db9e5542857",
+     "https://boringssl.googlesource.com/boringssl@44544d9d2d624cbfff9b1e77cb77f8dfc70d073c",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":

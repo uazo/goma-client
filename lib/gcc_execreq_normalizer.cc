@@ -47,6 +47,8 @@ ConfigurableExecReqNormalizer::Config GCCExecReqNormalizer::Configure(
       flag_parser.AddBoolFlag("fprofile-instr-generate");
   FlagParser::Flag* flag_fcoverage_mapping =
       flag_parser.AddBoolFlag("fcoverage-mapping");
+  FlagParser::Flag* flag_fdebug_compilation_dir =
+      flag_parser.AddBoolFlag("fdebug-compilation-dir");
   flag_parser.Parse(args);
 
   // -g does not capture -gsplit-dwarf. So we need to check it explicitly.
@@ -59,9 +61,17 @@ ConfigurableExecReqNormalizer::Config GCCExecReqNormalizer::Configure(
   }
 
   absl::optional<std::string> fdebug_compilation_dir;
-  if (has_debug_flag) {
+  {
     ClangFlagsHelper clang_flags_helper(args);
-    fdebug_compilation_dir = clang_flags_helper.fdebug_compilation_dir();
+    if (clang_flags_helper.fdebug_compilation_dir() &&
+        flag_fdebug_compilation_dir->seen()) {
+      // Ignore -fdebug-compilation-dir if it is specified w/ and w/o -Xclang.
+      LOG(ERROR) << "-fdebug-compilation-dir is specified w/ and w/o -Xclang";
+    } else if (flag_fdebug_compilation_dir->seen()) {
+      fdebug_compilation_dir = flag_fdebug_compilation_dir->GetLastValue();
+    } else {
+      fdebug_compilation_dir = clang_flags_helper.fdebug_compilation_dir();
+    }
   }
 
   bool has_m_flag = false;

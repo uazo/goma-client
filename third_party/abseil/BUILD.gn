@@ -1,5 +1,15 @@
+import("//build/config/clang/clang.gni")
+
 config("abseil_config") {
   include_dirs = [ "src" ]
+
+  if (clang_base_path == default_clang_base_path) {
+    # Only apply this for chromium clang build.
+    # TODO: enable again if
+    # https://chromium-review.googlesource.com/c/chromium/src/+/1756767
+    # is relanded.
+    # cflags = [ "-Wno-implicit-int-float-conversion" ]
+  }
 }
 
 # All libraries combined.

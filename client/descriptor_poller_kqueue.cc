@@ -97,8 +97,22 @@ class KqueueDescriptorPoller : public DescriptorPollerBase {
 
   int PollEventsInternal(absl::Duration timeout) override {
     struct timespec tv = absl::ToTimespec(timeout);
-    nevents_ = kevent(kqueue_fd_.fd(), nullptr, 0,
-        &eventlist_[0], eventlist_.size(), &tv);
+    nevents_ = kevent(kqueue_fd_.fd(), nullptr, 0, &eventlist_[0],
+                      eventlist_.size(), &tv);
+
+    PLOG_IF(ERROR, nevents_ == -1)
+        << "failed to call kevents with kqueue_fd=" << kqueue_fd_.fd()
+        << " |eventlist|=" << eventlist_.size() << " timeout=" << timeout;
+
+    if (nevents_ > 0) {
+      for (int i = 0; i < nevents_; ++i) {
+        const auto& ev = eventlist_[i];
+        if (ev.flags & EV_ERROR) {
+          LOG(ERROR) << "get EV_ERROR from kevent: " << strerror(ev.data);
+        }
+      }
+    }
+
     return nevents_;
   }
 
@@ -118,7 +132,7 @@ class KqueueDescriptorPoller : public DescriptorPollerBase {
       // Iterates over fired events.
       if (idx_ < poller_->nevents_) {
         current_ev_ = &poller_->eventlist_[idx_++];
-        PCHECK(!(current_ev_->flags & EV_ERROR));
+        CHECK(!(current_ev_->flags & EV_ERROR));
         SocketDescriptor* d = nullptr;
         if (static_cast<int>(current_ev_->ident) ==
             poller_->poll_breaker()->fd()) {

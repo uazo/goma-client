@@ -139,7 +139,8 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
 
   // standard
   parser.AddBoolFlag("permissive-")->SetOutput(&compiler_info_flags_);
-  parser.AddPrefixFlag("std:")->SetOutput(&compiler_info_flags_);
+  FlagParser::Flag* flag_std = parser.AddPrefixFlag("std:");  // e.g./std:c++17
+  flag_std->SetOutput(&compiler_info_flags_);
 
   // Additional include path.
   parser.AddFlag("I")->SetValueOutputWithCallback(&normalizer, &include_dirs_);
@@ -180,7 +181,7 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
   // TODO: check -iquote?
   // http://clang.llvm.org/docs/UsersManual.html#id8
   FlagParser::Flag* flag_imsvc = parser.AddFlag("imsvc");
-  FlagParser::Flag* flag_std = parser.AddFlag("std");  // e.g. -std=c11
+  FlagParser::Flag* flag_clang_std = parser.AddFlag("std");  // e.g. -std=c11
   FlagParser::Flag* flag_no_canonical_prefixes =
       parser.AddBoolFlag("no-canonical-prefixes");
   FlagParser::Flag* flag_target = parser.AddFlag("target");
@@ -201,7 +202,7 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     flag_mllvm->SetOutput(&compiler_info_flags_);
     flag_isystem->SetOutput(&compiler_info_flags_);
     flag_imsvc->SetOutput(&compiler_info_flags_);
-    flag_std->SetOutput(&compiler_info_flags_);
+    flag_clang_std->SetOutput(&compiler_info_flags_);
     flag_no_canonical_prefixes->SetOutput(&compiler_info_flags_);
     flag_target->SetOutput(&compiler_info_flags_);
     flag_hyphen_target->SetOutput(&compiler_info_flags_);
@@ -255,6 +256,22 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
   if (flag_Zc_wchar_t->seen()) {
     implicit_macros_.append("#define _NATIVE_WCHAR_T_DEFINED\n");
     implicit_macros_.append("#define _WCHAR_T_DEFINED\n");
+  }
+
+  if (flag_std->seen()) {
+    // https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros?view=vs-2019
+    // as of Aug 2019, wintoolchain checks _MSVC_LANG > 201402L only.
+    std::string stdvalue = flag_std->GetLastValue();
+    if (stdvalue == "c++14") {
+      implicit_macros_.append("#define _MSVC_LANG 201402L\n");
+    } else if (stdvalue == "c++17") {
+      implicit_macros_.append("#define _MSVC_LANG 201703L\n");
+    }
+    // https://docs.microsoft.com/en-us/cpp/build/reference/std-specify-language-standard-version?view=vs-2019
+    // TODO: stdvalue == "c++latest", "c++20" ?
+  } else if (lang_ == "c++") {
+    // default /std:c++14 is specified.
+    implicit_macros_.append("#define _MSVC_LANG 201402L\n");
   }
 
   // Debug information format.
@@ -611,6 +628,7 @@ void VCFlags::DefineFlags(FlagParser* parser) {
   parser->AddPrefixFlag("-analyze");  // enable code analysis (--analyze)
   parser->AddFlag("target");
   parser->AddFlag("-target");
+  parser->AddFlag("fdebug-compilation-dir");
 
   opts->flag_prefix = '-';
   opts->alt_flag_prefix = '/';

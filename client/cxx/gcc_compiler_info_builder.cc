@@ -5,20 +5,23 @@
 #include "gcc_compiler_info_builder.h"
 
 #include "absl/strings/match.h"
-#include "autolock_timer.h"
-#include "clang_compiler_info_builder_helper.h"
-#include "counterz.h"
-#include "env_flags.h"
-#include "gcc_flags.h"
+#include "base/path.h"
+#include "client/autolock_timer.h"
+#include "client/counterz.h"
+#include "client/cxx/clang_compiler_info_builder_helper.h"
+#include "client/cxx/nacl_compiler_info_builder_helper.h"
+#include "client/env_flags.h"
+#include "client/util.h"
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
-#include "nacl_compiler_info_builder_helper.h"
-#include "path.h"
-#include "path_resolver.h"
-#include "util.h"
+#include "lib/gcc_flags.h"
+#include "lib/path_resolver.h"
 
 #ifdef __linux__
-#include "chromeos_compiler_info_builder_helper.h"
+#include "binutils/elf_dep_parser.h"
+#include "binutils/elf_parser.h"
+#include "binutils/elf_util.h"
+#include "client/cxx/chromeos_compiler_info_builder_helper.h"
 #endif
 
 #ifdef _WIN32
@@ -174,6 +177,12 @@ std::string GetRealClangPath(const std::string& normal_gcc_path,
   argv.push_back("-v");
   argv.push_back("-E");
   argv.push_back("/dev/null");
+  if (GCCFlags::IsClangCommand(normal_gcc_path) &&
+      // pnacl-clang returns error for -no-canonical-prefixes.
+      !GCCFlags::IsPNaClClangCommand(normal_gcc_path)) {
+    // Expect clang to print a relative path if possible.
+    argv.push_back("-no-canonical-prefixes");
+  }
   int32_t status = 0;
   std::string v_output;
   {
@@ -327,6 +336,8 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
 
   // --- Experimental. Add compiler resource.
   std::vector<std::string> resource_paths_to_collect;
+  const std::string abs_real_compiler_path =
+      file::JoinPathRespectAbsolute(flags.cwd(), data->real_compiler_path());
 
   // local compiler.
   // The server assumes the first resource path is always the local compiler.
@@ -377,9 +388,8 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
           << " real_compiler_path=" << data->real_compiler_path();
       return;
     }
-  }
-  if (ChromeOSCompilerInfoBuilderHelper::IsClangInChrootEnv(
-          local_compiler_path)) {
+  } else if (ChromeOSCompilerInfoBuilderHelper::IsClangInChrootEnv(
+                 local_compiler_path)) {
     if (!ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
             flags.cwd(), local_compiler_path, data->real_compiler_path(),
             &resource_paths_to_collect)) {
@@ -398,21 +408,31 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     ChromeOSCompilerInfoBuilderHelper::SetAdditionalFlags(
         local_compiler_path, data->mutable_additional_flags());
     data->add_dimensions("os:linux-hermetic");
-  }
-  if (ChromeOSCompilerInfoBuilderHelper::IsAndroidClang(data->version())) {
-    if (!ChromeOSCompilerInfoBuilderHelper::CollectAndroidClangResources(
-            flags.cwd(), local_compiler_path, data->real_compiler_path(),
-            &resource_paths_to_collect)) {
+  } else if (ElfParser::IsElf(abs_real_compiler_path)) {
+    constexpr absl::string_view kLdSoConfPath = "/etc/ld.so.conf";
+    std::vector<std::string> searchpath = LoadLdSoConf(kLdSoConfPath);
+    ElfDepParser edp(flags.cwd(), searchpath, false);
+    absl::flat_hash_set<std::string> exec_deps;
+    if (!edp.GetDeps(data->real_compiler_path(), &exec_deps)) {
+      LOG(ERROR) << "failed to get library dependencies for executable."
+                 << " cwd=" << flags.cwd()
+                 << " real_compiler_path=" << data->real_compiler_path();
       // HACK: we should not affect people not using ATS.
       if (FLAGS_SEND_COMPILER_BINARY_AS_INPUT) {
-        AddErrorMessage("failed to add android clang resources", data);
+        AddErrorMessage("failed to add compiler resources", data);
       }
-      LOG(ERROR)
-          << "failed to add android clang resources: local_compiler_path="
-          << local_compiler_path
-          << " real_compiler_path=" << data->real_compiler_path();
       return;
     }
+    for (const auto& path : exec_deps) {
+      if (IsInSystemLibraryPath(path, searchpath)) {
+        continue;
+      }
+      resource_paths_to_collect.push_back(path);
+    }
+  } else {
+    LOG(INFO) << "The compiler is neither ChromeOS clang nor an ELF binary:"
+              << " local_compiler_path=" << local_compiler_path
+              << " abs_real_compiler_path=" << abs_real_compiler_path;
   }
 #endif  // __linux__
 

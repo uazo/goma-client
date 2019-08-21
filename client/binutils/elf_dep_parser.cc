@@ -24,7 +24,7 @@ bool ElfDepParser::GetDeps(const absl::string_view cmd_or_lib,
   std::unique_ptr<ElfParser> ep = ElfParser::NewElfParser(abs_cmd_or_lib);
   if (ep == nullptr) {
     LOG(ERROR) << "failed to open ELF file."
-               << " cmd_or_lib=" << cmd_or_lib;
+               << " abs_cmd_or_lib=" << abs_cmd_or_lib;
     return false;
   }
   std::vector<std::string> libs;
@@ -120,11 +120,12 @@ std::string ElfDepParser::FindLibInDir(
     return std::string();
   }
   std::string path = file::JoinPathRespectAbsolute(dir, lib_filename);
-  if (access(file::JoinPathRespectAbsolute(cwd_, path).c_str(), R_OK) != 0) {
+  std::string abs_path = file::JoinPathRespectAbsolute(cwd_, path);
+  if (access(abs_path.c_str(), R_OK) != 0) {
     return std::string();
   }
 
-  absl::optional<ElfDepParser::ElfHeader> elf_header = GetElfHeader(path);
+  absl::optional<ElfDepParser::ElfHeader> elf_header = GetElfHeader(abs_path);
   if (!elf_header.has_value()) {
     return std::string();
   }
@@ -134,6 +135,7 @@ std::string ElfDepParser::FindLibInDir(
               << " src_elf_header=" << src_elf_header.DebugString();
     return std::string();
   }
+  VLOG(2) << "origin:" << origin << " path:" << path;
 
   return path;
 }
@@ -141,7 +143,8 @@ std::string ElfDepParser::FindLibInDir(
 /* static */
 absl::optional<ElfDepParser::ElfHeader> ElfDepParser::GetElfHeader(
     const std::string& abs_cmd_or_lib) {
-  DCHECK(IsPosixAbsolutePath(abs_cmd_or_lib));
+  DCHECK(IsPosixAbsolutePath(abs_cmd_or_lib))
+      << "not absolute path: " << abs_cmd_or_lib;
   ElfDepParser::ElfHeader elf_header;
   static constexpr char kELFMagic[] = {0x7f, 'E', 'L', 'F'};
   ScopedFd fd(ScopedFd::OpenForRead(abs_cmd_or_lib));

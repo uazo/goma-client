@@ -12,9 +12,15 @@
 
 namespace devtools_goma {
 
-// Parse contents in ld.so.conf, and returns library search path.
+// Load library search paths from ld.so.conf.
 // The returned value would be used by ElfDepParser.
-std::vector<std::string> ParseLdSoConf(absl::string_view content);
+std::vector<std::string> LoadLdSoConf(const absl::string_view filename);
+
+// Returns true if |path| is in given |system_library_paths|.
+// If |path| is not absolute path, it always returns false.
+bool IsInSystemLibraryPath(
+    const absl::string_view path,
+    const std::vector<std::string>& system_library_paths);
 
 }  // namespace devtools_goma
 

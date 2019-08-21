@@ -33,6 +33,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "compiler_flags.h"
@@ -116,9 +117,30 @@ class GomaIPCSocketFactory : public GomaIPC::ChanFactory {
       PLOG(ERROR) << "failed to create socket";
       return nullptr;
     }
+    absl::Time start = absl::Now();
     int ret;
+    int n = 1;
     while ((ret = connect(socket_fd.get(), addr_, addr_len_)) < 0) {
       if (errno == EINTR) {
+        continue;
+      }
+      if (errno == ECONNREFUSED) {
+        if (!CheckGomaIPCServer(socket_path_)) {
+          LOG(ERROR) << "GOMA: connection refused: " << socket_path_;
+          return nullptr;
+        }
+        if (absl::Now() - start > absl::Minutes(10)) {
+          LOG(ERROR) << "GOMA: timed out to connect to " << socket_path_;
+          return nullptr;
+        }
+        n *= 2;
+        if (n >= 128) {
+          n = 128;
+        }
+        absl::Duration delay = absl::Milliseconds(rand() % (10 * n));
+        LOG(INFO) << "connection refused " << socket_path_
+                  << " but socket is listening.  try again " << delay;
+        absl::SleepFor(delay);
         continue;
       }
       break;
@@ -139,6 +161,49 @@ class GomaIPCSocketFactory : public GomaIPC::ChanFactory {
   std::string DestName() const override { return socket_path_; }
 
  private:
+  // Checks server running behind addr.
+  // Returns true if server is running and listening.
+  bool CheckGomaIPCServer(absl::string_view addr_name) {
+#if defined(__MACH__)
+    // TODO: don't use popen
+    int32_t exit_status = -1;
+    std::string output = ReadCommandOutputByPopen(
+        "netstat", {"-f", "unix"}, {}, "/tmp", STDOUT_ONLY, &exit_status);
+    if (exit_status != 0) {
+      LOG(ERROR) << "fail: netstat -f"
+                 << ": exit_status=" << exit_status;
+      return false;
+    }
+    for (const auto& line :
+         absl::StrSplit(output, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
+      if (absl::EndsWith(line, absl::StrCat(" ", addr_name))) {
+        LOG(INFO) << line;
+        return true;
+      }
+    }
+    LOG(WARNING) << "no matching gomaipc " << addr_name
+                 << " in 'netstat -f unix'";
+    return false;
+#elif defined(__linux__)
+    std::string buf;
+    if (!ReadFileToString("/proc/net/unix", &buf)) {
+      LOG(ERROR) << "cannot read /proc/net/unix";
+      return false;
+    }
+    for (const auto& line :
+         absl::StrSplit(buf, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
+      if (absl::EndsWith(line, absl::StrCat(" ", addr_name))) {
+        LOG(INFO) << line;
+        return true;
+      }
+    }
+    LOG(WARNING) << "no matching gomaipc " << addr_name << " in /proc/net/unix";
+    return false;
+#else
+#error unsupported platform? could not check active unix domain socket
+#endif
+  }
+
   const std::string socket_path_;
   GomaIPCAddr un_addr_;
   const sockaddr* addr_;

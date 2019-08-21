@@ -88,6 +88,9 @@ def CheckChangeOnUpload(input_api, output_api):
         'build/config/mac/mac_sdk.gni',
         # longer line from https://pki.goog/roots.pem
         'client/certs/roots.pem',
+
+        'test/goma_data.pb.cc',
+        'test/goma_data.pb.h',
     )
     return x.LocalPath() not in third_party_files
   results = []
@@ -109,7 +112,8 @@ def CheckChangeOnUpload(input_api, output_api):
       input_api, output_api,
       r'(Copyright 201\d Google Inc. All Rights Reserved.|' +
        'Copyright.*The Chromium Authors. All rights reserved.|' +
-       'Copyright.*The Goma Authors. All rights reserved.)')
+       'Copyright.*The Goma Authors. All rights reserved.)',
+      source_file_filter=source_file_filter)
   results += input_api.canned_checks.CheckDoNotSubmit(
       input_api, output_api)
   results += input_api.canned_checks.RunPylint(

@@ -183,7 +183,6 @@ protobuf_lite_sources = [
   "protobuf/src/google/protobuf/generated_message_util.cc",
   "protobuf/src/google/protobuf/implicit_weak_message.cc",
   "protobuf/src/google/protobuf/io/coded_stream.cc",
-  "protobuf/src/google/protobuf/io/coded_stream_inl.h",
   "protobuf/src/google/protobuf/io/zero_copy_stream.cc",
   "protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.cc",
   "protobuf/src/google/protobuf/message_lite.cc",

@@ -6,6 +6,7 @@
 #include "filename_id_table.h"
 
 #include <glog/logging.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "prototmp/deps_cache_data.pb.h"
@@ -59,7 +60,7 @@ TEST(FilenameIdTableTest, LoadFailedDuplicateId) {
   std::unordered_set<FilenameIdTable::Id> valid_ids;
   EXPECT_FALSE(table.LoadFrom(goma_table, &valid_ids));
 
-  EXPECT_TRUE(valid_ids.empty());
+  EXPECT_THAT(valid_ids, ::testing::IsEmpty());
 }
 
 TEST(FilenameIdTableTest, LoadFailedDuplicateFilename) {
@@ -77,7 +78,7 @@ TEST(FilenameIdTableTest, LoadFailedDuplicateFilename) {
   std::unordered_set<FilenameIdTable::Id> valid_ids;
   EXPECT_FALSE(table.LoadFrom(goma_table, &valid_ids));
 
-  EXPECT_TRUE(valid_ids.empty());
+  EXPECT_THAT(valid_ids, ::testing::IsEmpty());
 }
 
 TEST(FilenameIdTableTest, Clear) {

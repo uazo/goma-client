@@ -210,6 +210,7 @@ void WorkerThread::ThreadMain() {
 #else
   TlsSetValue(key_worker_, this);
 #endif
+  PlatformThread::SetName(handle_, name_);
   {
     AUTOLOCK(lock, &mu_);
     id_ = GetCurrentThreadId();

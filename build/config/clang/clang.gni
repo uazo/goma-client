@@ -6,6 +6,8 @@
 
 import("//build/toolchain/toolchain.gni")
 
+default_clang_base_path = "//third_party/llvm-build/Release+Asserts"
+
 declare_args() {
-  clang_base_path = "//third_party/llvm-build/Release+Asserts"
+  clang_base_path = default_clang_base_path
 }

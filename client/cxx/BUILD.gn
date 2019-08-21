@@ -135,7 +135,12 @@ static_library("gcc_compiler_info_builder_lib") {
   ]
 
   if (is_linux) {
-    deps += [ ":chromeos_compiler_info_builder_helper_lib" ]
+    deps += [
+      ":chromeos_compiler_info_builder_helper_lib",
+      "//client/binutils:elf_dep_parser_lib",
+      "//client/binutils:elf_parser_lib",
+      "//client/binutils:elf_util_lib",
+    ]
   }
 
   public_configs = [ "//client:client_config" ]
@@ -222,6 +227,10 @@ executable("gcc_compiler_info_builder_unittest") {
     "//client:subprocess_lib",
     "//lib",
   ]
+
+  if (is_linux) {
+    deps += [ "//client/binutils:elf_util_lib" ]
+  }
 }
 
 executable("vc_compiler_info_builder_unittest") {
