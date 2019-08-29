@@ -110,7 +110,7 @@ def CheckChangeOnUpload(input_api, output_api):
       input_api, output_api, 80, source_file_filter=source_file_filter)
   results += input_api.canned_checks.CheckLicense(
       input_api, output_api,
-      r'(Copyright 201\d Google Inc. All Rights Reserved.|' +
+      r'(Copyright 20\d\d Google LLC.|' +
        'Copyright.*The Chromium Authors. All rights reserved.|' +
        'Copyright.*The Goma Authors. All rights reserved.)',
       source_file_filter=source_file_filter)

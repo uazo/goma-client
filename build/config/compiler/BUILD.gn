@@ -1,7 +1,6 @@
 # Copyright 2014 The Goma Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
 if (os == "win") {
   import("//build/config/win/visual_studio_version.gni")
   import("//build/toolchain/goma.gni")
@@ -69,12 +68,14 @@ config("compiler") {
       "-Wl,-z,now",
       "-Wl,-z,relro",
     ]
+    sysroot = ""
     if (current_cpu == "x64") {
       cflags += [
         "-m64",
         "-march=x86-64",
       ]
       ldflags += [ "-m64" ]
+      sysroot = "//third_party/chromium_build/linux/debian_sid_amd64-sysroot"
     } else if (current_cpu == "x86") {
       cflags += [ "-m32" ]
       ldflags += [ "-m32" ]
@@ -83,6 +84,27 @@ config("compiler") {
         "-mfpmath=sse",
         "-mmmx",
       ]
+    }
+    if (sysroot != "") {
+      sysroot_flags = [ "--sysroot=" + rebase_path(sysroot, root_build_dir) ]
+      cflags += sysroot_flags
+      asmflags += sysroot_flags
+      ldflags += sysroot_flags
+
+      # Need to get some linker flags out of the sysroot.
+      ld_paths = exec_script(
+              "//third_party/chromium_build/config/posix/sysroot_ld_path.py",
+              [
+                rebase_path(
+                    "//third_party/chromium_build/linux/sysroot_ld_path.sh",
+                    root_build_dir),
+                rebase_path(sysroot),
+              ],
+              "list lines")
+      foreach(ld_path, ld_paths) {
+        ld_path = rebase_path(ld_path, root_build_dir)
+        ldflags += [ "-L" + ld_path ]
+      }
     }
 
     if (use_lld) {
@@ -452,16 +474,17 @@ config("no_goma_code") {
       cflags += [
         "-Wno-deprecated-declarations",
         "-Wno-enum-compare-switch",
+        "-Wno-implicit-fallthrough",
         "-Wno-invalid-noreturn",
         "-Wno-microsoft-cast",
         "-Wno-microsoft-include",
         "-Wno-missing-field-initializers",
         "-Wno-reorder",
+        "-Wno-shift-negative-value",
+        "-Wno-tautological-constant-compare",
         "-Wno-unused-const-variable",
         "-Wno-unused-function",
         "-Wno-unused-variable",
-        "-Wno-tautological-constant-compare",
-        "-Wno-shift-negative-value",
       ]
     }
   }
@@ -475,18 +498,8 @@ config("no_goma_code") {
 }
 
 config("no_chromium_code") {
-  # This is warning suppression config used by libc++/libc++abi.
-  if (is_clang) {
-    cflags_cc = [ "-Wno-implicit-fallthrough" ]
-  }
-
-  if (os == "win") {
-    defines = [
-      # These are for nasm.
-      "_CRT_NONSTDC_NO_WARNINGS",
-      "_CRT_SECURE_NO_WARNINGS",
-    ]
-  }
+  # This is just alias used for chromium's third_party build config.
+  configs = [ ":no_goma_code" ]
 }
 
 # Some code presumes that pointers to structures/objects are compatible

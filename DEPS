@@ -1,4 +1,4 @@
-# Copyright 2019 Google Inc. All Rights Reserved.
+# Copyright 2019 Google LLC.
 
 vars = {
      "chromium_git": "https://chromium.googlesource.com",
@@ -36,14 +36,12 @@ deps = {
      Var("chromium_git") + '/external/github.com/open-source-parsers/jsoncpp.git@f572e8e42e22cfcf5ab0aea26574f408943edfa4', # from svn 248
 
      # chrome's tools/clang
-     # TODO: remove fixed revision after next clang roll.
      "client/tools/clang":
-     "https://chromium.googlesource.com/chromium/src/tools/clang.git" +
-     "@4327557d191c3a676ee8340939638836560aedde",
+     "https://chromium.googlesource.com/chromium/src/tools/clang.git",
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@44544d9d2d624cbfff9b1e77cb77f8dfc70d073c",
+     "https://boringssl.googlesource.com/boringssl@a8ffaf1bf2ec64cbbb17863ede06ba506b3db8b8",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -63,7 +61,7 @@ deps = {
      # chromium's buildtools containing libc++, libc++abi, clang_format and gn.
      "client/buildtools":
      Var("chromium_git") + "/chromium/src/buildtools@" +
-         "d5c58b84d50d256968271db459cd29b22bff1ba2",
+         "74cfb57006f83cfe050817526db359d5c8a11628",
 
      # libFuzzer
      "client/third_party/libFuzzer/src":
@@ -102,9 +100,26 @@ deps = {
      # libyaml dist-0.2.2
      "client/third_party/libyaml/src":
      "https://github.com/yaml/libyaml.git@d407f6b1cccbf83ee182144f39689babcb220bd6",
+
+     # chromium's build.
+     "client/third_party/chromium_build":
+     "https://chromium.googlesource.com/chromium/src/build/@3fe260c8e2f6ccb84e1e43ab04b321328fb8998c",
 }
 
 hooks = [
+     # Download to make Linux Goma client linked with an old libc.
+     {
+       'name': 'sysroot_x64',
+       'pattern': '.',
+       'condition': 'checkout_linux',
+       'action': [
+         'python',
+         ('client/third_party/chromium_build/linux/sysroot_scripts/'
+          'install-sysroot.py'),
+          '--arch=x64',
+       ],
+     },
+
      # Update the Windows toolchain if necessary. Must run before 'clang' below.
      {
        'name': 'win_toolchain',

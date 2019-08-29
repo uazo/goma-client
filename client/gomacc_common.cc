@@ -1,8 +1,6 @@
 // Copyright 2011 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "gomacc_common.h"
 
 #include <stdio.h>
@@ -33,7 +31,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "compiler_flags.h"
@@ -163,26 +160,40 @@ class GomaIPCSocketFactory : public GomaIPC::ChanFactory {
  private:
   // Checks server running behind addr.
   // Returns true if server is running and listening.
-  bool CheckGomaIPCServer(absl::string_view addr_name) {
+  bool CheckGomaIPCServer(const std::string& addr_name) {
 #if defined(__MACH__)
     // TODO: don't use popen
     int32_t exit_status = -1;
-    std::string output = ReadCommandOutputByPopen(
-        "netstat", {"-f", "unix"}, {}, "/tmp", STDOUT_ONLY, &exit_status);
-    if (exit_status != 0) {
-      LOG(ERROR) << "fail: netstat -f"
-                 << ": exit_status=" << exit_status;
+    std::string output =
+        ReadCommandOutputByPopen("netstat", {"netstat", "-f", "unix"}, {},
+                                 "/tmp", STDOUT_ONLY, &exit_status);
+    if (exit_status == 0) {
+      for (const auto& line :
+           absl::StrSplit(output, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
+        if (absl::EndsWith(line, absl::StrCat(" ", addr_name))) {
+          LOG(INFO) << line;
+          return true;
+        }
+      }
+      LOG(WARNING) << "no matching gomaipc " << addr_name
+                   << " in 'netstat -f unix'";
       return false;
     }
-    for (const auto& line :
-         absl::StrSplit(output, absl::ByAnyChar("\r\n"), absl::SkipEmpty())) {
-      if (absl::EndsWith(line, absl::StrCat(" ", addr_name))) {
-        LOG(INFO) << line;
-        return true;
-      }
+    LOG(WARNING) << "fail: netstat -f"
+                 << ": exit_status=" << exit_status << " output=" << output;
+    int32_t netstat_exit_status = exit_status;
+    // netstat might not be available? http://crbug.com/998579. try lsof
+    output = ReadCommandOutputByPopen("lsof", {"lsof", "-F", "pun", addr_name},
+                                      {}, "/tmp", STDOUT_ONLY, &exit_status);
+    if (exit_status == 0) {
+      LOG(INFO) << "lsof -F pun " << addr_name << ": " << output;
+      return true;
     }
-    LOG(WARNING) << "no matching gomaipc " << addr_name
-                 << " in 'netstat -f unix'";
+    LOG(WARNING) << "fail: lsof -F pun " << addr_name
+                 << ": exit_status=" << exit_status << " output=" << output;
+    LOG(ERROR) << "failed to check " << addr_name
+               << " netstat -f unix: exit_status=" << netstat_exit_status
+               << " lsof -F pun " << addr_name << ": " << exit_status;
     return false;
 #elif defined(__linux__)
     std::string buf;

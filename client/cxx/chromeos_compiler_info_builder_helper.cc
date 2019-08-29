@@ -97,29 +97,16 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectSimpleChromeClangResources(
     return false;
   }
 
-  // if local_compiler is clang++, real_compiler is clang-<N>.elf.
-  // However, clang++-<N>.elf and clang-<N> are both necessary to run clang++.
-  if (absl::EndsWith(local_compiler_path, "clang++")) {
-    resource_paths->push_back(file::JoinPath(
-        local_compiler_dir, absl::StrCat("clang++-", version, ".elf")));
-    resource_paths->push_back(
-        file::JoinPath(local_compiler_dir, absl::StrCat("clang-", version)));
-  }
-
   // Please see --library-path argument in simple Chrome's clang wrapper.
   const std::vector<std::string> search_paths = {
       file::JoinPath(local_compiler_dir, "..", "..", "lib"),
       file::JoinPath(local_compiler_dir, "..", "lib64"),
   };
-  // TODO: use relative path real_compiler_path and simplify.
-  // Since real_compiler_path is absolute path, we cannot use that here.
-  const std::string compiler_path = file::JoinPath(
-      local_compiler_dir, absl::StrCat("clang-", version, ".elf"));
   // Since the shell script wrapper has --inhibit-rpath '',
   // we should ignore RPATH and RUNPATH specified in ELF.
   ElfDepParser edp(cwd, search_paths, true);
   absl::flat_hash_set<std::string> deps;
-  if (!edp.GetDeps(compiler_path, &deps)) {
+  if (!edp.GetDeps(real_compiler_path, &deps)) {
     LOG(ERROR) << "failed to get library dependencies."
                << " cwd=" << cwd
                << " local_compiler_path=" << local_compiler_path
@@ -138,10 +125,11 @@ bool ChromeOSCompilerInfoBuilderHelper::EstimateClangMajorVersion(
     absl::string_view real_compiler_path,
     int* version) {
   // Assuming real_compiler_path filename is like
-  // `clang-<N>.elf` or `clang-<N>`.
+  // `clang-<N>.elf`, `clang-<N>`, `clang++-<N>.elf`, or `clang++-<N>`.
 
   absl::string_view filename = file::Basename(real_compiler_path);
-  if (!absl::ConsumePrefix(&filename, "clang-")) {
+  if (!absl::ConsumePrefix(&filename, "clang-") &&
+      !absl::ConsumePrefix(&filename, "clang++-")) {
     LOG(INFO) << "not start with clang-:" << filename;
     return false;
   }

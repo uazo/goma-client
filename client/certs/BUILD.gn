@@ -66,11 +66,13 @@ if (os != "win") {
   # openssl_engine will fail to read certs.rc.
   source_set("certs_resource") {
     sources = [
-      "$roots.pem",
-      "DST_Root_CA_X3.pem",
       "certs.rc",
       "certs_resource.h",
     ]
     public_configs = [ ":certs_resource_config" ]
+    data = [
+      "DST_Root_CA_X3.pem",
+      "$roots.pem",
+    ]
   }
 }

@@ -169,7 +169,7 @@ nobase_include_headers = [
   "protobuf/src/google/protobuf/util/json_util.h",
   "protobuf/src/google/protobuf/util/time_util.h",
   "protobuf/src/google/protobuf/util/type_resolver_util.h",
-  "protobuf/src/google/protobuf/util/message_differencer.",
+  "protobuf/src/google/protobuf/util/message_differencer.h",
   "protobuf/src/google/protobuf/io/gzip_stream.h",
 ]
 

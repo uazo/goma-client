@@ -139,17 +139,6 @@ template("proto_library") {
                       root_build_dir),
     ]
 
-    if (!defined(invoker.generate_python) || invoker.generate_python) {
-      py_out_dir = "$root_out_dir/pyproto/" + proto_out_dir
-      rel_py_out_dir = rebase_path(py_out_dir, root_build_dir)
-
-      outputs += [ "$py_out_dir/{{source_name_part}}_pb2.py" ]
-      args += [
-        "--py-out-dir",
-        rel_py_out_dir,
-      ]
-    }
-
     if (!defined(invoker.generate_cc) || invoker.generate_cc) {
       # If passed cc_generator_options should end in a colon, which will
       # separate it from the directory when we concatenate them. The proto
