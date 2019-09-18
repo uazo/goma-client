@@ -30,9 +30,9 @@ config("compiler") {
   ldflags = []
   defines = []
   if (is_posix) {
-    cflags_cc += [ "-std=c++11" ]
+    cflags_cc += [ "-std=c++14" ]
 
-    cflags_c += [ "-std=c99" ]
+    cflags_c += [ "-std=c11" ]
 
     # hardening.
     # stack protection.

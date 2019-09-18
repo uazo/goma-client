@@ -1,8 +1,6 @@
 // Copyright 2011 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "compile_task.h"
 
 #ifndef _WIN32
@@ -334,8 +332,12 @@ void CompileTask::Deref() {
     refcnt_--;
     refcnt = refcnt_;
   }
-  if (refcnt == 0)
+  if (refcnt == 0) {
+    if (deref_cleanup_handler_) {
+      deref_cleanup_handler_->OnCleanup(this);
+    }
     delete this;
+  }
 }
 
 void CompileTask::Init(RpcController* rpc,
@@ -2753,7 +2755,7 @@ void CompileTask::UpdateRequiredFilesDone(bool ok) {
       if (!canceled_ && !abort_) {
         LOG(INFO) << trace_id_ << " failed to update required files. ";
         service_->RecordForcedFallbackInSetup(
-            CompileService::KFailToUpdateRequiredFiles);
+            CompileService::kFailToUpdateRequiredFiles);
         should_fallback_ = true;
       }
       SetupRequestDone(false);

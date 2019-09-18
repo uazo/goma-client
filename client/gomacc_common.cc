@@ -383,7 +383,7 @@ bool StartCompilerProxy() {
   ZeroMemory(&si, sizeof(STARTUPINFO));
   si.cb = sizeof(STARTUPINFO);
 
-  std::string path_env = GetEnv("PATH");
+  std::string path_env = GetEnv("PATH").value_or("");
   CHECK(!path_env.empty()) << "No PATH env. found.";
   std::string command_path;
   // Note: "" to use the Windows default pathext.
@@ -717,10 +717,13 @@ bool GomaClient::PrepareExecRequest(const CompilerFlags& flags, ExecReq* req) {
       RequesterInfo::CURRENT_VERSION);
   req->mutable_requester_info()->set_pid(Getpid());
   req->mutable_requester_info()->set_goma_revision(kBuiltRevisionString);
-  std::string autoninja_build_id = GetEnv("AUTONINJA_BUILD_ID");
-  if (!autoninja_build_id.empty()) {
+  {
+    absl::optional<std::string> autoninja_build_id =
+        GetEnv("AUTONINJA_BUILD_ID");
+    if (autoninja_build_id) {
       req->mutable_requester_info()->set_build_id(
-          std::move(autoninja_build_id));
+          std::move(*autoninja_build_id));
+    }
   }
 
   if (FLAGS_STORE_ONLY) {
@@ -739,9 +742,11 @@ bool GomaClient::PrepareExecRequest(const CompilerFlags& flags, ExecReq* req) {
   }
 
   devtools_goma::RequesterEnv* requester_env = req->mutable_requester_env();
-  const std::string path_env = GetEnv("PATH");
-  if (!path_env.empty())
-    requester_env->set_local_path(path_env);
+  {
+    absl::optional<std::string> path_env = GetEnv("PATH");
+    if (path_env)
+      requester_env->set_local_path(std::move(*path_env));
+  }
   if (!FLAGS_VERIFY_COMMAND.empty()) {
     requester_env->set_verify_command(FLAGS_VERIFY_COMMAND);
     requester_env->set_use_local(false);

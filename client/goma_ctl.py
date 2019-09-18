@@ -3,7 +3,6 @@
 # Copyright 2012 The Goma Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
 # TODO: remove GOMA_COMPILER_PROXY_PORT from code.
 #                    it could be 8089, 8090, ... actually.
 """A Script to manage compiler_proxy.
@@ -49,7 +48,6 @@ except ImportError:
 import zipfile
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-_TRUE_PATTERN = re.compile(r'^([tTyY]|1)')
 _DEFAULT_ENV = [
     ('USE_SSL', 'true'),
     ('PING_TIMEOUT_SEC', '60'),
@@ -89,8 +87,15 @@ def _IsGomaFlagTrue(flag_name, default=False):
   flag_value = os.environ.get('GOMA_%s' % flag_name, '')
   if not flag_value:
     return default
-  return bool(_TRUE_PATTERN.search(flag_value))
 
+  # This comes from
+  # https://github.com/abseil/abseil-cpp/blob/d902eb869bcfacc1bad14933ed9af4bed006d481/absl/strings/numbers.cc#L132
+  if flag_value.lower() in ('true', 't', 'yes', 'y', '1'):
+    return True
+  if flag_value.lower() in ('false', 'f', 'no', 'n', '0'):
+    return False
+
+  raise Error('failed to parse bool flag: %s' % flag_value)
 
 def _SetGomaFlagDefaultValueIfEmpty(flag_name, default_value):
   """Set default value to the given flag if it is not set.

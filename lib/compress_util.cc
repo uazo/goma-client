@@ -1,8 +1,6 @@
 // Copyright 2011 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "lib/compress_util.h"
 
 #include <string.h>
@@ -199,7 +197,7 @@ bool LZMAInputStream::Skip(int count) {
   return ok;
 }
 
-google::protobuf::io::ByteCountInt64 LZMAInputStream::ByteCount() const {
+int64_t LZMAInputStream::ByteCount() const {
   int ret = byte_count_ + lzma_context_.total_out;
   if (lzma_context_.next_out != nullptr && output_position_ != nullptr) {
     // GzipInputStream adds followings but I think we need to remove.
@@ -306,7 +304,7 @@ void LZMAOutputStream::BackUp(int count) {
   lzma_context_.avail_in -= count;
 }
 
-google::protobuf::io::ByteCountInt64 LZMAOutputStream::ByteCount() const {
+int64_t LZMAOutputStream::ByteCount() const {
   return lzma_context_.total_in + lzma_context_.avail_in;
 }
 

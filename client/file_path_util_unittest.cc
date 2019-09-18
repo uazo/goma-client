@@ -1,7 +1,6 @@
 // Copyright 2018 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 #include "file_path_util.h"
 
 #include "absl/strings/string_view.h"
@@ -35,7 +34,9 @@ std::string LocateExecutable(const char* cwd_in,
                              const char* cmd_in) {
   std::string path;
   if (path_in == nullptr) {
-    path = devtools_goma::GetEnv("PATH");
+    auto optional_path = devtools_goma::GetEnv("PATH");
+    CHECK(optional_path);
+    path = std::move(*optional_path);
     CHECK(!path.empty());
   } else {
     path.assign(path_in);
@@ -43,7 +44,9 @@ std::string LocateExecutable(const char* cwd_in,
 
   std::string pathext;
   if (pathext_in == nullptr) {
-    pathext = devtools_goma::GetEnv("PATHEXT");
+    auto optional_pathext = devtools_goma::GetEnv("PATHEXT");
+    CHECK(optional_pathext);
+    pathext = std::move(*optional_pathext);
     CHECK(!pathext.empty());
   } else {
     pathext.assign(pathext_in);

@@ -655,4 +655,5 @@ bool DartIncludeProcessor::ImportTokenizer(absl::string_view input,
   }
   return true;
 }
+
 }  // namespace devtools_goma

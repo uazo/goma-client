@@ -1,8 +1,6 @@
 // Copyright 2011 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "mypath.h"
 
 #include <limits.h>
@@ -63,7 +61,7 @@ static std::string GetEnvMatchedCondition(
     UnaryFunction condition,
     const char* default_value) {
   for (const auto* candidate : candidates) {
-    const std::string value = GetEnv(candidate);
+    std::string value = GetEnv(candidate).value_or("");
     if (!value.empty() && condition(value)) {
       return value;
     }

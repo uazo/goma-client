@@ -1,8 +1,6 @@
 // Copyright 2010 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "env_flags.h"
 
 #include <assert.h>
@@ -13,6 +11,10 @@
 #include <set>
 #include <string>
 #include <sstream>
+
+#include "absl/strings/numbers.h"
+#include "client/util.h"
+#include "glog/logging.h"
 
 struct GomaAutoConfigurer {
   GomaAutoConfigurer(std::string (*GetConfiguredValue)(void),
@@ -115,38 +117,33 @@ void DumpEnvFlag(std::ostringstream* ss) {
   }
 }
 
-#ifdef _WIN32
 std::string GOMA_EnvToString(const char* envname, const char* dflt) {
-  char* env;
-  if (_dupenv_s(&env, nullptr, envname) == 0 && env != nullptr) {
-    std::string value = env;
-    free(env);
-    return value;
-  } else {
-    return dflt;
-  }
+  return devtools_goma::GetEnv(envname).value_or(dflt);
 }
 
 bool GOMA_EnvToBool(const char* envname, bool dflt) {
-  char* env;
-  if (_dupenv_s(&env, nullptr, envname) == 0 && env != nullptr) {
-    bool value = (memchr("tTyY1\0", env[0], 6) != nullptr);
-    free(env);
-    return value;
-  } else {
+  const absl::optional<std::string> env = devtools_goma::GetEnv(envname);
+  if (!env) {
     return dflt;
   }
+  bool result = 0;
+  if (!absl::SimpleAtob(*env, &result)) {
+    LOG(FATAL) << envname << "=" << *env << " is invalid value for bool flag."
+               << " Specify true or false.";
+  }
+  return result;
 }
 
 int GOMA_EnvToInt(const char* envname, int dflt) {
-  char* env;
-  if (_dupenv_s(&env, nullptr, envname) == 0 && env != nullptr) {
-    int value = strtol(env, nullptr, 10);
-    free(env);
-    return value;
-  } else {
+  const absl::optional<std::string> env = devtools_goma::GetEnv(envname);
+  if (!env) {
     return dflt;
   }
+  int result = 0;
+  if (!absl::SimpleAtoi(*env, &result)) {
+    LOG(FATAL) << envname << "=" << *env
+               << " is invalid value for integer flag."
+               << " Specify number as a base-10 integer.";
+  }
+  return result;
 }
-
-#endif

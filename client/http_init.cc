@@ -1,7 +1,6 @@
 // Copyright 2015 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 #include "http_init.h"
 
 #include "absl/strings/ascii.h"
@@ -47,7 +46,7 @@ static std::string GetHomeDir() {
 #else
   static const char *kHomeEnv = "USERPROFILE";
 #endif
-  return GetEnv(kHomeEnv);
+  return GetEnv(kHomeEnv).value_or("");
 }
 
 void SetHttpProxyFromEnv(HttpClient::Options* http_options) {
@@ -67,13 +66,13 @@ void SetHttpProxyFromEnv(HttpClient::Options* http_options) {
       "ALL_PROXY",
   };
   for (const auto& env : envs) {
-    const std::string& proxy = GetEnv(env);
-    if (proxy.empty()) {
+    const absl::optional<std::string> proxy = GetEnv(env);
+    if (!proxy) {
       continue;
     }
 
     URL u;
-    if (!ParseURL(proxy, &u)) {
+    if (!ParseURL(*proxy, &u)) {
       continue;
     }
 
@@ -130,18 +129,18 @@ void InitHttpClientOptions(HttpClient::Options* http_options) {
   // ambient authentication in LUCI environment. We'll decide whether we will
   // use them few lines below. Note that LUCI_CONTEXT environment variable may
   // be defined even if ambient auth is not enabled.
-  const std::string& luci_context_file = GetEnv("LUCI_CONTEXT");
   LuciContextAuth luci_context_auth;
-  if (!luci_context_file.empty()) {
-    LuciContext luci_context;
-    CHECK(LoadConfig(luci_context_file,
-                     ParseLuciContext,
-                     &luci_context))
-        << "LUCI_CONTEXT is set but cannot load it."
-        << " filename=" << luci_context_file;
-    luci_context_auth = luci_context.local_auth;
-    LOG_IF(INFO, !luci_context_auth.enabled())
-        << "Running under LUCI, but LUCI_CONTEXT auth is not enabled.";
+  {
+    absl::optional<std::string> luci_context_file = GetEnv("LUCI_CONTEXT");
+    if (luci_context_file) {
+      LuciContext luci_context;
+      CHECK(LoadConfig(*luci_context_file, ParseLuciContext, &luci_context))
+          << "LUCI_CONTEXT is set but cannot load it."
+          << " filename=" << *luci_context_file;
+      luci_context_auth = luci_context.local_auth;
+      LOG_IF(INFO, !luci_context_auth.enabled())
+          << "Running under LUCI, but LUCI_CONTEXT auth is not enabled.";
+    }
   }
 
   // Preference order

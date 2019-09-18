@@ -1,7 +1,6 @@
 // Copyright 2018 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 #include "compiler_info_builder.h"
 
 #include "basictypes.h"
@@ -81,7 +80,7 @@ TEST_F(CompilerInfoBuilderTest, FillFromCompilerOutputsShouldUseProperPath) {
 #ifdef _WIN32
   const std::string clang = file::JoinPath(TestDir(), "clang.bat");
   InstallReadCommandOutputFunc(ReadCommandOutputByRedirector);
-  envs.emplace_back("PATHEXT=" + GetEnv("PATHEXT"));
+  envs.emplace_back("PATHEXT=" + GetEnv("PATHEXT").value_or(""));
 #else
   const std::string clang = file::JoinPath(TestDir(), "clang");
   InstallReadCommandOutputFunc(ReadCommandOutputByPopen);
@@ -89,7 +88,7 @@ TEST_F(CompilerInfoBuilderTest, FillFromCompilerOutputsShouldUseProperPath) {
   std::vector<std::string> args = {
       clang,
   };
-  envs.emplace_back("PATH=" + GetEnv("PATH"));
+  envs.emplace_back("PATH=" + GetEnv("PATH").value_or(""));
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(args, "."));
   std::unique_ptr<CompilerInfoData> data(
       cts_collection_.Get(flags->type())
@@ -174,8 +173,8 @@ TEST_F(CompilerInfoBuilderTest, ClangSmoke) {
 #ifdef _WIN32
   InstallReadCommandOutputFunc(ReadCommandOutputByRedirector);
   const std::vector<std::string> envs{
-      "PATH=" + GetEnv("PATH"),
-      "PATHEXT=" + GetEnv("PATHEXT"),
+      "PATH=" + GetEnv("PATH").value_or(""),
+      "PATHEXT=" + GetEnv("PATHEXT").value_or(""),
   };
 #else
   InstallReadCommandOutputFunc(ReadCommandOutputByPopen);

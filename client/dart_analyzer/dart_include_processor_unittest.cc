@@ -293,4 +293,5 @@ analyzer:
   EXPECT_EQ(library_path_map, expected_path_map);
   EXPECT_TRUE(error_reason.empty());
 }
+
 }  // namespace devtools_goma

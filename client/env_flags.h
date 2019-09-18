@@ -1,8 +1,6 @@
 // Copyright 2010 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #ifndef DEVTOOLS_GOMA_CLIENT_ENV_FLAGS_H_
 #define DEVTOOLS_GOMA_CLIENT_ENV_FLAGS_H_
 
@@ -20,32 +18,16 @@ void CheckFlagNames(const char** envp);
 void AutoConfigureFlags(const char** envp);
 void DumpEnvFlag(std::ostringstream* ss);
 
-#ifdef _WIN32
-// MSVS warns the usage of 'getenv'.
 std::string GOMA_EnvToString(const char* envname, const char* dflt);
 bool GOMA_EnvToBool(const char* envname, bool dflt);
 int GOMA_EnvToInt(const char* envname, int dflt);
 
-#else
-// These macros (could be functions, but I don't want to bother with a .cc
-// file), make it easier to initialize flags from the environment.
-
-#define GOMA_EnvToString(envname, dflt)         \
-  (!getenv(envname) ? (dflt) : getenv(envname))
-
-#define GOMA_EnvToBool(envname, dflt)                                   \
-  (!getenv(envname) ? (dflt) : memchr("tTyY1\0", getenv(envname)[0], 6) != NULL)
-
-#define GOMA_EnvToInt(envname, dflt)                                    \
-  (!getenv(envname) ? (dflt) : strtol(getenv(envname), NULL, 10))
-#endif
-
-#define GOMA_REGISTER_FLAG_NAME(name)                                   \
-  struct RegisterEnvFlag##name {                                        \
-    explicit RegisterEnvFlag##name() {                                  \
-      RegisterEnvFlag(#name);                                           \
-    }                                                                   \
-  };                                                                    \
+#define GOMA_REGISTER_FLAG_NAME(name)                        \
+  struct RegisterEnvFlag##name {                             \
+    explicit RegisterEnvFlag##name() {                       \
+      RegisterEnvFlag(#name); /* NOLINT(runtime/explicit) */ \
+    }                                                        \
+  };                                                         \
   RegisterEnvFlag##name g_register_env_flag_##name
 
 #define GOMA_REGISTER_AUTOCONF_FLAG_NAME(name, func)                    \

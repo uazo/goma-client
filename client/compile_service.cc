@@ -1,8 +1,6 @@
 // Copyright 2011 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "compile_service.h"
 
 #ifndef _WIN32
@@ -1551,7 +1549,7 @@ void CompileService::DumpCommonStatsUnlocked(GomaStats* stats) {
     fallback->set_requested_by_user(
         num_forced_fallback_in_setup_[kRequestedByUser]);
     fallback->set_failed_to_update_required_files(
-        num_forced_fallback_in_setup_[KFailToUpdateRequiredFiles]);
+        num_forced_fallback_in_setup_[kFailToUpdateRequiredFiles]);
     FileStats* files = stats->mutable_file_stats();
     files->set_requested(num_file_requested_);
     files->set_uploaded(num_file_uploaded_);

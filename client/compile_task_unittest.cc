@@ -1,7 +1,6 @@
 // Copyright 2016 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 #include "compile_task.h"
 
 #include <memory>
@@ -16,6 +15,7 @@
 #include "compile_stats.h"
 #include "compiler_flags.h"
 #include "compiler_flags_parser.h"
+#include "glog/logging.h"
 #include "gtest/gtest.h"
 #include "json_util.h"
 #include "prototmp/goma_data.pb.h"
@@ -42,6 +42,34 @@ std::unique_ptr<ExecReq> CreateExecReqForTest() {
   input->set_hash_key("abcdef");
 
   return req;
+}
+
+ScopedCompilerInfoState GetCompilerInfoStateForTest() {
+  auto data = absl::make_unique<CompilerInfoData>();
+  data->mutable_cxx();
+
+  auto res1 = data->add_resource();
+  res1->set_name("/usr/lib/gcc/x86_64-linux-gnu/8/crtbegin.o");
+  res1->set_type(CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER);
+
+  auto res2 = data->add_resource();
+  res2->set_name("../../third_party/llvm-build/Release+Asserts/bin/clang++");
+  res2->set_type(CompilerInfoData::EXECUTABLE_BINARY);
+  res2->set_symlink_path("clang");
+
+  auto res3 = data->add_resource();
+  res3->set_name("../../third_party/llvm-build/Release+Asserts/bin/clang");
+  res3->set_type(CompilerInfoData::EXECUTABLE_BINARY);
+  res3->set_is_executable(true);
+
+  auto res4 = data->add_resource();
+  res4->set_name(
+      "../../third_party/llvm-build/Release+Asserts/bin/../lib/libstdc++.so.6");
+  res4->set_type(CompilerInfoData::EXECUTABLE_BINARY);
+  res4->set_is_executable(true);
+
+  auto* compiler_info_state = new CompilerInfoState(std::move(data));
+  return ScopedCompilerInfoState(compiler_info_state);
 }
 
 class DummyHttpHandler : public ThreadpoolHttpServer::HttpHandler {
@@ -105,7 +133,8 @@ class FakeExecServiceClient : public ExecServiceClient {
 
 // Unit tests that require a real instance of CompileTask should inherit from
 // this class.
-class CompileTaskTest : public ::testing::Test {
+class CompileTaskTest : public ::testing::Test,
+                        public CompileTask::DerefCleanupHandler {
  public:
   void SetUp() override {
     // This is required for ProcessCallExec() to pass.
@@ -127,23 +156,30 @@ class CompileTaskTest : public ::testing::Test {
         absl::make_unique<RpcController>(http_server_request_.get());
 
     compile_task_ = new CompileTask(compile_service_.get(), kCompileTaskId);
+    compile_task_->SetDerefCleanupHandler(this);
     auto req = CreateExecReqForTest();
     compile_task_->Init(rpc_controller_.get(), std::move(req), &exec_response_,
                         nullptr);
+  }
+
+  // Notification callback to indicate that |compile_task_| was deallocated in
+  // CompileTask::Deref().
+  void OnCleanup(const CompileTask* task) override {
+    DCHECK_EQ(task, compile_task_);
+    compile_task_ = nullptr;
   }
 
   void TearDown() override {
     // Make sure all CHECKs pass by signaling the end of a CompileTask.
     rpc_controller_->SendReply(exec_response_);
     worker_thread_manager_->Finish();
-  }
 
-  // Clean up |*compile_task_| if it was not cleaned up automatically.
-  void ManuallyCleanUpCompileTask() {
-    // TODO: CompileTask/CompileService should be refactored so that it
-    // does not have to be manually deallocated.
-    compile_task_->Deref();
-    compile_task_ = nullptr;
+    // Force all CompileTasks owned by |compile_service_| to be cleaned up.
+    compile_service_.reset();
+    if (compile_task_) {
+      compile_task_->Deref();
+      compile_task_ = nullptr;
+    }
   }
 
   CompileTask* compile_task() const { return compile_task_; }
@@ -195,8 +231,6 @@ TEST_F(CompileTaskTest, DumpToJsonWithoutRunning) {
   EXPECT_TRUE(GetStringFromJson(json, "state", &state, &error_message))
       << error_message;
   EXPECT_EQ("INIT", state);
-
-  ManuallyCleanUpCompileTask();
 }
 
 TEST_F(CompileTaskTest, DumpToJsonWithUnsuccessfulStart) {
@@ -286,8 +320,6 @@ TEST_F(CompileTaskTest, DumpToJsonWithDone) {
   EXPECT_TRUE(GetIntFromJson(json, "replied", &replied, &error_message))
       << error_message;
   EXPECT_NE(0, replied);
-
-  // No need to manually clean up in this test, since Done() is called.
 }
 
 TEST_F(CompileTaskTest, UpdateStatsFinished) {
@@ -300,8 +332,6 @@ TEST_F(CompileTaskTest, UpdateStatsFinished) {
   EXPECT_FALSE(compile_task()->resp_->compiler_proxy_goma_cache_hit());
   EXPECT_FALSE(compile_task()->resp_->compiler_proxy_local_finished());
   EXPECT_FALSE(compile_task()->resp_->compiler_proxy_goma_aborted());
-
-  ManuallyCleanUpCompileTask();
 }
 
 TEST_F(CompileTaskTest, UpdateStatsFinishedCacheHit) {
@@ -315,8 +345,6 @@ TEST_F(CompileTaskTest, UpdateStatsFinishedCacheHit) {
   EXPECT_TRUE(compile_task()->resp_->compiler_proxy_goma_cache_hit());
   EXPECT_FALSE(compile_task()->resp_->compiler_proxy_local_finished());
   EXPECT_FALSE(compile_task()->resp_->compiler_proxy_goma_aborted());
-
-  ManuallyCleanUpCompileTask();
 }
 
 TEST_F(CompileTaskTest, UpdateStatsLocalFinished) {
@@ -329,8 +357,6 @@ TEST_F(CompileTaskTest, UpdateStatsLocalFinished) {
   EXPECT_FALSE(compile_task()->resp_->compiler_proxy_goma_cache_hit());
   EXPECT_TRUE(compile_task()->resp_->compiler_proxy_local_finished());
   EXPECT_FALSE(compile_task()->resp_->compiler_proxy_goma_aborted());
-
-  ManuallyCleanUpCompileTask();
 }
 
 TEST_F(CompileTaskTest, UpdateStatsAborted) {
@@ -343,11 +369,9 @@ TEST_F(CompileTaskTest, UpdateStatsAborted) {
   EXPECT_FALSE(compile_task()->resp_->compiler_proxy_goma_cache_hit());
   EXPECT_FALSE(compile_task()->resp_->compiler_proxy_local_finished());
   EXPECT_TRUE(compile_task()->resp_->compiler_proxy_goma_aborted());
-
-  ManuallyCleanUpCompileTask();
 }
 
-TEST(CompileTask, OmitDurationFromUserError) {
+TEST_F(CompileTaskTest, OmitDurationFromUserError) {
   // input, expected.
   std::vector<std::pair<std::string, std::string>> testcases = {
       {"compiler_proxy [173.736822ms]: reached max number of active fail "
@@ -359,6 +383,62 @@ TEST(CompileTask, OmitDurationFromUserError) {
   for (const auto& tc : testcases) {
     EXPECT_EQ(tc.second, CompileTask::OmitDurationFromUserError(tc.first));
   }
+}
+
+TEST_F(CompileTaskTest, SetCompilerResourcesNoSendCompilerBinary) {
+  compile_service()->SetSendCompilerBinaryAsInput(false);
+  compile_task()->compiler_info_state_ = GetCompilerInfoStateForTest();
+
+  compile_task()->SetCompilerResources();
+
+  const ExecReq& req = *compile_task()->req_;
+
+  // Only the object file is included as an input.
+  ASSERT_EQ(2, req.input_size());
+  EXPECT_EQ("foo.cc", req.input(0).filename());
+  EXPECT_EQ("/usr/lib/gcc/x86_64-linux-gnu/8/crtbegin.o",
+            req.input(1).filename());
+
+  // No toolchain specs included.
+  EXPECT_FALSE(req.toolchain_included());
+  EXPECT_EQ(0, req.toolchain_specs_size());
+}
+
+TEST_F(CompileTaskTest, SetCompilerResourcesSendCompilerBinary) {
+  compile_service()->SetSendCompilerBinaryAsInput(true);
+  compile_task()->compiler_info_state_ = GetCompilerInfoStateForTest();
+
+  compile_task()->SetCompilerResources();
+
+  const ExecReq& req = *compile_task()->req_;
+
+  // The toolchain files are included as inputs.
+  ASSERT_EQ(4, req.input_size());
+  EXPECT_EQ("foo.cc", req.input(0).filename());
+  EXPECT_EQ("/usr/lib/gcc/x86_64-linux-gnu/8/crtbegin.o",
+            req.input(1).filename());
+  EXPECT_EQ("../../third_party/llvm-build/Release+Asserts/bin/clang",
+            req.input(2).filename());
+  EXPECT_EQ(
+      "../../third_party/llvm-build/Release+Asserts/bin/../lib/libstdc++.so.6",
+      req.input(3).filename());
+
+  EXPECT_TRUE(req.toolchain_included());
+  ASSERT_EQ(3, req.toolchain_specs_size());
+
+  // The toolchain specs are included.
+  EXPECT_EQ("../../third_party/llvm-build/Release+Asserts/bin/clang++",
+            req.toolchain_specs(0).path());
+  EXPECT_EQ("clang", req.toolchain_specs(0).symlink_path());
+
+  EXPECT_EQ("../../third_party/llvm-build/Release+Asserts/bin/clang",
+            req.toolchain_specs(1).path());
+  EXPECT_TRUE(req.toolchain_specs(1).is_executable());
+
+  EXPECT_EQ(
+      "../../third_party/llvm-build/Release+Asserts/bin/../lib/libstdc++.so.6",
+      req.toolchain_specs(2).path());
+  EXPECT_TRUE(req.toolchain_specs(2).is_executable());
 }
 
 }  // namespace devtools_goma

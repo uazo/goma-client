@@ -1,7 +1,6 @@
 // Copyright 2015 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 #include "mypath.h"
 
 #include <stdlib.h>
@@ -64,7 +63,7 @@ TEST(MyPath, GetUsernameWithoutEnv) {
   devtools_goma::SetEnv("USER", "");
   devtools_goma::SetEnv("LOGNAME", "");
 
-  EXPECT_EQ(devtools_goma::GetEnv("USER"), "");
+  EXPECT_EQ(devtools_goma::GetEnv("USER"), absl::optional<std::string>(""));
 
   EXPECT_TRUE(devtools_goma::GetUsernameEnv().empty());
   const std::string username = devtools_goma::GetUsernameNoEnv();

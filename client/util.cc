@@ -1,13 +1,12 @@
 // Copyright 2010 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "util.h"
 
 #include <algorithm>
 #include <deque>
 
+#include "absl/types/optional.h"
 #include "env_flags.h"
 #include "file_stat.h"
 #include "glog/logging.h"
@@ -40,17 +39,18 @@ std::string ReadCommandOutput(const std::string& prog,
 }
 
 // Platform independent getenv.
-std::string GetEnv(const std::string& name) {
+absl::optional<std::string> GetEnv(const std::string& name) {
 #ifndef _WIN32
   char* ret = getenv(name.c_str());
-  if (ret == nullptr)
-    return "";
+  if (ret == nullptr) {
+    return absl::nullopt;
+  }
   return ret;
 #else
   DWORD size = GetEnvironmentVariableA(name.c_str(), nullptr, 0);
   if (size == 0) {
     CHECK(GetLastError() == ERROR_ENVVAR_NOT_FOUND);
-    return "";
+    return absl::nullopt;
   }
   std::string envvar(size, '\0');
   DWORD ret = GetEnvironmentVariableA(name.c_str(), &envvar[0], size);

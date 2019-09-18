@@ -1,8 +1,6 @@
 // Copyright 2010 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #ifndef DEVTOOLS_GOMA_CLIENT_UTIL_H_
 #define DEVTOOLS_GOMA_CLIENT_UTIL_H_
 
@@ -62,7 +60,7 @@ std::string ReadCommandOutput(const std::string& prog,
 // Platform independent getenv.
 // Note: in chromium/win, gomacc can only get environments that was
 // extracted by build/toolchain/win/setup_toolchain.py.
-std::string GetEnv(const std::string& name);
+absl::optional<std::string> GetEnv(const std::string& name);
 
 // Platform independent setenv.
 void SetEnv(const std::string& name, const std::string& value);

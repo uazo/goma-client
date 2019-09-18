@@ -1,8 +1,6 @@
 // Copyright 2013 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "util.h"
 
 #include <algorithm>
@@ -68,8 +66,13 @@ TEST(Util, ReplaceEnvInEnvIter) {
 }
 
 TEST(Util, GetEnvShouldReturnValueContainingNul) {
-  const std::string& env = devtools_goma::GetEnv("PATH");
-  EXPECT_EQ(std::string(env.c_str()), env);
+  const absl::optional<std::string> env = devtools_goma::GetEnv("PATH");
+  ASSERT_TRUE(env);
+  EXPECT_EQ(std::string(env->c_str()), env);
+}
+
+TEST(Util, GetEnvShouldReturnNuloptForNonExistingEnv) {
+  ASSERT_FALSE(devtools_goma::GetEnv("SHOULD_NOT_EXIST_ENVVAR"));
 }
 
 TEST(Util, SumRepeatedInt32) {

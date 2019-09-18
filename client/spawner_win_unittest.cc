@@ -1,8 +1,6 @@
 // Copyright 2011 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #ifndef _WIN32
 #error "This is a Windows-only unit test"
 #endif
@@ -40,8 +38,8 @@ TEST(SpawnerWin, SpawnerAndLogToFile) {
   envs.push_back("TEST_STRING1=goma");
   envs.push_back("TEST_STRING2=win");
   // TODO: remove these when spawn_win do not find command.
-  envs.push_back("PATH=" + devtools_goma::GetEnv("PATH"));
-  envs.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT"));
+  envs.push_back("PATH=" + devtools_goma::GetEnv("PATH").value_or(""));
+  envs.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
 
   const std::string stdout_filename("dump_env.stdout.log");
   const std::string stderr_filename("dump_env.stderr.log");
@@ -105,8 +103,8 @@ TEST(SpawnerWin, SpawnerAndLogToString) {
   env.push_back("TEST_STRING1=goma");
   env.push_back("TEST_STRING2=win");
   // TODO: remove these when spawn_win do not find command.
-  env.push_back("PATH=" + devtools_goma::GetEnv("PATH"));
-  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT"));
+  env.push_back("PATH=" + devtools_goma::GetEnv("PATH").value_or(""));
+  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
 
   // priority not supported yet
   // req.set_priority(devtools_goma::SubProcessReq_Priority_HIGH_PRIORITY);
@@ -158,8 +156,10 @@ TEST(SpawnerWin, SpawnerAbspath) {
   std::string cwd(buffer);
   std::string prog(file::JoinPathRespectAbsolute(cwd, "dump_env.exe"));
   std::vector<std::string> argv{prog};
-  std::vector<std::string> env{"PATH=" + devtools_goma::GetEnv("PATH"),
-                               "PATHEXT=" + devtools_goma::GetEnv("PATHEXT")};
+  std::vector<std::string> env{
+      "PATH=" + devtools_goma::GetEnv("PATH").value_or(""),
+      "PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""),
+  };
 
   devtools_goma::SpawnerWin spawner;
   std::string output;
@@ -223,8 +223,8 @@ TEST(SpawnerWin, SpawnerEscapeArgs) {
   argv.push_back("a\\\\b c");
 
   // TODO: remove these when spawn_win do not find command.
-  env.push_back("PATH=" + devtools_goma::GetEnv("PATH"));
-  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT"));
+  env.push_back("PATH=" + devtools_goma::GetEnv("PATH").value_or(""));
+  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
 
   // priority not supported yet
   // req.set_priority(devtools_goma::SubProcessReq_Priority_HIGH_PRIORITY);
@@ -341,8 +341,8 @@ TEST(SpawnerWin, SpawnerLongArgs) {
   argv.push_back(std::string(MAX_PATH + 10, 'a'));
 
   // TODO: remove these when spawn_win do not find command.
-  env.push_back("PATH=" + devtools_goma::GetEnv("PATH"));
-  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT"));
+  env.push_back("PATH=" + devtools_goma::GetEnv("PATH").value_or(""));
+  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
 
   // priority not supported yet
   // req.set_priority(devtools_goma::SubProcessReq_Priority_HIGH_PRIORITY);
@@ -379,7 +379,7 @@ TEST(SpawnerWin, SpawnerFailed) {
   env.push_back("TEST_STRING2=win");
   // TODO: remove these when spawn_win do not find command.
   env.push_back("PATH=C:\\non_exist_folder;C:\\non_exist_folder2");
-  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT"));
+  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
 
   devtools_goma::SpawnerWin spawner;
   std::string output;

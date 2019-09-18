@@ -1,8 +1,6 @@
 // Copyright 2011 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #ifndef DEVTOOLS_GOMA_CLIENT_COMPILE_TASK_H_
 #define DEVTOOLS_GOMA_CLIENT_COMPILE_TASK_H_
 
@@ -73,6 +71,15 @@ class CompileTask {
     LOCAL_FINISHED,  // Local run finished for fast fallback.
     NUM_STATE,
   };
+
+  // Since Deref() calls "delete this", it can result in external objects still
+  // holding a pointer to this CompileTask after it is deleted. Provide a way to
+  // notify these external holders of a pointer to this object.
+  class DerefCleanupHandler {
+   public:
+    virtual void OnCleanup(const CompileTask* task) = 0;
+  };
+
   CompileTask(CompileService* service, int id);
 
   void Ref() LOCKS_EXCLUDED(refcnt_mu_);
@@ -121,6 +128,10 @@ class CompileTask {
   }
   absl::Time GetLastReqTimestamp() const { return last_req_timestamp_; }
 
+  void SetDerefCleanupHandler(DerefCleanupHandler* handler) {
+    deref_cleanup_handler_ = handler;
+  }
+
  private:
   FRIEND_TEST(CompileTaskTest, DumpToJsonWithUnsuccessfulStart);
   FRIEND_TEST(CompileTaskTest, DumpToJsonWithValidCallToServer);
@@ -130,7 +141,9 @@ class CompileTask {
   FRIEND_TEST(CompileTaskTest, UpdateStatsFinishedCacheHit);
   FRIEND_TEST(CompileTaskTest, UpdateStatsLocalFinished);
   FRIEND_TEST(CompileTaskTest, UpdateStatsAborted);
-  FRIEND_TEST(CompileTask, OmitDurationFromUserError);
+  FRIEND_TEST(CompileTaskTest, OmitDurationFromUserError);
+  FRIEND_TEST(CompileTaskTest, SetCompilerResourcesNoSendCompilerBinary);
+  FRIEND_TEST(CompileTaskTest, SetCompilerResourcesSendCompilerBinary);
 
   enum ErrDest {
     // To log: write in log file, and show on status page.
@@ -494,6 +507,8 @@ class CompileTask {
 
   static Lock global_mu_;
   static std::deque<CompileTask*>* link_file_req_tasks_ GUARDED_BY(global_mu_);
+
+  DerefCleanupHandler* deref_cleanup_handler_ = nullptr;
 
   DISALLOW_COPY_AND_ASSIGN(CompileTask);
 };

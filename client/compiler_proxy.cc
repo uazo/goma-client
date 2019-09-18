@@ -1,7 +1,6 @@
 // Copyright 2010 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 //
 // Compiler proxy reimplemented as asynchronous.
 
@@ -382,8 +381,8 @@ int main(int argc, char* argv[], const char* envp[]) {
         new devtools_goma::Watchdog);
     std::vector<std::string> env;
     env.push_back("GOMA_COMPILER_PROXY_SOCKET_NAME=" + compiler_proxy_addr);
-    env.push_back("PATH=" + devtools_goma::GetEnv("PATH"));
-    env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT"));
+    env.push_back("PATH=" + devtools_goma::GetEnv("PATH").value_or(""));
+    env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
     env.push_back("USER=" + devtools_goma::GetUsername());
     env.push_back("GOMA_TMP_DIR=" + FLAGS_TMP_DIR);
     handler->SetWatchdog(std::move(watchdog), env,

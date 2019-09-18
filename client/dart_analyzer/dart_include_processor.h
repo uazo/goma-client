@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef DEVTOOLS_GOMA_CLIENT_DART_DART_INCLUDE_PROCESSOR_H_
-#define DEVTOOLS_GOMA_CLIENT_DART_DART_INCLUDE_PROCESSOR_H_
+#ifndef DEVTOOLS_GOMA_CLIENT_DART_ANALYZER_DART_INCLUDE_PROCESSOR_H_
+#define DEVTOOLS_GOMA_CLIENT_DART_ANALYZER_DART_INCLUDE_PROCESSOR_H_
 
 #include <set>
 #include <string>
@@ -60,5 +60,7 @@ class DartIncludeProcessor {
   static bool ImportTokenizer(absl::string_view input,
                               std::vector<std::string>* tokens);
 };
+
 }  // namespace devtools_goma
-#endif  // DEVTOOLS_GOMA_CLIENT_DART_DART_INCLUDE_PROCESSOR_H_
+
+#endif  // DEVTOOLS_GOMA_CLIENT_DART_ANALYZER_DART_INCLUDE_PROCESSOR_H_

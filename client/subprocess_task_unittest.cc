@@ -1,8 +1,6 @@
 // Copyright 2012 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "subprocess_task.h"
 
 #include <algorithm>
@@ -134,8 +132,8 @@ class SubProcessTaskTest : public ::testing::Test {
     std::vector<std::string> env;
 #ifdef _WIN32
     // TODO: remove env after I revise redirector_win.cc.
-    env.push_back("PATHEXT=" + GetEnv("PATHEXT"));
-    env.push_back("PATH=" + GetEnv("PATH"));
+    env.push_back("PATHEXT=" + GetEnv("PATHEXT").value_or(""));
+    env.push_back("PATH=" + GetEnv("PATH").value_or(""));
     EXPECT_EQ("hello\r\n",
               SubProcessTask::ReadCommandOutput("cmd", argv, env, "",
                                                 MERGE_STDOUT_STDERR, nullptr));
@@ -327,8 +325,8 @@ class SubProcessTaskTest : public ::testing::Test {
 
 #ifdef _WIN32
     // TODO: remove env after I revise redirector_win.cc.
-    c->s_->mutable_req()->add_env("PATH=" + GetEnv("PATH"));
-    c->s_->mutable_req()->add_env("PATHEXT=" + GetEnv("PATHEXT"));
+    c->s_->mutable_req()->add_env("PATH=" + GetEnv("PATH").value_or(""));
+    c->s_->mutable_req()->add_env("PATHEXT=" + GetEnv("PATHEXT").value_or(""));
 #endif
     c->s_->Start(NewCallback(this, &SubProcessTaskTest::TestSubProcessDone, c));
     EXPECT_NE(SubProcessState::SETUP, c->s_->state());

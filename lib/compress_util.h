@@ -1,8 +1,6 @@
 // Copyright 2011 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #ifndef DEVTOOLS_GOMA_LIB_COMPRESS_UTIL_H_
 #define DEVTOOLS_GOMA_LIB_COMPRESS_UTIL_H_
 
@@ -72,7 +70,7 @@ class LZMAInputStream : public ZeroCopyInputStream {
   bool Next(const void** data, int* size) override;
   void BackUp(int count) override;
   bool Skip(int size) override;
-  google::protobuf::io::ByteCountInt64 ByteCount() const override;
+  int64_t ByteCount() const override;
 
  private:
   lzma_ret Decode();
@@ -141,7 +139,7 @@ class LZMAOutputStream : public ZeroCopyOutputStream {
   // implements ZeroCopyOutputStream ---
   bool Next(void** data, int* size) override;
   void BackUp(int count) override;
-  google::protobuf::io::ByteCountInt64 ByteCount() const override;
+  int64_t ByteCount() const override;
 
  private:
   void Init(std::unique_ptr<ZeroCopyOutputStream> sub_stream,
@@ -201,9 +199,7 @@ class InflateInputStream : public ZeroCopyInputStream {
   bool Skip(int size) override {
     return zlib_stream_->Skip(size);
   }
-  google::protobuf::io::ByteCountInt64 ByteCount() const override {
-    return zlib_stream_->ByteCount();
-  }
+  int64_t ByteCount() const override { return zlib_stream_->ByteCount(); }
 
  private:
   std::unique_ptr<ZeroCopyInputStream> zlib_stream_;

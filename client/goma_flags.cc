@@ -1,7 +1,6 @@
 // Copyright 2011 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 //
 // We share these flags among gomacc and compiler_proxy.
 // As gomacc may start compiler_proxy, gomacc should accept flags for
@@ -241,7 +240,8 @@ GOMA_DEFINE_int32(MAX_LONG_TASKS, 50,
 GOMA_DEFINE_bool(COMPILER_PROXY_STORE_FILE, false,
                  "True to store files first.  False to believe FileService "
                  "already has files and not send new file content.");
-GOMA_DEFINE_int32(COMPILER_PROXY_NEW_FILE_THRESHOLD, 60 * 60,
+GOMA_DEFINE_int32(COMPILER_PROXY_NEW_FILE_THRESHOLD,
+                  5 * 60,
                   "Time(sec) to consider new file if the file is modified "
                   "in that time.");
 GOMA_DEFINE_int32(PING_TIMEOUT_SEC, 60,
