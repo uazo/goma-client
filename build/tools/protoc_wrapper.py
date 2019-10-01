@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # Copied from
 # https://chromium.googlesource.com/chromium/src/+/8867b9700fd90879dbb05cdcca3423f7e7b60cf7/tools/protoc_wrapper/protoc_wrapper.py
 #
