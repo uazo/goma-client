@@ -2799,4 +2799,43 @@ TEST_F(GCCFlagsTest, ClangFtrivialAutoVarInitShouldBeIgnored) {
   EXPECT_TRUE(flags.compiler_info_flags().empty());
 }
 
+TEST_F(GCCFlagsTest, ClangFTimeTrace) {
+  std::vector<std::string> common_args;
+  common_args.push_back("clang++");
+  common_args.push_back("-ftime-trace");
+
+  const struct {
+    std::vector<std::string> extra_args;
+    std::string expected_time_trace_output;
+    unsigned expected_output_count;
+  } kTestCases[] = {
+      {{"-c", "foo.cc"}, "foo.json", 2U},
+      {{"-c", "foo.cc", "-o", "foo.o"}, "foo.json", 2U},
+      {{"-c", "foo.cc", "-o", "bar.o"}, "bar.json", 2U},
+      {{"-c", "foo.cc", "-o", "bar/grok.o"}, "bar/grok.json", 2U},
+      {{"-c", "foo.cc", "-o", "../../bar/grok.o"}, "../../bar/grok.json", 2U},
+      {{"-E", "foo.cc"}, "-.json", 1U},  // Preprocessed output goes to stdout.
+      {{"-E", "foo.cc", "-o", "bar.i"}, "bar.json", 2U},
+      {{"-S", "foo.cc"}, "foo.json", 2U},
+  };
+
+  for (const auto& tc : kTestCases) {
+    std::vector<std::string> args = common_args;
+    args.insert(std::end(args), std::begin(tc.extra_args),
+                std::end(tc.extra_args));
+
+    std::unique_ptr<CompilerFlags> flags(
+        CompilerFlagsParser::MustNew(args, "/usr/local/src"));
+
+    EXPECT_EQ(args, flags->args());
+    EXPECT_EQ(tc.expected_output_count, flags->output_files().size());
+
+    ExpectHasElement(flags->output_files(), tc.expected_time_trace_output);
+
+    devtools_goma::GCCFlags* gcc_flags =
+        static_cast<devtools_goma::GCCFlags*>(flags.get());
+    EXPECT_TRUE(gcc_flags->has_ftime_trace());
+  }
+}
+
 }  // namespace devtools_goma

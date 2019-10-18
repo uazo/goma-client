@@ -54,6 +54,7 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
       has_fno_hosted_(false),
       has_fno_sanitize_blacklist_(false),
       has_fsyntax_only_(false),
+      has_ftime_trace_(false),
       has_wrapper_(false),
       has_fplugin_(false),
       is_precompiling_header_(false),
@@ -100,6 +101,7 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
   parser.AddBoolFlag("ffreestanding")->SetSeenOutput(&ffreestanding);
   parser.AddBoolFlag("fno-hosted")->SetSeenOutput(&fno_hosted);
   parser.AddBoolFlag("fsyntax-only")->SetSeenOutput(&fsyntax_only);
+  parser.AddBoolFlag("ftime-trace")->SetSeenOutput(&has_ftime_trace_);
   parser.AddBoolFlag("print-file-name")->SetSeenOutput(&print_file_name);
   parser.AddBoolFlag("-print-file-name")->SetSeenOutput(&print_file_name);
   FlagParser::Flag* flag_x = parser.AddFlag("x");
@@ -429,6 +431,9 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
     compiler_info_flags_.push_back("-fsyntax-only");
     has_fsyntax_only_ = true;
   }
+  if (has_ftime_trace_) {
+    compiler_info_flags_.push_back("-ftime-trace");
+  }
   if (fmodules) {
     compiler_info_flags_.push_back("-fmodules");
     has_fmodules_ = true;
@@ -494,11 +499,17 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
         if (flag_MF->seen()) {
           output_files_.push_back(flag_MF->GetLastValue());
         }
+        if (has_ftime_trace_) {
+          output_files_.push_back("-.json");
+        }
         return;
       } else if (flag_E->seen()) {
         // preprocess. No output.
         // If -E, -M and -MF are all specified in the command line,
         // gcc outputs deps to -MF value.
+        if (has_ftime_trace_) {
+          output_files_.push_back("-.json");
+        }
         return;
       } else if (flag_S->seen()) {
         output = absl::StrCat(stem, ".s");
@@ -508,7 +519,12 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
         output = absl::StrCat(stem, ".o");
       }
     }
-    if (!output.empty()) {
+
+    if (output.empty()) {
+      if (has_ftime_trace_) {
+        output_files_.push_back("-.json");
+      }
+    } else {
       // make output as output_files_[0].
       // Since we logs output_files_[0], it is usually preferred to be so.
       output_files_.insert(output_files_.begin(), output);
@@ -532,6 +548,15 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
         if (mode_ == LINK && GetExtension(input0) != "o") {
           output_files_.push_back(
               file::JoinPath(GetDirname(input0), GetStem(input0)) + ".dwo");
+        }
+      }
+
+      if (has_ftime_trace_) {
+        size_t ext_start = output.rfind('.');
+        if (std::string::npos != ext_start) {
+          output_files_.push_back(output.substr(0, ext_start) + ".json");
+        } else {
+          output_files_.push_back(output + ".json");
         }
       }
     }

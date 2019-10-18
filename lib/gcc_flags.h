@@ -63,6 +63,7 @@ class GCCFlags : public CxxFlags {
     return has_fno_sanitize_blacklist_;
   }
   bool has_fsyntax_only() const { return has_fsyntax_only_; }
+  bool has_ftime_trace() const { return has_ftime_trace_; }
   bool has_resource_dir() const { return !resource_dir_.empty(); }
   bool has_wrapper() const { return has_wrapper_; }
   bool has_fplugin() const { return has_fplugin_; }
@@ -137,6 +138,7 @@ class GCCFlags : public CxxFlags {
   bool has_fno_hosted_;
   bool has_fno_sanitize_blacklist_;
   bool has_fsyntax_only_;
+  bool has_ftime_trace_;
   bool has_wrapper_;
   bool has_fplugin_;
   bool is_precompiling_header_;
