@@ -483,6 +483,11 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
   if (mode_ == COMPILE)
     is_precompiling_header_ = absl::EndsWith(lang_, "-header");
 
+  if (mode_ == LINK && has_ftime_trace_) {
+    LOG(WARNING) << "clang uses unpredictable file names for -ftime-trace json "
+                    "output when linking";
+  }
+
   {  // outout
     std::string output;
     if (flag_o->seen()) {
@@ -500,7 +505,7 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
           output_files_.push_back(flag_MF->GetLastValue());
         }
         if (has_ftime_trace_) {
-          output_files_.push_back("-.json");
+          output_files_.push_back(".json");
         }
         return;
       } else if (flag_E->seen()) {
@@ -522,7 +527,11 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
 
     if (output.empty()) {
       if (has_ftime_trace_) {
-        output_files_.push_back("-.json");
+        if (flag_M->seen() || flag_MM->seen()) {
+          output_files_.push_back(".json");
+        } else {
+          output_files_.push_back("-.json");
+        }
       }
     } else {
       // make output as output_files_[0].
@@ -533,7 +542,7 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
       // assume .d file output.
       if ((flag_MD->seen() || flag_MMD->seen()) && !flag_MF->seen()) {
         size_t ext_start = output.rfind('.');
-        if (std::string::npos != ext_start) {
+        if (ext_start != std::string::npos) {
           output_files_.push_back(output.substr(0, ext_start) + ".d");
         }
       }
@@ -552,11 +561,15 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
       }
 
       if (has_ftime_trace_) {
-        size_t ext_start = output.rfind('.');
-        if (std::string::npos != ext_start) {
-          output_files_.push_back(output.substr(0, ext_start) + ".json");
+        if (flag_M->seen() || flag_MM->seen()) {
+          output_files_.push_back(".json");
         } else {
-          output_files_.push_back(output + ".json");
+          size_t ext_start = output.rfind('.');
+          if (ext_start != std::string::npos) {
+            output_files_.push_back(output.substr(0, ext_start) + ".json");
+          } else {
+            output_files_.push_back(output + ".json");
+          }
         }
       }
     }

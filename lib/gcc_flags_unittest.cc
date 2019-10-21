@@ -2811,11 +2811,21 @@ TEST_F(GCCFlagsTest, ClangFTimeTrace) {
   } kTestCases[] = {
       {{"-c", "foo.cc"}, "foo.json", 2U},
       {{"-c", "foo.cc", "-o", "foo.o"}, "foo.json", 2U},
+      {{"-c", "foo.cc", "-o", "namewithoutdot"}, "namewithoutdot.json", 2U},
       {{"-c", "foo.cc", "-o", "bar.o"}, "bar.json", 2U},
       {{"-c", "foo.cc", "-o", "bar/grok.o"}, "bar/grok.json", 2U},
       {{"-c", "foo.cc", "-o", "../../bar/grok.o"}, "../../bar/grok.json", 2U},
+
+      // -M and/or -MM with -ftime-trace seem to always produce ".json"
+      // unless -o is specified.
+      {{"-c", "foo.cc", "-M"}, ".json", 1U},
+      {{"-c", "foo.cc", "bar.cc", "-M"}, ".json", 1U},
+      {{"-c", "foo.cc", "-MM"}, ".json", 1U},
+      {{"-c", "foo.cc", "-M", "-o", "makefilerules"}, ".json", 2U},
+
       {{"-E", "foo.cc"}, "-.json", 1U},  // Preprocessed output goes to stdout.
       {{"-E", "foo.cc", "-o", "bar.i"}, "bar.json", 2U},
+
       {{"-S", "foo.cc"}, "foo.json", 2U},
   };
 
