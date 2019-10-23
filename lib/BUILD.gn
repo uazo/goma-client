@@ -614,6 +614,7 @@ executable("vc_flags_unittest") {
     ":vc_specific",
     "//base:goma_unittest",
     "//build/config:exe_and_shlib_deps",
+    "//third_party:gmock",
     "//third_party:gtest",
   ]
 }
