@@ -56,6 +56,8 @@ class LinkedUnorderedMap {
   iterator find(const K& key);
   const_iterator find(const K& key) const;
 
+  bool contains(const K& key) const;
+
  private:
   // Implementation Note: std::list iterator does not die after inserting
   // or deleting an entry. So, it is safe to have an list iterator in |map_|.
@@ -115,6 +117,11 @@ LinkedUnorderedMap<K, V>::find(const K& key) const {
   }
 
   return it->second;
+}
+
+template <typename K, typename V>
+bool LinkedUnorderedMap<K, V>::contains(const K& key) const {
+  return map_.contains(key);
 }
 
 }  // namespace devtools_goma

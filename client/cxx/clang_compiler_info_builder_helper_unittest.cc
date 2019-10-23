@@ -5,9 +5,9 @@
 #include "clang_compiler_info_builder_helper.h"
 
 #include <string>
-#include <unordered_map>
 
 #include "absl/base/macros.h"
+#include "absl/container/flat_hash_map.h"
 #include "cxx_compiler_info.h"
 #include "gtest/gtest.h"
 #include "unittest_util.h"
@@ -16,15 +16,14 @@ namespace devtools_goma {
 
 namespace {
 
-int FindValue(const std::unordered_map<std::string, int>& map,
+int FindValue(const absl::flat_hash_map<std::string, int>& map,
               const std::string& key) {
   const auto& it = map.find(key);
-  if (it == map.end())
-    return 0;
+  if (it == map.end()) return 0;
   return it->second;
 }
 
-}  // anonymous namespace
+}  // namespace
 
 #ifndef _WIN32
 

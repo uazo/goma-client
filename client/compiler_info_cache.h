@@ -9,10 +9,10 @@
 #include <memory>
 #include <sstream>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/time/time.h"
 #include "autolock_timer.h"
 #include "basictypes.h"
@@ -150,12 +150,12 @@ class CompilerInfoCache {
   mutable ReadWriteLock mu_;
 
   // key: compiler_info_key
-  std::unordered_map<std::string, CompilerInfoState*> compiler_info_
+  absl::flat_hash_map<std::string, CompilerInfoState*> compiler_info_
       GUARDED_BY(mu_);
 
   // key: hash of CompilerInfoData. value: compiler_info_key.
-  std::unordered_map<std::string,
-                     std::unique_ptr<std::unordered_set<std::string>>>
+  absl::flat_hash_map<std::string,
+                      std::unique_ptr<absl::flat_hash_set<std::string>>>
       keys_by_hash_ GUARDED_BY(mu_);
 
   int num_stores_ GUARDED_BY(mu_);

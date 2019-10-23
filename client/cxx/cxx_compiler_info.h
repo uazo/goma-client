@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "absl/container/flat_hash_map.h"
 #include "compiler_info.h"
 #include "cxx/include_processor/cpp_directive.h"
 
@@ -52,26 +53,26 @@ class CxxCompilerInfo : public CompilerInfo {
     return predefined_directives_;
   }
 
-  const std::unordered_map<std::string, bool>& supported_predefined_macros()
+  const absl::flat_hash_map<std::string, bool>& supported_predefined_macros()
       const {
     return supported_predefined_macros_;
   }
-  const std::unordered_map<std::string, int>& has_feature() const {
+  const absl::flat_hash_map<std::string, int>& has_feature() const {
     return has_feature_;
   }
-  const std::unordered_map<std::string, int>& has_extension() const {
+  const absl::flat_hash_map<std::string, int>& has_extension() const {
     return has_extension_;
   }
-  const std::unordered_map<std::string, int>& has_attribute() const {
+  const absl::flat_hash_map<std::string, int>& has_attribute() const {
     return has_attribute_;
   }
-  const std::unordered_map<std::string, int>& has_cpp_attribute() const {
+  const absl::flat_hash_map<std::string, int>& has_cpp_attribute() const {
     return has_cpp_attribute_;
   }
-  const std::unordered_map<std::string, int>& has_declspec_attribute() const {
+  const absl::flat_hash_map<std::string, int>& has_declspec_attribute() const {
     return has_declspec_attribute_;
   }
-  const std::unordered_map<std::string, int>& has_builtin() const {
+  const absl::flat_hash_map<std::string, int>& has_builtin() const {
     return has_builtin_;
   }
 
@@ -83,13 +84,13 @@ class CxxCompilerInfo : public CompilerInfo {
 
   // <macro name, hidden>.
   // If it is hidden macro like __has_include__ in GCC 5, hidden is set.
-  std::unordered_map<std::string, bool> supported_predefined_macros_;
-  std::unordered_map<std::string, int> has_feature_;
-  std::unordered_map<std::string, int> has_extension_;
-  std::unordered_map<std::string, int> has_attribute_;
-  std::unordered_map<std::string, int> has_cpp_attribute_;
-  std::unordered_map<std::string, int> has_declspec_attribute_;
-  std::unordered_map<std::string, int> has_builtin_;
+  absl::flat_hash_map<std::string, bool> supported_predefined_macros_;
+  absl::flat_hash_map<std::string, int> has_feature_;
+  absl::flat_hash_map<std::string, int> has_extension_;
+  absl::flat_hash_map<std::string, int> has_attribute_;
+  absl::flat_hash_map<std::string, int> has_cpp_attribute_;
+  absl::flat_hash_map<std::string, int> has_declspec_attribute_;
+  absl::flat_hash_map<std::string, int> has_builtin_;
 
   SharedCppDirectives predefined_directives_;
 };

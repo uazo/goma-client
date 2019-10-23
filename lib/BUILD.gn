@@ -1,9 +1,8 @@
-# Copyright 2014 The Goma Authors. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
+# Copyright 2014 Google LLC. The Goma Authors. All Rights Reserved.
 
 proto_out_dir = "prototmp"
 
+import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/protobuf/proto_library.gni")
 
 proto_library("goma_proto") {
@@ -615,6 +614,24 @@ executable("vc_flags_unittest") {
     "//base:goma_unittest",
     "//build/config:exe_and_shlib_deps",
     "//third_party:gtest",
+  ]
+}
+
+fuzzer_test("flag_parser_fuzzer") {
+  sources = [
+    "flag_parser_fuzzer.cc",
+  ]
+  deps = [
+    ":lib",
+  ]
+}
+
+fuzzer_test("path_resolver_fuzzer") {
+  sources = [
+    "path_resolver_fuzzer.cc",
+  ]
+  deps = [
+    ":lib",
   ]
 }
 

@@ -12,11 +12,11 @@
 #include <set>
 #include <sstream>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "absl/base/call_once.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
 #include "autolock_timer.h"
 #include "basictypes.h"
@@ -168,7 +168,7 @@ class CppParser {
     bool Has(const std::string& file) const;
 
    private:
-    std::unordered_set<std::string> files_;
+    absl::flat_hash_set<std::string> files_;
   };
 
   struct Condition {
@@ -286,7 +286,7 @@ class CppParser {
   Token ProcessHasCheckMacro(
       const std::string& name,
       const ArrayTokenList& tokens,
-      const std::unordered_map<std::string, int>& has_check_macro);
+      const absl::flat_hash_map<std::string, int>& has_check_macro);
 
   // Initializes tables etc.
   static void EnsureInitialize();
@@ -317,7 +317,7 @@ class CppParser {
   ErrorObserver* error_observer_;
 
   // When include guard macro is detected, the token is preserved here.
-  std::unordered_map<std::string, std::string> include_guard_ident_;
+  absl::flat_hash_map<std::string, std::string> include_guard_ident_;
 
   const CxxCompilerInfo* compiler_info_;
   bool is_vc_;

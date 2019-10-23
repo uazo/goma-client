@@ -101,6 +101,7 @@ void InitCompileStatsForTask(const CompileService& service,
   if (service.CanSendUserInfo()) {
     stats->set_username(service.username());
     stats->set_nodename(service.nodename());
+    stats->set_service_account_id(service.service_account_id());
   }
 
   if (req.requester_info().has_build_id()) {
@@ -164,6 +165,11 @@ void CompileService::SetCompileTaskHistorySize(
   max_finished_tasks_ = max_finished_tasks;
   max_failed_tasks_ = max_failed_tasks;
   max_long_tasks_ = max_long_tasks;
+}
+
+void CompileService::SetServiceAccountId(std::string account) {
+  AUTOLOCK(lock, &mu_);
+  service_account_id_ = std::move(account);
 }
 
 void CompileService::SetCompilerProxyIdPrefix(const std::string& prefix) {

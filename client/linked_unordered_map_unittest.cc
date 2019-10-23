@@ -79,7 +79,7 @@ TEST(LinkedUnorderedMap, NonCopyableType) {
   m.pop_front();
 
   EXPECT_EQ(m.size(), 1U);
-  EXPECT_TRUE(m.find(1) == m.end());
+  EXPECT_FALSE(m.contains(1));
   EXPECT_EQ(200, *m.find(2)->second);
 }
 

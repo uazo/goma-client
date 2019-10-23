@@ -6,11 +6,10 @@
 #define DEVTOOLS_GOMA_CLIENT_CXX_INCLUDE_PROCESSOR_INCLUDE_FILE_FINDER_H_
 
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 
 namespace devtools_goma {
 
@@ -72,13 +71,13 @@ class IncludeFileFinder {
   // Holds entries in i-th include directory.
   // |files_in_include_dirs_[i]| is set of file/directory name in
   // i-th include directory.
-  std::vector<std::unordered_set<std::string>> files_in_include_dirs_;
+  std::vector<absl::flat_hash_set<std::string>> files_in_include_dirs_;
 
   // Holds the minimum include directories index for each entries in
   // include directories.
   // e.g. |include_dir_index_lowerbound_["stdio.h"]| represents minimum index
   // of include directory containing "stdio.h".
-  std::unordered_map<std::string, size_t> include_dir_index_lowerbound_;
+  absl::flat_hash_map<std::string, size_t> include_dir_index_lowerbound_;
 
   // Cache for (path_in_directive, include_dir_index_start) ->
   //           (filepath, used_include_dir_index).

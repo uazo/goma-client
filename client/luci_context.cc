@@ -1,8 +1,6 @@
 // Copyright 2017 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "luci_context.h"
 
 #include <string>
@@ -89,6 +87,11 @@ bool ParseLuciContext(
   Json::Value root;
   if (!reader.parse(json_body, root, false)) {
     LOG(WARNING) << "invalid json";
+    return false;
+  }
+
+  if (!root.isObject()) {
+    LOG(WARNING) << "not object " << root;
     return false;
   }
 

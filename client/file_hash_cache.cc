@@ -11,8 +11,6 @@
 
 #include <sstream>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 
 #include "absl/time/clock.h"
 #include "atomic_stats_counter.h"
@@ -44,8 +42,7 @@ bool FileHashCache::GetFileCacheKey(const std::string& filename,
   FileInfo info;
   {
     AUTO_SHARED_LOCK(lock, &file_cache_mutex_);
-    std::unordered_map<std::string, struct FileInfo>::iterator it =
-        file_cache_.find(filename);
+    auto it = file_cache_.find(filename);
     if (it == file_cache_.end()) {
       num_cache_miss_.Add(1);
       return false;
@@ -117,8 +114,7 @@ bool FileHashCache::StoreFileCacheKey(
 
     AUTO_EXCLUSIVE_LOCK(lock, &file_cache_mutex_);
 
-    std::pair<std::unordered_map<std::string, struct FileInfo>::iterator, bool>
-        p = file_cache_.insert(make_pair(filename, info));
+    auto p = file_cache_.insert(make_pair(filename, info));
     if (!p.second) {
       if (!info.last_uploaded_timestamp.has_value()) {
         info.last_uploaded_timestamp = p.first->second.last_uploaded_timestamp;
@@ -129,8 +125,7 @@ bool FileHashCache::StoreFileCacheKey(
   }
 
   AUTO_EXCLUSIVE_LOCK(lock, &known_cache_keys_mutex_);
-  std::pair<std::unordered_set<std::string>::iterator, bool> p2 =
-      known_cache_keys_.insert(cache_key);
+  auto p2 = known_cache_keys_.insert(cache_key);
   return p2.second;
 }
 

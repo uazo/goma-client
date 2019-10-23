@@ -1,12 +1,11 @@
 // Copyright 2018 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 #include "compiler_proxy_http_handler.h"
 
 #include <sstream>
-#include <unordered_set>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
@@ -484,6 +483,16 @@ void CompilerProxyHttpHandler::HandleHttpRequest(
        << "/";
     if (FLAGS_SEND_USER_INFO) {
       service_.SetCompilerProxyIdPrefix(ss.str());
+
+      HttpClient* client = service_.http_rpc()->client();
+      const HttpClient::Options& options = client->options();
+      if (!options.gce_service_account.empty() ||
+          !options.service_account_json_filename.empty() ||
+          options.luci_context_auth.enabled()) {
+        std::string account = client->GetAccount();
+        LOG(INFO) << "service account id:" << account;
+        service_.SetServiceAccountId(std::move(account));
+      }
     } else {
       std::string hash;
       ComputeDataHashKey(ss.str(), &hash);
@@ -1037,7 +1046,7 @@ int CompilerProxyHttpHandler::HandleContentionRequest(
   std::ostringstream ss;
 
   if (g_auto_lock_stats) {
-    std::unordered_set<std::string> skip_name = {
+    absl::flat_hash_set<std::string> skip_name = {
         "descriptor_poller::PollEvents",
         "worker_thread::NextClosure",
     };

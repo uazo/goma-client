@@ -45,9 +45,8 @@ InputFileTask* InputFileTask::NewInputFileTask(
   InputFileTask* input_file_task = nullptr;
   {
     AUTOLOCK(lock, &global_mu_);
-    std::pair<std::unordered_map<std::string, InputFileTask*>::iterator, bool>
-        p = task_by_filename_->insert(
-            std::make_pair(filename, input_file_task));
+    auto p =
+        task_by_filename_->insert(std::make_pair(filename, input_file_task));
     if (p.second) {
       p.first->second = new InputFileTask(
           wm, std::move(blob_uploader), file_hash_cache, file_stat, filename,
@@ -179,8 +178,7 @@ void InputFileTask::Run(CompileTask* task, OneshotClosure* closure) {
 
   {
     AUTOLOCK(lock, &global_mu_);
-    std::unordered_map<std::string, InputFileTask*>::iterator found =
-        task_by_filename_->find(filename_);
+    auto found = task_by_filename_->find(filename_);
     DCHECK(found != task_by_filename_->end());
     DCHECK(found->second == this);
     task_by_filename_->erase(found);
@@ -316,7 +314,7 @@ void InputFileTask::SetTaskInput(CompileTask* task, ExecReq_Input* input) {
 
 void InputFileTask::InitializeStaticOnce() {
   AUTOLOCK(lock, &global_mu_);
-  task_by_filename_ = new std::unordered_map<std::string, InputFileTask*>;
+  task_by_filename_ = new FileToTaskMap();
 }
 
 // static
@@ -326,7 +324,6 @@ absl::once_flag InputFileTask::init_once_;
 Lock InputFileTask::global_mu_;
 
 // static
-std::unordered_map<std::string, InputFileTask*>*
-    InputFileTask::task_by_filename_;
+InputFileTask::FileToTaskMap* InputFileTask::task_by_filename_;
 
 }  // namespace devtools_goma

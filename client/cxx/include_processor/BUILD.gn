@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//testing/libfuzzer/fuzzer_test.gni")
+
 static_library("directive_filter_lib") {
   sources = [
     "directive_filter.cc",
@@ -16,6 +18,15 @@ static_library("directive_filter_lib") {
     "//third_party/abseil",
   ]
   public_configs = [ "//client:client_config" ]
+}
+
+fuzzer_test("directive_filter_make_filtered_content_fuzzer") {
+  sources = [
+    "directive_filter_make_filtered_content_fuzzer.cc",
+  ]
+  deps = [
+    ":directive_filter_lib",
+  ]
 }
 
 # cpp_directive_lib contains cpp directive. This should not depend on
@@ -65,6 +76,16 @@ static_library("cpp_directive_lib") {
     "//lib:clang_tidy_specific",
     "//lib:java_specific",
     "//client:compiler_info_lib",
+  ]
+}
+
+fuzzer_test("cpp_directive_parser_fuzzer") {
+  sources = [
+    "cpp_directive_parser_fuzzer.cc",
+  ]
+  deps = [
+    ":cpp_directive_lib",
+    "//client:common",
   ]
 }
 

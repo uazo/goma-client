@@ -51,40 +51,6 @@ class PermanentClosure : public Closure {
 
 namespace internal {
 
-// ----------------------------------------------------------------------
-// Making integer sequence (template).
-//
-// TODO: C++14 has std::index_sequence for the same purpose.
-// We cannot implement the same thing since C++14 version uses
-// template variable, which does not exist in C++11.
-// Currently we need to call type().
-
-// index_sequence will be made via index_sequence_for<Args>::type().
-// The template arguments are <0, 1, 2, ..., N - 1> where N is the size of Args.
-template<size_t...>
-struct index_sequence {};
-
-template<size_t I, typename T, typename... Types>
-struct make_indexes_impl;
-
-template<size_t I, size_t... Indexes, typename T, typename... Types>
-struct make_indexes_impl<I, index_sequence<Indexes...>, T, Types...> {
-  typedef typename make_indexes_impl<I + 1,
-                                     index_sequence<Indexes..., I>,
-                                     Types...>::type type;
-};
-
-template<size_t I, size_t... Indexes>
-struct make_indexes_impl<I, index_sequence<Indexes...>> {
-  typedef index_sequence<Indexes...> type;
-};
-
-template<typename... Types>
-struct index_sequence_for : make_indexes_impl<0, index_sequence<>, Types...> {
-};
-
-// ----------------------------------------------------------------------
-
 template<typename... Args>
 class OneshotFunctionClosure : public OneshotClosure {
  public:
@@ -95,13 +61,13 @@ class OneshotFunctionClosure : public OneshotClosure {
   ~OneshotFunctionClosure() override {}
 
   void Run() override {
-    Apply(typename index_sequence_for<Args...>::type());
+    Apply(std::index_sequence_for<Args...>{});
     delete this;
   }
 
  private:
   template<size_t... Indexes>
-  void Apply(index_sequence<Indexes...>) {
+  void Apply(std::index_sequence<Indexes...>) {
     function_(std::forward<Args>(std::get<Indexes>(args_))...);
   }
 
@@ -119,13 +85,13 @@ class OneshotMethodClosure : public OneshotClosure {
   ~OneshotMethodClosure() override {}
 
   void Run() override {
-    Apply(typename index_sequence_for<Args...>::type());
+    Apply(std::index_sequence_for<Args...>{});
     delete this;
   }
 
  private:
   template<size_t... Indexes>
-  void Apply(index_sequence<Indexes...>) {
+  void Apply(std::index_sequence<Indexes...>) {
     (object_->*method_)(std::forward<Args>(std::get<Indexes>(args_))...);
   }
 
@@ -144,12 +110,12 @@ class PermanentFunctionClosure : public PermanentClosure {
   ~PermanentFunctionClosure() override {}
 
   void Run() override {
-    Apply(typename index_sequence_for<Args...>::type());
+    Apply(std::index_sequence_for<Args...>{});
   }
 
  private:
   template<size_t... Indexes>
-  void Apply(index_sequence<Indexes...>) {
+  void Apply(std::index_sequence<Indexes...>) {
     function_(std::get<Indexes>(args_)...);
   }
 
@@ -167,12 +133,12 @@ class PermanentMethodClosure : public PermanentClosure {
   ~PermanentMethodClosure() override {}
 
   void Run() override {
-    Apply(typename index_sequence_for<Args...>::type());
+    Apply(std::index_sequence_for<Args...>{});
   }
 
  private:
   template<size_t... Indexes>
-  void Apply(index_sequence<Indexes...>) {
+  void Apply(std::index_sequence<Indexes...>) {
     (object_->*method_)(std::get<Indexes>(args_)...);
   }
 

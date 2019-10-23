@@ -183,8 +183,7 @@ bool IncludeFileFinder::Lookup(const std::string& path_in_directive,
     // because it may point to some sibling directory
     // that not in |files_in_include_dirs_|.
     if (!absl::StartsWith(top, ".") &&
-        files_in_include_dirs_[i].find(top) ==
-        files_in_include_dirs_[i].end()) {
+        !files_in_include_dirs_[i].contains(top)) {
       VLOG(2) << "not in " << i;
       continue;
     }

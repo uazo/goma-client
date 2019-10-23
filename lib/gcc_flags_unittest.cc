@@ -1,7 +1,6 @@
 // Copyright 2018 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 #include "lib/gcc_flags.h"
 
 #include <limits.h>
@@ -2816,8 +2815,7 @@ TEST_F(GCCFlagsTest, ClangFTimeTrace) {
       {{"-c", "foo.cc", "-o", "bar/grok.o"}, "bar/grok.json", 2U},
       {{"-c", "foo.cc", "-o", "../../bar/grok.o"}, "../../bar/grok.json", 2U},
 
-      // -M and/or -MM with -ftime-trace seem to always produce ".json"
-      // unless -o is specified.
+      // -M and/or -MM with -ftime-trace seem to always produce ".json".
       {{"-c", "foo.cc", "-M"}, ".json", 1U},
       {{"-c", "foo.cc", "bar.cc", "-M"}, ".json", 1U},
       {{"-c", "foo.cc", "-MM"}, ".json", 1U},

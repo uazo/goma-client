@@ -430,7 +430,7 @@ void NamedPipeServer::Stop() {
   flush_.Close();
   flusher_done_.Close();
 
-  std::unordered_set<Conn*> conns;
+  absl::flat_hash_set<Conn*> conns;
   {
     AUTOLOCK(lock, &mu_);
     conns.insert(actives_.begin(), actives_.end());
@@ -667,7 +667,7 @@ void NamedPipeServer::ReadDone(Conn* conn) {
 void NamedPipeServer::ProcessWatchClosed() {
   VLOG(1) << "ProcessWatchClosed";
   DCHECK(THREAD_ID_IS_SELF(thread_id_));
-  std::unordered_set<Conn*> watches;
+  absl::flat_hash_set<Conn*> watches;
   {
     AUTOLOCK(lock, &mu_);
     watches.swap(watches_);
@@ -775,7 +775,7 @@ void NamedPipeServer::ProcessFlushes() {
   GOMA_COUNTERZ("");
 
   VLOG(1) << "ProcessFlushes";
-  std::unordered_set<Conn*> flushes;
+  absl::flat_hash_set<Conn*> flushes;
   {
     AUTOLOCK(lock, &mu_);
     flushes.swap(flushes_);

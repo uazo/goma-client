@@ -333,6 +333,10 @@ if (target_cpu == "x86") {
     environment = "environment.x86"
     prefix = rebase_path("$clang_base_path/bin", root_build_dir)
     cl = "${goma_prefix}$prefix/${clang_cl}"
+    if (host_os == "win") {
+      # Flip the slashes so that copy/paste of the command works.
+      cl = string_replace(cl, "/", "\\")
+    }
     sys_include_flags = "${x86_toolchain_data.include_flags}"
 
     toolchain_args = {
@@ -371,6 +375,10 @@ template("win_x64_toolchains") {
     environment = "environment.x64"
     prefix = rebase_path("$clang_base_path/bin", root_build_dir)
     cl = "${goma_prefix}$prefix/${clang_cl}"
+    if (host_os == "win") {
+      # Flip the slashes so that copy/paste of the command works.
+      cl = string_replace(cl, "/", "\\")
+    }
     sys_include_flags = "${x64_toolchain_data.include_flags}"
 
     toolchain_args = {

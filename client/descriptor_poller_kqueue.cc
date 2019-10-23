@@ -8,9 +8,8 @@
 #include <sys/event.h>
 #include <sys/time.h>
 
-#include <unordered_set>
-
 #include "absl/base/call_once.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/memory/memory.h"
 #include "absl/time/time.h"
 #include "glog/logging.h"
@@ -150,7 +149,7 @@ class KqueueDescriptorPoller : public DescriptorPollerBase {
       // Then iterates over timed out ones.
       for (; timedout_iter_ != poller_->timeout_waiters_.end();
            ++timedout_iter_) {
-        if (event_received_.find(*timedout_iter_) == event_received_.end())
+        if (!event_received_.contains(*timedout_iter_))
           return *timedout_iter_++;
       }
       return nullptr;
@@ -168,8 +167,8 @@ class KqueueDescriptorPoller : public DescriptorPollerBase {
     const DescriptorMap& descriptors_;
     int idx_;
     struct kevent* current_ev_;
-    std::unordered_set<SocketDescriptor*>::const_iterator timedout_iter_;
-    std::unordered_set<SocketDescriptor*> event_received_;
+    absl::flat_hash_set<SocketDescriptor*>::const_iterator timedout_iter_;
+    absl::flat_hash_set<SocketDescriptor*> event_received_;
 
     DISALLOW_COPY_AND_ASSIGN(KqueueEventEnumerator);
   };
@@ -185,7 +184,7 @@ class KqueueDescriptorPoller : public DescriptorPollerBase {
   static absl::once_flag s_init_once_;
   ScopedFd kqueue_fd_;
   std::vector<struct kevent> eventlist_;
-  std::unordered_set<SocketDescriptor*> timeout_waiters_;
+  absl::flat_hash_set<SocketDescriptor*> timeout_waiters_;
   int nevents_;
   DISALLOW_COPY_AND_ASSIGN(KqueueDescriptorPoller);
 };

@@ -5,11 +5,11 @@
 #include "local_output_cache.h"
 
 #include <memory>
-#include <unordered_set>
 #include <vector>
 
 #include <gtest/gtest.h>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "content.h"
@@ -223,7 +223,7 @@ TEST_F(LocalOutputCacheTest, CollectGarbageByNumItems) {
   const std::string trace_id = "(garbage)";
 
   std::vector<std::string> keys;
-  std::unordered_set<std::string> key_set;
+  absl::flat_hash_set<std::string> key_set;
 
   // Make 99 items.
   for (int i = 0; i < 99; ++i) {

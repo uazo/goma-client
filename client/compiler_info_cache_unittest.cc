@@ -9,10 +9,10 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
-#include <unordered_set>
-#include <unordered_map>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/memory/memory.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -128,13 +128,13 @@ class CompilerInfoCacheTest : public testing::Test {
     compiler_info->data_->set_hash(hash);
   }
 
-  const std::unordered_map<std::string, CompilerInfoState*>& compiler_info()
+  const absl::flat_hash_map<std::string, CompilerInfoState*>& compiler_info()
       const {
     return cache_->compiler_info_;
   }
 
-  const std::unordered_map<std::string,
-                           std::unique_ptr<std::unordered_set<std::string>>>&
+  const absl::flat_hash_map<std::string,
+                            std::unique_ptr<absl::flat_hash_set<std::string>>>&
   keys_by_hash() const {
     return cache_->keys_by_hash_;
   }
@@ -251,8 +251,7 @@ TEST_F(CompilerInfoCacheTest, DupStore) {
 
   {
     EXPECT_EQ(1U, keys_by_hash().size());
-    const std::unordered_set<std::string>& keys =
-        *keys_by_hash().begin()->second;
+    const auto& keys = *keys_by_hash().begin()->second;
     EXPECT_EQ(1U, keys.size());
   }
 
@@ -293,8 +292,7 @@ TEST_F(CompilerInfoCacheTest, DupStore) {
 
   {
     EXPECT_EQ(1U, keys_by_hash().size());
-    const std::unordered_set<std::string>& keys =
-        *keys_by_hash().begin()->second;
+    const auto& keys = *keys_by_hash().begin()->second;
     EXPECT_EQ(2U, keys.size());
   }
 
@@ -524,8 +522,8 @@ TEST_F(CompilerInfoCacheTest, Marshal) {
     switch (entry.keys_size()) {
       case 2: // hash1: key1, key2
         {
-        std::unordered_set<std::string> keys(entry.keys().begin(),
-                                             entry.keys().end());
+        absl::flat_hash_set<std::string> keys(entry.keys().begin(),
+                                              entry.keys().end());
         EXPECT_EQ(1U, keys.count(key1));
         EXPECT_EQ(1U, keys.count(key2));
         EXPECT_EQ("gcc", entry.data().name());
@@ -607,7 +605,7 @@ TEST_F(CompilerInfoCacheTest, Unmarshal) {
   EXPECT_EQ(2U, keys_by_hash().size());
   auto found = keys_by_hash().find(hash1);
   EXPECT_TRUE(found != keys_by_hash().end());
-  const std::unordered_set<std::string>* keys = found->second.get();
+  const auto* keys = found->second.get();
   EXPECT_EQ(2U, keys->size());
   EXPECT_EQ(1U, keys->count("/usr/bin/gcc -O2 @"));
   EXPECT_EQ(1U, keys->count("/usr/bin/gcc -O2 -fno-diagnostics-show-option @"));
@@ -816,9 +814,13 @@ TEST_F(CompilerInfoCacheTest, RelativePathCompiler) {
   }
 
   {
+    // The intent here is to find /usr/bin/gcc starting from a non-root path.
+    // Note that the starting point must be a physical path, and not a symbolic
+    // link. Therefore "/tmp" is a better choice than "/bin", due to UsrMerge
+    // https://wiki.debian.org/UsrMerge. See b/142221434 for more context.
     std::vector<std::string> args{"../usr/bin/gcc"};
     std::unique_ptr<CompilerFlags> flags(
-        CompilerFlagsParser::MustNew(args, "/bin"));
+        CompilerFlagsParser::MustNew(args, "/tmp"));
     std::unique_ptr<CompilerInfoData> cid(
         GCCCompilerInfoBuilder().FillFromCompilerOutputs(
             *flags, "../usr/bin/gcc", empty_env));

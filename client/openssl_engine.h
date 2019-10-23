@@ -13,9 +13,9 @@
 #include <openssl/ssl.h>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "autolock_timer.h"
@@ -209,7 +209,7 @@ class OpenSSLEngineCache : public TLSEngineFactory {
   mutable Lock mu_;
   std::unique_ptr<OpenSSLContext> ctx_;
   std::vector<std::unique_ptr<OpenSSLContext>> contexts_to_delete_;
-  std::unordered_map<int, std::unique_ptr<OpenSSLEngine>> ssl_map_;
+  absl::flat_hash_map<int, std::unique_ptr<OpenSSLEngine>> ssl_map_;
   // Proxy configs to download CRLs.
   std::string hostname_;
   std::string proxy_host_;

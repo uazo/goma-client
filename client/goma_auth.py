@@ -3,7 +3,6 @@
 # Copyright 2015 The Goma Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
 """A Script to set goma_oauth2_config."""
 
 from __future__ import print_function
@@ -40,6 +39,8 @@ OAUTH_SCOPES = 'https://www.googleapis.com/auth/userinfo.email'
 OAUTH_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 TOKEN_INFO_ENDPOINT = 'https://oauth2.googleapis.com/tokeninfo'
 OOB_CALLBACK_URN = 'urn:ietf:wg:oauth:2.0:oob'
+
+GOOGLE_GOMA_PING = 'https://clients5.google.com/cxx-compiler-service/ping'
 
 DEFAULT_GOMA_OAUTH2_CONFIG_FILE_NAME = '.goma_client_oauth2_config'
 
@@ -135,7 +136,7 @@ class GomaOAuth2Config(dict):
   def Save(self):
     """Saves config to a file."""
     # TODO: not save unnecessary data.
-    with open(self._path, 'wb') as f:
+    with open(self._path, 'w') as f:
       if os.name == 'posix':
         os.fchmod(f.fileno(), 0o600)
       json.dump(self, f)
@@ -239,7 +240,7 @@ def _RandomString(length):
     random string.
   """
   generator = random.SystemRandom()
-  return ''.join(generator.choice(string.letters + string.digits)
+  return ''.join(generator.choice(string.ascii_letters + string.digits)
                  for _ in range(length))
 
 
@@ -315,6 +316,26 @@ def GetRefreshToken(get_code_func, config):
   return resp['refresh_token']
 
 
+def FetchTokenInfo(config):
+  """Fetch token info from refresh token in config.
+
+  Returns:
+     token_info for refresh token in config.
+  """
+  post_data = {
+      'client_id': config['client_id'],
+      'client_secret': config['client_secret'],
+      'refresh_token': config['refresh_token'],
+      'grant_type': 'refresh_token'
+  }
+  resp = json.loads(HttpPostRequest(config['token_uri'], post_data))
+  if 'error' in resp:
+    return {'error_description': 'obtain access token: %s' % resp['error']}
+  token_info = json.loads(HttpGetRequest(
+    TOKEN_INFO_ENDPOINT + '?access_token=' + resp['access_token']))
+  return token_info
+
+
 def VerifyRefreshToken(config):
   """Verify refresh token in config.
 
@@ -324,17 +345,7 @@ def VerifyRefreshToken(config):
   """
   if not 'refresh_token' in config:
     return 'no refresh token in config'
-  post_data = {
-      'client_id': config['client_id'],
-      'client_secret': config['client_secret'],
-      'refresh_token': config['refresh_token'],
-      'grant_type': 'refresh_token'
-  }
-  resp = json.loads(HttpPostRequest(config['token_uri'], post_data))
-  if 'error' in resp:
-    return 'obtain access token: %s' % resp['error']
-  token_info = json.loads(HttpGetRequest(
-    TOKEN_INFO_ENDPOINT + '?access_token=' + resp['access_token']))
+  token_info = FetchTokenInfo(config)
   if 'error_description' in token_info:
     return 'token info: %s' % token_info['error_description']
   if not 'email' in token_info:
@@ -435,6 +446,51 @@ def Info():
   return 0
 
 
+def enableSendInfo():
+  print('GOMA_PROVIDE_INFO=true')
+  print('GOMA_SEND_USER_INFO=true')
+  print('GOMA_COMPILER_PROXY_ENABLE_CRASH_DUMP=true')
+
+
+def Config():
+  """shows compiler_proxy flags for login account
+
+  Returns:
+    non-zero value on error.
+  """
+  config = GomaOAuth2Config()
+  if not config.Load():
+    # not logged in.
+    try:
+      HttpGetRequest(GOOGLE_GOMA_PING)
+      print('# in google')
+      print('GOMA_SERVER_HOST=clients5.google.com')
+      # TODO: only opt-in?
+      enableSendInfo()
+      return 0
+    except subprocess.CalledProcessError:
+      sys.stderr.write('Need to login\n')
+      return 1
+  # refresh_token exists in config if Load returns True.
+  token_info = FetchTokenInfo(config)
+  if 'error_description' in token_info:
+    sys.stderr.write(
+        'Failed to fetch token info: %s' % token_info['error_description'])
+    return 1
+  if not 'email' in token_info:
+    sys.stderr.write('No email in token_info %s' % token_info)
+    return 1
+  if token_info['email'].endswith('@google.com'):
+    print('# login as %s' % token_info['email'])
+    # TODO: use goma.chromium.org?
+    print('GOMA_SERVER_HOST=clients5.google.com')
+    # TODO: only opt-in?
+    enableSendInfo()
+    return 0
+  # non googlers. use default.
+  return 0
+
+
 def Help():
   """Print Usage"""
   print('''Usage: %(cmd)s <command> [options]
@@ -443,10 +499,13 @@ Commands are:
   login  performs interactive login and caches authentication token
   logout revokes cached authentication token
   info   shows email associated with a cached authentication token
+  config shows compiler_proxy flags for login account
 
 Options are:
   --browser use browser to get goma OAuth2 token (login command only)
-''' % {'cmd' : sys.argv[0]})
+''' % {
+      'cmd': sys.argv[0]
+  })
   return 0
 
 
@@ -455,6 +514,7 @@ def main():
       'login': Login,
       'logout': Logout,
       'info': Info,
+      'config': Config,
   }
   action = Help
   if len(sys.argv) > 1:

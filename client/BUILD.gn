@@ -107,6 +107,8 @@ static_library("oauth2_lib") {
     ":common",
     ":ioutil_lib",
     "//lib",
+  ]
+  public_deps = [
     "//third_party/abseil",
   ]
 }
@@ -2028,20 +2030,124 @@ fuzzer_test("base64_fuzzer") {
     "base64_fuzzer.cc",
   ]
   deps = [
-    ":common",
+    ":base64_lib",
     "//base",
   ]
 }
 
-fuzzer_test("ioutil_parse_http_response_fuzzer") {
+fuzzer_test("http_util_parse_http_response_fuzzer") {
   sources = [
-    "ioutil_parse_http_response_fuzzer.cc",
+    "http_util_parse_http_response_fuzzer.cc",
   ]
   deps = [
-    ":common",
+    ":ioutil_lib",
     "//base",
   ]
   dict = "data/fuzzer_dictionaries/net_url_request_fuzzer.dict"
+}
+
+fuzzer_test("ioutil_escape_string_fuzzer") {
+  sources = [
+    "ioutil_escape_string_fuzzer.cc",
+  ]
+  deps = [
+    ":ioutil_lib",
+    "//base",
+  ]
+}
+
+fuzzer_test("http_util_extract_header_field_fuzzer") {
+  sources = [
+    "http_util_extract_header_field_fuzzer.cc",
+  ]
+  deps = [
+    ":ioutil_lib",
+    "//base",
+  ]
+  dict = "data/fuzzer_dictionaries/net_url_request_fuzzer.dict"
+}
+
+fuzzer_test("http_util_find_content_length_and_body_offset_fuzzer") {
+  sources = [
+    "http_util_find_content_length_and_body_offset_fuzzer.cc",
+  ]
+  deps = [
+    ":ioutil_lib",
+    "//base",
+  ]
+  dict = "data/fuzzer_dictionaries/net_url_request_fuzzer.dict"
+}
+
+fuzzer_test("http_util_http_chunk_parser_parse_fuzzer") {
+  sources = [
+    "http_util_http_chunk_parser_parse_fuzzer.cc",
+  ]
+  deps = [
+    ":ioutil_lib",
+    "//base",
+  ]
+  dict = "data/fuzzer_dictionaries/net_url_request_fuzzer.dict"
+}
+
+fuzzer_test("http_util_parse_url_fuzzer") {
+  sources = [
+    "http_util_parse_url_fuzzer.cc",
+  ]
+  deps = [
+    ":ioutil_lib",
+    "//base",
+  ]
+  dict = "data/fuzzer_dictionaries/net_url_request_fuzzer.dict"
+}
+
+fuzzer_test("luci_context_parse_luci_context_fuzzer") {
+  sources = [
+    "luci_context_parse_luci_context_fuzzer.cc",
+  ]
+  deps = [
+    ":compiler_proxy_lib",
+  ]
+  dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
+}
+
+fuzzer_test("luci_context_parse_luci_auth_token_response_fuzzer") {
+  sources = [
+    "luci_context_parse_luci_auth_token_response_fuzzer.cc",
+  ]
+  deps = [
+    ":compiler_proxy_lib",
+  ]
+  dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
+}
+
+fuzzer_test("oauth2_parse_oauth2_access_token_fuzzer") {
+  sources = [
+    "oauth2_parse_oauth2_access_token_fuzzer.cc",
+  ]
+  deps = [
+    ":oauth2_lib",
+  ]
+  dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
+}
+
+fuzzer_test("oauth2_parse_oauth2_config_fuzzer") {
+  sources = [
+    "oauth2_parse_oauth2_config_fuzzer.cc",
+  ]
+  deps = [
+    ":oauth2_lib",
+  ]
+  dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
+}
+
+fuzzer_test("oauth2_parse_service_account_json_fuzzer") {
+  sources = [
+    "oauth2_parse_service_account_json_fuzzer.cc",
+  ]
+  deps = [
+    ":oauth2_lib",
+  ]
+  dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
 }
 
 executable("execreq_normalizer_diff") {

@@ -6,7 +6,6 @@
 #include "descriptor_poller.h"
 
 #include <memory>
-#include <unordered_set>
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
@@ -16,6 +15,7 @@
 #define EPOLL_SIZE_HINT FD_SETSIZE  // Any value but not 0 should be ok.
 
 #include "absl/base/call_once.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/memory/memory.h"
 #include "absl/time/time.h"
 #include "compiler_specific.h"
@@ -136,9 +136,9 @@ class EpollDescriptorPoller : public DescriptorPollerBase {
       current_ev_ = nullptr;
       // Then iterates over timed out ones.
       for (; timedout_iter_ != poller_->timeout_waiters_.end();
-        ++timedout_iter_) {
-          if (event_received_.find(*timedout_iter_) == event_received_.end())
-            return *timedout_iter_++;
+           ++timedout_iter_) {
+        if (!event_received_.contains(*timedout_iter_))
+          return *timedout_iter_++;
       }
       return nullptr;
     }
@@ -154,8 +154,8 @@ class EpollDescriptorPoller : public DescriptorPollerBase {
     EpollDescriptorPoller* poller_;
     int idx_;
     struct epoll_event* current_ev_;
-    std::unordered_set<SocketDescriptor*>::const_iterator timedout_iter_;
-    std::unordered_set<SocketDescriptor*> event_received_;
+    absl::flat_hash_set<SocketDescriptor*>::const_iterator timedout_iter_;
+    absl::flat_hash_set<SocketDescriptor*> event_received_;
 
     DISALLOW_COPY_AND_ASSIGN(EpollEventEnumerator);
   };
@@ -170,7 +170,7 @@ class EpollDescriptorPoller : public DescriptorPollerBase {
   static absl::once_flag s_init_once_;
   ScopedFd epoll_fd_;
   std::unique_ptr<struct epoll_event[]> events_;
-  std::unordered_set<SocketDescriptor*> timeout_waiters_;
+  absl::flat_hash_set<SocketDescriptor*> timeout_waiters_;
   int nevents_;
   int last_nevents_;
   int nfds_;

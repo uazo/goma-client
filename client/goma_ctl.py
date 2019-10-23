@@ -36,13 +36,11 @@ import tempfile
 import time
 try:
   import urllib.parse, urllib.request
-  URLOPEN = urllib.request.urlopen
   URLOPEN2 = urllib.request.urlopen
   URLREQUEST = urllib.request.Request
 except ImportError:
   import urllib
   import urllib2
-  URLOPEN = urllib.urlopen
   URLOPEN2 = urllib2.urlopen
   URLREQUEST = urllib2.Request
 import zipfile
@@ -109,6 +107,13 @@ def _SetGomaFlagDefaultValueIfEmpty(flag_name, default_value):
     os.environ[full_flag_name] = default_value
 
 
+def _DecodeBytesOnPython3(data):
+  """This function decodes bytes type on python3."""
+  if isinstance(data, bytes) and sys.version_info.major == 3:
+    return data.decode('utf-8')
+  return data
+
+
 def _ParseManifestContents(manifest):
   """Parse contents of MANIFEST into a dictionary.
 
@@ -118,6 +123,7 @@ def _ParseManifestContents(manifest):
   Returns:
     The dictionary of key and values in string.
   """
+  manifest = _DecodeBytesOnPython3(manifest)
   output = {}
   for line in manifest.splitlines():
     pair = line.strip().split('=', 1)
@@ -182,6 +188,7 @@ def _ParseSpaceSeparatedValues(data):
   Returns:
     a list of dictionaries parsed from data.
   """
+  data = _DecodeBytesOnPython3(data)
   # TODO: remove this if I will not use this on Windows.
   label = None
   contents = []
@@ -238,6 +245,7 @@ def _ParseLsof(data):
   Returns:
     a list of dictionaries parsed from data.
   """
+  data = _DecodeBytesOnPython3(data)
   pid = None
   uid = None
   contents = []
@@ -353,6 +361,7 @@ def _ParseFlagz(flagz):
   Returns:
     a dictionary of user-configured flags.
   """
+  flagz = _DecodeBytesOnPython3(flagz)
   envs = {}
   for line in flagz.splitlines():
     line = line.strip()
@@ -430,20 +439,56 @@ class Error(Exception):
   """Raises when an error found in the system."""
 
 
-class PopenWithCheck(subprocess.Popen):
+class CalledProcessError(Error):
+  """Raises when failed for check call using PopenWithCheck."""
+
+  def __init__(self, returncode, stdout=None, stderr=None):
+    super(Exception, self).__init__()
+    self.returncode = returncode
+    self.stdout = stdout
+    self.stderr = stderr
+
+  def __str__(self):
+    return "Command returned non-zero exit status %d" % self.returncode
+
+
+class Popen(subprocess.Popen):
+  """subprocess.Popen with automatic bytes output to string conversion."""
+
+  def communicate(self, input=None):
+    # pylint: disable=W0622
+    # To keep the interface consisntent with subprocess.Popen,
+    # we need to use |input| here.
+    stdout, stderr = super(Popen, self).communicate(input)
+    return _DecodeBytesOnPython3(stdout), _DecodeBytesOnPython3(stderr)
+
+
+class PopenWithCheck(Popen):
   """subprocess.Popen with automatic exit status check on communicate."""
 
   def communicate(self, input=None):
     # I do not think argument name |input| is good but this is from the original
     # communicate method.
     # pylint: disable=W0622
-    (stdout, stderr) = super(PopenWithCheck, self).communicate(input)
+    stdout, stderr = super(PopenWithCheck, self).communicate(input)
     if self.returncode is None or self.returncode != 0:
-      if stdout or stderr:
-        raise Error('Error(%s): %s%s' % (self.returncode, stdout, stderr))
-      else:
-        raise Error('failed to execute subprocess return=%s' % self.returncode)
-    return (stdout, stderr)
+      raise CalledProcessError(
+          returncode=self.returncode,
+          stdout=stdout,
+          stderr=stderr)
+    return stdout, stderr
+
+
+def _CheckOutput(args, **kwargs):
+  """subprocess.check_output that works with python2 and python3.
+
+  This function uses PopenWithCheck inside to silently converts bytes to
+  string.
+  """
+  return PopenWithCheck(args,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        **kwargs).communicate()[0]
 
 
 class GomaDriver(object):
@@ -566,6 +611,7 @@ class GomaDriver(object):
     return False
 
   def _GenericStartCompilerProxy(self, ensure=False):
+    self._env.CheckAuthConfig()
     self._env.CheckConfig()
     if self._compiler_proxy_running is None:
       self._compiler_proxy_running = self._env.CompilerProxyRunning()
@@ -673,7 +719,7 @@ class GomaDriver(object):
     reply = self._env.ControlCompilerProxy('/healthz', need_pids=True)
     print('compiler proxy (pid=%(pid)s) status: %(url)s %(message)s' % reply)
     if reply['message'].startswith('error:'):
-        reply['status'] = False
+      reply['status'] = False
     return reply['status']
 
   def _ShutdownCompilerProxy(self):
@@ -1083,6 +1129,10 @@ class GomaDriver(object):
     print('All files verified.')
     return True
 
+  def _OldCrashDumps(self):
+    """List old crash dump filenames."""
+    return filter(self._env.IsOldFile, self._env.GetCrashDumps())
+
   def _UploadCrashDump(self):
     """Upload crash dump if exists.
 
@@ -1092,6 +1142,9 @@ class GomaDriver(object):
     created a crash dump. Since the version to be sent is collected when
     goma_ctl.py starts up, it may pick the wrong version number if
     compiler_proxy was silently changed without using goma_ctl.py.
+
+    Returns:
+      crash dump filesnames that are ok to remove.
     """
     if self._env.IsProductionBinary():
       server_url = _CRASH_SERVER
@@ -1103,7 +1156,7 @@ class GomaDriver(object):
 
     if not server_url:
       # We do not upload crash dump made by the developer's binary.
-      return
+      return self._OldCrashDumps()
 
     try:
       (hash_value, timestamp) = self._GetDiskCompilerProxyVersion().split('@')
@@ -1114,11 +1167,13 @@ class GomaDriver(object):
     if self._version and version:
       version = 'ver %d %s' % (self._version, version)
 
-    if _IsGomaFlagTrue('SEND_USER_INFO', default=True):
+    send_user_info_default = False
+    if _IsGomaFlagTrue('SEND_USER_INFO', default=send_user_info_default):
       guid = '%s@%s' % (self._env.GetUsername(), _GetHostname())
     else:
       guid = None
 
+    old_files = []
     for dump_file in self._env.GetCrashDumps():
       uploaded = False
       # Upload crash dumps only when we know its version number.
@@ -1137,10 +1192,21 @@ class GomaDriver(object):
         except Error as inst:
           sys.stderr.write('Failed to upload crash dump: %s\n' % inst)
       if uploaded or self._env.IsOldFile(dump_file):
-        try:
-          self._env.RemoveFile(dump_file)
-        except OSError as e:
-          print('failed to remove %s: %s.' % (dump_file, e))
+        old_files.append(dump_file)
+    return old_files
+
+  def _RemoveCrashDumps(self, old_files):
+    """Remove old crash dumps if exists.
+
+    Args:
+      old_files: dump file names to remove.
+    """
+
+    for dump_file in old_files:
+      try:
+        self._env.RemoveFile(dump_file)
+      except OSError as e:
+        print('failed to remove %s: %s.' % (dump_file, e))
 
   def _CreateDirectory(self, dir_name, purpose, suppress_message=False):
     info = {
@@ -1204,8 +1270,11 @@ class GomaDriver(object):
       self._CreateGomaTmpDirectory()
       upload_crash_dump = False
       if upload_crash_dump:
-        self._UploadCrashDump()
-        self._CreateCrashDumpDirectory()
+        old_files = self._UploadCrashDump()
+      else:
+        old_files = self._OldCrashDumps()
+      self._RemoveCrashDumps(old_files)
+      self._CreateCrashDumpDirectory()
       self._CreateCacheDirectory()
     self._args = args
     if not args:
@@ -1309,6 +1378,42 @@ class GomaEnv(object):
     with open(manifest_path, 'w') as manifest_file:
       for key, value in manifest.items():
         manifest_file.write('%s=%s\n' % (key, value))
+
+  def CheckAuthConfig(self):
+    """Checks `goma_auth.py config` unless service accounts.
+
+    Updates goma flags by `goma_auth.py config` outputs.
+
+    Raises:
+      ConfigError if `goma_auth.py config` failed.
+    """
+    if 'GOMA_SERVICE_ACCOUNT_JSON_FILE' in os.environ:
+      return
+    if 'GOMA_GCE_SERVICE_ACCOUNT' in os.environ:
+      return
+    if 'LUCI_CONTEXT' in os.environ:
+      return
+    # not service account.
+    try:
+      out = PopenWithCheck(
+          [sys.executable,
+           os.path.join(SCRIPT_DIR, 'goma_auth.py'), 'config'],
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE).communicate()[0]
+    except Error as ex:
+      print(ex)
+      raise ConfigError('goma_auth.py config failed')
+    for line in out.splitlines():
+      if '=' not in line:
+        print(line)
+        continue
+      k, v = line.split('=', 1)
+      if not k.startswith('GOMA_'):
+        continue
+      if k in os.environ:
+        continue
+      print('override %s=%s' % (k, v))
+      os.environ[k] = v
 
   def CheckConfig(self):
     """Checks GomaEnv configurations."""
@@ -1427,10 +1532,20 @@ class GomaEnv(object):
       # running in 127.0.0.1, and trying to make the proxy connect to
       # 127.0.0.1 (i.e. the proxy itself), which should not work.
       # We should make urllib.urlopen ignore the proxy environment variables.
-      resp = URLOPEN(url, proxies={})
-      reply = resp.read()
+      no_proxy_env = os.environ.get('no_proxy')
+      os.environ['no_proxy'] = '*'
+      try:
+        resp = URLOPEN2(url)
+        reply = resp.read()
+      finally:
+        if no_proxy_env is None:
+          del os.environ['no_proxy']
+        else:
+          os.environ['no_proxy'] = no_proxy_env
+
       if need_pids:
         pids = ','.join(self._GetStakeholderPids())
+      reply = _DecodeBytesOnPython3(reply)
       return {'status': True, 'message': reply, 'url': url_prefix, 'pid': pids}
     except (Error, socket.error) as ex:
       # urllib.urlopen(url) may raise socket.error, such as [Errno 10054]
@@ -1464,7 +1579,7 @@ class GomaEnv(object):
       # headers is used to set Authorization header, but goma_fetch will
       # set appropriate authorization headers from goma env flags.
       # increate timeout.
-      env = os.environ
+      env = os.environ.copy()
       env['GOMA_HTTP_SOCKET_READ_TIMEOUT_SECS'] = '300.0'
       if destination_file:
         destination_file = os.path.join(self._dir, destination_file)
@@ -1519,9 +1634,8 @@ class GomaEnv(object):
 
     env = os.environ.copy()
     env['GLOG_logtostderr'] = 'true'
-    self._goma_tmp_dir = subprocess.check_output(
-        [self._gomacc_binary, 'tmp_dir'],
-        env=env).strip()
+    self._goma_tmp_dir = _CheckOutput([self._gomacc_binary, 'tmp_dir'],
+                          env=env).rstrip()
     return self._goma_tmp_dir
 
   def GetCrashDumpDirectory(self):
@@ -1697,7 +1811,7 @@ class GomaEnv(object):
           tf = tempfile.NamedTemporaryFile(delete=False)
           with tf as f:
             self._BuildFormData(form, boundary, f)
-          return subprocess.check_output(
+          return _CheckOutput(
               [self._goma_fetch,
                '--noauth',
                '--content_type',
@@ -2412,9 +2526,9 @@ class GomaEnvPosix(GomaEnv):
 
     # Lsof returns 1 for WARNING even if the result is good enough.
     # It also returns 1 if an owner process is not found.
-    ret = subprocess.Popen(lsof_command,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT).communicate()[0]
+    ret = Popen(lsof_command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT).communicate()[0]
     if ret:
       return _ParseLsof(ret)
     return []
@@ -2434,9 +2548,9 @@ class GomaEnvPosix(GomaEnv):
       return []
 
     if not network and self._GetFuserPath():
-      (out, err) = subprocess.Popen([self._GetFuserPath(), '-u', name],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE).communicate()
+      out, err = Popen([self._GetFuserPath(), '-u', name],
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE).communicate()
       if out:  # Found at least one owner.
         pids = self._FUSER_PID_PATTERN.findall(out)
         usernames = self._FUSER_USERNAME_PATTERN.findall(err)
@@ -2507,9 +2621,8 @@ class GomaEnvPosix(GomaEnv):
     pids = ''
     try:
       # note: mac pgrep does not know --delimitor.
-      pids = subprocess.check_output(['pgrep', '-d', ',',
-                                      self._COMPILER_PROXY]).strip()
-    except subprocess.CalledProcessError as e:
+      pids = _CheckOutput(['pgrep', '-d', ',', self._COMPILER_PROXY]).strip()
+    except CalledProcessError as e:
       if e.returncode == 1:
         # compiler_proxy is not running.
         return False

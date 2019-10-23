@@ -1,3 +1,5 @@
+import("//testing/libfuzzer/fuzzer_test.gni")
+
 static_library("modulemap_processor_lib") {
   sources = [
     "processor.cc",
@@ -60,6 +62,15 @@ static_library("modulemap_lexer_lib") {
     "//client:content_lib",
     "//third_party:glog",
     "//third_party/abseil",
+  ]
+}
+
+fuzzer_test("lexer_fuzzer") {
+  sources = [
+    "lexer_fuzzer.cc",
+  ]
+  deps = [
+    ":modulemap_lexer_lib",
   ]
 }
 

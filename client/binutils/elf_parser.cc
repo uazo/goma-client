@@ -56,12 +56,7 @@ class ElfParserImpl : public ElfParser {
     }
     CheckIdent();
   }
-  ~ElfParserImpl() override {
-    for (size_t i = 0; i < phdrs_.size(); ++i)
-      delete phdrs_[i];
-    for (size_t i = 0; i < shdrs_.size(); ++i)
-      delete shdrs_[i];
-  }
+  ~ElfParserImpl() override = default;
   ElfParserImpl(const ElfParserImpl&) = delete;
   ElfParserImpl& operator=(const ElfParserImpl&) = delete;
 
@@ -145,21 +140,20 @@ class ElfParserImpl : public ElfParser {
       return false;
     }
     for (int i = 0; i < ehdr_.e_phnum; ++i) {
-      Phdr* phdr = new Phdr;
-      if (read(fd_.fd(), reinterpret_cast<char*>(phdr), sizeof(Phdr)) !=
+      auto phdr = absl::make_unique<Phdr>();
+      if (read(fd_.fd(), reinterpret_cast<char*>(phdr.get()), sizeof(Phdr)) !=
           sizeof(Phdr)) {
         PLOG(ERROR) << "read phdr:" << i << " " << filename_;
         valid_ = false;
         return false;
       }
-      phdrs_.push_back(phdr);
       VLOG(1) << i << ":" << DumpPhdr(*phdr);
       switch (phdr->p_type) {
         case PT_DYNAMIC:
           LOG_IF(ERROR, dynamic_phdr_ != nullptr)
               << filename_ << " PT_DYNAMIC " << DumpPhdr(*dynamic_phdr_) << " "
               << DumpPhdr(*phdr);
-          dynamic_phdr_ = phdr;
+          dynamic_phdr_ = phdr.get();
           break;
         case PT_LOAD:
           // The first segment, which contains dynstr, is being mapped
@@ -175,6 +169,7 @@ class ElfParserImpl : public ElfParser {
         default:
           break;
       }
+      phdrs_.push_back(std::move(phdr));
     }
     return valid_;
   }
@@ -187,31 +182,31 @@ class ElfParserImpl : public ElfParser {
       return false;
     }
     for (int i = 0; i < ehdr_.e_shnum; ++i) {
-      Shdr* shdr = new Shdr;
-      if (read(fd_.fd(), reinterpret_cast<char*>(shdr), sizeof(Shdr)) !=
+      auto shdr = absl::make_unique<Shdr>();
+      if (read(fd_.fd(), reinterpret_cast<char*>(shdr.get()), sizeof(Shdr)) !=
           sizeof(Shdr)) {
         PLOG(ERROR) << "read shdr:" << i << " " << filename_;
         valid_ = false;
         return false;
       }
-      shdrs_.push_back(shdr);
       VLOG(1) << i << ":" << DumpShdr(*shdr);
       // TODO: This cannot handle ET_EXEC as this doesn't
       //               update text_offset_.
       switch (shdr->sh_type) {
         case SHT_STRTAB:
           // May have several STRTAB. Last one is ok?
-          strtab_shdr_ = shdr;
+          strtab_shdr_ = shdr.get();
           break;
         case SHT_DYNAMIC:
           LOG_IF(ERROR, dynamic_shdr_ != nullptr)
               << filename_ << " SHT_DYNAMIC " << DumpShdr(*dynamic_shdr_) << " "
               << DumpShdr(*shdr);
-          dynamic_shdr_ = shdr;
+          dynamic_shdr_ = shdr.get();
           break;
         default:
           break;
       }
+      shdrs_.push_back(std::move(shdr));
     }
     if (strtab_shdr_ != nullptr)
       ReadStrtab();
@@ -371,9 +366,9 @@ class ElfParserImpl : public ElfParser {
   bool valid_;
   bool use_program_header_;
   Ehdr ehdr_;
-  std::vector<Phdr*> phdrs_;
+  std::vector<std::unique_ptr<Phdr>> phdrs_;
   Phdr* dynamic_phdr_;
-  std::vector<Shdr*> shdrs_;
+  std::vector<std::unique_ptr<Shdr>> shdrs_;
   Shdr* strtab_shdr_;
   std::string strtab_;
   Shdr* dynamic_shdr_;
