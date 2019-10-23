@@ -164,7 +164,7 @@ $ gomacc clang++ -c foo.cc
 ```
 
 4. Build your product with `make -j100`, `ninja -j100` or larger -j.
-   Check http://localhost:8080 to see compiler\_proxy is actually working.
+   Check http://localhost:8088 to see compiler\_proxy is actually working.
 
 * You can use [autoninja](https://chromium.googlesource.com/chromium/tools/depot_tools.git/+/master/autoninja) in depot_tools instead of specifying gomacc manually.
 
