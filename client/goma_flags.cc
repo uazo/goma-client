@@ -159,8 +159,9 @@ GOMA_DEFINE_int32(NAMEDPIPE_WAIT_TIMEOUT_MS, 30000,
                   "Timeout(in milliseconds) to wait in ConnectNamedpipe.");
 #endif
 
-GOMA_DEFINE_bool(GOMACC_ENABLE_CRASH_DUMP, false,
-                 "True to store breakpad crash dump on gomacc.");
+GOMA_DEFINE_bool(GOMACC_ENABLE_CRASH_DUMP,
+                 true,
+                 "Deprecated: True to store breakpad crash dump on gomacc.");
 GOMA_DEFINE_bool(GOMACC_WRITE_LOG_FOR_TESTING, false,
                  "True to write log via glog.  Only for testing.");
 
@@ -483,8 +484,10 @@ GOMA_DEFINE_string(CTL_SCRIPT_NAME,
                    "latest updates in idle time and usually automatically "
                    "set by the script itself. You SHOULD NOT set this value "
                    "manually unless you know what you are doing.");
-GOMA_DEFINE_bool(COMPILER_PROXY_ENABLE_CRASH_DUMP, false,
-                 "True to store breakpad crash dump on compiler_proxy.");
+GOMA_DEFINE_bool(COMPILER_PROXY_ENABLE_CRASH_DUMP,
+                 true,
+                 "Deprecated: True to store breakpad crash dump on "
+                 "compiler_proxy.");
 
 // We keep this flag to provide future workarounds for subproc bugs.
 //

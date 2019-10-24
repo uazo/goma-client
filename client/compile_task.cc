@@ -1636,6 +1636,12 @@ void CompileTask::ProcessFinished(const std::string& msg) {
   LogCompilerOutput(trace_id_, "stderr", stderr_);
 
   fail_fallback_ = true;
+  // If we allow fallback, the result should be updated by the local run.
+  // We don't need to show remote failures in such a case. (b/120168939)
+  if (requester_env_.fallback()) {
+    resp_->mutable_result()->clear_stdout_buffer();
+    resp_->mutable_result()->clear_stderr_buffer();
+  }
   // TODO: active fail fallback only for http error?
   // b/36576025 b/36577821
   if (!service_->IncrementActiveFailFallbackTasks()) {

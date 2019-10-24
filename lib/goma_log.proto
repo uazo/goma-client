@@ -1,7 +1,6 @@
 // Copyright 2011 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 //
 // proto definitions for goma log.
 
@@ -9,7 +8,7 @@ syntax = "proto2";
 
 package devtools_goma;
 
-// NEXT ID TO USE: 94
+// NEXT ID TO USE: 95
 message ExecLog {
   enum AuthenticationType {
     NONE = 0;
@@ -45,6 +44,7 @@ message ExecLog {
   optional int32 task_id = 50;
   reserved 81;  // deprecated: use_case
   optional string build_id = 91;
+  optional string service_account_id = 94;
 
   optional string compiler_proxy_user_agent = 51;
 

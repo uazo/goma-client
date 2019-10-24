@@ -41,7 +41,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@1458b49a9e53b0db0ad63e8ef3156214f1473d87",
+     "https://boringssl.googlesource.com/boringssl@7f02881e96e51f1873afcf384d02f782b48967ca",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -65,8 +65,9 @@ deps = {
 
      # libFuzzer
      "client/third_party/libFuzzer/src":
-     Var("chromium_git") + "/chromium/llvm-project/llvm/lib/Fuzzer.git@" +
-         "9aa0bddeb6820f6e5d897da410e1e8a3f7fd4b8e",
+     Var("chromium_git") +
+         "/chromium/llvm-project/compiler-rt/lib/fuzzer.git@" +
+         "b9f51dc8c98065df0c8da13c051046f5bab833db",
 
      # abseil
      "client/third_party/abseil/src":

@@ -20,14 +20,6 @@ class VCCompilerInfoBuilderTest : public testing::Test {
                                               macro);
   }
 
-  int FindValue(const std::unordered_map<std::string, int>& map,
-                const std::string& key) {
-    const auto& it = map.find(key);
-    if (it == map.end())
-      return 0;
-    return it->second;
-  }
-
   std::string TestDir() {
     // This module is in out\Release.
     const std::string parent_dir = file::JoinPath(GetMyDirectory(), "..");

@@ -7,9 +7,9 @@
 #define DEVTOOLS_GOMA_CLIENT_MULTI_HTTP_RPC_H_
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/time/time.h"
 #include "basictypes.h"
 #include "http_rpc.h"
@@ -97,7 +97,7 @@ class MultiHttpRPC {
   ConditionVariable cond_;
   int num_multi_job_;  // number of jobs on-the-fly.
 
-  std::unordered_map<std::string, MultiJob*> pending_multi_jobs_;
+  absl::flat_hash_map<std::string, MultiJob*> pending_multi_jobs_;
   bool available_;
   std::vector<int> num_call_by_multi_;
   int num_call_by_req_num_;

@@ -586,8 +586,7 @@ bool LocalOutputCache::Lookup(const std::string& key,
   // Check cache entry first.
   {
     AUTO_SHARED_LOCK(lock, &entries_mu_);
-    auto it = entries_.find(key_hash);
-    if (it == entries_.end()) {
+    if (!entries_.contains(key_hash)) {
       stats_lookup_miss_.Add(1);
       return false;
     }

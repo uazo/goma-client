@@ -59,7 +59,7 @@ bool CppParser::PragmaOnceFileSet::Has(const std::string& file) const {
   if (files_.empty()) {
     return false;
   }
-  return files_.find(PathResolver::ResolvePath(file)) != files_.end();
+  return files_.contains(PathResolver::ResolvePath(file));
 }
 
 // CppParser -----------------------------------------------------------
@@ -826,7 +826,7 @@ bool CppParser::ProcessHasIncludeInternal(const ArrayTokenList& tokens,
 CppParser::Token CppParser::ProcessHasCheckMacro(
     const std::string& name,
     const ArrayTokenList& tokens,
-    const std::unordered_map<std::string, int>& has_check_macro) {
+    const absl::flat_hash_map<std::string, int>& has_check_macro) {
   GOMA_COUNTERZ("ProcessHasCheckMacro");
 
   if (tokens.empty()) {

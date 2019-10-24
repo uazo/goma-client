@@ -6,9 +6,9 @@
 #include "compiler_info_cache.h"
 
 #include <memory>
-#include <unordered_map>
-#include <unordered_set>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/memory/memory.h"
 #include "absl/time/clock.h"
 #include "absl/strings/str_join.h"
@@ -182,7 +182,7 @@ CompilerInfoState* CompilerInfoCache::Store(
   {
     auto found = keys_by_hash_.find(hash);
     if (found != keys_by_hash_.end()) {
-      std::unordered_set<std::string>* keys = found->second.get();
+      auto* keys = found->second.get();
       if (!keys->empty()) {
         const std::string& compiler_info_key = *keys->begin();
         state.reset(LookupUnlocked(
@@ -232,7 +232,7 @@ CompilerInfoState* CompilerInfoCache::Store(
   {
     auto p = keys_by_hash_.emplace(hash, nullptr);
     if (p.second) {
-      p.first->second = absl::make_unique<std::unordered_set<std::string>>();
+      p.first->second = absl::make_unique<absl::flat_hash_set<std::string>>();
     }
     p.first->second->insert(compiler_info_key);
     LOG(INFO) << "hash=" << hash << " key=" << compiler_info_key;
@@ -343,13 +343,13 @@ void CompilerInfoCache::DumpCompilersJSON(Json::Value* json) {
 
   Json::Value arr(Json::arrayValue);
 
-  std::unordered_set<std::string> used;
+  absl::flat_hash_set<std::string> used;
   for (const auto& info : compiler_info_) {
     const CompilerInfoData& data = info.second->info().data();
 
     // Check local_compiler_path so that the same compiler does not appear
     // twice.
-    if (used.count(data.local_compiler_path()) > 0) {
+    if (used.contains(data.local_compiler_path())) {
       continue;
     }
     used.insert(data.local_compiler_path());
@@ -517,8 +517,7 @@ bool CompilerInfoCache::Unmarshal(const CompilerInfoDataTable& table) {
 
 bool CompilerInfoCache::UnmarshalUnlocked(const CompilerInfoDataTable& table) {
   for (const auto& it : table.compiler_info_data()) {
-    std::unique_ptr<std::unordered_set<std::string>> keys(
-        new std::unordered_set<std::string>);
+    auto keys = absl::make_unique<absl::flat_hash_set<std::string>>();
     for (const auto& key : it.keys()) {
       keys->insert(key);
     }
@@ -568,7 +567,7 @@ bool CompilerInfoCache::Marshal(CompilerInfoDataTable* table) {
 }
 
 bool CompilerInfoCache::MarshalUnlocked(CompilerInfoDataTable* table) {
-  std::unordered_map<std::string, CompilerInfoDataTable::Entry*> by_hash;
+  absl::flat_hash_map<std::string, CompilerInfoDataTable::Entry*> by_hash;
   for (const auto& it : compiler_info_) {
     const std::string& info_key = it.first;
     CompilerInfoState* state = it.second;

@@ -10,11 +10,11 @@
 #include <deque>
 #include <memory>
 #include <string>
-#include <unordered_set>
 
 #include <AccCtrl.h>
 #include <Aclapi.h>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
 #include "lockhelper.h"
 #include "named_pipe_win.h"
@@ -92,11 +92,11 @@ class NamedPipeServer {
   ScopedFd flusher_done_;
 
   mutable Lock mu_;
-  std::unordered_set<Conn*> actives_ GUARDED_BY(mu_);
-  std::unordered_set<Conn*> watches_ GUARDED_BY(mu_);
+  absl::flat_hash_set<Conn*> actives_ GUARDED_BY(mu_);
+  absl::flat_hash_set<Conn*> watches_ GUARDED_BY(mu_);
   std::deque<Conn*> replies_ GUARDED_BY(mu_);
-  std::unordered_set<Conn*> finished_ GUARDED_BY(mu_);
-  std::unordered_set<Conn*> flushes_ GUARDED_BY(mu_);
+  absl::flat_hash_set<Conn*> finished_ GUARDED_BY(mu_);
+  absl::flat_hash_set<Conn*> flushes_ GUARDED_BY(mu_);
   bool shutting_down_ GUARDED_BY(mu_);
 };
 

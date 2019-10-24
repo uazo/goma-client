@@ -62,7 +62,7 @@ void AutoLockStats::TextReport(std::ostringstream* ss) {
 }
 
 void AutoLockStats::Report(std::ostringstream* ss,
-                           const std::unordered_set<std::string>& skip_names) {
+                           const absl::flat_hash_set<std::string>& skip_names) {
   (*ss) << "<html>"
         << "<script src=\"/static/jquery.min.js\"></script>"
         << "<script src=\"/static/compiler_proxy_contentionz_script.js\">"
@@ -88,7 +88,7 @@ void AutoLockStats::Report(std::ostringstream* ss,
     AutoLock lock(&mu_);
     for (size_t i = 0; i < stats_.size(); ++i) {
       AutoLockStat* stat = stats_[i].get();
-      if (skip_names.find(stat->name) != skip_names.end()) {
+      if (skip_names.contains(stat->name)) {
         continue;
       }
 

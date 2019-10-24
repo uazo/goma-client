@@ -1,8 +1,6 @@
 // Copyright 2012 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #ifndef DEVTOOLS_GOMA_CLIENT_SOCKET_POOL_H_
 #define DEVTOOLS_GOMA_CLIENT_SOCKET_POOL_H_
 
@@ -13,10 +11,10 @@
 
 #include <deque>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "basictypes.h"
@@ -65,7 +63,7 @@ class SocketPool : public SocketFactory {
     int ai_socktype;
     int ai_protocol;
     std::string name;
-    absl::optional<absl::Time> error_timestamp;
+    absl::Time error_timestamp;  // infinite-past if no error observed.
 
     const struct sockaddr* addr_ptr() const;
     void Invalidate();
@@ -88,7 +86,7 @@ class SocketPool : public SocketFactory {
   Errno InitializeUnlocked() EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Sets error_timetamp in AddrData for sock to |time|.
-  void SetErrorTimestampUnlocked(int sock, absl::optional<absl::Time> time);
+  void SetErrorTimestampUnlocked(int sock, absl::Time time);
 
   // This host:port is for means the address we will connect directly.
   // So, this can be either a destination address or a proxy address.
@@ -98,7 +96,7 @@ class SocketPool : public SocketFactory {
   mutable Lock mu_;
   std::vector<AddrData> addrs_;
   AddrData* current_addr_;  // point in addrs_, or NULL.
-  std::unordered_map<int, std::string> fd_addrs_;
+  absl::flat_hash_map<int, std::string> fd_addrs_;
   // TODO: use ScopedSocket. std::pair doesn't support movable yet?
   std::deque<std::pair<int, SimpleTimer>> socket_pool_;
 

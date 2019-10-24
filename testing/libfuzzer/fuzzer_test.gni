@@ -101,6 +101,20 @@ template("fuzzer_test") {
       test_deps += [ ":" + config_name ]
     }
 
+    # This is a hack to make fuzzer_teset targets automatically get the needed
+    # dependencies (To be exact, it is "buildtools/third_party:libc++" that
+    # fuzzers need, because we build fuzzers with our own customized libc++ by
+    # enabling use_custom_libcxx).
+    #
+    # What Chromium does is to make this dependency a default inside
+    # "executable".
+    # (see https://cs.chromium.org/chromium/src/build/config/BUILDCONFIG.gn?rcl=bcb8877&l=581)
+    # However, that requires some nontrivial changes to
+    # build/config/BUILD{CONFIG}.gn. Once we pull in Chromiums' build configs,
+    # we can deprecate the dependency here. Note that "test" and "fuzzer_test"
+    # are all "executable".
+    test_deps += [ "//build/config:fuzzer_test_deps" ]
+
     test(target_name) {
       forward_variables_from(invoker,
                              [

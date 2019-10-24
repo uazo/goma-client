@@ -11,10 +11,10 @@
 #include <memory>
 #include <string>
 #include <sstream>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "atomic_stats_counter.h"
@@ -121,6 +121,10 @@ class CompileService {
   const std::string& username() const { return username_; }
 
   const std::string& nodename() const { return nodename_; }
+
+  const std::string& service_account_id() const { return service_account_id_; }
+  void SetServiceAccountId(std::string account);
+
   absl::Time start_time() const { return start_time_; }
   const std::string& compiler_proxy_id_prefix() const {
     return compiler_proxy_id_prefix_;
@@ -441,7 +445,7 @@ class CompileService {
   int max_failed_tasks_;
   int max_long_tasks_;
   std::deque<CompileTask*> pending_tasks_;
-  std::unordered_set<CompileTask*> active_tasks_;
+  absl::flat_hash_set<CompileTask*> active_tasks_;
   std::deque<CompileTask*> finished_tasks_;
   std::deque<CompileTask*> failed_tasks_;
   // long_tasks_ is a heap compared by task's handler time.
@@ -450,10 +454,11 @@ class CompileService {
 
   // CompileTask's input that failed.
   mutable ReadWriteLock failed_inputs_mu_;
-  std::unordered_set<std::string> failed_inputs_ GUARDED_BY(failed_inputs_mu_);
+  absl::flat_hash_set<std::string> failed_inputs_ GUARDED_BY(failed_inputs_mu_);
 
   std::string username_;
   std::string nodename_;
+  std::string service_account_id_;
   absl::Time start_time_;
   std::string compiler_proxy_id_prefix_;
 
@@ -472,7 +477,7 @@ class CompileService {
 
   mutable Lock compiler_info_mu_;
   // key: key_cwd: value: a list of waiting param+closure.
-  std::unordered_map<std::string, CompilerInfoWaiterList*>
+  absl::flat_hash_map<std::string, CompilerInfoWaiterList*>
       compiler_info_waiters_ GUARDED_BY(compiler_info_mu_);
 
   std::unique_ptr<FileHashCache> file_hash_cache_;
@@ -516,23 +521,23 @@ class CompileService {
   std::string tmp_dir_;
 
   // key: "req_ver - resp_ver", value: count
-  std::unordered_map<std::string, int> command_version_mismatch_;
-  std::unordered_map<std::string, int> command_binary_hash_mismatch_;
+  absl::flat_hash_map<std::string, int> command_version_mismatch_;
+  absl::flat_hash_map<std::string, int> command_binary_hash_mismatch_;
 
   // key: "path hash", value: count
-  std::unordered_map<std::string, int> subprogram_mismatch_;
+  absl::flat_hash_map<std::string, int> subprogram_mismatch_;
 
   // key: error reason, value: pair<is_error, count>
-  std::unordered_map<std::string, std::pair<bool, int>> error_to_log_;
+  absl::flat_hash_map<std::string, std::pair<bool, int>> error_to_log_;
   // key: error reason, value: count
-  std::unordered_map<std::string, int> error_to_user_;
+  absl::flat_hash_map<std::string, int> error_to_user_;
 
   mutable ReadWriteLock compiler_mu_;
 
   // key: <gomacc_path>:<basename>:<cwd>:<local_path>
   //     if all path in <local_path> are absolute, "." is used for <cwd>.
   // value: (local_compiler_path, no_goma_local_path)
-  std::unordered_map<std::string, std::pair<std::string, std::string>>
+  absl::flat_hash_map<std::string, std::pair<std::string, std::string>>
       local_compiler_paths_ GUARDED_BY(compiler_mu_);
 
   int num_exec_request_ = 0;

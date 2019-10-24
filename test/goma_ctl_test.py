@@ -3,7 +3,6 @@
 # Copyright 2012 The Goma Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
 """Tests for goma_ctl."""
 
 from __future__ import print_function
@@ -134,6 +133,9 @@ class FakeGomaEnv(object):
 
   def CanAutoUpdate(self):
     return True
+
+  def CheckAuthConfig(self):
+    pass
 
   def CheckConfig(self):
     pass

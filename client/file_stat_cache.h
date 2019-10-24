@@ -8,10 +8,10 @@
 
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
 #include "basictypes.h"
 #include "file_stat.h"
 #include "lockhelper.h"
@@ -32,7 +32,7 @@ class GlobalFileStatCache {
 
  private:
   mutable ReadWriteLock mu_;
-  std::unordered_map<std::string, FileStat> file_stats_ GUARDED_BY(mu_);
+  absl::flat_hash_map<std::string, FileStat> file_stats_ GUARDED_BY(mu_);
 
   static GlobalFileStatCache* instance_;
 };
@@ -59,7 +59,7 @@ class FileStatCache {
   friend class DepsCacheTest;
 
  private:
-  typedef std::unordered_map<std::string, FileStat> FileStatMap;
+  typedef absl::flat_hash_map<std::string, FileStat> FileStatMap;
 
   bool is_acquired_;
   PlatformThreadId owner_thread_id_;

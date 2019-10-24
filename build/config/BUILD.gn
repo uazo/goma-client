@@ -62,6 +62,13 @@ group("exe_and_shlib_deps") {
   #}
 }
 
+# Dependencies that libFuzzer needs when using custom libc++
+group("fuzzer_test_deps") {
+  public_deps = [
+    ":common_deps",
+  ]
+}
+
 config("feature_flags") {
   defines = []
   if (is_asan) {

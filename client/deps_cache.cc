@@ -12,10 +12,10 @@
 #include <map>
 #include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
 #include "autolock_timer.h"
@@ -375,14 +375,14 @@ bool DepsCache::LoadGomaDeps() {
   LOG(INFO) << "Version matched.";
 
   // Load FilenameIdTable
-  std::unordered_set<FilenameIdTable::Id> valid_ids;
+  absl::flat_hash_set<FilenameIdTable::Id> valid_ids;
   if (!filename_id_table_.LoadFrom(goma_deps.filename_id_table(), &valid_ids)) {
     Clear();
     return false;
   }
 
   // Load DepsIdTable
-  std::unordered_map<FilenameIdTable::Id, std::pair<FileStat, std::string>>
+  absl::flat_hash_map<FilenameIdTable::Id, std::pair<FileStat, std::string>>
       deps_hash_id_map;
   {
     const GomaDepsIdTable& table = goma_deps.deps_id_table();
@@ -395,7 +395,7 @@ bool DepsCache::LoadGomaDeps() {
         return false;
       }
 
-      if (deps_hash_id_map.count(record.filename_id())) {
+      if (deps_hash_id_map.contains(record.filename_id())) {
         LOG(ERROR) << "DepsIdTable contains duplicated filename_id: "
                    << record.filename_id();
         Clear();
@@ -517,12 +517,12 @@ bool DepsCache::SaveGomaDeps() {
   //   FilenameIdTable::Id -> pair<FileStat, directive-hash>.
   // When we saw multiple DepsHashId for one FilenameIdTable::Id,
   // we choose the one whose mtime is the latest.
-  std::unordered_map<FilenameIdTable::Id, std::pair<FileStat, SHA256HashValue>>
+  absl::flat_hash_map<FilenameIdTable::Id, std::pair<FileStat, SHA256HashValue>>
       m;
   for (const auto& deps_table_entry : deps_table_) {
     for (const auto& deps_hash_id : deps_table_entry.second.deps_hash_ids) {
       FilenameIdTable::Id id = deps_hash_id.id;
-      if (!m.count(id) || m[id].first.mtime < deps_hash_id.file_stat.mtime) {
+      if (!m.contains(id) || m[id].first.mtime < deps_hash_id.file_stat.mtime) {
         m[id] =
             std::make_pair(deps_hash_id.file_stat, deps_hash_id.directive_hash);
       }

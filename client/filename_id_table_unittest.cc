@@ -9,6 +9,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/container/flat_hash_set.h"
 #include "prototmp/deps_cache_data.pb.h"
 
 namespace devtools_goma {
@@ -30,7 +31,7 @@ TEST(FilenameIdTableTest, SaveLoad) {
 
   EXPECT_EQ(FilenameIdTable::kInvalidId, table.ToId("a"));
 
-  std::unordered_set<FilenameIdTable::Id> valid_ids;
+  absl::flat_hash_set<FilenameIdTable::Id> valid_ids;
   table.LoadFrom(goma_table, &valid_ids);
 
   EXPECT_EQ(id_a, table.ToId("a"));
@@ -57,7 +58,7 @@ TEST(FilenameIdTableTest, LoadFailedDuplicateId) {
   record->set_filename("b");
   record->set_filename_id(0);
 
-  std::unordered_set<FilenameIdTable::Id> valid_ids;
+  absl::flat_hash_set<FilenameIdTable::Id> valid_ids;
   EXPECT_FALSE(table.LoadFrom(goma_table, &valid_ids));
 
   EXPECT_THAT(valid_ids, ::testing::IsEmpty());
@@ -75,7 +76,7 @@ TEST(FilenameIdTableTest, LoadFailedDuplicateFilename) {
   record->set_filename("a");
   record->set_filename_id(1);
 
-  std::unordered_set<FilenameIdTable::Id> valid_ids;
+  absl::flat_hash_set<FilenameIdTable::Id> valid_ids;
   EXPECT_FALSE(table.LoadFrom(goma_table, &valid_ids));
 
   EXPECT_THAT(valid_ids, ::testing::IsEmpty());

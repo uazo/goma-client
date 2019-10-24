@@ -7,8 +7,8 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/ascii.h"
 #include "compiler_specific.h"
@@ -115,7 +115,7 @@ std::unique_ptr<CppDirective> ReadObjectMacro(const std::string& name,
 
 std::unique_ptr<CppDirective> ReadFunctionMacro(const std::string& name,
                                                 CppInputStream* stream) {
-  std::unordered_map<std::string, size_t> params;
+  absl::flat_hash_map<std::string, size_t> params;
   size_t param_index = 0;
   bool is_vararg = false;
   for (;;) {

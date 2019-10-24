@@ -5,7 +5,7 @@
 #ifndef DEVTOOLS_GOMA_CLIENT_CXX_INCLUDE_PROCESSOR_CPP_MACRO_SET_H_
 #define DEVTOOLS_GOMA_CLIENT_CXX_INCLUDE_PROCESSOR_CPP_MACRO_SET_H_
 
-#include <unordered_set>
+#include "absl/container/flat_hash_set.h"
 
 namespace devtools_goma {
 
@@ -16,14 +16,14 @@ class MacroSet {
   MacroSet() {}
   void Set(const Macro* m) { macros_.insert(m); }
   void Remove(const Macro* m) { macros_.erase(m); }
-  bool Has(const Macro* m) const { return macros_.find(m) != macros_.end(); }
+  bool Has(const Macro* m) const { return macros_.contains(m); }
 
   void Union(const MacroSet& other) {
     macros_.insert(other.macros_.begin(), other.macros_.end());
   }
 
   void Intersection(const MacroSet& other) {
-    std::unordered_set<const Macro*> intersection;
+    absl::flat_hash_set<const Macro*> intersection;
 
     for (const Macro* x : macros_) {
       if (other.Has(x)) {
@@ -37,7 +37,7 @@ class MacroSet {
   bool empty() const { return macros_.empty(); }
 
  private:
-  std::unordered_set<const Macro*> macros_;
+  absl::flat_hash_set<const Macro*> macros_;
 };
 
 }  // namespace devtools_goma

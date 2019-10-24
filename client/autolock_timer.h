@@ -9,9 +9,9 @@
 #include <memory>
 #include <sstream>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/time/time.h"
 #include "basictypes.h"
 #include "lockhelper.h"
@@ -77,7 +77,7 @@ class AutoLockStats {
   AutoLockStat* NewStat(const char* name);
 
   void Report(std::ostringstream* ss,
-              const std::unordered_set<std::string>& skip_names);
+              const absl::flat_hash_set<std::string>& skip_names);
   void TextReport(std::ostringstream* ss);
 
  private:

@@ -6,8 +6,8 @@
 #define DEVTOOLS_GOMA_CLIENT_TASK_INPUT_FILE_TASK_H_
 
 #include <memory>
-#include <unordered_map>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/memory/memory.h"
 #include "absl/time/time.h"
 #include "base/lockhelper.h"
@@ -138,8 +138,8 @@ class InputFileTask {
   static absl::once_flag init_once_;
 
   static Lock global_mu_;
-  static std::unordered_map<std::string, InputFileTask*>* task_by_filename_
-      GUARDED_BY(global_mu_);
+  using FileToTaskMap = absl::flat_hash_map<std::string, InputFileTask*>;
+  static FileToTaskMap* task_by_filename_ GUARDED_BY(global_mu_);
 };
 
 }  // namespace devtools_goma

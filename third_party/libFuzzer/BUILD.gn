@@ -14,19 +14,28 @@ source_set("libfuzzer") {
 
   sources = [
     "src/FuzzerCrossOver.cpp",
+    "src/FuzzerDataFlowTrace.cpp",
     "src/FuzzerDriver.cpp",
     "src/FuzzerExtFunctionsDlsym.cpp",
     "src/FuzzerExtFunctionsWeak.cpp",
+    "src/FuzzerExtFunctionsWindows.cpp",
+    "src/FuzzerExtraCounters.cpp",
+    "src/FuzzerFork.cpp",
     "src/FuzzerIO.cpp",
+    "src/FuzzerIOPosix.cpp",
+    "src/FuzzerIOWindows.cpp",
     "src/FuzzerLoop.cpp",
     "src/FuzzerMain.cpp",
+    "src/FuzzerMerge.cpp",
     "src/FuzzerMutate.cpp",
     "src/FuzzerSHA1.cpp",
     "src/FuzzerTracePC.cpp",
-    "src/FuzzerTraceState.cpp",
     "src/FuzzerUtil.cpp",
     "src/FuzzerUtilDarwin.cpp",
+    "src/FuzzerUtilFuchsia.cpp",
     "src/FuzzerUtilLinux.cpp",
+    "src/FuzzerUtilPosix.cpp",
+    "src/FuzzerUtilWindows.cpp",
   ]
 }
 

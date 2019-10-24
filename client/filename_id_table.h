@@ -8,9 +8,9 @@
 
 #include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "autolock_timer.h"
 
 namespace devtools_goma {
@@ -36,7 +36,7 @@ class FilenameIdTable {
   // entry etc.), false will be returned.
   // |valid_ids| will contain all the valid ids if not null.
   bool LoadFrom(const GomaFilenameIdTable& table,
-                std::unordered_set<FilenameIdTable::Id>* valid_ids);
+                absl::flat_hash_set<FilenameIdTable::Id>* valid_ids);
   // Saves the data to |table|. Only entry that has |ids| will be saved.
   void SaveTo(const std::set<Id>& ids, GomaFilenameIdTable* table) const;
 
@@ -66,8 +66,8 @@ class FilenameIdTable {
 
   mutable ReadWriteLock mu_;
   Id next_available_id_ GUARDED_BY(mu_);
-  std::unordered_map<Id, std::string> map_to_filename_ GUARDED_BY(mu_);
-  std::unordered_map<std::string, Id> map_to_id_ GUARDED_BY(mu_);
+  absl::flat_hash_map<Id, std::string> map_to_filename_ GUARDED_BY(mu_);
+  absl::flat_hash_map<std::string, Id> map_to_id_ GUARDED_BY(mu_);
 
   DISALLOW_COPY_AND_ASSIGN(FilenameIdTable);
 };
