@@ -68,7 +68,8 @@ _TIMESTAMP_FORMAT = '%Y/%m/%d %H:%M:%S'
 _CRASH_SERVER = 'https://clients2.google.com/cr/report'
 _STAGING_CRASH_SERVER = 'https://clients2.google.com/cr/staging_report'
 
-def _IsGomaFlagTrue(flag_name, default=False):
+
+def _IsFlagTrue(flag_name, default=False):
   """Return true when the given flag is true.
 
   Note:
@@ -76,13 +77,13 @@ def _IsGomaFlagTrue(flag_name, default=False):
   Any values that do not match _TRUE_PATTERN are False.
 
   Args:
-    flag_name: name of a GOMA flag without GOMA_ prefix.
+    flag_name: name of an environment variable.
     default: default return value if the flag is not set.
 
   Returns:
     True if the flag is true.  Otherwise False.
   """
-  flag_value = os.environ.get('GOMA_%s' % flag_name, '')
+  flag_value = os.environ.get(flag_name, '')
   if not flag_value:
     return default
 
@@ -1168,7 +1169,7 @@ class GomaDriver(object):
       version = 'ver %d %s' % (self._version, version)
 
     send_user_info_default = False
-    if _IsGomaFlagTrue('SEND_USER_INFO', default=send_user_info_default):
+    if _IsFlagTrue('GOMA_SEND_USER_INFO', default=send_user_info_default):
       guid = '%s@%s' % (self._env.GetUsername(), _GetHostname())
     else:
       guid = None
@@ -1387,6 +1388,8 @@ class GomaEnv(object):
     Raises:
       ConfigError if `goma_auth.py config` failed.
     """
+    if _IsFlagTrue('GOMACTL_SKIP_AUTH'):
+      return
     if 'GOMA_SERVICE_ACCOUNT_JSON_FILE' in os.environ:
       return
     if 'GOMA_GCE_SERVICE_ACCOUNT' in os.environ:
@@ -1923,11 +1926,11 @@ class GomaEnv(object):
     for flag_name, default_value in self._DEFAULT_ENV:
       _SetGomaFlagDefaultValueIfEmpty(flag_name, default_value)
 
-    if not _IsGomaFlagTrue('USE_SSL'):
+    if not _IsFlagTrue('GOMA_USE_SSL'):
       for flag_name, default_value in _DEFAULT_NO_SSL_ENV:
         _SetGomaFlagDefaultValueIfEmpty(flag_name, default_value)
 
-    if _IsGomaFlagTrue('USE_SSL'):
+    if _IsFlagTrue('GOMA_USE_SSL'):
       for flag_name, default_value in self._DEFAULT_SSL_ENV:
         _SetGomaFlagDefaultValueIfEmpty(flag_name, default_value)
 
@@ -2462,7 +2465,7 @@ class GomaEnvPosix(GomaEnv):
     return image_name in output
 
   def _ExecCompilerProxy(self):
-    if _IsGomaFlagTrue('COMPILER_PROXY_DAEMON_MODE'):
+    if _IsFlagTrue('GOMA_COMPILER_PROXY_DAEMON_MODE'):
       self._is_daemon_mode = True
     return PopenWithCheck([self._compiler_proxy_binary],
                           stdout=open(os.devnull, "w"),
