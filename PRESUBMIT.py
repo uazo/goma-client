@@ -93,6 +93,12 @@ def CheckChangeOnUpload(input_api, output_api):
         '.style.yapf',
     )
     return x.LocalPath() not in third_party_files
+
+  def license_header_filter(x):
+    if x.LocalPath().endswith(".md"):
+      return False
+    return source_file_filter(x)
+
   results = []
   results += input_api.canned_checks.CheckChangeHasDescription(
       input_api, output_api)
@@ -114,7 +120,7 @@ def CheckChangeOnUpload(input_api, output_api):
       r'(Copyright 20\d\d Google LLC.|' +
       'Copyright.*The Chromium Authors. All rights reserved.|' +
       'Copyright.*The Goma Authors. All rights reserved.)',
-      source_file_filter=source_file_filter)
+      source_file_filter=license_header_filter)
   results += input_api.canned_checks.CheckDoNotSubmit(
       input_api, output_api)
   results += input_api.canned_checks.RunPylint(
@@ -133,5 +139,3 @@ def CheckChangeOnUpload(input_api, output_api):
   results += input_api.canned_checks.CheckGNFormatted(input_api, output_api)
   results += CheckGNGenChecked(input_api, output_api)
   return results
-
-
