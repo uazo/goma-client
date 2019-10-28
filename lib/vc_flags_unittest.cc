@@ -16,6 +16,7 @@
 #include "base/path.h"
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "lib/compiler_flags_parser.h"
 #include "lib/file_helper.h"
@@ -1751,6 +1752,41 @@ TEST_F(VCFlagsTest, CrWinClangCompileFlag) {
   EXPECT_EQ("clang-cl", flags->compiler_name());
   EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
   EXPECT_EQ("d:\\tmp", flags->cwd());
+}
+
+TEST_F(VCFlagsTest, FTimeTrace) {
+  std::vector<std::string> common_args;
+  common_args.push_back("clang-cl.exe");
+  common_args.push_back("-ftime-trace");
+
+  const struct {
+    std::vector<std::string> extra_args;
+    std::string expected_time_trace_output;
+    unsigned expected_output_count;
+  } kTestCases[] = {
+      {{"-c", "foo.cc"}, "foo.json", 2U},
+      {{"-c", "foo.cc", "-o", "foo.obj"}, "foo.json", 2U},
+      {{"-c", "foo.cc", "-o", "bar.obj"}, "bar.json", 2U},
+      {{"-c", "foo.cc", "-o", "bar\\grok.obj"}, "bar\\grok.json", 2U},
+      {{"-c", "foo.cc", "-o", "..\\..\\bar\\grok.obj"},
+       "..\\..\\bar\\grok.json",
+       2U},
+  };
+
+  for (const auto& tc : kTestCases) {
+    std::vector<std::string> args = common_args;
+    args.insert(std::end(args), std::begin(tc.extra_args),
+                std::end(tc.extra_args));
+
+    std::unique_ptr<CompilerFlags> flags(
+        CompilerFlagsParser::MustNew(args, "d:\\tmp"));
+
+    EXPECT_EQ(args, flags->args());
+    EXPECT_EQ(tc.expected_output_count, flags->output_files().size());
+
+    EXPECT_THAT(flags->output_files(),
+                ::testing::Contains(tc.expected_time_trace_output));
+  }
 }
 
 }  // namespace devtools_goma

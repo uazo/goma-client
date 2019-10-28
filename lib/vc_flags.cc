@@ -90,7 +90,8 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
       is_cplusplus_(true),
       ignore_stdinc_(false),
       has_Brepro_(false),
-      require_mspdbserv_(false) {
+      require_mspdbserv_(false),
+      has_ftime_trace_(false) {
   bool result =
       ExpandArgs(cwd, args, &expanded_args_, &optional_input_filenames_);
   if (!result) {
@@ -208,6 +209,8 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     flag_hyphen_target->SetOutput(&compiler_info_flags_);
 
     parser.AddBoolFlag("w")->SetOutput(&compiler_info_flags_);
+
+    parser.AddBoolFlag("ftime-trace")->SetSeenOutput(&has_ftime_trace_);
 
     // Make these understood.
     parser.AddBoolFlag(
@@ -327,6 +330,10 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     }
   }
 
+  if (has_ftime_trace_) {
+    compiler_info_flags_.push_back("-ftime-trace");
+  }
+
   std::string new_extension = ".obj";
   std::string force_output;
   if (flag_Fo->seen())
@@ -352,8 +359,18 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     }
 
     if (!force_output.empty()) {
-      output_files_.push_back(ComposeOutputFilePath(
-          input_filenames_[0], force_output, new_extension));
+      std::string of = ComposeOutputFilePath(input_filenames_[0], force_output,
+                                             new_extension);
+      output_files_.push_back(of);
+
+      if (has_ftime_trace_) {
+        size_t ext_start = of.rfind('.');
+        if (ext_start != std::string::npos) {
+          output_files_.push_back(of.substr(0, ext_start) + ".json");
+        } else {
+          output_files_.push_back(of + ".json");
+        }
+      }
     }
     if (!output_files_.empty()) {
       return;
@@ -361,8 +378,18 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
   }
 
   for (const auto& input_filename : input_filenames_) {
-    output_files_.push_back(
-        ComposeOutputFilePath(input_filename, force_output, new_extension));
+    std::string of =
+        ComposeOutputFilePath(input_filename, force_output, new_extension);
+    output_files_.push_back(of);
+
+    if (has_ftime_trace_) {
+      size_t ext_start = of.rfind('.');
+      if (ext_start != std::string::npos) {
+        output_files_.push_back(of.substr(0, ext_start) + ".json");
+      } else {
+        output_files_.push_back(of + ".json");
+      }
+    }
   }
 }
 

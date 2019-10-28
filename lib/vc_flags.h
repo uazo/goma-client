@@ -79,6 +79,7 @@ class VCFlags : public CxxFlags {
   bool require_mspdbserv_;
   std::string resource_dir_;
   std::string implicit_macros_;
+  bool has_ftime_trace_;
 };
 
 }  // namespace devtools_goma
