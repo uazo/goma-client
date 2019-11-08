@@ -9,9 +9,11 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/synchronization/mutex.h"
 #include "absl/time/time.h"
 #include "basictypes.h"
 #include "lockhelper.h"
@@ -130,6 +132,40 @@ class ReadWriteLockAcquireExclusiveStrategy {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ReadWriteLockAcquireExclusiveStrategy);
 };
 
+class AbslMutexAcquireSharedStrategy {
+ public:
+  static void Acquire(absl::Mutex* lock) SHARED_LOCK_FUNCTION(lock) {
+    lock->ReaderLock();
+  }
+
+  static void Release(absl::Mutex* lock) UNLOCK_FUNCTION(lock) {
+    lock->ReaderUnlock();
+  }
+
+  AbslMutexAcquireSharedStrategy() = delete;
+  AbslMutexAcquireSharedStrategy(const AbslMutexAcquireSharedStrategy&) =
+      delete;
+  AbslMutexAcquireSharedStrategy& operator=(
+      const AbslMutexAcquireSharedStrategy&) = delete;
+};
+
+class AbslMutexAcquireExclusiveStrategy {
+ public:
+  static void Acquire(absl::Mutex* lock) EXCLUSIVE_LOCK_FUNCTION(lock) {
+    lock->Lock();
+  }
+
+  static void Release(absl::Mutex* lock) UNLOCK_FUNCTION(lock) {
+    lock->Unlock();
+  }
+
+  AbslMutexAcquireExclusiveStrategy() = delete;
+  AbslMutexAcquireExclusiveStrategy(const AbslMutexAcquireExclusiveStrategy&) =
+      delete;
+  AbslMutexAcquireExclusiveStrategy& operator=(
+      const AbslMutexAcquireExclusiveStrategy&) = delete;
+};
+
 template<typename LockType, typename LockAcquireStrategy>
 class AutoLockTimerBase {
  public:
@@ -176,6 +212,17 @@ class SCOPED_LOCKABLE AutoLockTimer
   }
 };
 
+class SCOPED_LOCKABLE AutoAbslMutexTimer
+    : private AutoLockTimerBase<absl::Mutex,
+                                AbslMutexAcquireExclusiveStrategy> {
+ public:
+  AutoAbslMutexTimer(absl::Mutex* lock, AutoLockStat* statp)
+      EXCLUSIVE_LOCK_FUNCTION(lock)
+      : AutoLockTimerBase(lock, statp) {}
+
+  ~AutoAbslMutexTimer() UNLOCK_FUNCTION() {}
+};
+
 class SCOPED_LOCKABLE AutoReadWriteLockSharedTimer
     : private AutoLockTimerBase<ReadWriteLock,
                                 ReadWriteLockAcquireSharedStrategy> {
@@ -201,37 +248,135 @@ class SCOPED_LOCKABLE AutoReadWriteLockExclusiveTimer
   ~AutoReadWriteLockExclusiveTimer() UNLOCK_FUNCTION() {}
 };
 
+class SCOPED_LOCKABLE AutoAbslMutexSharedTimer
+    : private AutoLockTimerBase<absl::Mutex, AbslMutexAcquireSharedStrategy> {
+ public:
+  AutoAbslMutexSharedTimer(absl::Mutex* lock, AutoLockStat* statp)
+      SHARED_LOCK_FUNCTION(lock)
+      : AutoLockTimerBase(lock, statp) {}
+
+  ~AutoAbslMutexSharedTimer() UNLOCK_FUNCTION() {}
+};
+
+class SCOPED_LOCKABLE AutoAbslMutexExclusiveTimer
+    : private AutoLockTimerBase<absl::Mutex,
+                                AbslMutexAcquireExclusiveStrategy> {
+ public:
+  AutoAbslMutexExclusiveTimer(absl::Mutex* lock, AutoLockStat* statp)
+      EXCLUSIVE_LOCK_FUNCTION(lock)
+      : AutoLockTimerBase(lock, statp) {}
+
+  ~AutoAbslMutexExclusiveTimer() UNLOCK_FUNCTION() {}
+};
+
+namespace internal {
+
+template <typename T>
+using DecayPtr =
+    typename std::decay<typename std::remove_pointer<T>::type>::type;
+
+template <typename T>
+struct AutoLockTrait;
+
+template <typename T>
+struct AutoRwLockTrait;
+
+#ifdef NO_AUTOLOCK_STAT
+template <>
+struct AutoLockTrait<Lock> {
+  using Type = AutoLock;
+};
+
+template <>
+struct AutoLockTrait<absl::Mutex> {
+  using Type = absl::MutexLock;
+};
+
+template <>
+struct AutoRwLockTrait<ReadWriteLock> {
+  using Shared = AutoSharedLock;
+  using Exclusive = AutoExclusiveLock;
+};
+
+template <>
+struct AutoRwLockTrait<absl::Mutex> {
+  using Shared = absl::ReaderMutexLock;
+  using Exclusive = absl::MutexLock;
+};
+#else
+template <>
+struct AutoLockTrait<Lock> {
+  using Type = AutoLockTimer;
+};
+
+template <>
+struct AutoLockTrait<absl::Mutex> {
+  using Type = AutoAbslMutexTimer;
+};
+
+template <>
+struct AutoRwLockTrait<ReadWriteLock> {
+  using Shared = AutoReadWriteLockSharedTimer;
+  using Exclusive = AutoReadWriteLockExclusiveTimer;
+};
+
+template <>
+struct AutoRwLockTrait<absl::Mutex> {
+  using Shared = AutoAbslMutexSharedTimer;
+  using Exclusive = AutoAbslMutexExclusiveTimer;
+};
+#endif  // NO_AUTOLOCK_STAT
+
+template <typename T>
+using GetAutoLockType = typename AutoLockTrait<DecayPtr<T>>::Type;
+
+template <typename T>
+using GetAutoRwLockSharedType = typename AutoRwLockTrait<DecayPtr<T>>::Shared;
+
+template <typename T>
+using GetAutoRwLockExclusiveType =
+    typename AutoRwLockTrait<DecayPtr<T>>::Exclusive;
+
+}  // namespace internal
+
 #define GOMA_AUTOLOCK_TIMER_STRINGFY(i) #i
 #define GOMA_AUTOLOCK_TIMER_STR(i) GOMA_AUTOLOCK_TIMER_STRINGFY(i)
 // #define NO_AUTOLOCK_STAT
 #ifdef NO_AUTOLOCK_STAT
-#define AUTOLOCK(lock, mu) AutoLock lock(mu)
-#define AUTOLOCK_WITH_STAT(lock, mu, statp) AutoLock lock(mu)
-#define AUTO_SHARED_LOCK(lock, rwlock) AutoSharedLock lock(rwlock)
-#define AUTO_EXCLUSIVE_LOCK(lock, rwlock) AutoExclusiveLock lock(rwlock)
+#define AUTOLOCK(lock, mu) internal::GetAutoLockType<decltype(mu)> lock(mu)
+#define AUTOLOCK_WITH_STAT(lock, mu, statp) \
+  internal::GetAutoLockType<decltype(mu)> lock(mu)
+#define AUTO_SHARED_LOCK(lock, rwlock) \
+  internal::GetAutoRwLockSharedType<decltype(rwlock)> lock(rwlock)
+#define AUTO_EXCLUSIVE_LOCK(lock, rwlock) \
+  internal::GetAutoRwLockExclusiveType<decltype(rwlock)> lock(rwlock)
 #else
-#define AUTOLOCK(lock, mu)                                              \
-  static AutoLockStat* auto_lock_stat_for_the_source_location =         \
-      g_auto_lock_stats ? g_auto_lock_stats->NewStat(                   \
-          __FILE__ ":" GOMA_AUTOLOCK_TIMER_STR(__LINE__) "(" #mu ")") : \
-      NULL;                                                             \
-  AutoLockTimer lock(mu, auto_lock_stat_for_the_source_location);
+#define AUTOLOCK(lock, mu)                                                  \
+  static AutoLockStat* auto_lock_stat_for_the_source_location =             \
+      g_auto_lock_stats                                                     \
+          ? g_auto_lock_stats->NewStat(                                     \
+                __FILE__ ":" GOMA_AUTOLOCK_TIMER_STR(__LINE__) "(" #mu ")") \
+          : nullptr;                                                        \
+  internal::GetAutoLockType<decltype(mu)> lock(                             \
+      mu, auto_lock_stat_for_the_source_location);
 
-#define AUTOLOCK_WITH_STAT(lock, mu, statp)                             \
-  AutoLockTimer lock(mu, statp);
-#define AUTO_SHARED_LOCK(lock, rwlock)                                  \
-  static AutoLockStat* auto_lock_stat_for_the_source_location =         \
-      g_auto_lock_stats ? g_auto_lock_stats->NewStat(                   \
-          __FILE__ ":" GOMA_AUTOLOCK_TIMER_STR(__LINE__) "(" #rwlock ":r)") : \
-      NULL;                                                             \
-  AutoReadWriteLockSharedTimer lock(                                    \
+#define AUTOLOCK_WITH_STAT(lock, mu, statp) \
+  internal::GetAutoLockType<decltype(mu)> lock(mu, statp);
+#define AUTO_SHARED_LOCK(lock, rwlock)                                       \
+  static AutoLockStat* auto_lock_stat_for_the_source_location =              \
+      g_auto_lock_stats                                                      \
+          ? g_auto_lock_stats->NewStat(__FILE__ ":" GOMA_AUTOLOCK_TIMER_STR( \
+                __LINE__) "(" #rwlock ":r)")                                 \
+          : nullptr;                                                         \
+  internal::GetAutoRwLockSharedType<decltype(rwlock)> lock(                  \
       rwlock, auto_lock_stat_for_the_source_location);
-#define AUTO_EXCLUSIVE_LOCK(lock, rwlock)                               \
-  static AutoLockStat* auto_lock_stat_for_the_source_location =         \
-      g_auto_lock_stats ? g_auto_lock_stats->NewStat(                   \
-          __FILE__ ":" GOMA_AUTOLOCK_TIMER_STR(__LINE__) "(" #rwlock ":w)") : \
-      NULL;                                                             \
-  AutoReadWriteLockExclusiveTimer lock(                                 \
+#define AUTO_EXCLUSIVE_LOCK(lock, rwlock)                                    \
+  static AutoLockStat* auto_lock_stat_for_the_source_location =              \
+      g_auto_lock_stats                                                      \
+          ? g_auto_lock_stats->NewStat(__FILE__ ":" GOMA_AUTOLOCK_TIMER_STR( \
+                __LINE__) "(" #rwlock ":w)")                                 \
+          : nullptr;                                                         \
+  internal::GetAutoRwLockExclusiveType<decltype(rwlock)> lock(               \
       rwlock, auto_lock_stat_for_the_source_location);
 #endif  // NO_AUTOLOCK_STAT
 

@@ -59,6 +59,18 @@
 
 namespace devtools_goma {
 
+namespace {
+
+// Any closures higher than this priority (i.e. PRIORITY_IMMEDIATE)
+// can be executed before SocketDescriptor operations.
+// Especially, you should not use higher priority than this after
+// StopRead/StopWrite. Otherwise, you may cause use-after-free.
+// To tell the truth, since SocketDescriptor checks the situation,
+// the program crashes with FATAL instead of use-after-free.
+constexpr auto kSocketDescriptorPriority = WorkerThread::PRIORITY_HIGH;
+
+}  // namespace
+
 // TODO: make it flag?
 constexpr absl::Duration kDefaultTimeout = absl::Minutes(15);
 
@@ -525,9 +537,8 @@ void ThreadpoolHttpServer::RequestFromSocket::Start() {
   stat_.waiting_time = stat_.timer.GetDuration();
   stat_.timer.Start();
   thread_id_ = wm_->GetCurrentThreadId();
-  socket_descriptor_ =
-      wm_->RegisterSocketDescriptor(std::move(sock_),
-                                    WorkerThread::PRIORITY_HIGH);
+  socket_descriptor_ = wm_->RegisterSocketDescriptor(std::move(sock_),
+                                                     kSocketDescriptorPriority);
 
   socket_descriptor_->NotifyWhenReadable(NewPermanentCallback(
       this, &ThreadpoolHttpServer::RequestFromSocket::DoRead));
@@ -543,14 +554,12 @@ void ThreadpoolHttpServer::RequestFromSocket::NotifyWhenClosed(
   CHECK(callback != nullptr);
   CHECK(read_finished_);
   wm_->RunClosureInThread(
-      FROM_HERE,
-      thread_id_,
+      FROM_HERE, thread_id_,
       NewCallback(
           this,
           &ThreadpoolHttpServer::RequestFromSocket::NotifyWhenClosedInternal,
-          wm_->GetCurrentThreadId(),
-          callback),
-      WorkerThread::PRIORITY_HIGH);
+          wm_->GetCurrentThreadId(), callback),
+      kSocketDescriptorPriority);
 }
 
 void ThreadpoolHttpServer::RequestFromSocket::NotifyWhenClosedInternal(
@@ -599,7 +608,7 @@ void ThreadpoolHttpServer::RequestFromSocket::DoRead() {
         FROM_HERE, thread_id_,
         NewCallback(this,
                     &ThreadpoolHttpServer::RequestFromSocket::DoCheckClosed),
-        WorkerThread::PRIORITY_IMMEDIATE);
+        kSocketDescriptorPriority);
     return;
   }
   request_len_ += read_size;
@@ -615,11 +624,10 @@ void ThreadpoolHttpServer::RequestFromSocket::DoRead() {
       socket_descriptor_->StopRead();
       read_finished_ = true;
       wm_->RunClosureInThread(
-          FROM_HERE,
-          thread_id_,
-          NewCallback(
-              this, &ThreadpoolHttpServer::RequestFromSocket::ReadFinished),
-          WorkerThread::PRIORITY_IMMEDIATE);
+          FROM_HERE, thread_id_,
+          NewCallback(this,
+                      &ThreadpoolHttpServer::RequestFromSocket::ReadFinished),
+          kSocketDescriptorPriority);
       return;
     }
     if (request_len_ < request_offset_ + request_content_length_) {
@@ -633,11 +641,10 @@ void ThreadpoolHttpServer::RequestFromSocket::DoRead() {
       read_finished_ = true;
       parsed_valid_http_request_ = true;
       wm_->RunClosureInThread(
-          FROM_HERE,
-          thread_id_,
-          NewCallback(
-              this, &ThreadpoolHttpServer::RequestFromSocket::ReadFinished),
-          WorkerThread::PRIORITY_IMMEDIATE);
+          FROM_HERE, thread_id_,
+          NewCallback(this,
+                      &ThreadpoolHttpServer::RequestFromSocket::ReadFinished),
+          kSocketDescriptorPriority);
     }
   }
 }
@@ -655,7 +662,7 @@ void ThreadpoolHttpServer::RequestFromSocket::DoWrite() {
     wm_->RunClosureInThread(
         FROM_HERE, thread_id_,
         NewCallback(this, &ThreadpoolHttpServer::RequestFromSocket::Finish),
-        WorkerThread::PRIORITY_IMMEDIATE);
+        kSocketDescriptorPriority);
     return;
   }
   response_written_ += write_size;
@@ -663,11 +670,10 @@ void ThreadpoolHttpServer::RequestFromSocket::DoWrite() {
     socket_descriptor_->StopWrite();
     stat_.write_resp_time = stat_.timer.GetDuration();
     wm_->RunClosureInThread(
-        FROM_HERE,
-        thread_id_,
-        NewCallback(
-            this, &ThreadpoolHttpServer::RequestFromSocket::WriteFinished),
-        WorkerThread::PRIORITY_IMMEDIATE);
+        FROM_HERE, thread_id_,
+        NewCallback(this,
+                    &ThreadpoolHttpServer::RequestFromSocket::WriteFinished),
+        kSocketDescriptorPriority);
   }
 }
 
@@ -684,7 +690,7 @@ void ThreadpoolHttpServer::RequestFromSocket::DoTimeout() {
   wm_->RunClosureInThread(
       FROM_HERE, thread_id_,
       NewCallback(this, &ThreadpoolHttpServer::RequestFromSocket::Finish),
-      WorkerThread::PRIORITY_IMMEDIATE);
+      kSocketDescriptorPriority);
 }
 
 void ThreadpoolHttpServer::RequestFromSocket::DoCheckClosed() {
@@ -696,11 +702,9 @@ void ThreadpoolHttpServer::RequestFromSocket::DoCheckClosed() {
     PLOG(WARNING) << "readable after request? fd=" << socket_descriptor_->fd();
   }
   wm_->RunClosureInThread(
-      FROM_HERE,
-      thread_id_,
-      NewCallback(
-          this, &ThreadpoolHttpServer::RequestFromSocket::DoClosed),
-      WorkerThread::PRIORITY_IMMEDIATE);
+      FROM_HERE, thread_id_,
+      NewCallback(this, &ThreadpoolHttpServer::RequestFromSocket::DoClosed),
+      kSocketDescriptorPriority);
 }
 
 void ThreadpoolHttpServer::RequestFromSocket::DoClosed() {
@@ -709,6 +713,10 @@ void ThreadpoolHttpServer::RequestFromSocket::DoClosed() {
   OneshotClosure* callback = closed_callback_;
   closed_callback_ = nullptr;
   if (callback != nullptr) {
+    // TODO: confirm why this is high.
+    //                    Since this is initiated by DoCheckClosed, we do not
+    //                    need to make priority_high.
+    //                    Moreover, I suppose this can be immediate.
     wm_->RunClosureInThread(
         FROM_HERE,
         closed_thread_id_,
@@ -769,7 +777,7 @@ void ThreadpoolHttpServer::RequestFromSocket::DoReadEOF() {
   wm_->RunClosureInThread(
       FROM_HERE, thread_id_,
       NewCallback(this, &ThreadpoolHttpServer::RequestFromSocket::Finish),
-      WorkerThread::PRIORITY_IMMEDIATE);
+      kSocketDescriptorPriority);
 }
 
 void ThreadpoolHttpServer::RequestFromSocket::Finish() {
@@ -1165,6 +1173,7 @@ void ThreadpoolHttpServer::SendNamedPipeJobToWorkerThread(
   RequestFromNamedPipe* http_server_request =
       new RequestFromNamedPipe(wm_, this, Stat(), monitor_, req);
 
+  // We can use higher priority, but let's leave this as-is.
   wm_->RunClosureInPool(
       FROM_HERE,
       pool_,
@@ -1180,6 +1189,8 @@ void ThreadpoolHttpServer::SendJobToWorkerThread(
   RequestFromSocket* http_server_request =
       new RequestFromSocket(wm_, std::move(socket), socket_type, Stat(),
                             monitor_, trustedipsmanager_, this);
+
+  // We can use higher priority, but let's leave this as-is.
   wm_->RunClosureInPool(
       FROM_HERE,
       pool_,

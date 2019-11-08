@@ -368,6 +368,12 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseFeatures) {
   };
   static const unsigned long kNumDummyBuiltins = ABSL_ARRAYSIZE(kDummyBuiltins);
 
+  static const char* kDummyWarnings[] = {
+      "dummy_warning1",
+      "dummy_warning2",
+  };
+  static const unsigned long kNumDummyWarnings = ABSL_ARRAYSIZE(kDummyWarnings);
+
   static const char kClangOutput[] =
       "# 1 \"a.c\"\n"
       "# 1 \"a.c\" 1\n"
@@ -420,6 +426,10 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseFeatures) {
       "# 21\n"  // builtins
       "1\n"
       "# 22\n"
+      "0\n"
+      "#line 23\n"  // warnings
+      "1\n"
+      "#line 24\n"
       "0\n";
 
   ClangCompilerInfoBuilderHelper::FeatureList object_macros =
@@ -438,11 +448,14 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseFeatures) {
       std::make_pair(kDummyDeclspecAttributes, kNumDummyDeclspecAttributes);
   ClangCompilerInfoBuilderHelper::FeatureList builtins =
       std::make_pair(kDummyBuiltins, kNumDummyBuiltins);
+  ClangCompilerInfoBuilderHelper::FeatureList warnings =
+      std::make_pair(kDummyWarnings, kNumDummyWarnings);
 
   std::unique_ptr<CompilerInfoData> cid(new CompilerInfoData);
   EXPECT_TRUE(ClangCompilerInfoBuilderHelper::ParseFeatures(
       kClangOutput, object_macros, function_macros, features, extensions,
-      attributes, cpp_attributes, declspec_attributes, builtins, cid.get()));
+      attributes, cpp_attributes, declspec_attributes, builtins, warnings,
+      cid.get()));
 
   CxxCompilerInfo info(std::move(cid));
 
@@ -484,6 +497,9 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseFeatures) {
 
   EXPECT_EQ(1, FindValue(info.has_builtin(), "dummy_builtin1"));
   EXPECT_EQ(0U, info.has_builtin().count("dummy_builtin2"));
+
+  EXPECT_EQ(1, FindValue(info.has_warning(), "dummy_warning1"));
+  EXPECT_EQ(0, info.has_warning().count("dummy_warning2"));
 
   // check `#line <number> "<filename>"` format.
   static const char kClangClOutput[] =
@@ -538,12 +554,17 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseFeatures) {
       "#line 21\n"  // builtins
       "1\n"
       "#line 22\n"
+      "0\n"
+      "#line 23\n"  // warnings
+      "1\n"
+      "#line 24\n"
       "0\n";
 
   std::unique_ptr<CompilerInfoData> cid_cl(new CompilerInfoData);
   EXPECT_TRUE(ClangCompilerInfoBuilderHelper::ParseFeatures(
       kClangClOutput, object_macros, function_macros, features, extensions,
-      attributes, cpp_attributes, declspec_attributes, builtins, cid_cl.get()));
+      attributes, cpp_attributes, declspec_attributes, builtins, warnings,
+      cid_cl.get()));
   CxxCompilerInfo info_cl(std::move(cid_cl));
 
   EXPECT_EQ(2U, info_cl.supported_predefined_macros().size());
@@ -585,6 +606,9 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseFeatures) {
 
   EXPECT_EQ(1, FindValue(info_cl.has_builtin(), "dummy_builtin1"));
   EXPECT_EQ(0U, info_cl.has_builtin().count("dummy_builtin2"));
+
+  EXPECT_EQ(1, FindValue(info_cl.has_warning(), "dummy_warning1"));
+  EXPECT_EQ(0, info_cl.has_warning().count("dummy_warning2"));
 }
 
 #ifdef _WIN32

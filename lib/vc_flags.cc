@@ -175,6 +175,8 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
       parser.AddPrefixFlag("fms-compatibility-version=");
   FlagParser::Flag* flag_resource_dir = nullptr;
   FlagParser::Flag* flag_fsanitize = parser.AddFlag("fsanitize");
+  FlagParser::Flag* flag_fthinlto_index =
+      parser.AddPrefixFlag("fthinlto-index=");
   FlagParser::Flag* flag_fno_sanitize_blacklist = nullptr;
   FlagParser::Flag* flag_fsanitize_blacklist = nullptr;
   FlagParser::Flag* flag_mllvm = parser.AddFlag("mllvm");
@@ -301,6 +303,11 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     const std::vector<std::string>& values = flag_fsanitize_blacklist->values();
     std::copy(values.begin(), values.end(),
               back_inserter(optional_input_filenames_));
+  }
+
+  if (flag_fthinlto_index->seen()) {
+    optional_input_filenames_.push_back(flag_fthinlto_index->GetLastValue());
+    thinlto_index_ = flag_fthinlto_index->GetLastValue();
   }
 
   if (flag_X->seen()) {

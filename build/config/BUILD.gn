@@ -75,7 +75,10 @@ config("feature_flags") {
     defines += [ "ADDRESS_SANITIZER" ]
   }
   if (is_tsan) {
-    defines += [ "THREAD_SANITIZER" ]
+    defines += [
+      "THREAD_SANITIZER",
+      "DYNAMIC_ANNOTATIONS_ENABLED=1",
+    ]
   }
   if (is_msan) {
     defines += [ "MEMORY_SANITIZER" ]

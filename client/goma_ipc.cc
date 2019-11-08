@@ -200,8 +200,7 @@ int GomaIPC::SendRequest(const IOChannel* chan,
   http_send_message << "\r\n" << s;
   int err = chan->WriteString(http_send_message.str(), status->initial_timeout);
   if (err < 0) {
-    LOG(ERROR) << "GOMA: sending request failed: "
-               << chan->GetLastErrorMessage();
+    LOG(ERROR) << "GOMA: sending request failed: err=" << err;
     SetError(err, "Failed to send request", status);
     return err;
   }
@@ -234,9 +233,8 @@ int GomaIPC::ReadResponse(const IOChannel* chan,
     DCHECK_GT(buf_size, 0);
     int len = chan->ReadWithTimeout(buf, buf_size, timeout);
     if (len == 0) {
-      LOG(ERROR) << "GOMA: Unexpected end-of-file at " << response_len
-                 << "+" << buf_size
-                 << ": " << chan->GetLastErrorMessage();
+      LOG(ERROR) << "GOMA: Unexpected end-of-file at " << response_len << "+"
+                 << buf_size;
       SetError(FAIL, "Unexpected end-of-file", status);
       break;
     }
@@ -328,10 +326,8 @@ int GomaIPC::CheckHealthz(Status* status) {
       healthz_chan->ReadWithTimeout(buf, kNetworkBufSize, kReadSelectTimeout);
   if (len <= 0) {
     std::ostringstream ss;
-    ss << "Error /healthz err=" << len
-       << " duration=" << timer.GetDuration()
-       << " in pid:" << pid
-       << " error=" << healthz_chan->GetLastErrorMessage();
+    ss << "Error /healthz err=" << len << " duration=" << timer.GetDuration()
+       << " in pid:" << pid;
     LOG(ERROR) << "GOMA: " << ss.str();
     SetError(FAIL, ss.str(), status);
     return FAIL;

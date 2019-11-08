@@ -384,6 +384,8 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(std::string myname,
       "/includecachez", &CompilerProxyHttpHandler::HandleIncludeCacheRequest));
   http_handlers_.insert(
       std::make_pair("/flagz", &CompilerProxyHttpHandler::HandleFlagRequest));
+  http_handlers_.insert(
+      std::make_pair("/progz", &CompilerProxyHttpHandler::HandleProgRequest));
   http_handlers_.insert(std::make_pair(
       "/versionz", &CompilerProxyHttpHandler::HandleVersionRequest));
   http_handlers_.insert(std::make_pair(
@@ -1122,6 +1124,16 @@ int CompilerProxyHttpHandler::HandleFlagRequest(
   std::ostringstream ss;
   OutputOkHeader("text/plain", &ss);
   DumpEnvFlag(&ss);
+  *response = ss.str();
+  return 200;
+}
+
+int CompilerProxyHttpHandler::HandleProgRequest(
+    const HttpServerRequest& /* request */,
+    std::string* response) {
+  std::ostringstream ss;
+  OutputOkHeader("text/plain", &ss);
+  ss << GetMyPathname();
   *response = ss.str();
   return 200;
 }

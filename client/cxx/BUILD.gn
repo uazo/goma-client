@@ -196,6 +196,7 @@ static_library("vc_compiler_type_specific") {
   public_deps = [
     ":cxx_compiler_type_specific_lib",
     ":vc_compiler_info_builder_lib",
+    "//client/linker/linker_input_processor:thinlto_import_processor_lib",
   ]
 }
 

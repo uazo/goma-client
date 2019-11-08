@@ -41,7 +41,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@7f02881e96e51f1873afcf384d02f782b48967ca",
+     "https://boringssl.googlesource.com/boringssl@706da620b248615b709e71b36a31312f87a2c692",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -68,6 +68,12 @@ deps = {
      Var("chromium_git") +
          "/chromium/llvm-project/compiler-rt/lib/fuzzer.git@" +
          "b9f51dc8c98065df0c8da13c051046f5bab833db",
+
+     # libprotobuf-mutator
+     "client/third_party/libprotobuf-mutator/src":
+     Var("chromium_git") +
+         "/external/github.com/google/libprotobuf-mutator.git@" +
+         "439e81f8f4847ec6e2bf11b3aa634a5d8485633d",
 
      # abseil
      "client/third_party/abseil/src":

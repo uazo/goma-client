@@ -121,4 +121,11 @@ TEST(LuciContextTest, ParseLuciOAuthTokenResponseErrorCase) {
   EXPECT_EQ("", resp.access_token);
 }
 
+TEST(LuciContextTest, ParseLuciOAuthTokenInvalidScheme) {
+  static const char kResponse[] = "1";
+
+  LuciOAuthTokenResponse resp;
+  EXPECT_FALSE(ParseLuciOAuthTokenResponse(kResponse, &resp));
+}
+
 }  // namespace devtools_goma

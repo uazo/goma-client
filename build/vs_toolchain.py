@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # Copied from chromium build/
 #
 # Copyright 2014 The Chromium Authors. All rights reserved.

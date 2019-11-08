@@ -1,7 +1,6 @@
 // Copyright 2018 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 #ifndef DEVTOOLS_GOMA_CLIENT_COMPILER_PROXY_HTTP_HANDLER_H_
 #define DEVTOOLS_GOMA_CLIENT_COMPILER_PROXY_HTTP_HANDLER_H_
 
@@ -147,6 +146,9 @@ class CompilerProxyHttpHandler : public ThreadpoolHttpServer::HttpHandler,
                                 std::string* response);
 
   int HandleFlagRequest(const HttpServerRequest& /* request */,
+                        std::string* response);
+
+  int HandleProgRequest(const HttpServerRequest& /* request */,
                         std::string* response);
 
   int HandleVersionRequest(const HttpServerRequest& /* request */,

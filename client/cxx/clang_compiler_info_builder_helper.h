@@ -74,6 +74,7 @@ class ClangCompilerInfoBuilderHelper {
                             FeatureList cpp_attribute,
                             FeatureList declspec_attribute,
                             FeatureList builtins,
+                            FeatureList warnings,
                             CompilerInfoData* compiler_info);
 
   static bool GetPredefinedFeaturesAndExtensions(

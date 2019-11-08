@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 #
 # Copied from chromium's third_party/binutils directory, and modified for goma.
 #

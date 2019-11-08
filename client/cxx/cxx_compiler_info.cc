@@ -61,6 +61,9 @@ CxxCompilerInfo::CxxCompilerInfo(std::unique_ptr<CompilerInfoData> data)
   for (const auto& p : data_->cxx().has_builtin()) {
     has_builtin_.insert(make_pair(p.key(), p.value()));
   }
+  for (const auto& p : data_->cxx().has_warning()) {
+    has_warning_.insert(make_pair(p.key(), p.value()));
+  }
 
   predefined_directives_ = CppDirectiveParser::ParseFromString(
       predefined_macros(), "<compiler info output>");

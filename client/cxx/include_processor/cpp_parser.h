@@ -282,6 +282,14 @@ class CppParser {
     return ProcessHasCheckMacro("__has_builtin", tokens,
                                 compiler_info_->has_builtin());
   }
+  Token ProcessHasWarning(const ArrayTokenList& tokens) {
+    if (!compiler_info_) {
+      VLOG(1) << DebugStringPrefix() << " CompilerInfo is not set.";
+      return Token(0);
+    }
+    return ProcessHasCheckMacro("__has_warning", tokens,
+                                compiler_info_->has_warning());
+  }
 
   Token ProcessHasCheckMacro(
       const std::string& name,

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 # Copyright 2012 The Goma Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -731,12 +731,27 @@ class GomaDriver(object):
     """Print binary/running version of goma. """
     binary_version = self._GetDiskCompilerProxyVersion()
     print('compiler_proxy binary %s' % binary_version)
+    binary_path = self._env.CompilerProxyBinary()
+    print(' %s' % binary_path)
     versionz = self._env.ControlCompilerProxy('/versionz', check_running=True)
     if versionz['status']:
       running_version = versionz['message'].strip()
       print('running compiler_proxy version %s' % running_version)
-      if binary_version != running_version:
-        print('WARNING: binary was updated. restart required')
+      progz = self._env.ControlCompilerProxy('/progz', check_running=False)
+      if progz['status']:
+        running_binary_path = progz['message'].strip()
+        print(' %s' % running_binary_path)
+      else:
+        # old binary doesn't support /progz. ignores
+        running_binary_path = binary_path
+        print(' unknown running binary path')
+      if binary_path == running_binary_path:
+        if binary_version == running_version:
+          print('running binary is up-to-date')
+        else:
+          print('WARNING: binary was updated. restart required')
+      else:
+        print('WARNING: different binary is running')
     else:
       print('no running compiler_proxy')
 
@@ -748,8 +763,9 @@ class GomaDriver(object):
       running_version =  versionz['message'].strip()
       if binary_version != running_version:
         print('update %s -> %s' % (running_version, binary_version))
+        # TODO: check binary path is the same
         # TODO: preserve flag?
-        self._env.RestartCompilerProxy()
+        self._RestartCompilerProxy()
 
   def _GetLatestVersion(self):
     """Get latest version of goma.
@@ -1343,6 +1359,10 @@ class GomaEnv(object):
                           stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT).communicate()[0].rstrip()
 
+  def CompilerProxyBinary(self):
+    """Returns compiler_proxy binary path."""
+    return self._compiler_proxy_binary
+
   def GetScriptDir(self):
     return self._dir
 
@@ -1547,11 +1567,17 @@ class GomaEnv(object):
         pids = ','.join(self._GetStakeholderPids())
       reply = _DecodeBytesOnPython3(reply)
       return {'status': True, 'message': reply, 'url': url_prefix, 'pid': pids}
-    except (Error, socket.error) as ex:
+    except (Error, IOError, OSError) as ex:
       # urllib.urlopen(url) may raise socket.error, such as [Errno 10054]
       # An existing connection was forcibly closed by the remote host.
       # socket.error uses IOError as base class in python 2.6.
       # note: socket.error changed to an alias of OSError in python 3.3.
+      #
+      # for http error, such as 400 Not Found,
+      # python2: urlib2.urlopen(url) raises HTTPError, which is subclass
+      # of URLError, whis is subclass of IOError.
+      # python3: urllib.urlopen(url) raises HTTPError, which is subclass
+      # of URLError, which is subclass of OSError.
       msg = repr(ex)
     return {'status': False, 'message': msg, 'url': url_prefix, 'pid': pids}
 

@@ -618,12 +618,20 @@ executable("vc_flags_unittest") {
   ]
 }
 
+proto_library("flag_parser_fuzzer_proto") {
+  sources = [
+    "flag_parser_fuzzer.proto",
+  ]
+}
+
 fuzzer_test("flag_parser_fuzzer") {
   sources = [
     "flag_parser_fuzzer.cc",
   ]
   deps = [
+    ":flag_parser_fuzzer_proto",
     ":lib",
+    "//third_party/libprotobuf-mutator",
   ]
 }
 

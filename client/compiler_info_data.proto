@@ -167,7 +167,7 @@ message CompilerInfoData {
 };
 
 // CxxCompilerInfoData contains C/C++ related CompilerInfoData.
-// NEXT ID TO USE: 16
+// NEXT ID TO USE: 17
 message CxxCompilerInfoData {
   message MacroValue {
     optional string key = 1;
@@ -192,6 +192,7 @@ message CxxCompilerInfoData {
   repeated MacroValue has_cpp_attribute = 11;
   repeated MacroValue has_declspec_attribute = 12;
   repeated MacroValue has_builtin = 13;
+  repeated MacroValue has_warning = 16;
 
   // Path to compiler resource directory.
   optional string resource_dir = 14;

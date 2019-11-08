@@ -931,16 +931,17 @@ void CppParser::InitializeStaticOnce() {
     const char* name;
     Macro::CallbackFunc callback;
   } kPredefinedCallbackFuncMacros[] = {
-    { "__has_include", &self::ProcessHasInclude },
-    { "__has_include__", &self::ProcessHasInclude },
-    { "__has_include_next", &self::ProcessHasIncludeNext },
-    { "__has_include_next__", &self::ProcessHasIncludeNext },
-    { "__has_feature", &self::ProcessHasFeature },
-    { "__has_extension", &self::ProcessHasExtension },
-    { "__has_attribute", &self::ProcessHasAttribute },
-    { "__has_cpp_attribute", &self::ProcessHasCppAttribute },
-    { "__has_declspec_attribute", &self::ProcessHasDeclspecAttribute },
-    { "__has_builtin", &self::ProcessHasBuiltin },
+      {"__has_include", &self::ProcessHasInclude},
+      {"__has_include__", &self::ProcessHasInclude},
+      {"__has_include_next", &self::ProcessHasIncludeNext},
+      {"__has_include_next__", &self::ProcessHasIncludeNext},
+      {"__has_feature", &self::ProcessHasFeature},
+      {"__has_extension", &self::ProcessHasExtension},
+      {"__has_attribute", &self::ProcessHasAttribute},
+      {"__has_cpp_attribute", &self::ProcessHasCppAttribute},
+      {"__has_declspec_attribute", &self::ProcessHasDeclspecAttribute},
+      {"__has_builtin", &self::ProcessHasBuiltin},
+      {"__has_warning", &self::ProcessHasWarning},
   };
 
   for (const auto& iter : kPredefinedCallbackFuncMacros) {

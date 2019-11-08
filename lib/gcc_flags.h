@@ -49,8 +49,6 @@ class GCCFlags : public CxxFlags {
   const std::map<std::string, std::string>& fdebug_prefix_map() const {
     return fdebug_prefix_map_;
   }
-  // TODO: make this also works for VCFlags?
-  //                    I know ThinLTO is also supported on clang-cl.
   const std::string& thinlto_index() const { return thinlto_index_; }
 
   bool is_cplusplus() const override { return is_cplusplus_; }

@@ -54,6 +54,10 @@ class SocketDescriptor : public Descriptor {
   bool CanReuse() const override {
     return !IsClosed() && last_error_message_.empty();
   }
+  // Note: all closures called after Stop* should be equal or lower
+  // priority than SocketDescriptor. Otherwise, Stop* may not work, and you
+  // may see SocketDescriptor destructor crashes with fatal error because
+  // socket is deleted while it is in-queue.
   void StopRead() override;
   void StopWrite() override;
   virtual void RestartRead();

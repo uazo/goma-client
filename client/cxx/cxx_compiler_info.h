@@ -75,6 +75,9 @@ class CxxCompilerInfo : public CompilerInfo {
   const absl::flat_hash_map<std::string, int>& has_builtin() const {
     return has_builtin_;
   }
+  const absl::flat_hash_map<std::string, int>& has_warning() const {
+    return has_warning_;
+  }
 
  private:
   std::vector<std::string> quote_include_paths_;
@@ -91,6 +94,7 @@ class CxxCompilerInfo : public CompilerInfo {
   absl::flat_hash_map<std::string, int> has_cpp_attribute_;
   absl::flat_hash_map<std::string, int> has_declspec_attribute_;
   absl::flat_hash_map<std::string, int> has_builtin_;
+  absl::flat_hash_map<std::string, int> has_warning_;
 
   SharedCppDirectives predefined_directives_;
 };

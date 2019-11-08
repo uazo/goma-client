@@ -26,6 +26,13 @@ class VCCompilerTypeSpecific : public CxxCompilerTypeSpecific {
       const std::string& local_compiler_path,
       const std::vector<std::string>& compiler_info_envs) override;
 
+  IncludeProcessorResult RunIncludeProcessor(
+      const std::string& trace_id,
+      const CompilerFlags& compiler_flags,
+      const CompilerInfo& compiler_info,
+      const CommandSpec& command_spec,
+      FileStatCache* file_stat_cache) override;
+
   bool SupportsDepsCache(const CompilerFlags&) const override { return true; }
 
  private:

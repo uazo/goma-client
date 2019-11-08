@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 # Copyright 2012 The Goma Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -3215,6 +3215,9 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
       def GetCompilerProxyVersion(self):
         return 'GOMA version versionhash@time'
 
+      def CompilerProxyBinary(self):
+        return '/path/to/compiler_proxy'
+
       def ControlCompilerProxy(self, command, check_running=True,
                                need_pids=False):
         return {'status': False, 'message': 'goma is not running.', 'url': ''}
@@ -3233,6 +3236,9 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
       def GetCompilerProxyVersion(self):
         return 'GOMA version versionhash@time'
 
+      def CompilerProxyBinary(self):
+        return '/path/to/compiler_proxy'
+
       def ControlCompilerProxy(self, command, check_running=True,
                                need_pids=False):
         if command == '/versionz':
@@ -3248,75 +3254,157 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
       """Spy GomaEnv for update check"""
       def __init__(self):
         super(SpyGomaEnv, self).__init__()
-        self.restarted = False
+        self.shutdowned = False
+        self.running = False
 
       def GetCompilerProxyVersion(self):
         return 'GOMA version versionhash@time'
 
       def ControlCompilerProxy(self, command, check_running=True,
                                need_pids=False):
-        return {'status': False, 'message': 'goma is not running.', 'url': ''}
+        if command == '/quitquitquit' and self.running:
+          self.shutdowned = True
+          self.running = False
+          return {'status': False, 'message': 'ok', 'url': '', 'pid': '1234'}
+        if command == '/versionz' and self.running:
+          return {
+              'status': True,
+              'message': 'versionhash@time',
+              'url': 'http://127.0.0.1:8088',
+              'pid': '1234'
+          }
+        if self.running:
+          return {
+              'status': True,
+              'message': 'ok',
+              'url': 'http://127.0.0.1:8088',
+              'pid': '1234'
+          }
+        return {
+            'status': False,
+            'message': 'goma is not running.',
+            'url': '',
+            'pids': 'unknown'
+        }
 
       def CompilerProxyRunning(self):
-        return False
+        return self.running
 
-      def RestartCompilerProxy(self):
-        self.restarted = True
+      def ExecCompilerProxy(self):
+        self.running = True
 
     env = SpyGomaEnv()
     driver = self._module.GomaDriver(env, FakeGomaBackend())
     driver._UpdateHook()
-    self.assertFalse(env.restarted)
+    self.assertFalse(env.running)
 
   def testUpdateHookRunningNoChange(self):
     class SpyGomaEnv(FakeGomaEnv):
       """Spy GomaEnv for update check"""
       def __init__(self):
         super(SpyGomaEnv, self).__init__()
-        self.restarted = False
+        self.shutdowned = False
+        self.running = True
 
       def GetCompilerProxyVersion(self):
         return 'GOMA version versionhash@time'
 
       def ControlCompilerProxy(self, command, check_running=True,
                                need_pids=False):
-        return {'status': True, 'message': 'versionhash@time', 'url': ''}
+        if command == '/quitquitquit' and self.running:
+          self.shutdowned = True
+          self.running = False
+          return {'status': False, 'message': 'ok', 'url': '', 'pid': '1234'}
+        if command == '/versionz' and self.running:
+          return {
+              'status': True,
+              'message': 'versionhash@time',
+              'url': 'http://127.0.0.1:8088',
+              'pid': '1234'
+          }
+        if self.running:
+          return {
+              'status': True,
+              'message': 'ok',
+              'url': 'http://127.0.0.1:8088',
+              'pid': '1234'
+          }
+        return {
+            'status': False,
+            'message': 'goma is not running.',
+            'url': '',
+            'pids': 'unknown'
+        }
 
       def CompilerProxyRunning(self):
-        return False
+        return self.running
 
-      def RestartCompilerProxy(self):
-        self.restarted = True
+      def ExecCompilerProxy(self):
+        self.running = True
 
     env = SpyGomaEnv()
     driver = self._module.GomaDriver(env, FakeGomaBackend())
     driver._UpdateHook()
-    self.assertFalse(env.restarted)
+    self.assertFalse(env.shutdowned)
+    self.assertTrue(env.running)
 
   def testUpdateHookRunningChange(self):
     class SpyGomaEnv(FakeGomaEnv):
       """Spy GomaEnv for update check"""
       def __init__(self):
         super(SpyGomaEnv, self).__init__()
-        self.restarted = False
+        self.shutdowned = False
+        self.running = True
 
       def GetCompilerProxyVersion(self):
-        return 'GOMA version versionhash@time'
+        return 'GOMA version newversionhash@time'
 
       def ControlCompilerProxy(self, command, check_running=True,
                                need_pids=False):
-        return {'status': True, 'message': 'newversionhash@time', 'url': ''}
+        if command == '/quitquitquit' and self.running:
+          self.shutdowned = True
+          self.running = False
+          return {'status': False, 'message': 'ok', 'url': '', 'pid': '1234'}
+        if command == '/versionz' and self.running:
+          if self.shutdowned:
+            return {
+                'status': True,
+                'message': 'newversionhash@time',
+                'url': 'http://127.0.0.1:8088',
+                'pid': '1234'
+            }
+          return {
+              'status': True,
+              'message': 'versionhash@time',
+              'url': 'http://127.0.0.1:8088',
+              'pid': '1234'
+          }
+        if self.running:
+          return {
+              'status': True,
+              'message': 'ok',
+              'url': 'http://127.0.0.1:8088',
+              'pid': '1234'
+          }
+        return {
+            'status': False,
+            'message': 'goma is not running.',
+            'url': '',
+            'pids': 'unknown'
+        }
 
       def CompilerProxyRunning(self):
-        return False
+        return self.running
 
-      def RestartCompilerProxy(self):
-        self.restarted = True
+      def ExecCompilerProxy(self):
+        self.running = True
 
     env = SpyGomaEnv()
     driver = self._module.GomaDriver(env, FakeGomaBackend())
     driver._UpdateHook()
-    self.assertTrue(env.restarted)
+    self.assertTrue(env.shutdowned)
+    self.assertTrue(env.running)
+
 
 class GomaCtlLargeClients5Test(GomaCtlLargeTestCommon):
   """Large Clients5 tests for goma_ctl.py."""

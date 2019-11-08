@@ -218,7 +218,7 @@ class OpenSSLSessionCache {
   // are done under a lock held by BoringSSL, we do not need to lock for them.
   // That is why we use ReadWriteLock.
   // TODO: use mutex lock if it is much faster than shared lock.
-  bool SetCachedSessionInternal(SSL_CTX* ctx, SSL* ssl) {
+  bool SetCachedSessionInternal(SSL_CTX* ctx, SSL* ssl) LOCKS_EXCLUDED(mu_) {
     AUTO_SHARED_LOCK(lock, &mu_);
     SSL_SESSION* sess = GetInternalUnlocked(ctx);
     if (sess == nullptr) {
@@ -233,7 +233,8 @@ class OpenSSLSessionCache {
   }
 
   // Returns true if the session is added or updated.
-  bool RecordSessionInternal(SSL_CTX* ctx, SSL_SESSION* session) {
+  bool RecordSessionInternal(SSL_CTX* ctx, SSL_SESSION* session)
+      LOCKS_EXCLUDED(mu_) {
     AUTO_EXCLUSIVE_LOCK(lock, &mu_);
     if (!session_map_
              .insert_or_assign(ctx, bssl::UniquePtr<SSL_SESSION>(session))
@@ -244,12 +245,12 @@ class OpenSSLSessionCache {
   }
 
   // Returns true if the session is removed.
-  bool RemoveSessionInternal(SSL_CTX* ctx) {
+  bool RemoveSessionInternal(SSL_CTX* ctx) LOCKS_EXCLUDED(mu_) {
     AUTO_EXCLUSIVE_LOCK(lock, &mu_);
     return session_map_.erase(ctx) > 0;
   }
 
-  SSL_SESSION* GetInternalUnlocked(SSL_CTX* ctx) {
+  SSL_SESSION* GetInternalUnlocked(SSL_CTX* ctx) SHARED_LOCKS_REQUIRED(mu_) {
     auto found = session_map_.find(ctx);
     if (found != session_map_.end()) {
       return found->second.get();
@@ -259,7 +260,8 @@ class OpenSSLSessionCache {
 
   mutable ReadWriteLock mu_;
   // Won't take ownership of SSL_CTX*.
-  absl::flat_hash_map<SSL_CTX*, bssl::UniquePtr<SSL_SESSION>> session_map_;
+  absl::flat_hash_map<SSL_CTX*, bssl::UniquePtr<SSL_SESSION>> session_map_
+      GUARDED_BY(mu_);
 
   static OpenSSLSessionCache* cache_;
 
@@ -378,7 +380,7 @@ class OpenSSLCertificateStore {
     LOG(INFO) << "Loaded root certificates.";
   }
 
-  bool IsReadyInternal() const {
+  bool IsReadyInternal() const LOCKS_EXCLUDED(mu_) {
     AUTO_SHARED_LOCK(lock, &mu_);
     return certs_.size() != 0;
   }
@@ -387,12 +389,12 @@ class OpenSSLCertificateStore {
   // trusted_certificates_ is a member of the class, which is protected
   // by the mutex (mu_).  It could be updated after return of the function
   // by another thread.
-  std::string GetTrustedCertificatesInternal() const {
+  std::string GetTrustedCertificatesInternal() const LOCKS_EXCLUDED(mu_) {
     AUTO_SHARED_LOCK(lock, &mu_);
     return trusted_certificates_;
   }
 
-  void SetCertsToCTXInternal(SSL_CTX* ctx) const {
+  void SetCertsToCTXInternal(SSL_CTX* ctx) const LOCKS_EXCLUDED(mu_) {
     AUTO_SHARED_LOCK(lock, &mu_);
     for (const auto& it : certs_) {
       LOG(INFO) << "setting certs from: " << it.first
@@ -403,13 +405,15 @@ class OpenSSLCertificateStore {
     }
   }
 
-  bool IsKnownCertfileInternal(const std::string& filename) const {
+  bool IsKnownCertfileInternal(const std::string& filename) const
+      LOCKS_EXCLUDED(mu_) {
     AUTO_SHARED_LOCK(lock, &mu_);
     return certs_.find(filename) != certs_.end();
   }
 
   bool AddCertificateFromStringInternal(const std::string& source,
-                                        const std::string& cert) {
+                                        const std::string& cert)
+      LOCKS_EXCLUDED(mu_) {
     // Create BIO instance to be used by PEM_read_bio_X509_AUX.
     std::unique_ptr<BIO, ScopedBIOFree> bio(
         BIO_new_mem_buf(cert.data(), cert.size()));
@@ -454,9 +458,8 @@ class OpenSSLCertificateStore {
   mutable ReadWriteLock mu_;
   std::map<std::string,
            std::unique_ptr<std::vector<std::unique_ptr<X509, ScopedX509Free>>>>
-      certs_;
-
-  std::string trusted_certificates_;
+      certs_ GUARDED_BY(mu_);
+  std::string trusted_certificates_ GUARDED_BY(mu_);
 
   static OpenSSLCertificateStore* store_;
   DISALLOW_COPY_AND_ASSIGN(OpenSSLCertificateStore);
@@ -505,7 +508,7 @@ class OpenSSLCRLCache {
   }
 
   // Note: caller should free X509_CRL.
-  ScopedX509CRL LookupCRLInternal(const std::string& url) {
+  ScopedX509CRL LookupCRLInternal(const std::string& url) LOCKS_EXCLUDED(mu_) {
     AUTO_SHARED_LOCK(lock, &mu_);
     const auto& it = crls_.find(url);
     if (it == crls_.end())
@@ -513,8 +516,8 @@ class OpenSSLCRLCache {
     return ScopedX509CRL(X509_CRL_dup(it->second.get()));
   }
 
-  bool DeleteCRLInternal(const std::string& url) {
-    AUTO_EXCLUSIVE_LOCK(lock, &mu_);
+  bool DeleteCRLInternalUnlocked(const std::string& url)
+      EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     const auto& it = crls_.find(url);
     if (it == crls_.end())
       return false;
@@ -522,11 +525,15 @@ class OpenSSLCRLCache {
     return true;
   }
 
-  void SetCRLInternal(const std::string& url, X509_CRL* crl) {
+  bool DeleteCRLInternal(const std::string& url) LOCKS_EXCLUDED(mu_) {
     AUTO_EXCLUSIVE_LOCK(lock, &mu_);
-    if (crls_.count(url) > 0) {
-      DeleteCRLInternal(url);
-    }
+    return DeleteCRLInternalUnlocked(url);
+  }
+
+  void SetCRLInternal(const std::string& url, X509_CRL* crl)
+      LOCKS_EXCLUDED(mu_) {
+    AUTO_EXCLUSIVE_LOCK(lock, &mu_);
+    DeleteCRLInternalUnlocked(url);
     CHECK(crls_.insert(
             std::make_pair(url, ScopedX509CRL(X509_CRL_dup(crl)))).second)
         << "We already have the same URL in CRL store."
@@ -534,7 +541,7 @@ class OpenSSLCRLCache {
   }
 
   mutable ReadWriteLock mu_;
-  std::map<std::string, ScopedX509CRL> crls_;
+  std::map<std::string, ScopedX509CRL> crls_ GUARDED_BY(mu_);
 
   static OpenSSLCRLCache* cache_;
   DISALLOW_COPY_AND_ASSIGN(OpenSSLCRLCache);

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 # Dummy clang program for testing compiler_info behavior.
 # This is implemented to check misuse of real compiler.

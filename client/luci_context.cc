@@ -150,6 +150,11 @@ bool ParseLuciOAuthTokenResponse(
     return false;
   }
 
+  if (!root.isObject()) {
+    LOG(WARNING) << "not object " << root;
+    return false;
+  }
+
   Json::Value default_error_code(0);
   const Json::Value& error_code = root.get(kErrorCode, default_error_code);
   if (!error_code.isInt()) {

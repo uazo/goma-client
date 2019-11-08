@@ -1,4 +1,6 @@
 # Copyright 2015 The Chromium Authors. All rights reserved.
+# Copied from chromium's testing/libfuzzer/fuzzer_test.gni
+# and modified for goma.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -118,10 +120,13 @@ template("fuzzer_test") {
     test(target_name) {
       forward_variables_from(invoker,
                              [
+                               "cflags",
+                               "cflags_cc",
                                "check_includes",
                                "defines",
                                "include_dirs",
                                "sources",
+                               "libs",
                              ])
       deps = test_deps
 
@@ -129,9 +134,7 @@ template("fuzzer_test") {
         configs += invoker.additional_configs
       }
 
-      # TODO: fix this, not sure why no identifier can be
-      #                    found from here.
-      #configs += [ "//testing/libfuzzer:fuzzer_test_config" ]
+      configs += [ "//testing/libfuzzer:fuzzer_test_config" ]
 
       # Used by WebRTC to suppress some Clang warnings in their codebase.
       if (defined(invoker.suppressed_configs)) {

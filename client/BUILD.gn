@@ -48,6 +48,7 @@ static_library("common") {
     "mypath_helper.h",
     "simple_timer.cc",
     "simple_timer.h",
+    "thread_safe_variable.h",
     "util.cc",
     "util.h",
   ]
@@ -160,7 +161,7 @@ proto_library("compiler_info_data_proto") {
     "compiler_info_data.proto",
   ]
 
-  import_dir = [ "//third_party/protobuf/protobuf/src" ]
+  import_dirs = [ "//third_party/protobuf/protobuf/src" ]
 }
 
 proto_library("counterz_proto") {
@@ -174,7 +175,7 @@ proto_library("deps_cache_proto") {
     "deps_cache_data.proto",
   ]
 
-  import_dir = [ "//third_party/protobuf/protobuf/src" ]
+  import_dirs = [ "//third_party/protobuf/protobuf/src" ]
 }
 
 proto_library("error_notice") {
@@ -2177,5 +2178,17 @@ executable("fake_compiler") {
     "//base",
     "//build/config:exe_and_shlib_deps",
     "//third_party/abseil",
+  ]
+}
+
+executable("thread_safe_variable_unittest") {
+  testonly = true
+  sources = [
+    "thread_safe_variable_unittest.cc",
+  ]
+  deps = [
+    ":common",
+    ":goma_test_lib",
+    "//build/config:exe_and_shlib_deps",
   ]
 }

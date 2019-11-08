@@ -37,7 +37,8 @@ template("test") {
     }
   }
 }
+
 # Test defaults.
-#set_defaults("test") {
-#  configs = default_executable_configs
-#}
+set_defaults("test") {
+  configs = default_compiler_configs
+}

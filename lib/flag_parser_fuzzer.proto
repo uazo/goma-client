@@ -1,0 +1,32 @@
+// Copyright 2019 Google LLC. The Goma Authors. All Rights Reserved.
+
+syntax = "proto3";
+
+package devtools_goma;
+
+message FlagParserFuzzingSession {
+  enum FlagType {
+    REGULAR = 0;
+    BOOL = 1;
+    PREFIX = 2;
+  }
+
+  enum NameValueStyle {
+    SEP_BY_SPACE = 0;
+    NON_SPACE = 1;
+    EQUAL_SIGN = 2;
+  }
+
+  message NameValue {
+    string name = 1;
+    string value = 2;
+    bool add_to_parser = 3;
+    FlagType type = 4;
+    bool add_to_args = 5;
+    NameValueStyle style = 6;
+  }
+
+  repeated NameValue name_values = 1;
+  bool allows_nonspace_arg = 2;
+  bool allows_equal_arg = 3;
+}

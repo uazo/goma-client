@@ -997,6 +997,45 @@ TEST_F(VCFlagsTest, ClangCl) {
   EXPECT_EQ("d:\\tmp", flags->cwd());
 }
 
+TEST_F(VCFlagsTest, ClangClWithFThinltoIndex) {
+  const std::vector<std::string> args{
+      "clang-cl.exe",
+      "-O2",
+      "-o",
+      "file.native.obj",
+      "file.obj",
+      "-c",
+      "-fthinlto-index=./dir/file.obj.thinlto.bc",
+  };
+
+  std::unique_ptr<CompilerFlags> flags(
+      CompilerFlagsParser::MustNew(args, "d:\\tmp"));
+  EXPECT_EQ(args, flags->args());
+  EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
+
+  EXPECT_TRUE(flags->is_successful());
+  EXPECT_EQ("", flags->fail_message());
+  EXPECT_EQ("clang-cl.exe", flags->compiler_base_name());
+  EXPECT_EQ("clang-cl", flags->compiler_name());
+
+  EXPECT_EQ(1U, flags->input_filenames().size());
+  EXPECT_EQ("file.obj", flags->input_filenames()[0]);
+
+  EXPECT_EQ(1U, flags->optional_input_filenames().size());
+  EXPECT_EQ("./dir/file.obj.thinlto.bc", flags->optional_input_filenames()[0]);
+
+  EXPECT_EQ(1U, flags->output_files().size());
+  EXPECT_THAT(flags->output_files(), testing::Contains("file.native.obj"));
+
+  devtools_goma::VCFlags* vc_flags =
+      static_cast<devtools_goma::VCFlags*>(flags.get());
+  const std::vector<std::string> expected_compiler_info_flags{
+      "-O2",
+  };
+  EXPECT_EQ(expected_compiler_info_flags, vc_flags->compiler_info_flags());
+  EXPECT_EQ("./dir/file.obj.thinlto.bc", vc_flags->thinlto_index());
+}
+
 TEST_F(VCFlagsTest, ClangClWithMflag) {
   std::vector<std::string> args;
   args.push_back("clang-cl.exe");

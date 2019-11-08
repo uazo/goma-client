@@ -108,12 +108,15 @@ SANITIZER_HOOK_ATTRIBUTE const char *__asan_default_suppressions() {
 //   print_suppressions=1 - print the list of matched suppressions.
 //   history_size=7 - make the history buffer proportional to 2^7 (the maximum
 //     value) to keep more stack traces.
+//   report_atomic_races=0 - this is required for using absl synchronization
+//     primitives. See:
+//     https://github.com/abseil/abseil-cpp/blob/078b89b3c046d230ef3ad39494e5852184eb528b/ci/linux_clang-latest_libcxx_tsan_bazel.sh#L80
 //   strip_path_prefix=/../../ - prefixes up to and including this
 //     substring will be stripped from source file paths in symbolized reports.
 const char kTsanDefaultOptions[] =
     "detect_deadlocks=1 second_deadlock_stack=1 report_signal_unsafe=0 "
     "report_thread_leaks=0 print_suppressions=1 history_size=7 "
-    "strict_memcmp=0 strip_path_prefix=/../../ ";
+    "strict_memcmp=0 report_atomic_races=0 strip_path_prefix=/../../ ";
 
 SANITIZER_HOOK_ATTRIBUTE const char *__tsan_default_options() {
   return kTsanDefaultOptions;

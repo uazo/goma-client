@@ -428,11 +428,12 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
     FeatureList cpp_attributes,
     FeatureList declspec_attributes,
     FeatureList builtins,
+    FeatureList warnings,
     CompilerInfoData* compiler_info) {
   const size_t num_all_features =
       object_macros.second + function_macros.second + features.second +
       extensions.second + attributes.second + cpp_attributes.second +
-      declspec_attributes.second + builtins.second;
+      declspec_attributes.second + builtins.second + warnings.second;
   std::vector<std::string> lines =
       ToVector(absl::StrSplit(feature_output, '\n', absl::SkipEmpty()));
   size_t index = 0;
@@ -452,8 +453,10 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
       }
     }
 
-    if (line[0] == '#' || line[0] == '\0')
+    if (line[0] == '#' || line[0] == '\0') {
+      // Proceed to the next line to read the value of the checked feature.
       continue;
+    }
 
     if (!(isalnum(line[0]) || line[0] == '_')) {
       LOG(ERROR) << "Ignoring expected line in clang's output: " << line;
@@ -561,6 +564,15 @@ bool ClangCompilerInfoBuilderHelper::ParseFeatures(
       VLOG(3) << "builtin:" << m->DebugString();
       continue;
     }
+    current_index -= builtins.second;
+    if (current_index < warnings.second) {
+      CxxCompilerInfoData::MacroValue* m =
+          compiler_info->mutable_cxx()->add_has_warning();
+      m->set_key(warnings.first[current_index]);
+      m->set_value(value);
+      VLOG(3) << "warning:" << m->DebugString();
+      continue;
+    }
 
     // Since we've checked index range, must not reach here.
     LOG(FATAL) << "The number of features exceeds the expected number:"
@@ -633,43 +645,49 @@ bool ClangCompilerInfoBuilderHelper::GetPredefinedFeaturesAndExtensions(
       << "#endif\n"
       << "#ifndef __has_builtin\n"
       << "# define __has_builtin(x) 0\n"
+      << "#endif\n"
+      << "#ifndef __has_warning\n"
+      << "# define __has_warning(x) 0\n"
       << "#endif\n";
 
-  for (size_t i = 0; i < NUM_KNOWN_FEATURES; i++) {
+  for (const char* s : KNOWN_FEATURES) {
     // Specify the line number to tell pre-processor to output newlines.
     oss << '#' << ++index << '\n';
-    oss << "__has_feature(" << KNOWN_FEATURES[i] << ")\n";
+    oss << "__has_feature(" << s << ")\n";
   }
-  for (size_t i = 0; i < NUM_KNOWN_EXTENSIONS; i++) {
+  for (const char* s : KNOWN_EXTENSIONS) {
     // Specify the line number to tell pre-processor to output newlines.
     oss << '#' << ++index << '\n';
-    oss << std::string("__has_extension(") << KNOWN_EXTENSIONS[i] << ")\n";
+    oss << std::string("__has_extension(") << s << ")\n";
   }
-  for (size_t i = 0; i < NUM_KNOWN_ATTRIBUTES; i++) {
+  for (const char* s : KNOWN_ATTRIBUTES) {
     // Specify the line number to tell pre-processor to output newlines.
     oss << '#' << ++index << '\n';
-    oss << std::string("__has_attribute(") << KNOWN_ATTRIBUTES[i] << ")\n";
+    oss << std::string("__has_attribute(") << s << ")\n";
   }
   // If the attributes has "::", gcc fails in C-mode,
   // but works on C++ mode. So, when "::" is detected, we ignore it in C mode.
   // :: can be used like "clang::", "gsl::"
-  for (size_t i = 0; i < NUM_KNOWN_CPP_ATTRIBUTES; i++) {
+  for (const char* s : KNOWN_CPP_ATTRIBUTES) {
     // Specify the line number to tell pre-processor to output newlines.
     oss << '#' << ++index << '\n';
-    if (lang_flag == "-xc++" ||
-        strchr(KNOWN_CPP_ATTRIBUTES[i], ':') == nullptr) {
-      oss << "__has_cpp_attribute(" << KNOWN_CPP_ATTRIBUTES[i] << ")\n";
+    if (lang_flag == "-xc++" || strchr(s, ':') == nullptr) {
+      oss << "__has_cpp_attribute(" << s << ")\n";
     } else {
       oss << "0\n";
     }
   }
-  for (size_t i = 0; i < NUM_KNOWN_DECLSPEC_ATTRIBUTES; i++) {
+  for (const char* s : KNOWN_DECLSPEC_ATTRIBUTES) {
     oss << '#' << ++index << '\n';
-    oss << "__has_declspec_attribute(" << KNOWN_DECLSPEC_ATTRIBUTES[i] << ")\n";
+    oss << "__has_declspec_attribute(" << s << ")\n";
   }
-  for (size_t i = 0; i < NUM_KNOWN_BUILTINS; i++) {
+  for (const char* s : KNOWN_BUILTINS) {
     oss << '#' << ++index << '\n';
-    oss << "__has_builtin(" << KNOWN_BUILTINS[i] << ")\n";
+    oss << "__has_builtin(" << s << ")\n";
+  }
+  for (const char* s : KNOWN_WARNINGS) {
+    oss << '#' << ++index << '\n';
+    oss << "__has_warning(\"" << s << "\")\n";
   }
 
   const std::string& source = oss.str();
@@ -746,10 +764,11 @@ bool ClangCompilerInfoBuilderHelper::GetPredefinedFeaturesAndExtensions(
   FeatureList declspec_attributes =
       std::make_pair(KNOWN_DECLSPEC_ATTRIBUTES, NUM_KNOWN_DECLSPEC_ATTRIBUTES);
   FeatureList builtins = std::make_pair(KNOWN_BUILTINS, NUM_KNOWN_BUILTINS);
+  FeatureList warnings = std::make_pair(KNOWN_WARNINGS, NUM_KNOWN_WARNINGS);
 
   return ParseFeatures(out, object_macros, function_macros, features,
                        extensions, attributes, cpp_attributes,
-                       declspec_attributes, builtins, compiler_info);
+                       declspec_attributes, builtins, warnings, compiler_info);
 }
 
 // Return true if everything is fine, and all necessary information

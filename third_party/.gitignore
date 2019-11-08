@@ -11,6 +11,7 @@ gtest
 jinja2
 jsoncpp/source
 libFuzzer/src
+libprotobuf-mutator/src
 libyaml/src
 llvm-build
 lss

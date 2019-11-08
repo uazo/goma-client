@@ -147,6 +147,7 @@ TEST(CppParserTest, HasFeatureResultValue) {
   info_data->mutable_cxx()->add_supported_predefined_macros(
       "__has_declspec_attribute");
   info_data->mutable_cxx()->add_supported_predefined_macros("__has_builtin");
+  info_data->mutable_cxx()->add_supported_predefined_macros("__has_warning");
   CxxCompilerInfoData::MacroValue* m;
   m = info_data->mutable_cxx()->add_has_feature();
   m->set_key("feature");
@@ -166,6 +167,9 @@ TEST(CppParserTest, HasFeatureResultValue) {
   m = info_data->mutable_cxx()->add_has_builtin();
   m->set_key("builtin");
   m->set_value(7);
+  m = info_data->mutable_cxx()->add_has_warning();
+  m->set_key("warning");
+  m->set_value(8);
 
   CxxCompilerInfo info(std::move(info_data));
 
@@ -173,132 +177,175 @@ TEST(CppParserTest, HasFeatureResultValue) {
   cpp_parser.SetCompilerInfo(&info);
 
   cpp_parser.AddStringInput(
-    "#if __has_feature(feature) == 2\n"
-    "# define FEATURE_FEATURE_OK\n"
-    "#endif\n"
-    "#if __has_feature( feature ) == 2\n"
-    "# define FEATURE_FEATURE_SPACE_OK\n"
-    "#endif\n"
-    "#if __has_feature(extension) == 0\n"
-    "# define FEATURE_EXTENSION_OK\n"
-    "#endif\n"
-    "#if __has_feature(attribute) == 0\n"
-    "# define FEATURE_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_feature(cpp_attribute) == 0\n"
-    "# define FEATURE_CPP_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_feature(declspec_attribute) == 0\n"
-    "# define FEATURE_DECLSPEC_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_feature(builtin) == 0\n"
-    "# define FEATURE_BUILTIN_OK\n"
-    "#endif\n"
-    "#if __has_extension(feature) == 0\n"
-    "# define EXTENSION_FEATURE_OK\n"
-    "#endif\n"
-    "#if __has_extension(extension) == 3\n"
-    "# define EXTENSION_EXTENSION_OK\n"
-    "#endif\n"
-    "#if __has_extension( extension ) == 3\n"
-    "# define EXTENSION_EXTENSION_SPACE_OK\n"
-    "#endif\n"
-    "#if __has_extension(attribute) == 0\n"
-    "# define EXTENSION_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_extension(cpp_attribute) == 0\n"
-    "# define EXTENSION_CPP_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_extension(declspec_attribute) == 0\n"
-    "# define EXTENSION_DECLSPEC_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_extension(builtin) == 0\n"
-    "# define EXTENSION_BUILTIN_OK\n"
-    "#endif\n"
-    "#if __has_attribute(feature) == 0\n"
-    "# define ATTRIBUTE_FEATURE_OK\n"
-    "#endif\n"
-    "#if __has_attribute(extension) == 0\n"
-    "# define ATTRIBUTE_EXTENSION_OK\n"
-    "#endif\n"
-    "#if __has_attribute(attribute) == 4\n"
-    "# define ATTRIBUTE_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_attribute( attribute ) == 4\n"
-    "# define ATTRIBUTE_ATTRIBUTE_SPACE_OK\n"
-    "#endif\n"
-    "#if __has_attribute(cpp_attribute) == 0\n"
-    "# define ATTRIBUTE_CPP_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_attribute(declspec_attribute) == 0\n"
-    "# define ATTRIBUTE_DECLSPEC_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_attribute(builtin) == 0\n"
-    "# define ATTRIBUTE_BUILTIN_OK\n"
-    "#endif\n"
-    "#if __has_cpp_attribute(feature) == 0\n"
-    "# define CPP_ATTRIBUTE_FEATURE_OK\n"
-    "#endif\n"
-    "#if __has_cpp_attribute(extension) == 0\n"
-    "# define CPP_ATTRIBUTE_EXTENSION_OK\n"
-    "#endif\n"
-    "#if __has_cpp_attribute(attribute) == 0\n"
-    "# define CPP_ATTRIBUTE_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_cpp_attribute(cpp_attribute) == 5\n"
-    "# define CPP_ATTRIBUTE_CPP_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_cpp_attribute( cpp_attribute ) == 5\n"
-    "# define CPP_ATTRIBUTE_CPP_ATTRIBUTE_SPACE_OK\n"
-    "#endif\n"
-    "#if __has_cpp_attribute(declspec_attribute) == 0\n"
-    "# define CPP_ATTRIBUTE_DECLSPEC_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_cpp_attribute(builtin) == 0\n"
-    "# define CPP_ATTRIBUTE_BUILTIN_OK\n"
-    "#endif\n"
-    "#if __has_declspec_attribute(feature) == 0\n"
-    "# define DECLSPEC_ATTRIBUTE_FEATURE_OK\n"
-    "#endif\n"
-    "#if __has_declspec_attribute(extension) == 0\n"
-    "# define DECLSPEC_ATTRIBUTE_EXTENSION_OK\n"
-    "#endif\n"
-    "#if __has_declspec_attribute(attribute) == 0\n"
-    "# define DECLSPEC_ATTRIBUTE_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_declspec_attribute(cpp_attribute) == 0\n"
-    "# define DECLSPEC_ATTRIBUTE_CPP_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_declspec_attribute(declspec_attribute) == 6\n"
-    "# define DECLSPEC_ATTRIBUTE_DECLSPEC_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_declspec_attribute( declspec_attribute ) == 6\n"
-    "# define DECLSPEC_ATTRIBUTE_DECLSPEC_ATTRIBUTE_SPACE_OK\n"
-    "#endif\n"
-    "#if __has_declspec_attribute(builtin) == 0\n"
-    "# define DECLSPEC_ATTRIBUTE_BUILTIN_OK\n"
-    "#endif\n"
-    "#if __has_builtin(feature) == 0\n"
-    "# define BUILTIN_FEATURE_OK\n"
-    "#endif\n"
-    "#if __has_builtin(extension) == 0\n"
-    "# define BUILTIN_EXTENSION_OK\n"
-    "#endif\n"
-    "#if __has_builtin(attribute) == 0\n"
-    "# define BUILTIN_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_builtin(cpp_attribute) == 0\n"
-    "# define BUILTIN_CPP_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_builtin(declspec_attribute) == 0\n"
-    "# define BUILTIN_DECLSPEC_ATTRIBUTE_OK\n"
-    "#endif\n"
-    "#if __has_builtin(builtin) == 7\n"
-    "# define BUILTIN_BUILTIN_OK\n"
-    "#endif\n"
-    "#if __has_builtin( builtin ) == 7\n"
-    "# define BUILTIN_BUILTIN_SPACE_OK\n"
-    "#endif\n", "(string)");
+      "#if __has_feature(feature) == 2\n"
+      "# define FEATURE_FEATURE_OK\n"
+      "#endif\n"
+      "#if __has_feature( feature ) == 2\n"
+      "# define FEATURE_FEATURE_SPACE_OK\n"
+      "#endif\n"
+      "#if __has_feature(extension) == 0\n"
+      "# define FEATURE_EXTENSION_OK\n"
+      "#endif\n"
+      "#if __has_feature(attribute) == 0\n"
+      "# define FEATURE_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_feature(cpp_attribute) == 0\n"
+      "# define FEATURE_CPP_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_feature(declspec_attribute) == 0\n"
+      "# define FEATURE_DECLSPEC_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_feature(builtin) == 0\n"
+      "# define FEATURE_BUILTIN_OK\n"
+      "#endif\n"
+      "#if __has_feature(warning) == 0\n"
+      "# define FEATURE_WARNING_OK\n"
+      "#endif\n"
+      "#if __has_extension(feature) == 0\n"
+      "# define EXTENSION_FEATURE_OK\n"
+      "#endif\n"
+      "#if __has_extension(extension) == 3\n"
+      "# define EXTENSION_EXTENSION_OK\n"
+      "#endif\n"
+      "#if __has_extension( extension ) == 3\n"
+      "# define EXTENSION_EXTENSION_SPACE_OK\n"
+      "#endif\n"
+      "#if __has_extension(attribute) == 0\n"
+      "# define EXTENSION_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_extension(cpp_attribute) == 0\n"
+      "# define EXTENSION_CPP_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_extension(declspec_attribute) == 0\n"
+      "# define EXTENSION_DECLSPEC_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_extension(builtin) == 0\n"
+      "# define EXTENSION_BUILTIN_OK\n"
+      "#endif\n"
+      "#if __has_extension(warning) == 0\n"
+      "# define EXTENSION_WARNING_OK\n"
+      "#endif\n"
+      "#if __has_attribute(feature) == 0\n"
+      "# define ATTRIBUTE_FEATURE_OK\n"
+      "#endif\n"
+      "#if __has_attribute(extension) == 0\n"
+      "# define ATTRIBUTE_EXTENSION_OK\n"
+      "#endif\n"
+      "#if __has_attribute(attribute) == 4\n"
+      "# define ATTRIBUTE_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_attribute( attribute ) == 4\n"
+      "# define ATTRIBUTE_ATTRIBUTE_SPACE_OK\n"
+      "#endif\n"
+      "#if __has_attribute(cpp_attribute) == 0\n"
+      "# define ATTRIBUTE_CPP_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_attribute(declspec_attribute) == 0\n"
+      "# define ATTRIBUTE_DECLSPEC_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_attribute(builtin) == 0\n"
+      "# define ATTRIBUTE_BUILTIN_OK\n"
+      "#endif\n"
+      "#if __has_attribute(warning) == 0\n"
+      "# define ATTRIBUTE_WARNING_OK\n"
+      "#endif\n"
+      "#if __has_cpp_attribute(feature) == 0\n"
+      "# define CPP_ATTRIBUTE_FEATURE_OK\n"
+      "#endif\n"
+      "#if __has_cpp_attribute(extension) == 0\n"
+      "# define CPP_ATTRIBUTE_EXTENSION_OK\n"
+      "#endif\n"
+      "#if __has_cpp_attribute(attribute) == 0\n"
+      "# define CPP_ATTRIBUTE_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_cpp_attribute(cpp_attribute) == 5\n"
+      "# define CPP_ATTRIBUTE_CPP_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_cpp_attribute( cpp_attribute ) == 5\n"
+      "# define CPP_ATTRIBUTE_CPP_ATTRIBUTE_SPACE_OK\n"
+      "#endif\n"
+      "#if __has_cpp_attribute(declspec_attribute) == 0\n"
+      "# define CPP_ATTRIBUTE_DECLSPEC_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_cpp_attribute(builtin) == 0\n"
+      "# define CPP_ATTRIBUTE_BUILTIN_OK\n"
+      "#endif\n"
+      "#if __has_cpp_attribute(warning) == 0\n"
+      "# define CPP_ATTRIBUTE_WARNING_OK\n"
+      "#endif\n"
+      "#if __has_declspec_attribute(feature) == 0\n"
+      "# define DECLSPEC_ATTRIBUTE_FEATURE_OK\n"
+      "#endif\n"
+      "#if __has_declspec_attribute(extension) == 0\n"
+      "# define DECLSPEC_ATTRIBUTE_EXTENSION_OK\n"
+      "#endif\n"
+      "#if __has_declspec_attribute(attribute) == 0\n"
+      "# define DECLSPEC_ATTRIBUTE_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_declspec_attribute(cpp_attribute) == 0\n"
+      "# define DECLSPEC_ATTRIBUTE_CPP_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_declspec_attribute(declspec_attribute) == 6\n"
+      "# define DECLSPEC_ATTRIBUTE_DECLSPEC_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_declspec_attribute( declspec_attribute ) == 6\n"
+      "# define DECLSPEC_ATTRIBUTE_DECLSPEC_ATTRIBUTE_SPACE_OK\n"
+      "#endif\n"
+      "#if __has_declspec_attribute(builtin) == 0\n"
+      "# define DECLSPEC_ATTRIBUTE_BUILTIN_OK\n"
+      "#endif\n"
+      "#if __has_declspec_attribute(warning) == 0\n"
+      "# define DECLSPEC_ATTRIBUTE_WARNING_OK\n"
+      "#endif\n"
+      "#if __has_builtin(feature) == 0\n"
+      "# define BUILTIN_FEATURE_OK\n"
+      "#endif\n"
+      "#if __has_builtin(extension) == 0\n"
+      "# define BUILTIN_EXTENSION_OK\n"
+      "#endif\n"
+      "#if __has_builtin(attribute) == 0\n"
+      "# define BUILTIN_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_builtin(cpp_attribute) == 0\n"
+      "# define BUILTIN_CPP_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_builtin(declspec_attribute) == 0\n"
+      "# define BUILTIN_DECLSPEC_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_builtin(builtin) == 7\n"
+      "# define BUILTIN_BUILTIN_OK\n"
+      "#endif\n"
+      "#if __has_builtin( builtin ) == 7\n"
+      "# define BUILTIN_BUILTIN_SPACE_OK\n"
+      "#endif\n"
+      "#if __has_builtin(warning) == 0\n"
+      "# define BUILTIN_WARNING_OK\n"
+      "#endif\n"
+      "#if __has_warning(feature) == 0\n"
+      "# define WARNING_FEATURE_OK\n"
+      "#endif\n"
+      "#if __has_warning(extension) == 0\n"
+      "# define WARNING_EXTENSION_OK\n"
+      "#endif\n"
+      "#if __has_warning(attribute) == 0\n"
+      "# define WARNING_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_warning(cpp_attribute) == 0\n"
+      "# define WARNING_CPP_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_warning(declspec_attribute) == 0\n"
+      "# define WARNING_DECLSPEC_ATTRIBUTE_OK\n"
+      "#endif\n"
+      "#if __has_warning(builtin) == 0\n"
+      "# define WARNING_BUILTIN_OK\n"
+      "#endif\n"
+      "#if __has_warning(warning) == 8\n"
+      "# define WARNING_WARNING_OK\n"
+      "#endif\n"
+      "#if __has_warning( warning ) == 8\n"
+      "# define WARNING_WARNING_SPACE_OK\n"
+      "#endif\n",
+      "(string)");
   cpp_parser.ProcessDirectives();
 
   EXPECT_TRUE(cpp_parser.IsMacroDefined("FEATURE_FEATURE_OK"));
@@ -308,6 +355,7 @@ TEST(CppParserTest, HasFeatureResultValue) {
   EXPECT_TRUE(cpp_parser.IsMacroDefined("FEATURE_CPP_ATTRIBUTE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("FEATURE_DECLSPEC_ATTRIBUTE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("FEATURE_BUILTIN_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("FEATURE_WARNING_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("EXTENSION_FEATURE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("EXTENSION_EXTENSION_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("EXTENSION_EXTENSION_SPACE_OK"));
@@ -315,6 +363,7 @@ TEST(CppParserTest, HasFeatureResultValue) {
   EXPECT_TRUE(cpp_parser.IsMacroDefined("EXTENSION_CPP_ATTRIBUTE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("EXTENSION_DECLSPEC_ATTRIBUTE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("EXTENSION_BUILTIN_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("EXTENSION_WARNING_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("ATTRIBUTE_FEATURE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("ATTRIBUTE_EXTENSION_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("ATTRIBUTE_ATTRIBUTE_OK"));
@@ -322,6 +371,7 @@ TEST(CppParserTest, HasFeatureResultValue) {
   EXPECT_TRUE(cpp_parser.IsMacroDefined("ATTRIBUTE_CPP_ATTRIBUTE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("ATTRIBUTE_DECLSPEC_ATTRIBUTE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("ATTRIBUTE_BUILTIN_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("ATTRIBUTE_WARNING_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("CPP_ATTRIBUTE_FEATURE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("CPP_ATTRIBUTE_EXTENSION_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("CPP_ATTRIBUTE_ATTRIBUTE_OK"));
@@ -330,6 +380,7 @@ TEST(CppParserTest, HasFeatureResultValue) {
       "CPP_ATTRIBUTE_CPP_ATTRIBUTE_SPACE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("CPP_ATTRIBUTE_DECLSPEC_ATTRIBUTE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("CPP_ATTRIBUTE_BUILTIN_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("CPP_ATTRIBUTE_WARNING_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("DECLSPEC_ATTRIBUTE_FEATURE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("DECLSPEC_ATTRIBUTE_EXTENSION_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("DECLSPEC_ATTRIBUTE_ATTRIBUTE_OK"));
@@ -339,6 +390,7 @@ TEST(CppParserTest, HasFeatureResultValue) {
   EXPECT_TRUE(cpp_parser.IsMacroDefined(
                   "DECLSPEC_ATTRIBUTE_DECLSPEC_ATTRIBUTE_SPACE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("DECLSPEC_ATTRIBUTE_BUILTIN_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("DECLSPEC_ATTRIBUTE_WARNING_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("BUILTIN_FEATURE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("BUILTIN_EXTENSION_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("BUILTIN_ATTRIBUTE_OK"));
@@ -346,6 +398,14 @@ TEST(CppParserTest, HasFeatureResultValue) {
   EXPECT_TRUE(cpp_parser.IsMacroDefined("BUILTIN_DECLSPEC_ATTRIBUTE_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("BUILTIN_BUILTIN_OK"));
   EXPECT_TRUE(cpp_parser.IsMacroDefined("BUILTIN_BUILTIN_SPACE_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("BUILTIN_WARNING_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("WARNING_FEATURE_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("WARNING_EXTENSION_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("WARNING_ATTRIBUTE_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("WARNING_CPP_ATTRIBUTE_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("WARNING_DECLSPEC_ATTRIBUTE_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("WARNING_WARNING_OK"));
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("WARNING_WARNING_SPACE_OK"));
 }
 
 TEST(CppParserTest, ClangExtendedCheckMacro) {
@@ -400,6 +460,7 @@ TEST(CppParserTest, DontCrashWithEmptyTokenInCheckMacro) {
   info_data->mutable_cxx()->add_supported_predefined_macros(
       "__has_declspec_attribute");
   info_data->mutable_cxx()->add_supported_predefined_macros("__has_builtin");
+  info_data->mutable_cxx()->add_supported_predefined_macros("__has_warning");
   CxxCompilerInfoData::MacroValue* m;
   m = info_data->mutable_cxx()->add_has_feature();
   m->set_key("foo");
@@ -419,36 +480,45 @@ TEST(CppParserTest, DontCrashWithEmptyTokenInCheckMacro) {
   m = info_data->mutable_cxx()->add_has_builtin();
   m->set_key("foo");
   m->set_value(1);
+  m = info_data->mutable_cxx()->add_has_warning();
+  m->set_key("foo");
+  m->set_value(1);
 
   CxxCompilerInfo info(std::move(info_data));
 
   CppParser cpp_parser;
   cpp_parser.SetCompilerInfo(&info);
 
-  cpp_parser.AddStringInput("#if __has_feature()\n#endif\n"
-                            "#if __has_feature(\n#endif\n"
-                            "#if __has_feature\n#endif\n"
-                            "#if __has_extension()\n#endif\n"
-                            "#if __has_extension(\n#endif\n"
-                            "#if __has_extension\n#endif\n"
-                            "#if __has_attribute()\n#endif\n"
-                            "#if __has_attribute(\n#endif\n"
-                            "#if __has_attribute\n#endif\n"
-                            "#if __has_cpp_attribute()\n#endif\n"
-                            "#if __has_cpp_attribute(\n#endif\n"
-                            "#if __has_cpp_attribute\n#endif\n"
-                            "#if __has_declspec_attribute()\n#endif\n"
-                            "#if __has_declspec_attribute(\n#endif\n"
-                            "#if __has_declspec_attribute\n#endif\n"
-                            "#if __has_builtin()\n#endif\n"
-                            "#if __has_builtin(\n#endif\n"
-                            "#if __has_builtin\n#endif\n",
-                            "(string)");
+  cpp_parser.AddStringInput(
+      "#if __has_feature()\n#endif\n"
+      "#if __has_feature(\n#endif\n"
+      "#if __has_feature\n#endif\n"
+      "#if __has_extension()\n#endif\n"
+      "#if __has_extension(\n#endif\n"
+      "#if __has_extension\n#endif\n"
+      "#if __has_attribute()\n#endif\n"
+      "#if __has_attribute(\n#endif\n"
+      "#if __has_attribute\n#endif\n"
+      "#if __has_cpp_attribute()\n#endif\n"
+      "#if __has_cpp_attribute(\n#endif\n"
+      "#if __has_cpp_attribute\n#endif\n"
+      "#if __has_declspec_attribute()\n#endif\n"
+      "#if __has_declspec_attribute(\n#endif\n"
+      "#if __has_declspec_attribute\n#endif\n"
+      "#if __has_builtin()\n#endif\n"
+      "#if __has_builtin(\n#endif\n"
+      "#if __has_builtin\n#endif\n"
+      "#if __has_warning()\n#endif\n"
+      "#if __has_warning(\n#endif\n"
+      "#if __has_warning\n#endif\n",
+      "(string)");
   CppErrorObserver err_observer;
   cpp_parser.set_error_observer(&err_observer);
   cpp_parser.ProcessDirectives();
-  ASSERT_EQ(18U, err_observer.errors().size()) << err_observer.errors();
-  for (int i = 0; i < 18; ++i) {
+  constexpr unsigned kNumExpectedErrors = 21U;
+  ASSERT_EQ(kNumExpectedErrors, err_observer.errors().size())
+      << err_observer.errors();
+  for (int i = 0; i < kNumExpectedErrors; ++i) {
     std::string error_prefix(
         absl::StrCat("CppParser((string):", (i + 1) * 2, ") "));
     EXPECT_TRUE(absl::StartsWith(err_observer.errors()[i], error_prefix));
