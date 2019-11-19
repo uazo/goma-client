@@ -306,6 +306,7 @@ static_library("compiler_proxy_base_lib") {
 
   deps = [
     ":ioutil_lib",
+    ":notification_lib",
     ":time_util_lib",
   ]
 
@@ -850,6 +851,17 @@ static_library("breakpad_lib") {
   ]
 }
 
+static_library("notification_lib") {
+  sources = [
+    "notification.cc",
+    "notification.h",
+  ]
+  deps = [
+    ":common",
+    "//base",
+  ]
+}
+
 executable("gomacc") {
   sources = [
     "gomacc.cc",
@@ -1234,6 +1246,18 @@ static_library("gomacc_test_lib") {
     "//lib",
     "//third_party:glog",
     "//third_party:gtest",
+  ]
+}
+
+static_library("test_worker_thread_lib") {
+  testonly = true
+  sources = [
+    "test_worker_thread.cc",
+    "test_worker_thread.h",
+  ]
+  public_deps = [
+    "//third_party/abseil",
+    "//third_party/chromium_base:platform_thread",
   ]
 }
 
@@ -2189,6 +2213,22 @@ executable("thread_safe_variable_unittest") {
   deps = [
     ":common",
     ":goma_test_lib",
+    ":test_worker_thread_lib",
     "//build/config:exe_and_shlib_deps",
+  ]
+}
+
+executable("notification_unittest") {
+  testonly = true
+  sources = [
+    "notification_unittest.cc",
+  ]
+  deps = [
+    ":common",
+    ":goma_test_lib",
+    ":notification_lib",
+    ":test_worker_thread_lib",
+    "//build/config:exe_and_shlib_deps",
+    "//third_party/abseil",
   ]
 }

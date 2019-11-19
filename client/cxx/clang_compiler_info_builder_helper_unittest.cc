@@ -50,8 +50,9 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseResourceOutputPosix) {
       "-internal-externc-isystem /usr/include/x86_64-linux-gnu "
       "-internal-externc-isystem /include -internal-externc-isystem "
       "/usr/include -ferror-limit 19 -fmessage-length 80 -fsanitize=address "
-      "-fsanitize-blacklist=/third_party/llvm-build/Release+Asserts/lib/clang"
-      "/7.0.0/share/asan_blacklist.txt -fsanitize-address-use-after-scope "
+      "-fsanitize-blacklist=my_blacklist.txt "
+      "-fsanitize-system-blacklist=/third_party/llvm-build/Release+Asserts/lib/"
+      "clang/7.0.0/share/asan_blacklist.txt -fsanitize-address-use-after-scope "
       "-fno-assume-sane-operator-new -fobjc-runtime=gcc "
       "-fdiagnostics-show-option -fcolor-diagnostics -o /dev/null -x c "
       "/dev/null";
@@ -65,6 +66,7 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseResourceOutputPosix) {
   std::vector<ClangCompilerInfoBuilderHelper::ResourceList> expected = {
       {"gcc/x86_64-linux-gnu/4.6/crtbegin.o",
        CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER},
+      {"my_blacklist.txt", CompilerInfoData::CLANG_RESOURCE},
       {"/third_party/llvm-build/Release+Asserts/lib/clang"
        "/7.0.0/share/asan_blacklist.txt",
        CompilerInfoData::CLANG_RESOURCE},

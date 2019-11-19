@@ -3,8 +3,6 @@
 // Copyright 2010 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include <algorithm>
 #include <iomanip>
 #include <string>
@@ -20,7 +18,7 @@ MSVC_POP_WARNING()
 
 namespace devtools_goma {
 
-const int64_t kGraphWidth = 50;
+constexpr int64_t kGraphWidth = 50;
 
 void Histogram::SetName(const std::string& name) {
   name_ = name;

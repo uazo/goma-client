@@ -68,8 +68,7 @@ _TIMESTAMP_FORMAT = '%Y/%m/%d %H:%M:%S'
 _CRASH_SERVER = 'https://clients2.google.com/cr/report'
 _STAGING_CRASH_SERVER = 'https://clients2.google.com/cr/staging_report'
 
-
-def _IsFlagTrue(flag_name, default=False):
+def _IsGomaFlagTrue(flag_name, default=False):
   """Return true when the given flag is true.
 
   Note:
@@ -77,13 +76,13 @@ def _IsFlagTrue(flag_name, default=False):
   Any values that do not match _TRUE_PATTERN are False.
 
   Args:
-    flag_name: name of an environment variable.
+    flag_name: name of a GOMA flag without GOMA_ prefix.
     default: default return value if the flag is not set.
 
   Returns:
     True if the flag is true.  Otherwise False.
   """
-  flag_value = os.environ.get(flag_name, '')
+  flag_value = os.environ.get('GOMA_%s' % flag_name, '')
   if not flag_value:
     return default
 
@@ -519,6 +518,7 @@ class GomaDriver(object):
         'status': self._CheckStatus,
         'stop': self._ShutdownCompilerProxy,
         'version': self._PrintVersion,
+        'goma_dir': self._PrintGomaDir,
         'update_hook': self._UpdateHook,
     }
     self._version = 0
@@ -756,17 +756,48 @@ class GomaDriver(object):
     else:
       print('no running compiler_proxy')
 
+  def _PrintGomaDir(self):
+    """Print goma dir."""
+    goma_dir_source = '$GOMA_DIR'
+    goma_dir = os.environ.get('GOMA_DIR')
+    if not goma_dir:
+      progz = self._env.ControlCompilerProxy('/progz', check_running=False)
+      if progz['status']:
+        running_binary_path = progz['message'].strip()
+        goma_dir = os.path.dirname(running_binary_path)
+        goma_dir_source = 'running compiler_proxy'
+      else:
+        goma_dir = self._env._dir
+        goma_dir_source = 'goma_ctl.py path'
+    if not os.path.exists(os.path.join(goma_dir, self._env._GOMACC)):
+      sys.stderr.write('%s not exists in %s (%s)' % (self._env._GOMACC,
+                                                     goma_dir, goma_dir_source))
+      sys.exit(1)
+    print('%s' % goma_dir)
+
   def _UpdateHook(self):
     """Restart compiler_proxy if binary is updated."""
     binary_version = self._GetDiskCompilerProxyVersion()
+    binary_path = self._env.CompilerProxyBinary()
     versionz = self._env.ControlCompilerProxy('/versionz', check_running=True)
     if versionz['status']:
       running_version =  versionz['message'].strip()
-      if binary_version != running_version:
-        print('update %s -> %s' % (running_version, binary_version))
-        # TODO: check binary path is the same
+      running_binary_path = ''
+      progz = self._env.ControlCompilerProxy('/progz', check_running=False)
+      if progz['status']:
+        running_binary_path = progz['message'].strip()
+      if binary_path == running_binary_path and \
+        binary_version != running_version:
+        print('update %s -> %s @%s' % (running_version, binary_version,
+                                       binary_path))
         # TODO: preserve flag?
         self._RestartCompilerProxy()
+      else:
+        print(
+            'update %s@%s -> %s@%s, skip restart' %
+            (running_version, running_binary_path, binary_version, binary_path))
+    else:
+      print('compiler_proxy is not running')
 
   def _GetLatestVersion(self):
     """Get latest version of goma.
@@ -1185,7 +1216,7 @@ class GomaDriver(object):
       version = 'ver %d %s' % (self._version, version)
 
     send_user_info_default = False
-    if _IsFlagTrue('GOMA_SEND_USER_INFO', default=send_user_info_default):
+    if _IsGomaFlagTrue('SEND_USER_INFO', default=send_user_info_default):
       guid = '%s@%s' % (self._env.GetUsername(), _GetHostname())
     else:
       guid = None
@@ -1408,8 +1439,6 @@ class GomaEnv(object):
     Raises:
       ConfigError if `goma_auth.py config` failed.
     """
-    if _IsFlagTrue('GOMACTL_SKIP_AUTH'):
-      return
     if 'GOMA_SERVICE_ACCOUNT_JSON_FILE' in os.environ:
       return
     if 'GOMA_GCE_SERVICE_ACCOUNT' in os.environ:
@@ -1952,11 +1981,11 @@ class GomaEnv(object):
     for flag_name, default_value in self._DEFAULT_ENV:
       _SetGomaFlagDefaultValueIfEmpty(flag_name, default_value)
 
-    if not _IsFlagTrue('GOMA_USE_SSL'):
+    if not _IsGomaFlagTrue('USE_SSL'):
       for flag_name, default_value in _DEFAULT_NO_SSL_ENV:
         _SetGomaFlagDefaultValueIfEmpty(flag_name, default_value)
 
-    if _IsFlagTrue('GOMA_USE_SSL'):
+    if _IsGomaFlagTrue('USE_SSL'):
       for flag_name, default_value in self._DEFAULT_SSL_ENV:
         _SetGomaFlagDefaultValueIfEmpty(flag_name, default_value)
 
@@ -2491,7 +2520,7 @@ class GomaEnvPosix(GomaEnv):
     return image_name in output
 
   def _ExecCompilerProxy(self):
-    if _IsFlagTrue('GOMA_COMPILER_PROXY_DAEMON_MODE'):
+    if _IsGomaFlagTrue('COMPILER_PROXY_DAEMON_MODE'):
       self._is_daemon_mode = True
     return PopenWithCheck([self._compiler_proxy_binary],
                           stdout=open(os.devnull, "w"),

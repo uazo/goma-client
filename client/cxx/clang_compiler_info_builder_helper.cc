@@ -348,6 +348,8 @@ ClangCompilerInfoBuilderHelper::ParseResourceOutput(
     std::vector<std::string> blacklist_paths;
     flag_parser->AddFlag("fsanitize-blacklist")
         ->SetValueOutputWithCallback(nullptr, &blacklist_paths);
+    flag_parser->AddFlag("fsanitize-system-blacklist")
+        ->SetValueOutputWithCallback(nullptr, &blacklist_paths);
     flag_parser->Parse(argv);
     for (std::string& path : blacklist_paths) {
       paths->emplace_back(std::move(path), CompilerInfoData::CLANG_RESOURCE);
