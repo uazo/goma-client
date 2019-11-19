@@ -386,36 +386,35 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
 
   def testIsGomaFlagTrueShouldShowTrueForVariousTruePatterns(self):
     flag_test_name = 'FLAG_TEST'
-    self.assertFalse(self._module._IsGomaFlagTrue(flag_test_name))
-    os.environ['GOMA_%s' % flag_test_name] = 'T'
-    self.assertTrue(self._module._IsGomaFlagTrue(flag_test_name))
-    os.environ['GOMA_%s' % flag_test_name] = 'true'
-    self.assertTrue(self._module._IsGomaFlagTrue(flag_test_name))
-    os.environ['GOMA_%s' % flag_test_name] = 'y'
-    self.assertTrue(self._module._IsGomaFlagTrue(flag_test_name))
-    os.environ['GOMA_%s' % flag_test_name] = 'Yes'
-    self.assertTrue(self._module._IsGomaFlagTrue(flag_test_name))
-    os.environ['GOMA_%s' % flag_test_name] = '1'
-    self.assertTrue(self._module._IsGomaFlagTrue(flag_test_name))
+    self.assertFalse(self._module._IsFlagTrue(flag_test_name))
+    os.environ[flag_test_name] = 'T'
+    self.assertTrue(self._module._IsFlagTrue(flag_test_name))
+    os.environ[flag_test_name] = 'true'
+    self.assertTrue(self._module._IsFlagTrue(flag_test_name))
+    os.environ[flag_test_name] = 'y'
+    self.assertTrue(self._module._IsFlagTrue(flag_test_name))
+    os.environ[flag_test_name] = 'Yes'
+    self.assertTrue(self._module._IsFlagTrue(flag_test_name))
+    os.environ[flag_test_name] = '1'
+    self.assertTrue(self._module._IsFlagTrue(flag_test_name))
 
   def testIsGomaFlagTrueShouldShowFalseForVariousFalsePatterns(self):
     flag_test_name = 'FLAG_TEST'
-    os.environ['GOMA_%s' % flag_test_name] = 'F'
-    self.assertFalse(self._module._IsGomaFlagTrue(flag_test_name))
-    os.environ['GOMA_%s' % flag_test_name] = 'false'
-    self.assertFalse(self._module._IsGomaFlagTrue(flag_test_name))
-    os.environ['GOMA_%s' % flag_test_name] = 'n'
-    self.assertFalse(self._module._IsGomaFlagTrue(flag_test_name))
-    os.environ['GOMA_%s' % flag_test_name] = 'No'
-    self.assertFalse(self._module._IsGomaFlagTrue(flag_test_name))
-    os.environ['GOMA_%s' % flag_test_name] = '0'
-    self.assertFalse(self._module._IsGomaFlagTrue(flag_test_name))
+    os.environ[flag_test_name] = 'F'
+    self.assertFalse(self._module._IsFlagTrue(flag_test_name))
+    os.environ[flag_test_name] = 'false'
+    self.assertFalse(self._module._IsFlagTrue(flag_test_name))
+    os.environ[flag_test_name] = 'n'
+    self.assertFalse(self._module._IsFlagTrue(flag_test_name))
+    os.environ[flag_test_name] = 'No'
+    self.assertFalse(self._module._IsFlagTrue(flag_test_name))
+    os.environ[flag_test_name] = '0'
+    self.assertFalse(self._module._IsFlagTrue(flag_test_name))
 
   def testIsGomaFlagTrueShouldFollowDefaultIfEnvNotSet(self):
     flag_test_name = 'FLAG_TEST'
-    self.assertFalse(self._module._IsGomaFlagTrue(flag_test_name,
-                                                  default=False))
-    self.assertTrue(self._module._IsGomaFlagTrue(flag_test_name, default=True))
+    self.assertFalse(self._module._IsFlagTrue(flag_test_name, default=False))
+    self.assertTrue(self._module._IsFlagTrue(flag_test_name, default=True))
 
   def testSetGomaFlagDefaultValueIfEmptyShouldSetIfEmpty(self):
     flag_test_name = 'FLAG_TEST'
