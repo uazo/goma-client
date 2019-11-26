@@ -685,13 +685,13 @@ class HttpClient::Task {
     status_->response_header = std::string(resp_->Header());
   }
 
-  HttpClient* client_;
+  HttpClient* const client_;
   const HttpClient::Request* req_;
   std::unique_ptr<HttpClient::Request> cloned_req_;
-  HttpClient::Response* resp_;
-  Status* status_;
-  WorkerThreadManager* wm_;
-  WorkerThread::ThreadId thread_id_;
+  HttpClient::Response* const resp_;
+  Status* const status_;
+  WorkerThreadManager* const wm_;
+  const WorkerThread::ThreadId thread_id_;
   Descriptor* descriptor_;
 
   bool active_;

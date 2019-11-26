@@ -2153,6 +2153,7 @@ fuzzer_test("oauth2_parse_oauth2_access_token_fuzzer") {
     ":oauth2_lib",
   ]
   dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
+  seed_corpus = "//client/fuzzer/corpora/oauth2"
 }
 
 fuzzer_test("oauth2_parse_oauth2_config_fuzzer") {
@@ -2230,5 +2231,17 @@ executable("notification_unittest") {
     ":test_worker_thread_lib",
     "//build/config:exe_and_shlib_deps",
     "//third_party/abseil",
+  ]
+}
+
+executable("json_util_unittest") {
+  testonly = true
+  sources = [
+    "json_util_unittest.cc",
+  ]
+  deps = [
+    ":common",
+    ":goma_test_lib",
+    "//build/config:exe_and_shlib_deps",
   ]
 }

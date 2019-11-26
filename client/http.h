@@ -449,48 +449,50 @@ class HttpClient {
   // Do performs a HTTP transaction.
   // Caller have ownership of req, resp and status.
   // This is synchronous call.
-  void Do(const Request* req, Response* resp, Status* status);
+  void Do(const Request* req, Response* resp, Status* status)
+      LOCKS_EXCLUDED(mu_);
 
   // DoAsync initiates a HTTP transaction.
   // Caller have ownership of req, resp and status, until callback is called
   // (if callback is not NULL) or status->finished becomes true (if callback
   // is NULL).
-  void DoAsync(const Request* req, Response* resp,
+  void DoAsync(const Request* req,
+               Response* resp,
                Status* status,
-               OneshotClosure* callback);
+               OneshotClosure* callback) LOCKS_EXCLUDED(mu_);
 
   // Wait waits for a HTTP transaction initiated by DoAsync with callback=NULL.
   void Wait(Status* status);
 
   // Shutdown the client. all on-the-fly requests will fail.
-  void Shutdown();
-  bool shutting_down() const;
+  void Shutdown() LOCKS_EXCLUDED(mu_);
+  bool shutting_down() const LOCKS_EXCLUDED(mu_);
 
   // ramp_up return [0, 100].
   // ramp_up == 0 means 0% of requests could be sent.
   // ramp_up == 100 means 100% of requests could be sent.
   // when !enabled(), it returns 0.
   // when enabled_from_ == 0, it returns 100.
-  int ramp_up() const;
+  int ramp_up() const LOCKS_EXCLUDED(mu_);
 
   // IsHealthyRecently returns false if more than given percentage
   // (via options_.network_error_threshold_percent) of http requests in
   // last 3 seconds having status code other than 200.
-  bool IsHealthyRecently();
-  std::string GetHealthStatusMessage() const;
+  bool IsHealthyRecently() LOCKS_EXCLUDED(mu_);
+  std::string GetHealthStatusMessage() const LOCKS_EXCLUDED(mu_);
   // Prefer to use IsHealthyRecently instead of IsHealthy to judge
   // network is healthy or not.  HTTP status could be temporarily unhealthy,
   // but we prefer to ignore the case.
-  bool IsHealthy() const;
+  bool IsHealthy() const LOCKS_EXCLUDED(mu_);
 
   // Get email address to login with oauth2.
   std::string GetAccount();
   bool GetOAuth2Config(OAuth2Config* config) const;
 
-  std::string DebugString() const;
+  std::string DebugString() const LOCKS_EXCLUDED(mu_);
 
-  void DumpToJson(Json::Value* json) const;
-  void DumpStatsToProto(HttpRPCStats* stats) const;
+  void DumpToJson(Json::Value* json) const LOCKS_EXCLUDED(mu_);
+  void DumpStatsToProto(HttpRPCStats* stats) const LOCKS_EXCLUDED(mu_);
 
   // options used to construct this client.
   // Note that oauth2_config might have been updated and differ from this one.
@@ -504,24 +506,27 @@ class HttpClient {
       bool in_error);
 
   // public for HttpRPC ping.
-  void IncNumActive();
-  void DecNumActive();
+  void IncNumActive() LOCKS_EXCLUDED(mu_);
+  void DecNumActive() LOCKS_EXCLUDED(mu_);
   // Provided for test that checks socket_pool status.
   // A test should wait all in-flight tasks land.
-  void WaitNoActive();
+  void WaitNoActive() LOCKS_EXCLUDED(mu_);
 
   int UpdateHealthStatusMessageForPing(
-      const Status& status, absl::optional<absl::Duration> round_trip_time);
+      const Status& status,
+      absl::optional<absl::Duration> round_trip_time) LOCKS_EXCLUDED(mu_);
 
   // NetworkErrorStartedTime return a time network error started.
   // Returns absl::nullopt if no error occurred recently.
   // The time will be set on fatal http error (302, 401, 403) and when
   // no socket in socket pool is available to connect to the host.
   // The time will be cleared when HttpClient get 2xx response.
-  absl::optional<absl::Time> NetworkErrorStartedTime() const;
+  absl::optional<absl::Time> NetworkErrorStartedTime() const
+      LOCKS_EXCLUDED(mu_);
 
   // Takes the ownership.
-  void SetMonitor(std::unique_ptr<NetworkErrorMonitor> monitor);
+  void SetMonitor(std::unique_ptr<NetworkErrorMonitor> monitor)
+      LOCKS_EXCLUDED(mu_);
 
  private:
   class Task;
@@ -575,10 +580,10 @@ class HttpClient {
   };
 
   // |may_retry| is provided for initial ping.
-  Descriptor* NewDescriptor();
+  Descriptor* NewDescriptor() LOCKS_EXCLUDED(mu_);
   void ReleaseDescriptor(Descriptor* d, ConnectionCloseState close_state);
 
-  absl::Duration EstimatedRecvTime(size_t bytes);
+  absl::Duration EstimatedRecvTime(size_t bytes) LOCKS_EXCLUDED(mu_);
 
   std::string GetOAuth2Authorization() const;
   bool ShouldRefreshOAuth2AccessToken() const;
@@ -589,23 +594,23 @@ class HttpClient {
   void UpdateBackoffUnlocked(bool in_error) EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Returns time to wait in the queue. If returns 0, no need to wait.
-  absl::Duration TryStart();
+  absl::Duration TryStart() LOCKS_EXCLUDED(mu_);
 
-  void IncNumPending();
-  void DecNumPending();
+  void IncNumPending() LOCKS_EXCLUDED(mu_);
+  void DecNumPending() LOCKS_EXCLUDED(mu_);
 
   // Returns randomized duration to wait in the queue on error.
   absl::Duration GetRandomizedBackoff() const;
 
   // return true if shutting_down or disabled.
-  bool failnow() const;
+  bool failnow() const LOCKS_EXCLUDED(mu_);
 
-  void IncReadByte(int n);
-  void IncWriteByte(int n);
+  void IncReadByte(int n) LOCKS_EXCLUDED(mu_);
+  void IncWriteByte(int n) LOCKS_EXCLUDED(mu_);
 
-  void UpdateStats(const Status& status);
+  void UpdateStats(const Status& status) LOCKS_EXCLUDED(mu_);
 
-  void UpdateTrafficHistory();
+  void UpdateTrafficHistory() LOCKS_EXCLUDED(mu_);
 
   void NetworkErrorDetectedUnlocked() EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void NetworkRecoveredUnlocked() EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -615,14 +620,14 @@ class HttpClient {
       EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   const Options options_;
-  std::unique_ptr<TLSEngineFactory> tls_engine_factory_;
-  std::unique_ptr<SocketFactory> socket_pool_;
+  const std::unique_ptr<TLSEngineFactory> tls_engine_factory_;
+  const std::unique_ptr<SocketFactory> socket_pool_;
   std::unique_ptr<OAuth2AccessTokenRefreshTask> oauth_refresh_task_;
 
-  WorkerThreadManager* wm_;
+  WorkerThreadManager* const wm_;
 
   mutable Lock mu_;
-  ConditionVariable cond_;  // signaled when num_active_ is 0.
+  ConditionVariable cond_ GUARDED_BY(mu_);  // signaled when num_active_ is 0.
   std::string health_status_ GUARDED_BY(mu_);
   bool shutting_down_ GUARDED_BY(mu_);
   std::deque<std::pair<absl::Time, int>>
@@ -665,6 +670,8 @@ class HttpClient {
   std::map<int, int> num_http_status_code_ GUARDED_BY(mu_);
   TrafficHistory traffic_history_ GUARDED_BY(mu_);
   PeriodicClosureId traffic_history_closure_id_ GUARDED_BY(mu_);
+  // TODO: Either wrap |retry_backoff_| inside ThreadSafeVariable
+  // or read it under |mu_| in `GetRandomizedBackoff()`.
   absl::Duration retry_backoff_;
   // if enabled_from_ is set:
   //   if now < *enabled_from: it will be disabled,

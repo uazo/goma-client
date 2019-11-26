@@ -94,7 +94,7 @@ class SimpleTryTest(unittest.TestCase):
     os.chdir(self._cwd)
 
   @staticmethod
-  def ExecCommand(cmd):
+  def ExecCommand(cmd, env=None):
     """Execute given list of command.
 
     Args:
@@ -103,9 +103,8 @@ class SimpleTryTest(unittest.TestCase):
     Returns:
       a tuple of proc instance, stdout string and stderr string.
     """
-    proc = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     (out, err) = proc.communicate()
     return (proc, out, err)
 
@@ -318,6 +317,28 @@ class SimpleTryTest(unittest.TestCase):
                        msg='clang-cl.exe in path env. compile')
     self.AssertNotEmptyFile('test.obj', msg='cl_test_obj')
     self.AssertNoGomaccInfo()
+
+  def testStdoutStderr(self):
+    local_proc, local_out, local_err = self.ExecCommand(
+        ['clang-cl', '/c', '/Fotest.obj',
+         os.path.join('test', 'hello.c')])
+    self.assertEqual(
+        local_proc.returncode,
+        0,
+        msg=('local clang-cl\n%s\n%s\n' % (local_out, local_err)))
+    env = os.environ.copy()
+    env['GOMA_STORE_ONLY'] = 'true'
+    remote_proc, remote_out, remote_err = self.ExecCommand([
+        self.gomacc, 'clang-cl', '/c', '/Fotest.obj',
+        os.path.join('test', 'hello.c')
+    ],
+                                                           env=env)
+    self.assertEqual(
+        remote_proc.returncode,
+        0,
+        msg=('remote clang-cl\n%s\n%s\n' % (remote_out, remote_err)))
+    self.assertEqual(local_out, remote_out)
+    self.assertEqual(local_err, remote_err)
 
   def testAccessCheck(self):
     url = 'http://localhost:%s/e' % (

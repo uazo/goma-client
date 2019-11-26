@@ -8,6 +8,10 @@ namespace devtools_goma {
 
 bool GetStringFromJson(const Json::Value& json, const std::string& key,
                        std::string* value, std::string* error_message) {
+  if (!json.isObject()) {
+    *error_message = "not a JSON object";
+    return false;
+  }
   if (!json.isMember(key)) {
     *error_message = "missing " + key;
     return false;
@@ -39,6 +43,10 @@ bool GetNonEmptyStringFromJson(const Json::Value& json, const std::string& key,
 
 bool GetIntFromJson(const Json::Value& json, const std::string& key,
                     int* value, std::string* error_message) {
+  if (!json.isObject()) {
+    *error_message = "not a JSON object";
+    return false;
+  }
   if (!json.isMember(key)) {
     *error_message = "missing " + key;
     return false;
@@ -56,6 +64,10 @@ bool GetIntFromJson(const Json::Value& json, const std::string& key,
 
 bool GetInt64FromJson(const Json::Value& json, const std::string& key,
                       int64_t* value, std::string* error_message) {
+  if (!json.isObject()) {
+    *error_message = "not a JSON object";
+    return false;
+  }
   if (!json.isMember(key)) {
     *error_message = "missing " + key;
     return false;
@@ -73,6 +85,10 @@ bool GetInt64FromJson(const Json::Value& json, const std::string& key,
 
 bool GetArrayFromJson(const Json::Value& json, const std::string& key,
                       Json::Value* value, std::string* error_message) {
+  if (!json.isObject()) {
+    *error_message = "not a JSON object";
+    return false;
+  }
   if (!json.isMember(key)) {
     *error_message = "missing " + key;
     return false;

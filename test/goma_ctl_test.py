@@ -140,6 +140,9 @@ class FakeGomaEnv(object):
   def CheckConfig(self):
     pass
 
+  def CheckRBEDogfood(self):
+    pass
+
   def ControlCompilerProxy(self, command, check_running=True, need_pids=False):
     if command == '/healthz':
       return {'status': True, 'message': 'ok', 'url': 'dummy_url',

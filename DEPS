@@ -41,7 +41,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@98f969491ce613f146087d6c694808b7d0e81d88",
+     "https://boringssl.googlesource.com/boringssl@75148d7abf12bdd1797fec3c5da9a21963703516",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -111,6 +111,17 @@ deps = {
      # chromium's build.
      "client/third_party/chromium_build":
      "https://chromium.googlesource.com/chromium/src/build/@3fe260c8e2f6ccb84e1e43ab04b321328fb8998c",
+
+     'client/tools/clang/dsymutil': {
+       'packages': [
+         {
+           'package': 'chromium/llvm-build-tools/dsymutil',
+           'version': 'M56jPzDv1620Rnm__jTMYS62Zi8rxHVq7yw0qeBFEgkC',
+         }
+       ],
+       'condition': 'checkout_mac or checkout_ios',
+       'dep_type': 'cipd',
+     },
 }
 
 hooks = [

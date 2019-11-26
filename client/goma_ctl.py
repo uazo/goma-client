@@ -432,6 +432,22 @@ def _GetLogFileTimestamp(glog_log):
   return None
 
 
+def _OverrideEnvVar(key, value):
+    """
+    Sets env var `key` to `value`, overriding the existing value.
+
+    Args:
+      key: The environment variable name
+      value: The value to set the environment variable. Use value=None to unset.
+    """
+    if value is not None:
+      print('override %s=%s' % (key, value))
+      os.environ[key] = value
+    elif key in os.environ:
+      print('override unset %s' % key)
+      del os.environ[key]
+
+
 class ConfigError(Exception):
   """Raises when an error found in configurations."""
 
@@ -582,7 +598,7 @@ class GomaDriver(object):
         self._env.WriteManifest(manifest, directory=self._latest_package_dir)
 
   def _GetRunningCompilerProxyVersion(self):
-    versionz = self._env.ControlCompilerProxy('/versionz', check_running=False)
+    versionz = self._env.ControlCompilerProxy('/versionz', check_running=True)
     if versionz['status']:
       return versionz['message'].strip()
     return None
@@ -615,6 +631,7 @@ class GomaDriver(object):
   def _GenericStartCompilerProxy(self, ensure=False):
     self._env.CheckAuthConfig()
     self._env.CheckConfig()
+    self._env.CheckRBEDogfood()
     if self._compiler_proxy_running is None:
       self._compiler_proxy_running = self._env.CompilerProxyRunning()
     if (not ensure and self._env.MayUsingDefaultIPCPort() and
@@ -762,7 +779,7 @@ class GomaDriver(object):
     goma_dir_source = '$GOMA_DIR'
     goma_dir = os.environ.get('GOMA_DIR')
     if not goma_dir:
-      progz = self._env.ControlCompilerProxy('/progz', check_running=False)
+      progz = self._env.ControlCompilerProxy('/progz', check_running=True)
       if progz['status']:
         running_binary_path = progz['message'].strip()
         goma_dir = os.path.dirname(running_binary_path)
@@ -994,7 +1011,7 @@ class GomaDriver(object):
     print(self._env.ControlCompilerProxy('/histogramz')['message'])
 
   def _PrintFlags(self):
-    flagz = self._env.ControlCompilerProxy('/flagz', check_running=False)
+    flagz = self._env.ControlCompilerProxy('/flagz', check_running=True)
     print(json.dumps(_ParseFlagz(flagz['message'].strip())))
 
   def _PrintJsonStatus(self):
@@ -1292,16 +1309,18 @@ class GomaDriver(object):
     print('  audit                 audit goma client.')
     print('  ensure_start          start compiler proxy if it is not running')
     print('  ensure_stop           synchronous stop of compiler proxy')
+    print('  goma_dir              show goma dir')
     print('  histogram             show histogram')
     print('  jsonstatus [outfile]  show status report in JSON')
     print('  report                create a report file.')
     print('  restart               restart compiler proxy')
+    print('  showflags             show flag settings in json')
     print('  start                 start compiler proxy')
     print('  stat                  show statistics')
     print('  status                get compiler proxy status')
     print('  stop                  asynchronous stop of compiler proxy')
-    print('  version               show binary/running version')
     print('  update_hook           restart if binary is updated.')
+    print('  version               show binary/running version')
 
 
   def _DefaultAction(self):
@@ -1467,8 +1486,7 @@ class GomaEnv(object):
         continue
       if k in os.environ:
         continue
-      print('override %s=%s' % (k, v))
-      os.environ[k] = v
+      _OverrideEnvVar(k, v)
 
   def CheckConfig(self):
     """Checks GomaEnv configurations."""
@@ -1484,6 +1502,20 @@ class GomaEnv(object):
     if not os.path.isfile(self._gomacc_binary):
       raise ConfigError('gomacc(%s) not exist' % self._gomacc_binary)
     self._CheckPlatformConfig()
+
+  def CheckRBEDogfood(self):
+    """Enables RBE dogfood if flag is set."""
+    if not _IsFlagTrue('GOMACTL_RBE_DOGFOOD'):
+      return
+
+    _OverrideEnvVar('GOMA_SERVER_HOST', 'goma.chromium.org')
+    _OverrideEnvVar('GOMA_RPC_EXTRA_PARAMS', '?rbe')
+
+    # On Windows, ATS must be enabled.
+    if isinstance(self, GomaEnvWin):
+      _OverrideEnvVar('GOMA_ARBITRARY_TOOLCHAIN_SUPPORT', 'true')
+
+    # TODO: On Linux, enable ATS by default.
 
   def _GetCompilerProxyPort(self, proc=None):
     """Gets compiler_proxy's port by "gomacc port".
@@ -1566,6 +1598,8 @@ class GomaEnv(object):
     Args:
       command: a string of command to send to the compiler proxy.
       check_running: True if it needs to check compiler_proxy is running
+        if not running, returns {'status': False, ...}.
+        False it waits for compiler_proxy running.
       need_pids: True if it needs stakeholder pids.
 
     Returns:

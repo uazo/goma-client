@@ -1,4 +1,5 @@
 BUILD.generated_tests.gni
+crypto_test_data.cc
 ios-aarch64
 ios-arm
 linux-aarch64

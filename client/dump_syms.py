@@ -20,6 +20,10 @@ import re
 import subprocess
 import sys
 
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+SRC_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+
+
 class Error(Exception):
   """Raised on Error."""
 
@@ -51,7 +55,10 @@ class MacDumpSyms(DumpSyms):
   def Dump(self):
     """Dump symbols for breakpad."""
     dsym_file = self._src + '.dSYM'
-    subprocess.check_call(['dsymutil', self._src, '-o', dsym_file])
+    subprocess.check_call([
+        os.path.join(SRC_DIR, 'tools', 'clang', 'dsymutil', 'bin', 'dsymutil'),
+        self._src, '-o', dsym_file
+    ])
     with open(self._dst, 'w') as f:
       p = subprocess.Popen(
         [self._dump_syms, '-g', dsym_file, self._src],
