@@ -68,9 +68,14 @@ void AutoLockStats::Report(std::ostringstream* ss,
         << "<script src=\"/static/compiler_proxy_contentionz_script.js\">"
         << "</script>"
         << "<body onload=\"init()\">"
-        << (skip_names.empty() ?
-            "<a href=\"./contentionz\">simplified</a>" :
-            "<a href=\"./contentionz?detailed=1\">detailed</a>")
+        << (skip_names.empty()
+                ? "<a href=\"./contentionz\">simplified</a>"
+                : "<a href=\"./contentionz?detailed=1\">detailed</a>")
+#ifdef USE_ABSL_BACKED_SYNC_PRIMITIVES
+        << "<p>Using abseil backed synchronization primitives</p>"
+#else
+        << "<p>Using OS dependent synchronization primitives</p>"
+#endif
         << "<table border=\"1\"><thead>"
         << "<tr><th>name</th>"
         << "<th class=\"count\">count</th>"
@@ -81,8 +86,7 @@ void AutoLockStats::Report(std::ostringstream* ss,
         << "<th class=\"max-hold\">max hold</th>"
         << "<th class=\"ave-hold\">ave hold</th>"
         << "</tr></thead>\n"
-        << "<tbody>"
-        << std::fixed << std::setprecision(9);
+        << "<tbody>" << std::fixed << std::setprecision(9);
 
   {
     AutoLock lock(&mu_);

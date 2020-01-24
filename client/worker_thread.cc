@@ -46,6 +46,8 @@ namespace devtools_goma {
 namespace {
 
 constexpr WorkerThread::ThreadId kInvalidThreadId = 0;
+constexpr absl::Duration kDefaultPollInterval = absl::Milliseconds(500);
+constexpr int kMaxNumConsecutiveIdledLoops = 5000;
 
 // This function returns true at most one per second,
 // used to decide whether LOG_EVERY_SEC logs or not.
@@ -148,6 +150,37 @@ void WorkerThread::ThreadSafeThreadId::Reset() {
   id_ = kInvalidThreadId;
 }
 
+WorkerThread::IdleLoopsThrottler::IdleLoopsThrottler(std::string name, Lock* mu)
+    : name_(std::move(name)), mu_(mu), num_idle_(0) {}
+
+void WorkerThread::IdleLoopsThrottler::OnBusy() {
+  num_idle_ = 0;
+}
+
+void WorkerThread::IdleLoopsThrottler::OnIdle() {
+  if (++num_idle_ == kMaxNumConsecutiveIdledLoops) {
+    num_idle_ = 0;
+
+    mu_->Release();
+    absl::SleepFor(kDefaultPollInterval);
+    LOG_EVERY_N(WARNING, 1000) << "Worker thread name_=" << name_
+                               << " is throttled due to a long period of idle "
+                                  "looping, consider restarting compiler_proxy";
+    mu_->Acquire();
+  }
+}
+
+WorkerThread::IdleLoopsThrottler::Raii::Raii(IdleLoopsThrottler* throttler)
+    : throttler_(throttler), idle_(false) {}
+
+WorkerThread::IdleLoopsThrottler::Raii::~Raii() {
+  if (idle_) {
+    throttler_->OnIdle();
+  } else {
+    throttler_->OnBusy();
+  }
+}
+
 WorkerThread::WorkerThread(int pool, std::string name)
     : name_(std::move(name)),
       pool_(pool),
@@ -156,7 +189,8 @@ WorkerThread::WorkerThread(int pool, std::string name)
       shutting_down_(false),
       quit_(false),
       auto_lock_stat_next_closure_(nullptr),
-      auto_lock_stat_poll_events_(nullptr) {
+      auto_lock_stat_poll_events_(nullptr),
+      idle_loops_throttler_(name_, &mu_) {
   VLOG(2) << "WorkerThread " << name_;
   int pipe_fd[2];
 #ifndef _WIN32
@@ -479,14 +513,12 @@ bool WorkerThread::NextClosure() {
   DCHECK(!now_cached_.get());  // NowCached() will get new time
   ++tick_;
   current_closure_data_.reset();
+  IdleLoopsThrottler::Raii throttler_raii(&idle_loops_throttler_);
 
-  // Default descriptor polling timeout.
   // If there are pending closures, it will check descriptors without timeout.
   // If there are deplayed closures, it will reduce intervals to the nearest
   // delayed closure.
-  constexpr absl::Duration kPollInterval = absl::Milliseconds(500);
-
-  poll_interval_ = kPollInterval;
+  poll_interval_ = kDefaultPollInterval;
 
   int priority = PRIORITY_IMMEDIATE;
   for (priority = PRIORITY_IMMEDIATE; priority >= PRIORITY_MIN; --priority) {
@@ -521,7 +553,7 @@ bool WorkerThread::NextClosure() {
   now_cached_.set(timer_.GetDuration());
   // on Windows, poll time would be 0.51481 or so when no event happened.
   // multiply 1.1 (i.e. 0.55) would be good.
-  if (NowCached() - poll_start_time > 1.1 * kPollInterval) {
+  if (NowCached() - poll_start_time > 1.1 * kDefaultPollInterval) {
     LOG(WARNING) << id() << " poll too slow:" << (NowCached() - poll_start_time)
                  << " nsec"
                  << " interval=" << poll_interval_ << " msec"
@@ -606,7 +638,8 @@ bool WorkerThread::NextClosure() {
               << " periodic_closures=" << periodic_closures_.size()
               << " descriptors=" << descriptors_.empty();
   }
-  VLOG(4) << "NextClosure: no closure to run";
+  VLOG(4) << "NextClosure: no closure to run, name_=" << name_;
+  throttler_raii.MarkLoopIdle();
   return true;
 }
 

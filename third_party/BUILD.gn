@@ -43,7 +43,7 @@ glog_include_dirs = [
 glog_defines = [ "HAVE_CONFIG_H" ]
 
 if (os == "win" &&
-    (visual_studio_version == "2015" || visual_studio_version == "2017")) {
+    (visual_studio_version == "2017" || visual_studio_version == "2019")) {
   glog_defines += [ "HAVE_SNPRINTF" ]
 }
 

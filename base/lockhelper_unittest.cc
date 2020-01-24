@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "absl/synchronization/notification.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
@@ -19,6 +20,7 @@ namespace devtools_goma {
 
 // Basic test to make sure that Acquire()/Release()/Try() don't crash
 
+template <typename Lock>
 class BasicLockTestThread : public PlatformThread::Delegate {
  public:
   explicit BasicLockTestThread(Lock* lock) : lock_(lock), acquired_(0) {
@@ -54,9 +56,10 @@ class BasicLockTestThread : public PlatformThread::Delegate {
   int acquired_;
 };
 
+template <typename Lock>
 bool BasicLockTest() {
   Lock lock;
-  BasicLockTestThread thread(&lock);
+  BasicLockTestThread<Lock> thread(&lock);
   PlatformThreadHandle handle = kNullThreadHandle;
 
   EXPECT_TRUE(PlatformThread::Create(&thread, &handle));
@@ -97,6 +100,7 @@ bool BasicLockTest() {
 
 // Test that Try() works as expected -------------------------------------------
 
+template <typename Lock>
 class TryLockTestThread : public PlatformThread::Delegate {
  public:
   explicit TryLockTestThread(Lock* lock) : lock_(lock), got_lock_(false) {
@@ -120,13 +124,16 @@ class TryLockTestThread : public PlatformThread::Delegate {
   bool got_lock_;
 };
 
+template <typename Lock>
 bool TryLockTest() {
+  using ThreadT = TryLockTestThread<Lock>;
+
   Lock lock;
 
   if (lock.Try()) {
     // We now have the lock....
     // This thread will not be able to get the lock.
-    TryLockTestThread thread(&lock);
+    ThreadT thread(&lock);
     PlatformThreadHandle handle = kNullThreadHandle;
 
     EXPECT_TRUE(PlatformThread::Create(&thread, &handle));
@@ -142,7 +149,7 @@ bool TryLockTest() {
 
   // This thread will....
   {
-    TryLockTestThread thread(&lock);
+    ThreadT thread(&lock);
     PlatformThreadHandle handle = kNullThreadHandle;
 
     EXPECT_TRUE(PlatformThread::Create(&thread, &handle));
@@ -163,6 +170,7 @@ bool TryLockTest() {
 
 // Tests that locks actually exclude -------------------------------------------
 
+template <typename Lock>
 class MutexLockTestThread : public PlatformThread::Delegate {
  public:
   MutexLockTestThread(Lock* lock, int* value) : lock_(lock), value_(value) {}
@@ -189,16 +197,19 @@ class MutexLockTestThread : public PlatformThread::Delegate {
   int* value_;
 };
 
+template <typename Lock>
 bool MutexTwoThreads() {
+  using ThreadT = MutexLockTestThread<Lock>;
+
   Lock lock;
   int value = 0;
 
-  MutexLockTestThread thread(&lock, &value);
+  ThreadT thread(&lock, &value);
   PlatformThreadHandle handle = kNullThreadHandle;
 
   EXPECT_TRUE(PlatformThread::Create(&thread, &handle));
 
-  MutexLockTestThread::DoStuff(&lock, &value);
+  ThreadT::DoStuff(&lock, &value);
 
   PlatformThread::Join(handle);
 
@@ -206,13 +217,16 @@ bool MutexTwoThreads() {
   return true;
 }
 
+template <typename Lock>
 bool MutexFourThreads() {
+  using ThreadT = MutexLockTestThread<Lock>;
+
   Lock lock;
   int value = 0;
 
-  MutexLockTestThread thread1(&lock, &value);
-  MutexLockTestThread thread2(&lock, &value);
-  MutexLockTestThread thread3(&lock, &value);
+  ThreadT thread1(&lock, &value);
+  ThreadT thread2(&lock, &value);
+  ThreadT thread3(&lock, &value);
   PlatformThreadHandle handle1 = kNullThreadHandle;
   PlatformThreadHandle handle2 = kNullThreadHandle;
   PlatformThreadHandle handle3 = kNullThreadHandle;
@@ -221,7 +235,7 @@ bool MutexFourThreads() {
   EXPECT_TRUE(PlatformThread::Create(&thread2, &handle2));
   EXPECT_TRUE(PlatformThread::Create(&thread3, &handle3));
 
-  MutexLockTestThread::DoStuff(&lock, &value);
+  ThreadT::DoStuff(&lock, &value);
 
   PlatformThread::Join(handle1);
   PlatformThread::Join(handle2);
@@ -231,6 +245,7 @@ bool MutexFourThreads() {
   return true;
 }
 
+template <typename Lock, typename CV>
 class ConditionVariableTestThread : public PlatformThread::Delegate {
  public:
   struct Data {
@@ -241,12 +256,8 @@ class ConditionVariableTestThread : public PlatformThread::Delegate {
     int count;
   };
 
-  ConditionVariableTestThread(int id,
-                              Lock* lock,
-                              ConditionVariable* cond,
-                              Data* data)
-      : id_(id), lock_(lock), cond_(cond), data_(data) {
-  }
+  ConditionVariableTestThread(int id, Lock* lock, CV* cond, Data* data)
+      : id_(id), lock_(lock), cond_(cond), data_(data) {}
   ConditionVariableTestThread(const ConditionVariableTestThread&) = delete;
   ConditionVariableTestThread& operator=(const ConditionVariableTestThread&) =
       delete;
@@ -306,20 +317,22 @@ class ConditionVariableTestThread : public PlatformThread::Delegate {
   const int id_;
 
   Lock* lock_;
-  ConditionVariable* cond_;
+  CV* cond_;
   Data* data_;
 };
 
-bool ConditionVar() {
-  Lock lock;
-  ConditionVariable cond;
-  ConditionVariableTestThread::Data data;
+template <typename Lock, typename CV>
+bool ConditionVarTest() {
+  using ThreadT = ConditionVariableTestThread<Lock, CV>;
 
-  std::unique_ptr<ConditionVariableTestThread> threads[2];
+  Lock lock;
+  CV cond;
+  typename ThreadT::Data data;
+
+  std::unique_ptr<ThreadT> threads[2];
   PlatformThreadHandle handles[2];
   for (int i = 0; i < 2; ++i) {
-    threads[i] =
-        absl::make_unique<ConditionVariableTestThread>(i, &lock, &cond, &data);
+    threads[i] = absl::make_unique<ThreadT>(i, &lock, &cond, &data);
     handles[i] = kNullThreadHandle;
   }
 
@@ -598,23 +611,93 @@ class IncrementThread : public PlatformThread::Delegate {
 using FastIncrement = IncrementThread<FastLock, AutoFastLock>;
 using NormalIncrement = IncrementThread<Lock, AutoLock>;
 
+class AbslCondVarWaitTimeoutThread : public PlatformThread::Delegate {
+ public:
+  AbslCondVarWaitTimeoutThread(AbslBackedLock* lock,
+                               AbslBackedCondVar* cv,
+                               absl::Notification* n,
+                               bool* done)
+      : lock_(lock), cv_(cv), n_(n), done_(done) {}
+  AbslCondVarWaitTimeoutThread(const AbslCondVarWaitTimeoutThread&) = delete;
+  AbslCondVarWaitTimeoutThread& operator=(const AbslCondVarWaitTimeoutThread&) =
+      delete;
+
+  void ThreadMain() override {
+    n_->WaitForNotification();
+
+    lock_->Acquire();
+    *done_ = true;
+    cv_->Signal();
+    lock_->Release();
+  }
+
+ private:
+  AbslBackedLock* const lock_;
+  AbslBackedCondVar* const cv_;
+  absl::Notification* const n_;
+  bool* done_;
+};
+
+bool AbslCondVarWaitTimeoutTest() {
+  AbslBackedLock lock;
+  AbslBackedCondVar cv;
+  absl::Notification n;
+  bool done = false;
+
+  AbslCondVarWaitTimeoutThread thread(&lock, &cv, &n, &done);
+  PlatformThreadHandle handle = kNullThreadHandle;
+
+  EXPECT_TRUE(PlatformThread::Create(&thread, &handle));
+
+  lock.Acquire();
+  const bool timedout = cv.WaitWithTimeout(&lock, absl::Milliseconds(10));
+  lock.Release();
+
+  EXPECT_TRUE(timedout);
+  EXPECT_FALSE(done);
+
+  lock.Acquire();
+  n.Notify();
+  cv.Wait(&lock);
+  lock.Release();
+  EXPECT_TRUE(done);
+
+  PlatformThread::Join(handle);
+
+  return true;
+}
+
 }  // namespace devtools_goma
 
+using OsDependentLock = devtools_goma::OsDependentLock;
+using OsDependentRwLock = devtools_goma::OsDependentRwLock;
+using AbslBackedLock = devtools_goma::AbslBackedLock;
+using OsDependentCondVar = devtools_goma::OsDependentCondVar;
+using AbslBackedCondVar = devtools_goma::AbslBackedCondVar;
+
 TEST(LockTest, Basic) {
-  ASSERT_TRUE(devtools_goma::BasicLockTest());
+  ASSERT_TRUE(devtools_goma::BasicLockTest<OsDependentLock>());
+  ASSERT_TRUE(devtools_goma::BasicLockTest<AbslBackedLock>());
 }
 
 TEST(LockTest, TryLock) {
-  ASSERT_TRUE(devtools_goma::TryLockTest());
+  ASSERT_TRUE(devtools_goma::TryLockTest<OsDependentLock>());
+  ASSERT_TRUE(devtools_goma::TryLockTest<AbslBackedLock>());
 }
 
 TEST(LockTest, Mutex) {
-  ASSERT_TRUE(devtools_goma::MutexTwoThreads());
-  ASSERT_TRUE(devtools_goma::MutexFourThreads());
+  ASSERT_TRUE(devtools_goma::MutexTwoThreads<OsDependentLock>());
+  ASSERT_TRUE(devtools_goma::MutexTwoThreads<AbslBackedLock>());
+  ASSERT_TRUE(devtools_goma::MutexFourThreads<OsDependentLock>());
+  ASSERT_TRUE(devtools_goma::MutexFourThreads<AbslBackedLock>());
 }
 
 TEST(LockTest, ConditionVar) {
-  ASSERT_TRUE(devtools_goma::ConditionVar());
+  bool ok =
+      devtools_goma::ConditionVarTest<OsDependentLock, OsDependentCondVar>();
+  ASSERT_TRUE(ok);
+  ok = devtools_goma::ConditionVarTest<AbslBackedLock, AbslBackedCondVar>();
+  ASSERT_TRUE(ok);
 }
 
 TEST(ReadWriteLockTest, ReadWriteLockBasic) {
@@ -629,4 +712,8 @@ TEST(ReadWriteLockTest, ReadWriteLockAcquireExclusive) {
 TEST(ReadWriteLockTest, ReadWriteLockAcquireShared) {
   ASSERT_TRUE(devtools_goma::ReadWriteLockAcquireSharedWithExclusiveLockTest());
   ASSERT_TRUE(devtools_goma::ReadWriteLockAcquireSharedWithSharedLockTest());
+}
+
+TEST(CondVarTest, AbslCondVarWaitTimeoutTest) {
+  ASSERT_TRUE(devtools_goma::AbslCondVarWaitTimeoutTest());
 }

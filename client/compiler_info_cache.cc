@@ -1,8 +1,6 @@
 // Copyright 2015 The Goma Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-
 #include "compiler_info_cache.h"
 
 #include <memory>
@@ -255,6 +253,9 @@ CompilerInfoState* CompilerInfoCache::Store(
   }
   LOG(INFO) << "Update state=" << state.get()
             << " for key=" << compiler_info_key
+            << " version=" << state.get()->info().version()
+            << " target=" << state.get()->info().target()
+            << " compiler_hash=" << state.get()->info().request_compiler_hash()
             << " hash=" << hash;
 
   // Check if the same local compiler was already disabled.

@@ -6,7 +6,14 @@ if (os == "win") {
   import("//build/toolchain/goma.gni")
 }
 
+import("//build/config/clang/clang.gni")
 import("//build/toolchain/toolchain.gni")
+
+declare_args() {
+  # We don't really care about warnings from the third party code, so don't
+  # treat them as errors by default.
+  treat_no_goma_code_warnings_as_errors = false
+}
 
 # default_include_dirs ---------------------------------------------------------
 #
@@ -29,6 +36,9 @@ config("compiler") {
   cflags_objcc = []
   ldflags = []
   defines = []
+  configs = []
+
+  configs += [ ":clang_revision" ]
   if (is_posix) {
     cflags_cc += [ "-std=c++14" ]
 
@@ -48,10 +58,6 @@ config("compiler") {
     if (!is_asan && !is_debug) {
       defines += [ "_FORTIFY_SOURCE=2" ]
     }
-  }
-
-  if (is_clang) {
-    cflags += [ "-Werror" ]
   }
 
   if (os == "linux") {
@@ -174,12 +180,10 @@ config("compiler") {
         # Many files use intrinsics without including this header.
         "/FIIntrin.h",
       ]
-      if (visual_studio_version == "2013") {
-        cflags += [ "-fmsc-version=1800" ]
-      } else if (visual_studio_version == "2015") {
-        cflags += [ "-fmsc-version=1900" ]
-      } else if (visual_studio_version == "2017") {
+      if (visual_studio_version == "2017") {
         cflags += [ "-fmsc-version=1911" ]
+      } else if (visual_studio_version == "2019") {
+        cflags += [ "-fmsc-version=1916" ]
       }
       if (current_cpu == "x86") {
         cflags += [ "-m32" ]
@@ -255,6 +259,27 @@ config("enable_lzma") {
 
 config("keep_subproc_stderr") {
   defines = [ "KEEP_SUBPROC_STDERR" ]
+}
+
+config("clang_revision") {
+  if (is_clang && clang_base_path == default_clang_base_path) {
+    update_args = [
+      "--print-revision",
+      "--verify-version=$clang_version",
+    ]
+    if (llvm_force_head_revision) {
+      update_args += [ "--llvm-force-head-revision" ]
+    }
+    clang_revision = exec_script("//tools/clang/scripts/update.py",
+                                 update_args,
+                                 "trim string")
+
+    # This is here so that all files get recompiled after a clang roll and
+    # when turning clang on or off. (defines are passed via the command line,
+    # and build system rebuild things when their commandline changes). Nothing
+    # should ever read this define.
+    defines = [ "CR_CLANG_REVISION=\"$clang_revision\"" ]
+  }
 }
 
 # Optimization --------------------------------------------------------------
@@ -432,6 +457,7 @@ config("goma_code") {
 
       # This is for buildtools/third_party/libc++abi/cxa_demangle_stub.cc
       "-Wno-unused-parameter",
+      "-Werror",
     ]
   }
 }
@@ -494,6 +520,10 @@ config("no_goma_code") {
       "-Wno-unused-result",
       "-Wno-format",
     ]
+  }
+
+  if (is_clang && treat_no_goma_code_warnings_as_errors) {
+    cflags += [ "-Werror" ]
   }
 }
 

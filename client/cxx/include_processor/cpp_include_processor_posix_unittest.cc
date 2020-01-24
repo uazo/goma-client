@@ -1,12 +1,13 @@
-// Copyright 2018 The Goma Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// Copyright 2018 Google LLC.
 //
 // You can specify the clang binary for this test by
 //
 // GOMATEST_CLANG_PATH=/somewhere/bin/clang ./include_processor_unittest
 
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/strip.h"
 #include "clang_modules/modulemap/cache.h"
 #include "compiler_flags.h"
 #include "compiler_flags_parser.h"
@@ -40,6 +41,7 @@ class CppIncludeProcessorPosixTest : public testing::Test {
   void InitClangPath() {
     clang_path_ = GetClangPath();
     ASSERT_TRUE(!clang_path_.empty());
+
   }
 
   void SetUp() override {
@@ -162,40 +164,75 @@ class CppIncludeProcessorPosixTest : public testing::Test {
   }
 
   std::set<std::string> GetExpectedFiles(std::vector<std::string> args) {
-    args.push_back("-M");
+    // output of -M might contain extra files.
+    // http://b/145317553
+    // so use -E output.
+    args.push_back("-E");
 
     std::vector<std::string> env(env_);
     env.push_back("LC_ALL=C");
 
-    // The output format of -M will be
+    // The output format of -E will be
     //
-    // stdio: /usr/include/stdio.h /usr/include/features.h \\\n
-    //   /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h \\\n
-    //   ...
+    // # <n> "<filename>" <flags>
+    //
+    // https://gcc.gnu.org/onlinedocs/gcc-3.4.6/cpp/Preprocessor-Output.html
     int exit_status;
     std::string command_output = ReadCommandOutputByPopen(
         args[0], args, env, tmpdir_util_->tmpdir(), STDOUT_ONLY, &exit_status);
-    std::vector<std::string> files = ToVector(absl::StrSplit(
-        command_output, absl::ByAnyChar(" \n\r\\"), absl::SkipEmpty()));
+    std::vector<std::string> lines = ToVector(absl::StrSplit(
+        command_output, absl::ByAnyChar("\n\r"), absl::SkipEmpty()));
     LOG_IF(INFO, exit_status != 0)
         << "non-zero exit status."
         << " args=" << args << " exit_status=" << exit_status;
     std::set<std::string> expected_files;
     PathResolver pr;
-    // Skip the first element as it's the make target.
-    for (size_t i = 1; i < files.size(); i++) {
-      if (files[i].empty())
+    for (const auto& line : lines) {
+      absl::string_view data(line);
+      if (!absl::ConsumePrefix(&data, "# ")) {
         continue;
+      }
+      // skip linenumber
+      while (!data.empty()) {
+        if (!absl::ascii_isdigit(data.front())) {
+          break;
+        }
+        data.remove_prefix(1);
+      }
+      if (!absl::ascii_isspace(data.front())) {
+        LOG(WARNING) << "unexpected line:" << line;
+        continue;
+      }
+      data = absl::StripLeadingAsciiWhitespace(data);
+      // parse filename
+      bool quoted = absl::ConsumePrefix(&data, "\"");
+      int i = 0;
+      while (i < data.length()) {
+        if ((quoted && data.at(i) == '"') || absl::ascii_isspace(data.at(i))) {
+          break;
+        }
+        i++;
+      }
+      if (i == data.length()) {
+        LOG(WARNING) << "unexpected line:" << line;
+        continue;
+      }
+      absl::string_view filename = data.substr(0, i);
+      // ignore flags
+
+      if (absl::StartsWith(filename, "<")) {
+        // ignore <built-in> <command-line> etc.
+        continue;
+      }
 
       // For the include files in the current directory, gcc or clang returns
       // it with relative path. we need to normalize it to absolute path.
-      std::string file =
-          file::JoinPathRespectAbsolute(tmpdir_util_->tmpdir(), files[i]);
+      std::string file = file::JoinPathRespectAbsolute(tmpdir_util_->tmpdir(),
+                                                       std::string(filename));
       // Need normalization as GCC may output a same file in different way.
       // TODO: don't use ResolvePath.
       expected_files.insert(pr.ResolvePath(file));
     }
-
     return expected_files;
   }
 
@@ -1731,7 +1768,10 @@ TEST_F(CppIncludeProcessorPosixTest, fmodules) {
       "}\n",
       "module.modulemap");
 
-  RunTest(clang_path_, a_cc, args);
+  RunTestAllowExtra(
+      clang_path_, a_cc, args,
+      {file::JoinPath(tmpdir_util_->tmpdir(), "a.h"),
+       file::JoinPath(tmpdir_util_->tmpdir(), "module.modulemap")});
 }
 
 TEST_F(CppIncludeProcessorPosixTest, fmodule_map_file) {
@@ -1747,7 +1787,8 @@ TEST_F(CppIncludeProcessorPosixTest, fmodule_map_file) {
 
   const std::vector<std::string> args{
       "-fmodules", "-fmodule-map-file=tmp.modulemap", "-fmodule-name=foo"};
-  RunTest(clang_path_, a_cc, args);
+  RunTestAllowExtra(clang_path_, a_cc, args,
+                    {file::JoinPath(tmpdir_util_->tmpdir(), "tmp.modulemap")});
 }
 
 TEST_F(CppIncludeProcessorPosixTest, fmodule_map_file_extern) {
@@ -1770,7 +1811,11 @@ module baz {
 
   const std::vector<std::string> args{
       "-fmodules", "-fmodule-map-file=foo.modulemap", "-fmodule-name=foo"};
-  RunTest(clang_path_, a_cc, args);
+  RunTestAllowExtra(
+      clang_path_, a_cc, args,
+      {file::JoinPath(tmpdir_util_->tmpdir(), "foo.modulemap"),
+       file::JoinPath(tmpdir_util_->tmpdir(), "bar/bar.modulemap"),
+       file::JoinPath(tmpdir_util_->tmpdir(), "bar/baz/baz.modulemap")});
 }
 
 TEST_F(CppIncludeProcessorPosixTest, fmodule_map_file_extern_dup) {
@@ -1802,7 +1847,11 @@ module qux {
 
   const std::vector<std::string> args{
       "-fmodules", "-fmodule-map-file=foo.modulemap", "-fmodule-name=foo"};
-  RunTest(clang_path_, a_cc, args);
+  RunTestAllowExtra(clang_path_, a_cc, args,
+                    {file::JoinPath(tmpdir_util_->tmpdir(), "foo.modulemap"),
+                     file::JoinPath(tmpdir_util_->tmpdir(), "bar.modulemap"),
+                     file::JoinPath(tmpdir_util_->tmpdir(), "baz.modulemap"),
+                     file::JoinPath(tmpdir_util_->tmpdir(), "qux.modulemap")});
 }
 
 TEST_F(CppIncludeProcessorPosixTest, fmodule_file) {
@@ -1847,7 +1896,11 @@ TEST_F(CppIncludeProcessorPosixTest, fmodule_file) {
   // binary file.
   //
   // "a.h" will be extra.
-  const std::set<std::string> allowed_extra_files{a_h};
+  const std::set<std::string> allowed_extra_files{
+      a_h,
+      file::JoinPath(tmpdir_util_->tmpdir(), "module.modulemap"),
+      file::JoinPath(tmpdir_util_->tmpdir(), "module.pcm"),
+  };
   RunTestAllowExtra(clang_path_, a_cc, args, allowed_extra_files);
 }
 

@@ -42,4 +42,6 @@ TEST(ElfDepParserTest, GetDepsSmokeWithDifferentCwd) {
   EXPECT_THAT(deps, ::testing::Contains(::testing::HasSubstr("/libc.so.")));
 }
 
+// TODO: write a test to use default trusted libraries.
+
 }  // namespace devtools_goma

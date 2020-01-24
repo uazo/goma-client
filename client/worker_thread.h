@@ -296,6 +296,40 @@ class WorkerThread : public PlatformThread::Delegate {
   std::unique_ptr<DescriptorPoller> poller_;
   absl::Duration poll_interval_ GUARDED_BY(mu_);
 
+  // Due to bugs like b/145046673 and b/131856067, we need to throttle the
+  // thread by forcefully yielding the CPU if it has been in a consecutive idle
+  // loop for too long. This could hurt IO throughput in theory (I doubt it,
+  // because whenever Goma is in such a state, it is pretty much dead in the
+  // water), but it works and the ideal fix (threading + IO model) will take
+  // much longer time.
+  class IdleLoopsThrottler {
+   public:
+    IdleLoopsThrottler(std::string name, Lock* mu);
+    class Raii {
+     public:
+      explicit Raii(IdleLoopsThrottler* throttler);
+      // ~Raii() could block.
+      ~Raii();
+
+      void MarkLoopIdle() { idle_ = true; }
+
+     private:
+      IdleLoopsThrottler* const throttler_;
+      bool idle_;
+    };
+
+   private:
+    friend class Raii;
+
+    void OnBusy() EXCLUSIVE_LOCKS_REQUIRED(mu_);
+    void OnIdle() EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+    const std::string name_;
+    Lock* const mu_;
+    int num_idle_;
+  };
+  IdleLoopsThrottler idle_loops_throttler_ GUARDED_BY(mu_);
+
   static absl::once_flag key_worker_once_;
 #ifndef _WIN32
   static pthread_key_t key_worker_;

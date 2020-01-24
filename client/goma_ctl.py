@@ -171,37 +171,88 @@ def _ShouldUpdate(cur_ver, next_ver, bad_vers):
   return _IsBadVersion(cur_ver, bad_vers)
 
 
-def _ParseSpaceSeparatedValues(data):
-  """Parses space separated values.
+def _ParseTaskList(data):
+  """Parse tasklist command result.
 
-  This function assumes that 1st line is a list of labels.
-
-  e.g. If data is like this:
-  | COMMAND   PID
-  | bash        1
-  | tcsh        2
+  e.g. If |data| is like:
+  |
+  | Image name      PID  Session Name
+  |
+  | ============== ==== =============
+  |
+  | compiler.exe    123       Console
+  | system.exe      456        System
+  |
   This function returns:
-  | [{'COMMAND': 'bash', 'PID': '1'}, {'COMMAND': 'tcsh', 'PID': '2'}]
+  | [{'Image name': 'compiler.exe', 'PID': '123', 'Session Name': 'Console'},
+  |  {'Image name': 'system.exe', 'PID': '456', 'Session Name': 'System'}]
 
   Args:
-    data: space separated values to be parsed.
+    data: result of tasklist command.
 
-  Returns:
-    a list of dictionaries parsed from data.
+  Return:
+    a list of dictionaries parsed from the data.
+
+  Raises:
+    Error if it failed to parse.
   """
-  data = _DecodeBytesOnPython3(data)
-  # TODO: remove this if I will not use this on Windows.
-  label = None
+  labels = []
+  offsets = []
   contents = []
-  for line in data.splitlines():
-    entries = line.split()
-    if not entries:  # skip empty line.
-      continue
+  lines = [x for x in data.splitlines() if x.strip()]
 
-    if not label:  # 1st line.
-      label = entries
-    else:
-      contents.append(dict(list(zip(label, entries))))
+  if len(lines) < 2:
+    raise Error('tasklist result is too short: %s' % data)
+
+  label_line = lines[0]
+  sep_line = lines[1]
+  # Parse separater line ('== ==')
+  idx = 0
+  while idx < len(sep_line):
+    begin = sep_line.find('=', idx)
+    if begin < 0:
+      break
+    end = sep_line.find(' ', idx)
+    if end < 0:
+      offsets.append((begin, len(sep_line)))
+      break
+    offsets.append((begin, end))
+    idx = end + 1
+
+  def ParseEntries(line):
+    """Parse entries from line."""
+    entries = []
+    for begin, end in offsets:
+      if len(line) < begin:
+        # We detect lack of column.
+        # e.g. compiler.exe does not have PID entry:
+        # | Image name      PID\n
+        # | ============== ====\n
+        # | compiler.exe\n
+        #
+        # Note that we allow white space column, which will be '':
+        # e.g.
+        # | Image name      PID\n
+        # | ============== ====\n
+        # | compiler.exe       \n
+        raise Error('line does not have enough entries to parse: %s' % data)
+      if len(line) > end and line[end] != ' ':
+        # We detect lack of delimiter.
+        # e.g.
+        # | Image name      PID\n
+        # | ============== ====\n
+        # | aaaaaaaaaaaaaaaaaaa\n
+        raise Error('no delimiter between columns: %s' % data)
+      entries.append(line[begin:end].strip())
+    return entries
+
+  # Parse label line.
+  labels = ParseEntries(label_line)
+
+  for line in lines[2:]:
+    if not line:
+      continue
+    contents.append(dict(zip(labels, ParseEntries(line))))
   return contents
 
 
@@ -433,19 +484,19 @@ def _GetLogFileTimestamp(glog_log):
 
 
 def _OverrideEnvVar(key, value):
-    """
+  """
     Sets env var `key` to `value`, overriding the existing value.
 
     Args:
       key: The environment variable name
       value: The value to set the environment variable. Use value=None to unset.
     """
-    if value is not None:
-      print('override %s=%s' % (key, value))
-      os.environ[key] = value
-    elif key in os.environ:
-      print('override unset %s' % key)
-      del os.environ[key]
+  if value is not None:
+    print('override %s=%s' % (key, value))
+    os.environ[key] = value
+  elif key in os.environ:
+    print('override unset %s' % key)
+    del os.environ[key]
 
 
 class ConfigError(Exception):
@@ -533,7 +584,7 @@ class GomaDriver(object):
         'start': self._StartCompilerProxy,
         'stat': self._PrintStatistics,
         'status': self._CheckStatus,
-        'stop': self._ShutdownCompilerProxy,
+        'stop': self._StopCompilerProxyAndWait,
         'version': self._PrintVersion,
         'goma_dir': self._PrintGomaDir,
         'update_hook': self._UpdateHook,
@@ -728,6 +779,12 @@ class GomaDriver(object):
     if not self._WaitCooldown():
       self._KillStakeholders()
 
+  def _StopCompilerProxyAndWait(self):
+    self._ShutdownCompilerProxy()
+    if not self._WaitCooldown(wait_seconds=5):
+      print('Compiler proxy is still running, consider running '
+            '`goma_ctl ensure_stop` or manually killing the process.')
+
   def _CheckStatus(self):
     status = self._GetStatus()
     if not status:
@@ -859,26 +916,26 @@ class GomaDriver(object):
       pass
     return version
 
-  def _WaitCooldown(self):
+  def _WaitCooldown(self, wait_seconds=_MAX_COOLDOWN_WAIT):
     """Wait until compiler_proxy process have finished.
 
-    This will give up after waiting _MAX_COOLDOWN_WAIT seconds.
+    This will give up after waiting for wait_second.
     It would return False, if other compiler_proxy is running on other IPC port.
 
     Returns:
-      True if compiler_proxy successfully cool down.  Otherwise, False.
+      True if compiler_proxy successfully shutdown.  Otherwise, False.
     """
     if not self._env.CompilerProxyRunning():
       return True
-    print('Waiting for cool down...')
-    for cnt in range(_MAX_COOLDOWN_WAIT):
+    print('Wait for compiler_proxy process to terminate...')
+    for cnt in range(wait_seconds):
       if not self._env.CompilerProxyRunning():
         break
-      print(_MAX_COOLDOWN_WAIT - cnt)
+      print(wait_seconds - cnt)
       sys.stdout.flush()
       time.sleep(_COOLDOWN_SLEEP)
     else:
-      print('give up')
+      print('Cannot shutdown compiler_proxy in %ss' % wait_seconds)
       return False
     print()
     return True
@@ -1545,7 +1602,7 @@ class GomaEnv(object):
         break
 
       if current_time - ping_print_time > 1:
-        print('waiting for compiler_proxy...')
+        print('waiting for compiler_proxy to respond...')
         ping_print_time = current_time
 
       # output glog output to stderr but ignore it because it is usually about
@@ -1582,7 +1639,7 @@ class GomaEnv(object):
     if port_error:
       print(port_error)
     if stderr:
-      sys.stderr.write(stderr)
+      sys.stderr.write(_DecodeBytesOnPython3(stderr))
     e = Error('compiler_proxy is not ready?')
     self._GetDetailedFailureReason()
     if proc:
@@ -1977,9 +2034,9 @@ class GomaEnv(object):
       return False
 
     magics = {
-        '.tgz': '\x1F\x8B',
-        '.txz': '\xFD7zXZ\x00',
-        '.zip': 'PK',
+        '.tgz': b'\x1F\x8B',
+        '.txz': b'\xFD7zXZ\x00',
+        '.zip': b'PK',
     }
     magic = magics.get(os.path.splitext(filename)[1])
     if not magic:
@@ -2377,7 +2434,8 @@ class GomaEnvWin(GomaEnv):
       self._win32api = __import__('win32api')
     except ImportError as e:
       print('You don\'t seem to have installed pywin32 module, '
-            '`pip install pywin32` may fix.')
+            '`pip install pywin32` or `python -m pip install pywin32` '
+            'may fix.')
       raise e
 
     GomaEnv.__init__(self)
@@ -2387,12 +2445,24 @@ class GomaEnvWin(GomaEnv):
   def GetPackageExtension(platform):
     return 'zip'
 
-  def _ProcessRunning(self, image_name):
+  def _GetProcessImagePid(self, image_name):
+    """Returns process ID of the image."""
     process = PopenWithCheck(['tasklist', '/FI',
                               'IMAGENAME eq %s' % image_name],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output = process.communicate()[0]
-    return image_name in output
+    if image_name not in output:
+      return []
+    pids = []
+    for entry in _ParseTaskList(output):
+      try:
+        pids.append(entry['PID'])
+      except KeyError:
+        raise Exception('strange output: %s' % output)
+    return pids
+
+  def _ProcessRunning(self, image_name):
+    return bool(self._GetProcessImagePid(image_name))
 
   def _CheckPlatformConfig(self):
     """Checks platform dependent GomaEnv configurations."""
@@ -2459,6 +2529,9 @@ class GomaEnvWin(GomaEnv):
     return self._ProcessRunning(self._COMPILER_PROXY)
 
   def _GetStakeholderPids(self):
+    # List processes with compiler_proxy name.
+    pids = set(self._GetProcessImagePid(self._COMPILER_PROXY))
+    # List processes listening the TCP port.
     ports = []
     ports.append(os.environ.get('GOMA_COMPILER_PROXY_PORT', '8088'))
     ns = PopenWithCheck(['netstat', '-a', '-n', '-o'],
@@ -2466,7 +2539,6 @@ class GomaEnvWin(GomaEnv):
                         stderr=subprocess.STDOUT).communicate()[0]
     listenline = re.compile('.*TCP.*(?:%s).*LISTENING *([0-9]*).*' %
                             '|'.join(ports))
-    pids = set()
     for line in ns.splitlines():
       m = listenline.match(line)
       if m:
@@ -2661,9 +2733,6 @@ class GomaEnvPosix(GomaEnv):
 
   def _GetStakeholderPids(self):
     """Get PID of stake holders.
-
-    Args:
-      quick: if True, quickly returns result if one of pids is found.
 
     Returns:
       a list of pids holding compiler_proxy locks and a port.

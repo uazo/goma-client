@@ -525,50 +525,65 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
   def testShouldUpdateReturnsFalseForTheSameVersion(self):
     self.assertFalse(self._module._ShouldUpdate(1, 1, '1'))
 
-  def testParseSpaceSeparatedValuesShouldParse(self):
+  def testParseTaskList(self):
     test = (
-        'COMMAND PID\n'
-        'bash      1\n'
-        'tcsh      2\n'
+        'Image name      PID  Session Name      Session#    Mem Usage\n'
+        '============== ==== ============= ============= ============\n'
+        'compiler.exe    123       Console             1     33,000 K\n'
+        'system.exe      456        System             2     10,000 K\n'
         )
     expected = [
-        {'COMMAND': 'bash', 'PID': '1'},
-        {'COMMAND': 'tcsh', 'PID': '2'},
+        {'Image name': 'compiler.exe',
+         'PID': '123',
+         'Session Name': 'Console',
+         'Session#': '1',
+         'Mem Usage': '33,000 K'},
+        {'Image name': 'system.exe',
+         'PID': '456',
+         'Session Name': 'System',
+         'Session#': '2',
+         'Mem Usage': '10,000 K'},
         ]
-    parsed = self._module._ParseSpaceSeparatedValues(test)
+    parsed = self._module._ParseTaskList(test)
     self.assertEqual(parsed, expected)
 
-  def testParseSpaceSeparatedValuesShouldParseEmpty(self):
-    parsed = self._module._ParseSpaceSeparatedValues('')
-    self.assertEqual(parsed, [])
+  def testParseTaskListShouldRaiseErrorWithEmpty(self):
+    self.assertRaises(self._module.Error, self._module._ParseTaskList, '')
 
-  def testParseSpaceSeparatedValuesShouldSkipBlankLines(self):
+  def testParseTaskListShouldRaiseErrorWithElmLenMismatch(self):
     test = (
-        'COMMAND PID\n'
-        'bash      1\n'
-        'tcsh      2\n'
-        '\n'
-        )
-    expected = [
-        {'COMMAND': 'bash', 'PID': '1'},
-        {'COMMAND': 'tcsh', 'PID': '2'},
-        ]
-    parsed = self._module._ParseSpaceSeparatedValues(test)
-    self.assertEqual(parsed, expected)
+        'Image name      PID  Session Name      Session#    Mem Usage\n'
+        '============== ==== ============= ============= ============\n'
+        'compiler.exe    123       Console\n'
+    )
+    self.assertRaises(self._module.Error, self._module._ParseTaskList, test)
 
-  def testParseSpaceSeparatedValuesShouldIgnoreWhiteSpaces(self):
+  def testParseTaskListShouldRaiseErrorWithNoSpaceBetweenValues(self):
     test = (
-        'COMMAND                           PID            \n'
-        '   bash \t     1  \n'
-        '  \t  \n'
-        '\ttcsh    \t  2\t\n'
-        '\n'
-        )
+        'Image name      PID  Session Name      Session#    Mem Usage\n'
+        '============== ==== ============= ============= ============\n'
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n'
+    )
+    self.assertRaises(self._module.Error, self._module._ParseTaskList, test)
+
+  def testParseTaskListShouldSkipBlankLines(self):
+    test = (
+        ' \n'
+        'Image name      PID  Session Name      Session#    Mem Usage\n'
+        '\r \n'
+        '============== ==== ============= ============= ============\n'
+        '\v\n'
+        'compiler.exe    123       Console             1     33,000 K\n'
+        '\t\n'
+      )
     expected = [
-        {'COMMAND': 'bash', 'PID': '1'},
-        {'COMMAND': 'tcsh', 'PID': '2'},
+        {'Image name': 'compiler.exe',
+         'PID': '123',
+         'Session Name': 'Console',
+         'Session#': '1',
+         'Mem Usage': '33,000 K'},
         ]
-    parsed = self._module._ParseSpaceSeparatedValues(test)
+    parsed = self._module._ParseTaskList(test)
     self.assertEqual(parsed, expected)
 
   def testParseLsofShouldParse(self):
@@ -3203,13 +3218,13 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
       # ditto.
       if f == 'MANIFEST':
         continue
-      with open(os.path.join(latest_dir, f)) as f:
-        self.assertEqual(f.read(), msg)
+      with open(os.path.join(latest_dir, f), 'rb') as f:
+        self.assertEqual(f.read(), msg.encode('utf-8'))
 
     driver._Pull()
     for f in files:
-      with open(os.path.join(latest_dir, f)) as f:
-        self.assertNotEqual(f.read(), msg)
+      with open(os.path.join(latest_dir, f), 'rb') as f:
+        self.assertNotEqual(f.read(), msg.encode('utf-8'))
 
   def testVersionNotRunning(self):
     class SpyGomaEnv(FakeGomaEnv):

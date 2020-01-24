@@ -220,6 +220,8 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     parser.AddBoolFlag(
         "fdiagnostics-absolute-paths");  // Print absolute paths in diagnostics
 
+    parser.AddBoolFlag("fno-integrated-cc1")->SetOutput(&compiler_info_flags_);
+
     // Make it understand Xclang.
     parser.AddFlag("Xclang")->SetOutput(&compiler_info_flags_);
 
@@ -663,6 +665,7 @@ void VCFlags::DefineFlags(FlagParser* parser) {
   parser->AddFlag("target");
   parser->AddFlag("-target");
   parser->AddFlag("fdebug-compilation-dir");
+  parser->AddBoolFlag("fno-integrated-cc1");
 
   opts->flag_prefix = '-';
   opts->alt_flag_prefix = '/';

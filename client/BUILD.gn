@@ -2090,6 +2090,7 @@ fuzzer_test("http_util_extract_header_field_fuzzer") {
     "//base",
   ]
   dict = "data/fuzzer_dictionaries/net_url_request_fuzzer.dict"
+  seed_corpus = "//client/fuzzer/corpora/http"
 }
 
 fuzzer_test("http_util_find_content_length_and_body_offset_fuzzer") {

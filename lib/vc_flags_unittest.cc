@@ -1705,6 +1705,30 @@ TEST_F(VCFlagsTest, ClangClWithXclang) {
             flags->compiler_info_flags());
 }
 
+TEST_F(VCFlagsTest, ClangClNoIntegratedCC1) {
+  std::vector<std::string> args;
+  args.push_back("clang-cl.exe");
+  args.push_back("-fno-integrated-cc1");
+  args.push_back("/c");
+  args.push_back("hello.cc");
+  std::unique_ptr<CompilerFlags> flags(
+      CompilerFlagsParser::MustNew(args, "d:\\tmp"));
+  EXPECT_EQ(args, flags->args());
+  EXPECT_EQ(1U, flags->output_files().size());
+  EXPECT_EQ("hello.obj", flags->output_files()[0]);
+  EXPECT_EQ(1U, flags->input_filenames().size());
+  EXPECT_EQ("hello.cc", flags->input_filenames()[0]);
+  EXPECT_TRUE(flags->is_successful());
+  EXPECT_EQ("", flags->fail_message());
+  EXPECT_EQ("clang-cl", flags->compiler_name());
+  EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
+  EXPECT_EQ("d:\\tmp", flags->cwd());
+
+  std::vector<std::string> expected_compiler_info_flags;
+  expected_compiler_info_flags.push_back("-fno-integrated-cc1");
+  EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
+}
+
 TEST_F(VCFlagsTest, ClShouldNotRecognizeXclang) {
   std::vector<std::string> args;
   args.push_back("cl.exe");

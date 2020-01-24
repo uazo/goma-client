@@ -102,6 +102,7 @@ SubProcessControllerClient::SubProcessControllerClient(int fd,
       periodic_closure_id_(kInvalidPeriodicClosureId),
       quit_(false),
       closed_(false),
+      registered_readable_events_(false),
       initialized_(false) {}
 
 SubProcessControllerClient::~SubProcessControllerClient() {
@@ -122,8 +123,12 @@ void SubProcessControllerClient::Setup(WorkerThreadManager* wm,
   socket_descriptor_ =
       wm_->RegisterSocketDescriptor(std::move(fd_), WorkerThread::PRIORITY_MED);
   SetInitialized();
-  socket_descriptor_->NotifyWhenReadable(
-      NewPermanentCallback(this, &SubProcessControllerClient::DoRead));
+  {
+    AUTOLOCK(lock, &mu_);
+    socket_descriptor_->NotifyWhenReadable(
+        NewPermanentCallback(this, &SubProcessControllerClient::DoRead));
+    registered_readable_events_ = true;
+  }
   SetTmpDir(tmp_dir);
   {
     AUTOLOCK(lock, &mu_);
@@ -426,7 +431,10 @@ bool SubProcessControllerClient::BelongsToCurrentThread() const {
 
 void SubProcessControllerClient::Delete() {
   DCHECK(BelongsToCurrentThread());
-  socket_descriptor_->ClearReadable();
+  {
+    AUTOLOCK(lock, &mu_);
+    MaybeClearReadableEventUnlocked();
+  }
 
   // Maybe not good to accessing g_client_instance which is being
   // deleted. So, guard `delete this`, too.
@@ -578,8 +586,8 @@ void SubProcessControllerClient::OnClosed() {
   LOG(INFO) << "peer closed";
   CHECK(subproc_tasks_.empty());
   closed_ = true;
-  socket_descriptor_->StopRead();
-  socket_descriptor_->StopWrite();
+  MaybeClearReadableEventUnlocked();
+  socket_descriptor_->ClearWritable();
   cond_.Signal();
 }
 
@@ -650,6 +658,13 @@ std::string SubProcessControllerClient::DebugString() const {
        << "pid=" << task->started().pid() << "\n";
   }
   return ss.str();
+}
+
+void SubProcessControllerClient::MaybeClearReadableEventUnlocked() {
+  if (registered_readable_events_) {
+    socket_descriptor_->ClearReadable();
+    registered_readable_events_ = false;
+  }
 }
 
 }  // namespace devtools_goma

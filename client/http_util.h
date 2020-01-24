@@ -32,6 +32,7 @@ extern const absl::string_view kTransferEncoding;
 // Extracts HTTP header field value.
 // field_name should not have leading and trailing space.
 // header should be HTTP message header, i.e. ends with CRLFCRLF.
+// If field cannot be extracted, returns an empty string.
 absl::string_view ExtractHeaderField(
     absl::string_view header, absl::string_view field_name);
 

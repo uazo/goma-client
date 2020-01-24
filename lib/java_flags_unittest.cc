@@ -152,6 +152,9 @@ TEST_F(JavacFlagsTest, Processor) {
   const std::vector<std::string> expected_processors{
       "dagger.internal.codegen.ComponentProcessor",
   };
+  const std::vector<std::string> expected_jar_files{
+      "classes.jar",
+  };
 
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(args, "."));
   EXPECT_TRUE(flags->is_successful());
@@ -159,13 +162,14 @@ TEST_F(JavacFlagsTest, Processor) {
 
   JavacFlags* javac_flags = static_cast<JavacFlags*>(flags.get());
   EXPECT_EQ(expected_processors, javac_flags->processors());
+  EXPECT_EQ(expected_jar_files, javac_flags->jar_files());
 }
 
-TEST_F(JavacFlagsTest, MultipleProcessorArgs) {
+TEST_F(JavacFlagsTest, MultipleProcessorArgsAndPaths) {
   const std::vector<std::string> args{
       "javac",
       "-processorpath",
-      "classes.jar",
+      "classes.jar:more_classes.jar",
       "-processor",
       "dagger.internal.codegen.ComponentProcessor",
       "-processor",
@@ -175,6 +179,10 @@ TEST_F(JavacFlagsTest, MultipleProcessorArgs) {
       "dagger.internal.codegen.ComponentProcessor",
       "com.google.auto.value.processor.AutoValueProcessor",
   };
+  const std::vector<std::string> expected_jar_files{
+      "classes.jar",
+      "more_classes.jar",
+  };
 
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(args, "."));
   EXPECT_TRUE(flags->is_successful());
@@ -182,6 +190,7 @@ TEST_F(JavacFlagsTest, MultipleProcessorArgs) {
 
   JavacFlags* javac_flags = static_cast<JavacFlags*>(flags.get());
   EXPECT_EQ(expected_processors, javac_flags->processors());
+  EXPECT_EQ(expected_jar_files, javac_flags->jar_files());
 }
 
 TEST_F(JavacFlagsTest, MultipleProcessorsInArg) {
@@ -197,6 +206,9 @@ TEST_F(JavacFlagsTest, MultipleProcessorsInArg) {
       "dagger.internal.codegen.ComponentProcessor",
       "com.google.auto.value.processor.AutoValueProcessor",
   };
+  const std::vector<std::string> expected_jar_files{
+      "classes.jar",
+  };
 
   std::unique_ptr<CompilerFlags> flags(CompilerFlagsParser::MustNew(args, "."));
   EXPECT_TRUE(flags->is_successful());
@@ -204,6 +216,7 @@ TEST_F(JavacFlagsTest, MultipleProcessorsInArg) {
 
   JavacFlags* javac_flags = static_cast<JavacFlags*>(flags.get());
   EXPECT_EQ(expected_processors, javac_flags->processors());
+  EXPECT_EQ(expected_jar_files, javac_flags->jar_files());
 }
 
 TEST_F(JavacFlagsTest, ParseJavaClassPaths) {

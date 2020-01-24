@@ -112,8 +112,8 @@ void PathResolver::PlatformConvertToString(
     PathResolver::PathCaseType case_type,
     std::string* OUTPUT) {
   // TODO: remove this check if we confirm this is removable.
-  DCHECK(!absl::EndsWith(path, " "));
-  DCHECK(!absl::StartsWith(path, " "));
+  DCHECK(!absl::EndsWith(path, " ")) << " path=\"" << path << "\"";
+  DCHECK(!absl::StartsWith(path, " ")) << " path=\"" << path << "\"";
 
   // TODO: use Chrome base FilePath object, which has everything
   //                  we need and is much better than the hack below.
@@ -282,7 +282,7 @@ std::string PathResolver::WeakRelativePath(const std::string& raw_path,
   // but it should be /var/tmp/bar.
   // it might failed some cases, but we'll take safer option here.
   absl::string_view target = path;
-  CHECK_EQ(target[0], sep_type);
+  CHECK_EQ(target[0], sep_type) << " target=" << target;
   if (target == real_cwd)
     return ".";
 

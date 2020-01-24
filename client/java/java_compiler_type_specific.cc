@@ -4,9 +4,12 @@
 
 #include "java/java_compiler_type_specific.h"
 
+#include "env_flags.h"
 #include "glog/logging.h"
 #include "java/jar_parser.h"
 #include "java_flags.h"
+
+GOMA_DECLARE_bool(SEND_COMPILER_BINARY_AS_INPUT);
 
 namespace devtools_goma {
 
@@ -48,6 +51,11 @@ bool JavacCompilerTypeSpecific::RemoteCompileSupported(
     const std::string& trace_id,
     const CompilerFlags& flags,
     bool verify_output) const {
+  if (FLAGS_SEND_COMPILER_BINARY_AS_INPUT) {
+    // TODO: Ensure flags are valid for remote compile.
+    return true;
+  }
+
   const JavacFlags& javac_flag = static_cast<const JavacFlags&>(flags);
   // TODO: remove following code when goma backend get ready.
   // Force fallback a compile request with -processor (b/38215808)

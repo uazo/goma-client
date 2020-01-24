@@ -710,6 +710,7 @@ void ThreadpoolHttpServer::RequestFromSocket::DoCheckClosed() {
 void ThreadpoolHttpServer::RequestFromSocket::DoClosed() {
   closed_ = true;
   socket_descriptor_->ClearReadable();
+  socket_descriptor_->ClearWritable();
   OneshotClosure* callback = closed_callback_;
   closed_callback_ = nullptr;
   if (callback != nullptr) {

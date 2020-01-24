@@ -13,21 +13,33 @@ config("abseil_config") {
   }
 }
 
+config("abseil_config_internal") {
+  if (is_mac) {
+    # Building absl/time/internal/cctz needs Foundation lib
+    # https://chromium.googlesource.com/chromium/src/+/5a043322a1bc2d3566eb5ad8c8696f8b0594c156/third_party/abseil-cpp/absl/time/internal/cctz/BUILD.gn#72
+    libs = [ "Foundation.framework" ]
+  }
+}
+
 # All libraries combined.
 # TODO: It's better to split libraries like abseil's BUILD files,
 # but for goma use, this would be enough since we don't update abseil
 # frequently.
 static_library("abseil") {
   # In abseil directory,
-  # $ find src | egrep '\.(h|cc|inc)$' |
+  # $ find src | egrep '\.(h|cc|inc)$' | \
   #       grep -v '_test' | \
   #       grep -v 'test_util' | \
   #       grep -v 'nonprod' | \
   #       grep -v 'benchmark.cc' | \
   #       grep -v 'print_hash_of.cc' | \
+  #       grep -v 'absl/flags/' | \
+  #       grep -v 'absl/random/' | \
+  #       grep -v 'src/ci/' | \
   #       sed -e 's/^/"/' -e 's/$/",/' | sort
   # Note: a few unnecessary files might be left. You might need to
-  # remove it manually.
+  # remove it manually. We don't use abseil's flag and random libraries, hence
+  # they are filtered out.
   sources = [
     "src/absl/algorithm/algorithm.h",
     "src/absl/algorithm/container.h",
@@ -44,6 +56,8 @@ static_library("abseil") {
     "src/absl/base/internal/cycleclock.h",
     "src/absl/base/internal/direct_mmap.h",
     "src/absl/base/internal/endian.h",
+    "src/absl/base/internal/exponential_biased.cc",
+    "src/absl/base/internal/exponential_biased.h",
     "src/absl/base/internal/hide_ptr.h",
     "src/absl/base/internal/identity.h",
     "src/absl/base/internal/inline_variable.h",
@@ -52,10 +66,14 @@ static_library("abseil") {
     "src/absl/base/internal/low_level_alloc.h",
     "src/absl/base/internal/low_level_scheduling.h",
     "src/absl/base/internal/per_thread_tls.h",
+    "src/absl/base/internal/periodic_sampler.cc",
+    "src/absl/base/internal/periodic_sampler.h",
     "src/absl/base/internal/pretty_function.h",
     "src/absl/base/internal/raw_logging.cc",
     "src/absl/base/internal/raw_logging.h",
     "src/absl/base/internal/scheduling_mode.h",
+    "src/absl/base/internal/scoped_set_env.cc",
+    "src/absl/base/internal/scoped_set_env.h",
     "src/absl/base/internal/spinlock.cc",
     "src/absl/base/internal/spinlock.h",
     "src/absl/base/internal/spinlock_akaros.inc",
@@ -66,6 +84,7 @@ static_library("abseil") {
     "src/absl/base/internal/spinlock_win32.inc",
     "src/absl/base/internal/sysinfo.cc",
     "src/absl/base/internal/sysinfo.h",
+    "src/absl/base/internal/thread_annotations.h",
     "src/absl/base/internal/thread_identity.cc",
     "src/absl/base/internal/thread_identity.h",
     "src/absl/base/internal/throw_delegate.cc",
@@ -74,23 +93,35 @@ static_library("abseil") {
     "src/absl/base/internal/unaligned_access.h",
     "src/absl/base/internal/unscaledcycleclock.cc",
     "src/absl/base/internal/unscaledcycleclock.h",
+    "src/absl/base/log_severity.cc",
     "src/absl/base/log_severity.h",
     "src/absl/base/macros.h",
     "src/absl/base/optimization.h",
+    "src/absl/base/options.h",
     "src/absl/base/policy_checks.h",
     "src/absl/base/port.h",
     "src/absl/base/thread_annotations.h",
+    "src/absl/container/btree_map.h",
+    "src/absl/container/btree_set.h",
     "src/absl/container/fixed_array.h",
     "src/absl/container/flat_hash_map.h",
     "src/absl/container/flat_hash_set.h",
     "src/absl/container/inlined_vector.h",
+    "src/absl/container/internal/btree.h",
+    "src/absl/container/internal/btree_container.h",
+    "src/absl/container/internal/common.h",
     "src/absl/container/internal/compressed_tuple.h",
     "src/absl/container/internal/container_memory.h",
+    "src/absl/container/internal/counting_allocator.h",
     "src/absl/container/internal/hash_function_defaults.h",
     "src/absl/container/internal/hash_policy_traits.h",
     "src/absl/container/internal/hashtable_debug.h",
     "src/absl/container/internal/hashtable_debug_hooks.h",
+    "src/absl/container/internal/hashtablez_sampler.cc",
+    "src/absl/container/internal/hashtablez_sampler.h",
+    "src/absl/container/internal/hashtablez_sampler_force_weak_definition.cc",
     "src/absl/container/internal/have_sse.h",
+    "src/absl/container/internal/inlined_vector.h",
     "src/absl/container/internal/layout.h",
     "src/absl/container/internal/node_hash_policy.h",
     "src/absl/container/internal/raw_hash_map.h",
@@ -134,6 +165,10 @@ static_library("abseil") {
     "src/absl/debugging/symbolize_elf.inc",
     "src/absl/debugging/symbolize_unimplemented.inc",
     "src/absl/debugging/symbolize_win32.inc",
+    "src/absl/functional/bind_front.h",
+    "src/absl/functional/function_ref.h",
+    "src/absl/functional/internal/front_binder.h",
+    "src/absl/functional/internal/function_ref.h",
     "src/absl/hash/hash.h",
     "src/absl/hash/internal/city.cc",
     "src/absl/hash/internal/city.h",
@@ -256,8 +291,13 @@ static_library("abseil") {
     "src/absl/types/bad_optional_access.h",
     "src/absl/types/bad_variant_access.cc",
     "src/absl/types/bad_variant_access.h",
+    "src/absl/types/compare.h",
+    "src/absl/types/internal/conformance_aliases.h",
+    "src/absl/types/internal/conformance_archetype.h",
+    "src/absl/types/internal/conformance_profile.h",
+    "src/absl/types/internal/optional.h",
+    "src/absl/types/internal/span.h",
     "src/absl/types/internal/variant.h",
-    "src/absl/types/optional.cc",
     "src/absl/types/optional.h",
     "src/absl/types/span.h",
     "src/absl/types/variant.h",
@@ -265,7 +305,10 @@ static_library("abseil") {
   ]
 
   configs -= [ "//build/config/compiler:goma_code" ]
-  configs += [ "//build/config/compiler:no_goma_code" ]
+  configs += [
+    ":abseil_config_internal",
+    "//build/config/compiler:no_goma_code",
+  ]
   public_configs = [ ":abseil_config" ]
 
   if (is_tsan) {

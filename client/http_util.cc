@@ -198,7 +198,7 @@ absl::string_view ExtractHeaderField(
       LOG(ERROR) << "no end-of-header CRLFCRLF? "
                  << "finding " << field_name
                  << " remain=" << absl::CEscape(header);
-      break;
+      return absl::string_view();
     }
     // field name is case insensitive.
     if (!absl::StartsWithIgnoreCase(header, field_name)) {
@@ -221,6 +221,13 @@ absl::string_view ExtractHeaderField(
             << absl::CEscape(field.substr(0, crlf));
     // multiple lines by preceding each extra line with at least one SP or HT.
     crlf = field.find("\r\n");
+    if (crlf == absl::string_view::npos) {
+      // no end-of-header?
+      LOG(ERROR) << "no end-of-header CRLFCRLF? "
+                 << "finding " << field_name
+                 << " remain=" << absl::CEscape(header);
+      return absl::string_view();
+    }
     absl::string_view rest = field.substr(crlf + 2);
     VLOG(5) << "following lines:" << absl::CEscape(rest);
     absl::string_view::size_type eof = crlf + 2;

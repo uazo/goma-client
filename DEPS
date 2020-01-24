@@ -2,6 +2,7 @@
 
 vars = {
      "chromium_git": "https://chromium.googlesource.com",
+     "clang_revision": "42fbdfef1ce265b09dc6bda2ed90d83324c97481",
 }
 
 deps = {
@@ -37,11 +38,12 @@ deps = {
 
      # chrome's tools/clang
      "client/tools/clang":
-     "https://chromium.googlesource.com/chromium/src/tools/clang.git",
+     Var("chromium_git") + "/chromium/src/tools/clang.git@" +
+         Var("clang_revision"),
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@75148d7abf12bdd1797fec3c5da9a21963703516",
+     "https://boringssl.googlesource.com/boringssl@a965a25952d4e6ed12a9194d3454b69f33f4e99e",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -77,7 +79,7 @@ deps = {
 
      # abseil
      "client/third_party/abseil/src":
-     "https://github.com/abseil/abseil-cpp.git@3e2e9b5557e76d098de4b8a2a659125b98ca519b",
+     "https://github.com/abseil/abseil-cpp.git@a048203a881f11f4b7b8df5fb563aec85522f8db",
 
      # google benchmark v1.4.1
      "client/third_party/benchmark/src":
@@ -110,7 +112,7 @@ deps = {
 
      # chromium's build.
      "client/third_party/chromium_build":
-     "https://chromium.googlesource.com/chromium/src/build/@3fe260c8e2f6ccb84e1e43ab04b321328fb8998c",
+     "https://chromium.googlesource.com/chromium/src/build/@408555bc71eae7cddecea98c2c4de0aa93f3a2b6",
 
      'client/tools/clang/dsymutil': {
        'packages': [

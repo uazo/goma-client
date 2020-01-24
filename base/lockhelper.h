@@ -7,6 +7,7 @@
 #define DEVTOOLS_GOMA_BASE_LOCKHELPER_H_
 
 #include "absl/base/thread_annotations.h"
+#include "absl/synchronization/mutex.h"
 
 #ifdef __MACH__
 # include <libkern/OSAtomic.h>
@@ -28,12 +29,12 @@ namespace devtools_goma {
 // NOTE: capability based thread safety analysis is not working well
 // for shared lock. So, let me keep using older style thread safety analysis.
 
-class LOCKABLE Lock {
+class LOCKABLE OsDependentLock {
  public:
-  Lock();
-  ~Lock();
-  Lock(const Lock&) = delete;
-  Lock& operator=(const Lock&) = delete;
+  OsDependentLock();
+  ~OsDependentLock();
+  OsDependentLock(const OsDependentLock&) = delete;
+  OsDependentLock& operator=(const OsDependentLock&) = delete;
 
   // If the lock is not held, take it and return true.  If the lock is already
   // held by something else, immediately return false.
@@ -47,12 +48,41 @@ class LOCKABLE Lock {
   void Release() UNLOCK_FUNCTION();
 
  private:
-  friend class ConditionVariable;
+  friend class OsDependentCondVar;
 #ifdef _WIN32
   friend class WinVistaCondVar;
 #endif
   OSLockType os_lock_;
 };
+
+// AbslBackedLock supports both Lock and ReadWriteLock interfaces.
+class LOCKABLE AbslBackedLock {
+ public:
+  AbslBackedLock() = default;
+  AbslBackedLock(const AbslBackedLock&) = delete;
+  AbslBackedLock& operator=(const AbslBackedLock&) = delete;
+
+  bool Try() EXCLUSIVE_TRYLOCK_FUNCTION(true);
+
+  void Acquire() EXCLUSIVE_LOCK_FUNCTION();
+  void Release() UNLOCK_FUNCTION();
+
+  void AcquireShared() SHARED_LOCK_FUNCTION();
+  void ReleaseShared() UNLOCK_FUNCTION();
+
+  void AcquireExclusive() EXCLUSIVE_LOCK_FUNCTION();
+  void ReleaseExclusive() UNLOCK_FUNCTION();
+
+ private:
+  friend class AbslBackedCondVar;
+  absl::Mutex mu_;
+};
+
+#ifdef USE_ABSL_BACKED_SYNC_PRIMITIVES
+using Lock = AbslBackedLock;
+#else
+using Lock = OsDependentLock;
+#endif
 
 #ifdef __MACH__
 
@@ -84,13 +114,12 @@ using FastLock = Lock;
 
 #endif
 
-// ReadWriteLock provides readers-writer lock.
-class LOCKABLE ReadWriteLock {
+class LOCKABLE OsDependentRwLock {
  public:
-  ReadWriteLock();
-  ~ReadWriteLock();
-  ReadWriteLock(const ReadWriteLock&) = delete;
-  ReadWriteLock& operator=(const ReadWriteLock&) = delete;
+  OsDependentRwLock();
+  ~OsDependentRwLock();
+  OsDependentRwLock(const OsDependentRwLock&) = delete;
+  OsDependentRwLock& operator=(const OsDependentRwLock&) = delete;
 
   void AcquireShared() SHARED_LOCK_FUNCTION();
   void ReleaseShared() UNLOCK_FUNCTION();
@@ -105,6 +134,13 @@ class LOCKABLE ReadWriteLock {
   OSRWLockType os_rwlock_;
 #endif
 };
+
+// ReadWriteLock provides readers-writer lock.
+#ifdef USE_ABSL_BACKED_SYNC_PRIMITIVES
+using ReadWriteLock = AbslBackedLock;
+#else
+using ReadWriteLock = OsDependentRwLock;
+#endif
 
 class SCOPED_LOCKABLE AutoLock {
  public:
@@ -186,15 +222,14 @@ class SCOPED_LOCKABLE AutoSharedLock {
   ReadWriteLock* lock_;
 };
 
-// POSIX conditional variable
-class ConditionVariable {
+class OsDependentCondVar {
  public:
-  ConditionVariable();
-  ~ConditionVariable();
-  ConditionVariable(const ConditionVariable&) = delete;
-  ConditionVariable& operator=(const ConditionVariable&) = delete;
+  OsDependentCondVar();
+  ~OsDependentCondVar();
+  OsDependentCondVar(const OsDependentCondVar&) = delete;
+  OsDependentCondVar& operator=(const OsDependentCondVar&) = delete;
 
-  void Wait(Lock* lock);
+  void Wait(OsDependentLock* lock);
   void Signal();
   void Broadcast();
 
@@ -205,6 +240,33 @@ class ConditionVariable {
   pthread_cond_t condition_;
 #endif
 };
+
+class AbslBackedCondVar {
+ public:
+  AbslBackedCondVar() = default;
+  AbslBackedCondVar(const AbslBackedCondVar&) = delete;
+  AbslBackedCondVar& operator=(const AbslBackedCondVar&) = delete;
+
+  void Wait(AbslBackedLock* lock);
+
+  // Returns true if the timeout has expired without this `CondVar`
+  // being signalled in any manner. If both the timeout has expired
+  // and this `CondVar` has been signalled, the implementation is free
+  // to return `true` or `false`.
+  bool WaitWithTimeout(AbslBackedLock* lock, absl::Duration timeout);
+
+  void Signal();
+  void Broadcast();
+
+ private:
+  absl::CondVar cv_;
+};
+
+#ifdef USE_ABSL_BACKED_SYNC_PRIMITIVES
+using ConditionVariable = AbslBackedCondVar;
+#else
+using ConditionVariable = OsDependentCondVar;
+#endif
 
 }  // namespace devtools_goma
 #endif  // DEVTOOLS_GOMA_BASE_LOCKHELPER_H_

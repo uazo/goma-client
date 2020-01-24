@@ -4,6 +4,8 @@
 
 #include "elf_dep_parser.h"
 
+#include <elf.h>
+
 #include "absl/base/macros.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_replace.h"
@@ -83,7 +85,7 @@ std::string ElfDepParser::FindLib(
   //    The value should be passed via |default_search_path|.
   // 3. DT_RUNPATH (we searches RUNPATH in 1. in this impl. Weshould fix it.)
   // 4. path in ldconfig cache (we do not support this)
-  // 5. trusted default paths (we do not support this)
+  // 5. trusted default paths
   if (!ignore_rpath_) {
     for (const auto& dir : search_paths) {
       std::string lib = FindLibInDir(dir, lib_filename, origin, src_elf_header);
@@ -98,6 +100,32 @@ std::string ElfDepParser::FindLib(
       return lib;
     }
   }
+  VLOG(1) << "fallback to trusted default search path.";
+  switch (src_elf_header.ei_class) {
+    case ELFCLASS64: {
+      VLOG(2) << "64bit binary: " << lib_filename;
+      static constexpr char const* kTrustedPaths[] = {"/lib64", "/usr/lib64"};
+      for (const auto& dir : kTrustedPaths) {
+        std::string lib =
+            FindLibInDir(dir, lib_filename, origin, src_elf_header);
+        if (!lib.empty()) {
+          return lib;
+        }
+      }
+    } break;
+    case ELFCLASS32: {
+      VLOG(2) << "32bit binary: " << lib_filename;
+      static constexpr char const* kTrustedPaths[] = {"/lib", "/usr/lib"};
+      for (const auto& dir : kTrustedPaths) {
+        std::string lib =
+            FindLibInDir(dir, lib_filename, origin, src_elf_header);
+        if (!lib.empty()) {
+          return lib;
+        }
+      }
+    } break;
+  }
+
   return std::string();
 }
 

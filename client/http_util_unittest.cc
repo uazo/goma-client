@@ -29,6 +29,13 @@ TEST(HttpUtilTest, ExtractHeaderField) {
   EXPECT_EQ("deflate", ExtractHeaderField(kHeader, kAcceptEncoding));
 }
 
+TEST(HttpUtilTest, ExtractHeaderFieldNoCrash) {
+  // b/142977500
+  // This isn't a valid header, the test is just to verify that such input
+  // will not crash the program.
+  EXPECT_EQ(ExtractHeaderField("foo\r\n:", "foo"), "");
+}
+
 TEST(HttpUtilTest, FindContentLengthAndBodyOffset) {
   std::string data = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nH";
   size_t body_offset = std::string::npos;

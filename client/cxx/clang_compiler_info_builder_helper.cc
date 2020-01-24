@@ -322,6 +322,12 @@ ClangCompilerInfoBuilderHelper::ParseResourceOutput(
       continue;
     }
 
+    // clang11 without -fno-integrated-cc1 will produce (in-process)
+    // before command line.
+    if (absl::StartsWith(line, " (in-process)")) {
+      continue;
+    }
+
     // The first command should be the "cc1" command.
     // We do not need to read anything else.
     std::vector<std::string> argv;

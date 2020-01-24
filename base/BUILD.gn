@@ -2,8 +2,16 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+declare_args() {
+  use_absl_backed_sync_primitives = false
+}
+
 config("base_config") {
   include_dirs = [ "." ]
+  cflags = []
+  if (use_absl_backed_sync_primitives) {
+    cflags += [ "-DUSE_ABSL_BACKED_SYNC_PRIMITIVES" ]
+  }
 }
 
 static_library("base") {

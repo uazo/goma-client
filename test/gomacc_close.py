@@ -3,7 +3,6 @@
 # Copyright 2018 The Goma Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
 """This script is for emulating gomacc closed.
 
 The script open the socket and send request to compiler_proxy, and close
@@ -23,10 +22,10 @@ import tempfile
 # TODO: remove this when we deprecate python2.
 if sys.version_info >= (3, 0):
   import io
-  STRINGIO = io.StringIO
+  BUFIO = io.BytesIO
 else:
   import cStringIO
-  STRINGIO = cStringIO.StringIO
+  BUFIO = cStringIO.StringIO
 
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -125,7 +124,7 @@ def ReadAll(conn):
   Returns:
     data read from conn.
   """
-  data = STRINGIO()
+  data = BUFIO()
   while True:
     ready, _, _ = select.select([conn], [], [], READ_TIMEOUT_IN_SEC)
     if not ready:
@@ -134,11 +133,11 @@ def ReadAll(conn):
     if not snippet:
       return
     data.write(snippet)
-    CRLFCRLF = '\r\n\r\n'
+    CRLFCRLF = b'\r\n\r\n'
     pos = data.getvalue().find(CRLFCRLF)
     if pos != -1:
       pos += len(CRLFCRLF)
-      content_length = GetContentLength(data.getvalue()[:pos])
+      content_length = GetContentLength(data.getvalue()[:pos].decode())
       if content_length and (len(data.getvalue()) - pos) == content_length:
         return data.getvalue()
 

@@ -75,7 +75,7 @@ class SubProcessControllerClient: public SubProcessController {
   SubProcessControllerClient(int fd, pid_t pid, Options options);
   ~SubProcessControllerClient() override;
   void Setup(WorkerThreadManager* wm, std::string tmp_dir);
-  void Delete();
+  void Delete() LOCKS_EXCLUDED(mu_);
 
   // Sends request to server.
   void Register(std::unique_ptr<SubProcessReq> req) override;
@@ -91,9 +91,11 @@ class SubProcessControllerClient: public SubProcessController {
 
   void DoRead();
 
-  void OnClosed();
+  void OnClosed() LOCKS_EXCLUDED(mu_);
   void RunCheckSignaled();
   void CheckSignaled();
+
+  void MaybeClearReadableEventUnlocked() EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   WorkerThreadManager* wm_;
   WorkerThread::ThreadId thread_id_;
@@ -113,6 +115,12 @@ class SubProcessControllerClient: public SubProcessController {
   PeriodicClosureId periodic_closure_id_ GUARDED_BY(mu_);
   bool quit_ GUARDED_BY(mu_);
   bool closed_ GUARDED_BY(mu_);
+  // We prefer to use ClearReadable() instead of StopReadale() to unregister
+  // poller events from the IO multiplexing module (e.g. epoll). However, epoll
+  // doesn't allow an IO event to be unregistered for more than once. This flag
+  // ensures it's unregistered only once.
+  //
+  bool registered_readable_events_ GUARDED_BY(mu_);
 
   mutable Lock initialized_mu_;
   bool initialized_ GUARDED_BY(initialized_mu_);

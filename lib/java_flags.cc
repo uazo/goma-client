@@ -60,6 +60,10 @@ JavacFlags::JavacFlags(const std::vector<std::string>& args,
   parser.AddFlag("cp")->SetValueOutputWithCallback(nullptr, &class_paths);
   parser.AddFlag("classpath")
       ->SetValueOutputWithCallback(nullptr, &class_paths);
+  std::vector<std::string> processor_paths;
+  parser.AddFlag("processorpath")
+      ->SetValueOutputWithCallback(nullptr, &processor_paths);
+
   // TODO: Handle CLASSPATH environment variables.
   // TODO: Handle -extdirs option.
   FlagParser::Flag* flag_processor = parser.AddFlag("processor");
@@ -88,6 +92,7 @@ JavacFlags::JavacFlags(const std::vector<std::string>& args,
 
   ParseJavaClassPaths(boot_class_paths, &jar_files_);
   ParseJavaClassPaths(class_paths, &jar_files_);
+  ParseJavaClassPaths(processor_paths, &jar_files_);
 
   if (flag_processor->seen()) {
     for (const std::string& value : flag_processor->values()) {
@@ -110,32 +115,45 @@ void JavacFlags::DefineFlags(FlagParser* parser) {
     const char* name;
     FlagType flag_type;
   } kFlags[] = {
-    { "J-Xmx", kPrefix },  // -J-Xmx2048M, -J-Xmx1024M; Specify max JVM memory
-    { "Werror", kBool },  // Treat warning as error
-    { "XDignore.symbol.file", kBool },  // to use JRE internal classes
-    { "XDskipDuplicateBridges=", kPrefix },  //  See https://android.googlesource.com/platform/build/soong.git/+/master/java/config/config.go#60
-    { "XDstringConcat=", kPrefix },  // Specifies how to concatenate strings
-    { "Xdoclint:", kPrefix },  // -Xdoclint: lint for document.
-    { "Xlint", kBool },  // -Xlint
-    { "Xlint:", kPrefix },  // -Xlint:all, -Xlint:none, ...
-    { "Xmaxerrs", kNormal },  // -Xmaxerrs <number>; Sets the maximum number of errors to print.
-    { "Xmaxwarns", kNormal },  // -Xmaxwarns <number>; Sets the maximum number of warnings to print.
-    { "bootclasspath", kNormal },  // Cross-compiles against the specified set of boot classes.
-    { "classpath", kNormal },  // set classpath
-    { "cp", kNormal },  // set classpath
-    { "d", kNormal },  // Sets the destination directory for class files.
-    { "encoding", kNormal },  // -encoding <encoding>; Specify encoding.
-    { "g", kBool },  // -g; generate debug information
-    { "g:", kPrefix },   // -g:foobar; generate debug information
-    { "nowarn", kBool },  // -nowarn; the same effect of -Xlint:none.
-    { "parameters", kBool },  // Stores formal parameter names of constructors and methods in the generated class file
-    { "proc:none", kBool },  // Desable annotation processor.
-    { "processor", kNormal },  // Names of the annotation processors to run.
-    { "processorpath", kBool },  // -processorpath <path>;  // Specifies where to find annotation processors. If this option is not used, then the class path is searched for processors
-    { "s", kNormal },  // Specifies the directory where to place the generated source files.
-    { "source", kNormal },  // -source <version> e.g. -source 8; Specify java source version
-    { "sourcepath", kNormal },  // -sourcepath <sourcepath>
-    { "target", kNormal },  // -target <version> e.g. -target 8; Generates class files that target a specified release of the virtual machine.
+      {"J-Xmx", kPrefix},  // -J-Xmx2048M, -J-Xmx1024M; Specify max JVM memory
+      {"Werror", kBool},   // Treat warning as error
+      {"XDignore.symbol.file", kBool},  // to use JRE internal classes
+      {"XDskipDuplicateBridges=",
+       kPrefix},  //  See
+                  //  https://android.googlesource.com/platform/build/soong.git/+/master/java/config/config.go#60
+      {"XDstringConcat=", kPrefix},  // Specifies how to concatenate strings
+      {"Xdoclint:", kPrefix},        // -Xdoclint: lint for document.
+      {"Xlint", kBool},              // -Xlint
+      {"Xlint:", kPrefix},           // -Xlint:all, -Xlint:none, ...
+      {"Xmaxerrs", kNormal},   // -Xmaxerrs <number>; Sets the maximum number of
+                               // errors to print.
+      {"Xmaxwarns", kNormal},  // -Xmaxwarns <number>; Sets the maximum number
+                               // of warnings to print.
+      {"bootclasspath",
+       kNormal},  // Cross-compiles against the specified set of boot classes.
+      {"classpath", kNormal},  // set classpath
+      {"cp", kNormal},         // set classpath
+      {"d", kNormal},         // Sets the destination directory for class files.
+      {"encoding", kNormal},  // -encoding <encoding>; Specify encoding.
+      {"g", kBool},           // -g; generate debug information
+      {"g:", kPrefix},        // -g:foobar; generate debug information
+      {"nowarn", kBool},      // -nowarn; the same effect of -Xlint:none.
+      {"parameters", kBool},  // Stores formal parameter names of constructors
+                              // and methods in the generated class file
+      {"proc:none", kBool},   // Desable annotation processor.
+      {"processor", kNormal},  // Names of the annotation processors to run.
+      {"processorpath",
+       kNormal},  // -processorpath <path>;  // Specifies where to find
+                  // annotation processors. If this option is not used, then the
+                  // class path is searched for processors
+      {"s", kNormal},  // Specifies the directory where to place the generated
+                       // source files.
+      {"source", kNormal},  // -source <version> e.g. -source 8; Specify java
+                            // source version
+      {"sourcepath", kNormal},  // -sourcepath <sourcepath>
+      {"target",
+       kNormal},  // -target <version> e.g. -target 8; Generates class files
+                  // that target a specified release of the virtual machine.
   };
 
   for (const auto& f : kFlags) {

@@ -3,7 +3,6 @@
 # Copyright 2012 The Goma Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
 """Script for running all goma unit tests.
 Use -h to see its usage.
 """
@@ -19,9 +18,15 @@ import sys
 
 SCRIPT_DIR = os.path.dirname(__file__)
 
-sys.path.append(os.path.join(SCRIPT_DIR, os.pardir, "third_party",
-                             "subprocess32"))
-import subprocess32
+# use subprocess on python3 as recommended by
+# third_party/subprocess32/README.md
+# but windows needs to use subprocess32 too (for timeout keyword argument)
+if sys.version_info[0] < 3:
+  sys.path.append(
+      os.path.join(SCRIPT_DIR, os.pardir, "third_party", "subprocess32"))
+  import subprocess32 as subprocess
+else:
+  import subprocess
 
 
 CLIENT_ABS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
@@ -39,13 +44,18 @@ def TestNames(case_key):
     test case names.
   """
   gn_py_path = os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, 'gn.py')
-  output = subprocess32.check_output([sys.executable,
-                                      gn_py_path,
-                                      'ls', '.', '//%s/*' % case_key,
-                                      '--testonly=true',
-                                      '--type=executable',
-                                      '--as=output'])
-  return [test for test in output.split() if test != 'vstestrun.exe']
+  try:
+    output = subprocess.check_output([
+        sys.executable, gn_py_path, 'ls', '.',
+        '//%s/*' % case_key, '--testonly=true', '--type=executable',
+        '--as=output'
+    ])
+  except subprocess.CalledProcessError as ex:
+    print(ex.output)
+    print(ex.stderr)
+    raise ex
+  outputs = output.decode("utf-8").split()
+  return [test for test in outputs if test != 'vstestrun.exe']
 
 
 class TestError(Exception):
@@ -55,7 +65,7 @@ class TestError(Exception):
 def SetupClang():
   clang_path = os.path.join(CLIENT_ABS_DIR, 'third_party', 'llvm-build',
                             'Release+Asserts', 'bin', 'clang')
-  if subprocess32.call([clang_path, "-v"]) == 0:
+  if subprocess.call([clang_path, "-v"]) == 0:
     os.environ['GOMATEST_CLANG_PATH'] = clang_path
     print('GOMATEST_CLANG_PATH=' + os.environ['GOMATEST_CLANG_PATH'])
   else:
@@ -82,9 +92,11 @@ def RunTest(build_dir, target, case_opt, non_stop):
     for case in case_names:
       try:
         sys.stdout.write("\nINFO: <" + target + "> case: " + case + "\n")
-        return_code = subprocess32.call(os.path.join('.', case),
-                                        stdout=sys.stdout, stderr=sys.stderr,
-                                        timeout=60)
+        return_code = subprocess.call(
+            os.path.join('.', case),
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+            timeout=60)
         if return_code != 0:
           error_message = case + " failed"
           raise TestError(error_message)

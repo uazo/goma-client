@@ -74,6 +74,70 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseResourceOutputPosix) {
   EXPECT_EQ(expected, resource);
 }
 
+TEST(ClangCompilerInfoBuilderHelperTest, ParseClang11IntegratedCC1) {
+  // http://b/148147812
+  static const char kDummyClangOutput[] =
+      "Fuchsia clang version 11.0.0"
+      " (https://fuchsia.googlesource.com/a/third_party/llvm-project"
+      " de51559fa68049da73b696a4e89468154b12852a)\n"
+      "Target: x86_64-unknown-linux-gnu\n"
+      "Thread model: posix\n"
+      "InstalledDir: /prebuilt/third_party/clang/linux-x64/bin\n"
+      "Found candidate GCC installation: gcc/x86_64-linux-gnu/4.6\n"
+      "Selected GCC installation: gcc/x86_64-linux-gnu/4.6\n"
+      "Candidate multilib: .;@m64\n"
+      "Selected multilib: .;@m64\n"
+      " (in-process)\n"
+      " \"/prebuilt/third_party/clang/linux-x64/bin/clang-11\" -cc1"
+      " -triple x86_64-unknown-linux-gnu -E -disable-free"
+      " -disable-llvm-verifier -discard-value-names -main-file-name null"
+      " -mrelocation-model static -mthread-model posix -mframe-pointer=all"
+      " -fmath-errno -fno-rounding-math -masm-verbose -mconstructor-aliases"
+      " -munwind-tables -target-cpu x86-64 -dwarf-column-info"
+      " -fno-split-dwarf-inlining -debugger-tuning=gdb -v"
+      " -resource-dir /prebuilt/third_party/clang/linux-x64/lib/clang/11.0.0"
+      " -isysroot ../fuchsia/zircon/prebuilt/downloads/sysroot/linux-x64"
+      " -internal-isystem ../fuchsia/zircon/prebuilt/downloads/sysroot/"
+      "linux-x64/usr/local/include"
+      " -internal-isystem /prebuilt/third_party/clang/linux-x64/"
+      "lib/clang/11.0.0/include"
+      " -internal-externc-isystem ../fuchsia/zircon/prebuilt/downloads/sysroot/"
+      "linux-x64/usr/include/x86_64-linux-gnu"
+      " -internal-externc-isystem ../fuchsia/zircon/prebuilt/downloads/sysroot/"
+      "linux-x64/include"
+      " -internal-externc-isystem ../fuchsia/zircon/prebuilt/downloads/sysroot/"
+      "linux-x64/usr/include"
+      " -fdebug-compilation-dir /SRC/c++"
+      " -ferror-limit 19 -fmessage-length 0 -fgnuc-version=4.2.1"
+      " -fobjc-runtime=gcc -fdiagnostics-show-option -fcolor-diagnostics"
+      " -faddrsig -o /dev/null -x c /dev/null\n"
+      "clang -cc1 version 11.0.0 based upon LLVM 11.0.0git"
+      " default target x86_64-unknown-linux-gnu\n"
+      "ignoring nonexistent directory \"../fuchsia/zircon/prebuilt/downloads/"
+      "sysroot/linux-x64/usr/local/include\"\n"
+      "ignoring nonexistent directory \"../fuchsia/zircon/prebuilt/downloads/"
+      "sysroot/linux-x64/include\"\n"
+      "#include \"...\" search starts here:\n"
+      "#include <...> search starts here:\n"
+      " /prebuilt/third_party/clang/linux-x64/lib/clang/11.0.0/include\n"
+      " ../fuchsia/zircon/prebuilt/downloads/sysroot/linux-x64/"
+      "usr/include/x86_64-linux-gnu\n"
+      " ../fuchsia/zircon/prebuilt/downloads/sysroot/linux-x64/usr/include\n"
+      "End of search list.\n";
+  TmpdirUtil tmpdir("parse_resource_output");
+  tmpdir.CreateEmptyFile("gcc/x86_64-linux-gnu/4.6/crtbegin.o");
+  std::vector<ClangCompilerInfoBuilderHelper::ResourceList> resource;
+  EXPECT_EQ(ClangCompilerInfoBuilderHelper::ParseStatus::kSuccess,
+            ClangCompilerInfoBuilderHelper::ParseResourceOutput(
+                "/prebuilt/third_party/llvm-build/Release+Asserts/bin/clang",
+                tmpdir.realcwd(), kDummyClangOutput, &resource));
+  std::vector<ClangCompilerInfoBuilderHelper::ResourceList> expected = {
+      {"gcc/x86_64-linux-gnu/4.6/crtbegin.o",
+       CompilerInfoData::CLANG_GCC_INSTALLATION_MARKER},
+  };
+  EXPECT_EQ(expected, resource);
+}
+
 TEST(ClangCompilerInfoBuilderHelperTest, ParseResourceOutputPosixMultilib) {
   // $ /path/to/goma/clang -m32 -v -E -o /dev/null -x c /dev/null
   // and modified GCC installation path (remove /usr/lib), and search

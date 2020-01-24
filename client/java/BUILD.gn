@@ -19,6 +19,9 @@ static_library("java_compiler_type_specific") {
     "java_compiler_type_specific.h",
   ]
 
+  deps = [
+    "//client:common",
+  ]
   public_deps = [
     ":jar_parser_lib",
     ":java_compiler_info_builder_lib",
