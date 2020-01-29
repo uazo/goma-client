@@ -218,6 +218,62 @@ TEST(ClangCompilerInfoBuilderHelperTest, GetResourceDirPosix) {
             compiler_info.cxx().resource_dir());
 }
 
+TEST(ClangCompilerInfoBuilderHelperTest, GetResourceDirPosixClang11) {
+  static const char kDummyClangOutput[] =
+      "clang version 11.0.0 (https://github.com/llvm/llvm-project/ "
+      "68051c122440b556e88a946bce12bae58fcfccb4)\n"
+      "Target: x86_64-unknown-linux-gnu\n"
+      "Thread model: posix\n"
+      "InstalledDir: /tmp/./third_party/llvm-build/Release+Asserts/bin\n"
+      "Found candidate GCC installation: /usr/lib/gcc/i686-linux-gnu/6\n"
+      "Found candidate GCC installation: /usr/lib/gcc/i686-linux-gnu/6.5.0\n"
+      "Found candidate GCC installation: /usr/lib/gcc/i686-linux-gnu/7\n"
+      "Found candidate GCC installation: /usr/lib/gcc/i686-linux-gnu/7.4.0\n"
+      "Found candidate GCC installation: /usr/lib/gcc/i686-linux-gnu/8\n"
+      "Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/6\n"
+      "Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/6.5.0\n"
+      "Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/7\n"
+      "Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/7.4.0\n"
+      "Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/8\n"
+      "Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/8\n"
+      "Candidate multilib: .;@m64\n"
+      "Selected multilib: .;@m64\n"
+      " (in-process)\n"
+      " \"/tmp/third_party/llvm-build/Release+Asserts/bin/clang\" -cc1 "
+      "-triple x86_64-unknown-linux-gnu -E -disable-free "
+      "-disable-llvm-verifier -discard-value-names -main-file-name null "
+      "-mrelocation-model static -mthread-model posix -mframe-pointer=all "
+      "-fmath-errno -fno-rounding-math -masm-verbose -mconstructor-aliases "
+      "-munwind-tables -target-cpu x86-64 -dwarf-column-info "
+      "-fno-split-dwarf-inlining -debugger-tuning=gdb -v "
+      "-resource-dir "
+      "/tmp/third_party/llvm-build/Release+Asserts/lib/clang/11.0.0 "
+      "-internal-isystem /usr/local/include "
+      "-internal-isystem "
+      "/tmp/third_party/llvm-build/Release+Asserts/lib/clang/11.0.0/include "
+      "-internal-externc-isystem /usr/include/x86_64-linux-gnu "
+      "-internal-externc-isystem /include -internal-externc-isystem "
+      "/usr/include -fdebug-compilation-dir /tmp "
+      "-ferror-limit 19 -fmessage-length 0 -fgnuc-version=4.2.1 "
+      "-fobjc-runtime=gcc -fdiagnostics-show-option -fcolor-diagnostics "
+      "-faddrsig -o /dev/null -x c /dev/null\n"
+      "clang -cc1 version 11.0.0 based upon LLVM 11.0.0git "
+      "default target x86_64-unknown-linux-gnu\n"
+      "ignoring nonexistent directory \"/include\"\n"
+      "#include \"...\" search starts here:\n"
+      "#include <...> search starts here:\n"
+      " /usr/local/include\n"
+      " /tmp/third_party/llvm-build/Release+Asserts/lib/clang/11.0.0/include\n"
+      " /usr/include/x86_64-linux-gnu\n"
+      " /usr/include\n"
+      "End of search list.\n";
+  CompilerInfoData compiler_info;
+  EXPECT_TRUE(ClangCompilerInfoBuilderHelper::GetResourceDir(kDummyClangOutput,
+                                                             &compiler_info));
+  EXPECT_EQ("/tmp/third_party/llvm-build/Release+Asserts/lib/clang/11.0.0",
+            compiler_info.cxx().resource_dir());
+}
+
 TEST(ClangCompilerInfoBuilderHelperTest, GetResourceDirPosixClangCl) {
   static const char kDummyClangClOutput[] =
       "clang version 7.0.0 (trunk 332838)\n"
@@ -251,6 +307,46 @@ TEST(ClangCompilerInfoBuilderHelperTest, GetResourceDirPosixClangCl) {
   EXPECT_EQ("../../third_party/llvm-build/Release+Asserts/lib/clang/7.0.0",
             compiler_info.cxx().resource_dir());
 }
+
+TEST(ClangCompilerInfoBuilderHelperTest, GetResourceDirPosixClangCl11) {
+  static const char kDummyClangClOutput[] =
+      "clang version 11.0.0 (https://github.com/llvm/llvm-project/ "
+      "68051c122440b556e88a946bce12bae58fcfccb4)\n"
+      "Target: x86_64-pc-windows-msvc\n"
+      "Thread model: posix\n"
+      "InstalledDir: /tmp/./third_party/llvm-build/Release+Asserts/bin\n"
+      " (in-process)\n"
+      " \"/tmp/third_party/llvm-build/Release+Asserts/bin/clang\" -cc1 "
+      "-triple x86_64-pc-windows-msvc19.11.0 -E -disable-free "
+      "-disable-llvm-verifier -discard-value-names -main-file-name null "
+      "-mrelocation-model pic -pic-level 2 -mthread-model posix "
+      "-mframe-pointer=none -relaxed-aliasing -fmath-errno -fno-rounding-math "
+      "-masm-verbose -mconstructor-aliases -munwind-tables -target-cpu x86-64 "
+      "-mllvm -x86-asm-syntax=intel -D_MT -flto-visibility-public-std "
+      "--dependent-lib=libcmt --dependent-lib=oldnames -stack-protector 2 "
+      "-fms-volatile -fdiagnostics-format msvc -dwarf-column-info -v "
+      "-resource-dir "
+      "/tmp/third_party/llvm-build/Release+Asserts/lib/clang/11.0.0 "
+      "-internal-isystem "
+      "/tmp/third_party/llvm-build/Release+Asserts/lib/clang/11.0.0/include "
+      "-fdebug-compilation-dir /tmp -ferror-limit 19 -fmessage-length 0 "
+      "-fno-use-cxa-atexit -fms-extensions -fms-compatibility "
+      "-fms-compatibility-version=19.11 -fdelayed-template-parsing "
+      "-fobjc-runtime=gcc -fdiagnostics-show-option -fcolor-diagnostics "
+      "-faddrsig -o - -x c /dev/null\n"
+      "clang -cc1 version 11.0.0 based upon LLVM 11.0.0git "
+      "default target x86_64-unknown-linux-gnu\n"
+      "#include \"...\" search starts here:\n"
+      "#include <...> search starts here:\n"
+      " /tmp/third_party/llvm-build/Release+Asserts/lib/clang/11.0.0/include\n"
+      "End of search list.\n";
+  CompilerInfoData compiler_info;
+  EXPECT_TRUE(ClangCompilerInfoBuilderHelper::GetResourceDir(
+      kDummyClangClOutput, &compiler_info));
+  EXPECT_EQ("/tmp/third_party/llvm-build/Release+Asserts/lib/clang/11.0.0",
+            compiler_info.cxx().resource_dir());
+}
+
 #else
 TEST(ClangCompilerInfoBuilderHelperTest, ParseResourceOutputWin) {
   static const char kDummyClangOutput[] =
@@ -306,6 +402,34 @@ TEST(ClangCompilerInfoBuilderHelperTest, GetResourceDirWinClangCl) {
   EXPECT_EQ(
       "c:\\\\third_party\\\\llvm-build\\\\"
       "Release+Asserts\\\\lib\\\\clang\\\\7.0.0",
+      compiler_info.cxx().resource_dir());
+}
+
+TEST(ClangCompilerInfoBuilderHelperTest, GetResourceDirWinClangCl11) {
+  static const char kDummyClangOutput[] =
+      "clang version 11.0.0 (https://github.com/llvm/llvm-project/ "
+      "68051c122440b556e88a946bce12bae58fcfccb4)\n"
+      "Target: x86_64-pc-windows-msvc\n"
+      "Thread model: posix\n"
+      "InstalledDir: c:\\third_party\\llvm-build\\Release+Asserts\\bin\n"
+      " (in-process)\n"
+      " \"c:\\\\third_party\\\\llvm-build\\\\Release+Asserts\\\\"
+      "bin\\\\clang-cl.exe\" \"-cc1\" \"-triple\" "
+      "\"x86_64-pc-windows-msvc19.11.0\"\"-emit-obj\" \"-mrelax-all\" "
+      "\"-mincremental-linker-compatible\" \"-disable-free\" "
+      "\"-ferror-limit\" \"19\" \"-fmessage-length\" \"89\" "
+      "\"-resource-dir\" \"c:\\\\third_party\\\\llvm-build\\\\"
+      "Release+Asserts\\\\lib\\\\clang\\\\11.0.0\" "
+      "\"-fsanitize=address\" \"-fsanitize-blacklist=c:\\\\third_party"
+      "\\\\llvm-build\\\\Release+Asserts\\\\lib\\\\clang\\\\11.0.0"
+      "\\\\share\\\\asan_blacklist.txt\" \"-fsanitize-address-use-after-scope\""
+      "\"-fms-compatibility\" \"-fms-compatibility-version=19.11\"";
+  CompilerInfoData compiler_info;
+  EXPECT_TRUE(ClangCompilerInfoBuilderHelper::GetResourceDir(kDummyClangOutput,
+                                                             &compiler_info));
+  EXPECT_EQ(
+      "c:\\\\third_party\\\\llvm-build\\\\"
+      "Release+Asserts\\\\lib\\\\clang\\\\11.0.0",
       compiler_info.cxx().resource_dir());
 }
 #endif

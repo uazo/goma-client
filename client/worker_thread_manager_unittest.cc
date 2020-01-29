@@ -287,6 +287,7 @@ class WorkerThreadManagerTest : public ::testing::Test {
       fd = tc->fd_;
       descriptor = tc->socket_descriptor_;
     }
+    descriptor->ClearWritable();  // Check b/148360680 case.
     descriptor->ClearReadable();
     descriptor->ClearTimeout();
     ScopedSocket sock(wm_->DeleteSocketDescriptor(descriptor));
@@ -387,6 +388,7 @@ class WorkerThreadManagerTest : public ::testing::Test {
       fd = tc->fd_;
       descriptor = tc->socket_descriptor_;
     }
+    descriptor->ClearReadable();  // Check b/148360680 case.
     descriptor->ClearWritable();
     ScopedSocket sock(wm_->DeleteSocketDescriptor(descriptor));
     EXPECT_EQ(fd, sock.get());

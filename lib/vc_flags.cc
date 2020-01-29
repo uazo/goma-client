@@ -222,7 +222,8 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
 
     parser.AddBoolFlag("fno-integrated-cc1")->SetOutput(&compiler_info_flags_);
 
-    // Make it understand Xclang.
+    // Make it understand /clang: and Xclang.
+    parser.AddPrefixFlag("clang:")->SetOutput(&compiler_info_flags_);
     parser.AddFlag("Xclang")->SetOutput(&compiler_info_flags_);
 
     parser.AddBoolFlag("mincremental-linker-compatible")
@@ -637,12 +638,14 @@ void VCFlags::DefineFlags(FlagParser* parser) {
   parser->AddBoolFlag("Brepro-");
 
   // also see clang-cl
-  // http://llvm.org/klaus/clang/blob/master/include/clang/Driver/CLCompatOptions.td
+  // https://github.com/llvm/llvm-project/blob/master/clang/include/clang/Driver/CLCompatOptions.td
   parser->AddFlag("o");  // set output file or directory
   parser->AddBoolFlag("fallback");
   parser->AddBoolFlag("G1");
   parser->AddBoolFlag("G2");
   parser->AddFlag("imsvc");  // both -imsvc, /imsvc.
+  // http://b/148244706  /clang:<arg> pass <arg> to the clang driver.
+  parser->AddPrefixFlag("clang:");
 
   // clang-cl flags. only accepts if it starts with '-'.
   opts->flag_prefix = '-';

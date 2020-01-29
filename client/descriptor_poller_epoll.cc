@@ -72,17 +72,15 @@ class EpollDescriptorPoller : public DescriptorPollerBase {
                            EventType type ALLOW_UNUSED) override {
     struct epoll_event ev = {};
     ev.data.ptr = d;
-    int op = EPOLL_CTL_DEL;
     if (d->wait_readable()) {
       ev.events |= EPOLLIN;
-      op = EPOLL_CTL_MOD;
     }
     if (d->wait_writable()) {
       ev.events |= EPOLLOUT;
-      op = EPOLL_CTL_MOD;
     }
-    PCHECK(epoll_ctl(epoll_fd_.fd(), op, d->fd(), &ev) != -1)
-        << "Cannot delete fd for epoll:" << d->fd();
+    PCHECK(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_MOD, d->fd(), &ev) != -1)
+        << "Cannot modify fd for epoll:" << d->fd()
+        << " ev.events=" << ev.events;
   }
 
   void RegisterTimeoutEvent(SocketDescriptor* d) override {

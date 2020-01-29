@@ -69,13 +69,22 @@ bool ParseDriverArgs(absl::string_view display_output,
                      std::vector<std::string>* driver_args) {
   for (auto&& line : absl::StrSplit(display_output, absl::ByAnyChar("\r\n"),
                                     absl::SkipEmpty())) {
-    if (absl::StartsWith(line, " ")) {
-#ifdef _WIN32
-      return ParseWinCommandLineToArgv(line, driver_args);
-#else
-      return ParsePosixCommandLineToArgv(line, driver_args);
-#endif
+    if (!absl::StartsWith(line, " ")) {
+      continue;
     }
+    // clang11 without -fno-integrated-cc1 will produce (in-process)
+    // before command line.
+    // We'll ignore any line starts with paren, since it won't be
+    // used as argv0, so considered as some kind of annotations like
+    // (in-proccess).
+    if (absl::StartsWith(line, " (")) {
+      continue;
+    }
+#ifdef _WIN32
+    return ParseWinCommandLineToArgv(line, driver_args);
+#else
+    return ParsePosixCommandLineToArgv(line, driver_args);
+#endif
   }
   return false;
 }
@@ -324,7 +333,10 @@ ClangCompilerInfoBuilderHelper::ParseResourceOutput(
 
     // clang11 without -fno-integrated-cc1 will produce (in-process)
     // before command line.
-    if (absl::StartsWith(line, " (in-process)")) {
+    // We'll ignore any line starts with paren, since it won't be
+    // used as argv0, so considered as some kind of annotations like
+    // (in-proccess).
+    if (absl::StartsWith(line, " (")) {
       continue;
     }
 
