@@ -17,6 +17,7 @@ from __future__ import print_function
 
 import collections
 import copy
+import ctypes
 import datetime
 import glob
 import gzip
@@ -24,6 +25,7 @@ import hashlib
 import io
 import json
 import os
+import posixpath
 import random
 import re
 import shutil
@@ -36,11 +38,14 @@ import tempfile
 import time
 try:
   import urllib.parse, urllib.request
+  URLJOIN = urllib.parse.urljoin
   URLOPEN2 = urllib.request.urlopen
   URLREQUEST = urllib.request.Request
 except ImportError:
   import urllib
   import urllib2
+  import urlparse
+  URLJOIN = urlparse.urljoin
   URLOPEN2 = urllib2.urlopen
   URLREQUEST = urllib2.Request
 import zipfile
@@ -1569,10 +1574,8 @@ class GomaEnv(object):
     _OverrideEnvVar('GOMA_RPC_EXTRA_PARAMS', '?rbe')
 
     # On Windows, ATS must be enabled.
-    if isinstance(self, GomaEnvWin):
+    if self.GetPlatform() != 'mac':
       _OverrideEnvVar('GOMA_ARBITRARY_TOOLCHAIN_SUPPORT', 'true')
-
-    # TODO: On Linux, enable ATS by default.
 
   def _GetCompilerProxyPort(self, proc=None):
     """Gets compiler_proxy's port by "gomacc port".
@@ -2429,15 +2432,6 @@ class GomaEnvWin(GomaEnv):
   _DEPOT_TOOLS_DIR_PATTERN = re.compile(r'.*[/\\]depot_tools[/\\]?$')
 
   def __init__(self):
-    try:
-      self._win32process = __import__('win32process')
-      self._win32api = __import__('win32api')
-    except ImportError as e:
-      print('You don\'t seem to have installed pywin32 module, '
-            '`pip install pywin32` or `python -m pip install pywin32` '
-            'may fix.')
-      raise e
-
     GomaEnv.__init__(self)
     self._platform = 'win64'
 
@@ -2470,8 +2464,10 @@ class GomaEnvWin(GomaEnv):
       raise ConfigError('vcflags.exe not found')
 
   def _ExecCompilerProxy(self):
+    # https://docs.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
+    DETACHED_PROCESS = 8
     return PopenWithCheck([self._compiler_proxy_binary],
-                          creationflags=self._win32process.DETACHED_PROCESS)
+                          creationflags=DETACHED_PROCESS)
 
   def _GetDetailedFailureReason(self, proc=None):
     pids = self._GetStakeholderPids()
@@ -2564,23 +2560,35 @@ class GomaEnvWin(GomaEnv):
     return True
 
   def _WaitWithTimeout(self, proc, timeout_sec):
-    import win32api
-    import win32con
-    import win32event
+    # https://docs.microsoft.com/en-us/windows/win32/procthread/process-security-and-access-rights
+    PROCESS_QUERY_INFORMATION = 0x400
+    SYNCHRONIZE = 0x100000
+    # https://docs.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitforsingleobject
+    WAIT_TIMEOUT = 0x102
+    WAIT_OBJECT_0 = 0
     try:
-      handle = win32api.OpenProcess(
-          win32con.PROCESS_QUERY_INFORMATION | win32con.SYNCHRONIZE,
-          False, proc.pid)
-      ret = win32event.WaitForSingleObject(handle, timeout_sec * 10**3)
-      if ret in (win32event.WAIT_TIMEOUT, win32event.WAIT_OBJECT_0):
+      handle = ctypes.windll.kernel32.OpenProcess(
+          PROCESS_QUERY_INFORMATION | SYNCHRONIZE, False, proc.pid)
+      ret = ctypes.windll.kernel32.WaitForSingleObject(handle,
+                                                       timeout_sec * 10**3)
+      if ret in (WAIT_TIMEOUT, WAIT_OBJECT_0):
         return
       raise Error('WaitForSingleObject returned expected value %s' % ret)
     finally:
       if handle:
-        win32api.CloseHandle(handle)
+        ctypes.windll.kernel32.CloseHandle(handle)
 
   def _GetUsernameNoEnv(self):
-    return self._win32api.GetUserName()
+    GetUserNameEx = ctypes.windll.secur32.GetUserNameExW
+    # https://docs.microsoft.com/en-us/windows/win32/api/secext/ne-secext-extended_name_format
+    NameSamCompatible = 2
+
+    size = ctypes.pointer(ctypes.c_ulong(0))
+    GetUserNameEx(NameSamCompatible, None, size)
+
+    name_buffer = ctypes.create_unicode_buffer(size.contents.value)
+    GetUserNameEx(NameSamCompatible, name_buffer, size)
+    return name_buffer.value.encode('utf-8')
 
 
 class GomaEnvPosix(GomaEnv):
@@ -2600,7 +2608,6 @@ class GomaEnvPosix(GomaEnv):
   PLATFORM_CANDIDATES = [
       # (Shown name, platform)
       ('Goobuntu', 'goobuntu'),
-      ('Chrome OS', 'chromeos'),
       ('MacOS', 'mac'),
       ]
   _LSOF = 'lsof'
@@ -2879,11 +2886,11 @@ def _GetPackageName(platform):
 class GomaBackend(object):
   """Backend specific configs."""
 
-  def __init__(self, env):
+  def __init__(self, env, server_host=None, path_prefix=None):
     self._env = env
     self._download_base_url = None
-    self._path_prefix = None
-    self._stubby_host = None
+    self._server_host = server_host
+    self._path_prefix = path_prefix
     self._SetupEnviron()
 
   def _SetupEnviron(self):
@@ -2904,6 +2911,10 @@ class GomaBackend(object):
     """
     raise NotImplementedError('Please implement _NormalizeBaseUrl')
 
+  def _MakeServerUrl(self, suffix):
+    return URLJOIN('https://%s' % self._server_host,
+                   posixpath.join(self._path_prefix, suffix))
+
   def GetDownloadBaseUrl(self):
     """Orchestrate download base url for retrieving manifest file.
 
@@ -2916,8 +2927,7 @@ class GomaBackend(object):
     if self._download_base_url:
       return self._download_base_url
 
-    downloadurl_path = '%s/downloadurl' % self._path_prefix
-    downloadurl = 'https://%s%s' % (self._stubby_host, downloadurl_path)
+    downloadurl = self._MakeServerUrl('downloadurl')
     url = self._NormalizeBaseUrl(
         self._env.HttpDownload(downloadurl,
                                rewrite_url=self.RewriteRequest,
@@ -2935,7 +2945,7 @@ class GomaBackend(object):
     Returns:
        URL for ping
     """
-    return 'https://%s/%s/ping' % (self._stubby_host, self._path_prefix)
+    return self._MakeServerUrl('ping')
 
   def RewriteRequest(self, request):
     """Rewrite request based on backend needs."""
@@ -2953,12 +2963,15 @@ class GomaBackend(object):
 class Clients5Backend(GomaBackend):
   """Backend specific config for Clients5."""
 
+  def __init__(self, env):
+    # Set member variables for GetDownloadBaseUrl.
+    super(Clients5Backend, self).__init__(
+        env,
+        server_host='clients5.google.com',
+        path_prefix='/cxx-compiler-service')
+
   def _SetupEnviron(self):
     """Set up clients5 backend specific environmental variables."""
-    # Set member variables for _GetDownloadBaseUrl.
-    self._path_prefix = '/cxx-compiler-service'
-    self._stubby_host = 'clients5.google.com'
-
     # TODO: provide better way to make server know Windows client.
     # Fool proof until we provide the way.
     if (isinstance(self._env, GomaEnvWin) and

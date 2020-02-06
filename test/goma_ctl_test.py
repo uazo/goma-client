@@ -112,7 +112,7 @@ def GetPlatformSpecific(platform):
   """
   if platform in ('win', 'win64'):
     return WindowsSpecific(platform)
-  elif platform in ('linux', 'mac', 'goobuntu', 'chromeos'):
+  elif platform in ('linux', 'mac', 'goobuntu'):
     return PosixSpecific(platform)
   raise ValueError('You should specify supported platform name.')
 
@@ -2753,10 +2753,10 @@ class GomaEnvTest(GomaCtlTestCommon):
     manifest_file = os.path.join(self._tmp_dir, self._TMP_SUBDIR_NAME,
                                  'MANIFEST')
     with open(manifest_file, 'w') as f:
-      f.write('PLATFORM=chromeos')
+      f.write('PLATFORM=linux')
     env = self._module.GomaEnv()
     self.assertTrue(os.path.exists(os.path.join(env._dir, 'MANIFEST')))
-    self.assertEqual(env._platform, 'chromeos')
+    self.assertEqual(env._platform, 'linux')
 
   def testIsValidMagicShouldBeTrueForValidManifest(self):
     filename = os.path.join(self._tmp_dir, self._TMP_SUBDIR_NAME, 'MANIFEST')
@@ -3526,6 +3526,60 @@ class GomaCtlLargeClients5Test(GomaCtlLargeTestCommon):
         'Using GOMA_SERVICE_ACCOUNT_JSON_FILE = %s\n' % self._oauth2_file)
 
 
+class GomaBackendTest(GomaCtlTestCommon):
+  """Tests basic operation of class GomaBackend."""
+
+  _SERVER_HOST = 'example.com'
+  _PATH_PREFIX = 'cxx-compiler-service'
+
+  def __init__(self, method_name, goma_ctl_path):
+    super(GomaBackendTest, self).__init__(
+        method_name, goma_ctl_path, platform_specific=None)
+
+  def setUp(self):
+    super(GomaBackendTest, self).setUp()
+
+    class TestGomaBackend(self._module.GomaBackend):
+      """Implements methods that were not implemented in its parent class."""
+
+      def __init__(self, env):
+        super(TestGomaBackend, self).__init__(env, GomaBackendTest._SERVER_HOST,
+                                              GomaBackendTest._PATH_PREFIX)
+
+    self._backend = TestGomaBackend(self._module.GomaEnv())
+
+  def testMakeServerUrl(self):
+    self.assertEqual(
+        self._backend._MakeServerUrl('foo'),
+        'https://example.com/cxx-compiler-service/foo')
+
+  def testGetPingUrl(self):
+    self.assertEqual(self._backend.GetPingUrl(),
+                     'https://example.com/cxx-compiler-service/ping')
+
+
+class Clients5BackendTest(GomaCtlTestCommon):
+  """Tests basic operation of class Clients5BackendTest."""
+
+  def __init__(self, method_name, goma_ctl_path):
+    super(Clients5BackendTest, self).__init__(
+        method_name, goma_ctl_path, platform_specific=None)
+
+  def setUp(self):
+    super(Clients5BackendTest, self).setUp()
+
+    self._backend = self._module.Clients5Backend(self._module.GomaEnv())
+
+  def testMakeServerUrl(self):
+    self.assertEqual(
+        self._backend._MakeServerUrl('foo'),
+        'https://clients5.google.com/cxx-compiler-service/foo')
+
+  def testGetPingUrl(self):
+    self.assertEqual(self._backend.GetPingUrl(),
+                     'https://clients5.google.com/cxx-compiler-service/ping')
+
+
 def GetParameterizedTestSuite(klass, **kwargs):
   test_loader = unittest.TestLoader()
   test_names = test_loader.getTestCaseNames(klass)
@@ -3542,13 +3596,16 @@ def main():
   option_parser = optparse.OptionParser()
   option_parser.add_option('--goma-dir', default=None,
                            help='absolute or relative to goma top dir')
-  option_parser.add_option('--platform', help='goma platform type.',
-                           default={'linux2': 'linux',
-                                    'darwin': 'mac',
-                                    'win32': 'win',
-                                    'cygwin': 'win'}.get(sys.platform, None),
-                           choices=('linux', 'mac', 'win',
-                                    'goobuntu', 'chromeos', 'win64'))
+  option_parser.add_option(
+      '--platform',
+      help='goma platform type.',
+      default={
+          'linux2': 'linux',
+          'darwin': 'mac',
+          'win64': 'win64',
+          'cygwin': 'win'
+      }.get(sys.platform, None),
+      choices=('linux', 'mac', 'goobuntu', 'win64'))
   option_parser.add_option('--goma-service-account-json-file',
                            help='goma service account JSON file')
   option_parser.add_option('--small', action='store_true',
@@ -3575,6 +3632,11 @@ def main():
       GetParameterizedTestSuite(GomaCtlSmallTest,
                                 goma_ctl_path=goma_ctl_path,
                                 platform_specific=platform_specific))
+  suite.addTest(
+      GetParameterizedTestSuite(GomaBackendTest, goma_ctl_path=goma_ctl_path))
+  suite.addTest(
+      GetParameterizedTestSuite(
+          Clients5BackendTest, goma_ctl_path=goma_ctl_path))
   if not options.small:
     suite.addTest(
         GetParameterizedTestSuite(GomaEnvTest,

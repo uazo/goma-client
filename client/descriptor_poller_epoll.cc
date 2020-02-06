@@ -66,19 +66,32 @@ class EpollDescriptorPoller : public DescriptorPollerBase {
       r = epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_MOD, d->fd(), &ev);
     }
     PCHECK(r != -1) << "Cannot add fd for epoll:" << d->fd();
+    // Since we allow to register twice, we do not check existence of
+    // the fd.
+    registered_fds_.insert(d->fd());
   }
 
   void UnregisterPollEvent(SocketDescriptor* d,
                            EventType type ALLOW_UNUSED) override {
+    if (!registered_fds_.contains(d->fd())) {
+      VLOG(1) << "fd has already been removed. fd=" << d->fd();
+      return;
+    }
     struct epoll_event ev = {};
     ev.data.ptr = d;
+    int op = EPOLL_CTL_DEL;
     if (d->wait_readable()) {
       ev.events |= EPOLLIN;
+      op = EPOLL_CTL_MOD;
     }
     if (d->wait_writable()) {
       ev.events |= EPOLLOUT;
+      op = EPOLL_CTL_MOD;
     }
-    PCHECK(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_MOD, d->fd(), &ev) != -1)
+    if (op == EPOLL_CTL_DEL) {
+      registered_fds_.erase(d->fd());
+    }
+    PCHECK(epoll_ctl(epoll_fd_.fd(), op, d->fd(), &ev) != -1)
         << "Cannot modify fd for epoll:" << d->fd()
         << " ev.events=" << ev.events;
   }
@@ -169,6 +182,7 @@ class EpollDescriptorPoller : public DescriptorPollerBase {
   ScopedFd epoll_fd_;
   std::unique_ptr<struct epoll_event[]> events_;
   absl::flat_hash_set<SocketDescriptor*> timeout_waiters_;
+  absl::flat_hash_set<int> registered_fds_;
   int nevents_;
   int last_nevents_;
   int nfds_;

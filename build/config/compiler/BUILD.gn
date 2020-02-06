@@ -55,7 +55,7 @@ config("compiler") {
 
     # sanitizer build with _FORTIFY_SOURCE is not supported, and it requires a
     # -O level bigger than 0.
-    if (!is_asan && !is_debug) {
+    if (!is_asan && !is_msan && !is_debug) {
       defines += [ "_FORTIFY_SOURCE=2" ]
     }
   }

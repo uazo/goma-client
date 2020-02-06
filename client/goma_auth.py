@@ -370,18 +370,18 @@ def CheckPing():
     server_url = '%s:%s' % (server_url, port)
 
   # e.g. url='https://goma.chromium.org/cxx-compiler-service/ping'
-  url = '%s%s/ping%s' % (
-      server_url,
-      os.environ.get('GOMA_URL_PATH_PREFIX', '/cxx-compiler-service'),
-      os.environ.get('GOMA_RPC_EXTRA_PARAMS', ''))
+  path_prefix = os.environ.get('GOMA_URL_PATH_PREFIX', '/cxx-compiler-service')
+  rpc_extra_params = os.environ.get('GOMA_RPC_EXTRA_PARAMS', '')
+  url = '%s%s/ping%s' % (server_url, path_prefix, rpc_extra_params)
   cmd = [GOMA_FETCH, '--auth', url]
   try:
     subprocess.check_output(cmd, stderr=subprocess.STDOUT)  # discard outputs.
     print('Ready to use Goma service at %s' % server_url)
     return True
   except subprocess.CalledProcessError:
-    print(('Current user is not registered with Goma service at %s. ' +
-          'Unable to use Goma') % server_url)
+    print(('Current user is not registered with Goma service at %s with ' +
+           'GOMA_RPC_EXTRA_PARAMS="%s". ' +
+           'Unable to use Goma.') % (server_url, rpc_extra_params))
   return False
 
 
