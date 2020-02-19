@@ -11,7 +11,9 @@
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
 #include "gtest/gtest.h"
+#include "include_file_utils.h"
 #include "lib/file_helper.h"
+#include "path.h"
 
 namespace devtools_goma {
 
@@ -73,6 +75,69 @@ void CompareFiles(const std::string& compiler,
       << " test_contents=" << test_contents
       << " files=" << nonallowed_extra_files;
 #endif
+}
+
+bool CreateHeaderMapFile(
+    const std::string& filename,
+    const std::vector<std::pair<std::string, std::string>>& entries) {
+  HeaderMap hmap;
+  hmap.string_offset = sizeof(hmap) - sizeof(hmap.buckets) +
+                       entries.size() * sizeof(HeaderMapBucket);
+  hmap.hash_capacity = entries.size();
+
+  std::vector<HeaderMapBucket> buckets(entries.size());
+
+  struct FileEntry {
+    std::string key;
+    std::string prefix;
+    std::string suffix;
+  };
+  std::vector<FileEntry> string_contents(entries.size());
+  int index = 0;
+
+  // Set up data of hmap file.
+  uint32_t offset = 1;
+  for (const auto& entry : entries) {
+    const auto& key = entry.first;
+    const auto& filename = entry.second;
+    std::string prefix = std::string(file::Dirname(filename)) + "/";
+    std::string suffix = std::string(file::Basename(filename));
+
+    auto& strings = string_contents[index];
+    strings.key = key;
+    strings.prefix = prefix;
+    strings.suffix = suffix;
+
+    auto& bucket = buckets[index];
+    bucket.key = offset;
+    bucket.prefix = offset + key.size() + 1;
+    bucket.suffix = bucket.prefix + prefix.size() + 1;
+    offset = bucket.suffix + suffix.size() + 1;
+
+    ++index;
+  }
+
+  // Write all data to a string buffer before writing to file.
+  const size_t data_size = hmap.string_offset + offset;
+  std::string data(data_size, '\0');
+
+  auto result = std::copy_n(reinterpret_cast<const char*>(&hmap),
+                            sizeof(hmap) - sizeof(hmap.buckets), data.begin());
+  result = std::copy_n(reinterpret_cast<const char*>(buckets.data()),
+                       sizeof(buckets[0]) * buckets.size(), result);
+  for (const auto& strings : string_contents) {
+    for (const auto& str : {strings.key, strings.prefix, strings.suffix}) {
+      // ++result because first string cannot have offset of 0 from
+      // |string_offset|, and there needs to be a 0 after each string.
+      result = std::copy_n(str.begin(), str.size(), ++result);
+    }
+  }
+
+  if (!WriteStringToFile(data, filename)) {
+    LOG(ERROR) << "Unable to write to " << filename;
+    return false;
+  }
+  return true;
 }
 
 }  // namespace devtools_goma

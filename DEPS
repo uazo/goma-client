@@ -43,7 +43,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@093a823923f3b9c413427c45015c8d452dc9c349",
+     "https://boringssl.googlesource.com/boringssl@7940ed1f304e82eee22fb072c05f204187f87cec",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -123,6 +123,19 @@ deps = {
        ],
        'condition': 'checkout_mac or checkout_ios',
        'dep_type': 'cipd',
+     },
+
+     # Java toolchain.
+     'client/third_party/jdk': {
+         'packages': [
+             {
+                 'package': 'chromium/third_party/jdk',
+                 'version': 'PfRSnxe8Od6WU4zBXomq-zsgcJgWmm3z4gMQNB-r2QcC',
+             },
+         ],
+         # Used on Linux only.
+         'condition': 'checkout_linux',
+         'dep_type': 'cipd',
      },
 }
 

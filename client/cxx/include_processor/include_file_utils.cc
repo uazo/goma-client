@@ -43,23 +43,6 @@ bool ReadHeaderMapContent(
     std::vector<std::pair<std::string, std::string>>* entries) {
   DCHECK(entries);
 
-  struct HeaderMapBucket {
-    uint32_t key;
-    uint32_t prefix;
-    uint32_t suffix;
-  };
-
-  struct HeaderMap {
-    char magic[4];
-    uint16_t version;
-    uint16_t reserved;
-    uint32_t string_offset;
-    uint32_t string_count;
-    uint32_t hash_capacity;
-    uint32_t max_value_length;
-    HeaderMapBucket buckets[1];
-  };
-
   std::unique_ptr<Content> file(Content::CreateFromFile(hmap_filename));
 
   if (!file) {
@@ -93,10 +76,11 @@ bool ReadHeaderMapContent(
       reinterpret_cast<const char*>(hmap) + hmap->string_offset;
 
   if (strings < file->buf() || buf_end <= strings) {
-    LOG(WARNING) << "Invalid string_offset: " << hmap_filename;
+    LOG(WARNING) << "Invalid string_offset: " << hmap_filename << ", "
+                 << "strings=" << hmap->string_offset << ", "
+                 << "file_size=" << file->size();
     return false;
   }
-
 
   if (sizeof(HeaderMap) - sizeof(HeaderMapBucket) +
       static_cast<int64_t>(hmap->hash_capacity) * sizeof(HeaderMapBucket) >

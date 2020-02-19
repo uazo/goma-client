@@ -39,6 +39,16 @@ bool IsKnownClangInChroot(const absl::string_view local_compiler_path) {
          IsClangWrapperInChroot(local_compiler_path);
 }
 
+bool IsClangHostWrapper(const std::string& abs_local_compiler_path) {
+  constexpr absl::string_view kClangHostWrapper = "clang_host_wrapper";
+  char buf[256];
+  ssize_t size = readlink(abs_local_compiler_path.c_str(), buf, sizeof(buf));
+  if (size > 0) {
+    return absl::string_view(buf, size) == kClangHostWrapper;
+  }
+  return false;
+}
+
 bool ParseEnvdPath(absl::string_view envd_path, std::string* path) {
   // content is like
   //
@@ -287,7 +297,8 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
                      std::make_move_iterator(pnacl_deps.end()));
   }
 
-  if (!IsClangWrapperInChroot(local_compiler_path)) {
+  if (!IsClangWrapperInChroot(local_compiler_path) ||
+      IsClangHostWrapper(abs_local_compiler_path)) {
     return SetChrootClangResourcePaths(cwd, resources, local_compiler_path,
                                        real_compiler_path, resource_paths);
   }
@@ -341,34 +352,6 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
   } else {
     resources.emplace_back(kClang);
   }
-
-  // We also need python2 for wrapper.
-  // TODO: better way to handle python library usage change.
-  std::vector<std::string> python2_deps = {
-      "/usr/lib64/python2.7/_abcoll.py",
-      "/usr/lib64/python2.7/abc.py",
-      "/usr/lib64/python2.7/codecs.py",
-      "/usr/lib64/python2.7/copy_reg.py",
-      "/usr/lib64/python2.7/encodings/aliases.py",
-      "/usr/lib64/python2.7/encodings/__init__.py",
-      "/usr/lib64/python2.7/encodings/utf_8.py",
-      "/usr/lib64/python2.7/__future__.py",
-      "/usr/lib64/python2.7/genericpath.py",
-      "/usr/lib64/python2.7/linecache.py",
-      "/usr/lib64/python2.7/os.py",
-      "/usr/lib64/python2.7/posixpath.py",
-      "/usr/lib64/python2.7/stat.py",
-      "/usr/lib64/python2.7/types.py",
-      "/usr/lib64/python2.7/UserDict.py",
-      "/usr/lib64/python2.7/warnings.py",
-      "/usr/lib64/python2.7/_weakrefset.py",
-      // "lib-dynload" is needed for detecting EXEC_PREFIX in python.
-      // The following code make it created in remote.
-      "/usr/lib64/python2.7/lib-dynload/../../../bin/python2",
-  };
-  resources.insert(resources.end(),
-                   std::make_move_iterator(python2_deps.begin()),
-                   std::make_move_iterator(python2_deps.end()));
 
   return SetChrootClangResourcePaths(cwd, resources, local_compiler_path,
                                      real_compiler_path, resource_paths);

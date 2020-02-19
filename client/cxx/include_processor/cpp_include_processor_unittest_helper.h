@@ -7,6 +7,8 @@
 
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace devtools_goma {
 
@@ -15,6 +17,10 @@ void CompareFiles(const std::string& compiler,
                   const std::set<std::string>& expected_files,
                   const std::set<std::string>& actual_files,
                   const std::set<std::string>& allowed_extra_files);
+
+bool CreateHeaderMapFile(
+    const std::string& hmap_filename,
+    const std::vector<std::pair<std::string, std::string>>& entries);
 
 }  // namespace devtools_goma
 

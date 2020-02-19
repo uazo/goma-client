@@ -10,6 +10,7 @@ proto_library("goma_proto") {
     "goma_data.proto",
     "goma_log.proto",
   ]
+  import_dirs = [ "//third_party/protobuf/protobuf/src" ]
 }
 
 config("lib_config") {

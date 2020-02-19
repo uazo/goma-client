@@ -4,8 +4,10 @@
 
 #include <gtest/gtest.h>
 
+#include "cpp_include_processor_unittest_helper.h"
 #include "include_file_utils.h"
 #include "path.h"
+#include "scoped_tmp_file.h"
 
 namespace devtools_goma {
 

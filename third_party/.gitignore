@@ -8,6 +8,7 @@ depot_tools
 gflags/src
 glog
 gtest
+jdk
 jinja2
 jsoncpp/source
 libFuzzer/src

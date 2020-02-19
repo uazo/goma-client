@@ -6,13 +6,61 @@
 
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
+#include "base/path.h"
 #include "counterz.h"
+#include "env_flags.h"
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
 #include "ioutil.h"
 #include "util.h"
 
+GOMA_DECLARE_bool(SEND_COMPILER_BINARY_AS_INPUT);
+
 namespace devtools_goma {
+
+namespace {
+
+void AddJavaLibraries(const std::string& compiler_path,
+                      const std::string& cwd,
+                      CompilerInfoData* data) {
+  // TODO: Verify that this is the smallest set of files needed to
+  // run javac.
+  const auto lib_dir = file::JoinPath(file::Dirname(compiler_path), "../lib");
+  constexpr absl::string_view kJavaLibs[] = {
+      "jfr/default.jfc", "jfr/profile.jfc",
+
+      "jli/libjli.so",
+
+      "security/blacklisted.certs", "security/cacerts",
+      "security/default.policy", "security/public_suffix_list.dat",
+
+      "server/libjsig.so", "server/libjvm.so", "server/Xusage.txt",
+
+      "libattach.so", "libawt_headless.so", "libawt.so", "libawt_xawt.so",
+      "libdt_socket.so", "libextnet.so", "libfontmanager.so",
+      "libinstrument.so", "libj2gss.so", "libj2pcsc.so", "libj2pkcs11.so",
+      "libjaas.so", "libjavajpeg.so", "libjava.so", "libjawt.so", "libjdwp.so",
+      "libjimage.so", "libjsig.so", "libjsound.so", "liblcms.so",
+      "libmanagement_agent.so", "libmanagement_ext.so", "libmanagement.so",
+      "libmlib_image.so", "libnet.so", "libnio.so", "libprefs.so", "librmi.so",
+      "libsaproc.so", "libsctp.so", "libsplashscreen.so", "libsunec.so",
+      "libunpack.so", "libverify.so", "libzip.so",
+
+      // Other files
+      "classlist", "ct.sym", "jexec", "jrt-fs.jar", "jvm.cfg", "modules",
+      "psfontj2d.properties", "psfont.properties.ja", "tzdb.dat",
+
+      // Files that are excluded:
+      // - src.zip
+  };
+
+  for (const auto lib_file : kJavaLibs) {
+    JavacCompilerInfoBuilder::AddResourceAsExecutableBinary(
+        file::JoinPath(lib_dir, lib_file), cwd, data);
+  }
+}
+
+}  // namespace
 
 void JavacCompilerInfoBuilder::SetLanguageExtension(
     CompilerInfoData* data) const {
@@ -25,14 +73,24 @@ void JavacCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     const std::string& abs_local_compiler_path,
     const std::vector<std::string>& compiler_info_envs,
     CompilerInfoData* data) const {
-  if (!GetJavacVersion(local_compiler_path, compiler_info_envs, flags.cwd(),
+  // TODO: Check for Python wrapper for javac, and set
+  // |real_javac_path| to the wrapper path instead of |real_compiler_path|.
+  const std::string real_javac_path = data->real_compiler_path();
+  if (!GetJavacVersion(real_javac_path, compiler_info_envs, flags.cwd(),
                        data->mutable_version())) {
-    AddErrorMessage("Failed to get java version for " + local_compiler_path,
-                    data);
+    AddErrorMessage("Failed to get java version for " + real_javac_path, data);
     LOG(ERROR) << data->error_message();
     return;
   }
   data->set_target("java");
+
+  if (FLAGS_SEND_COMPILER_BINARY_AS_INPUT) {
+    // TODO: Add Python wrapper if it is being used.
+    AddResourceAsExecutableBinary(real_javac_path, flags.cwd(), data);
+
+    // Add libs.
+    AddJavaLibraries(real_javac_path, flags.cwd(), data);
+  }
 }
 
 // static
@@ -93,5 +151,27 @@ void JavaCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     const std::string& abs_local_compiler_path,
     const std::vector<std::string>& compiler_info_envs,
     CompilerInfoData* data) const {}
+
+bool JavacCompilerInfoBuilder::AddResourceAsExecutableBinary(
+    const std::string& resource_path,
+    const std::string& cwd,
+    CompilerInfoData* data) {
+  CompilerInfoData::ResourceInfo r;
+  if (!CompilerInfoBuilder::ResourceInfoFromPath(
+          cwd, resource_path, CompilerInfoData::EXECUTABLE_BINARY, &r)) {
+    CompilerInfoBuilder::AddErrorMessage(
+        "failed to get resource info for " + resource_path, data);
+    LOG(ERROR) << "failed to get resource info for " + resource_path;
+    return false;
+  }
+
+  if (r.symlink_path().empty()) {
+    // Not a symlink, add it as a resource directly.
+    *data->add_resource() = std::move(r);
+    return true;
+  }
+  // TODO: handle symlinks?
+  return false;
+}
 
 }  // namespace devtools_goma

@@ -91,6 +91,7 @@ def CheckChangeOnUpload(input_api, output_api):
         'test/goma_data.pb.cc',
         'test/goma_data.pb.h',
         '.style.yapf',
+        'third_party/boringssl/err_data.c',
     )
     return x.LocalPath() not in third_party_files
 

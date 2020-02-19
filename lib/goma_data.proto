@@ -8,6 +8,8 @@
 
 syntax = "proto2";
 
+import "google/protobuf/timestamp.proto";
+
 package devtools_goma;
 
 // persistent data
@@ -295,6 +297,17 @@ message ExecReq {
   reserved 99;
 }
 
+// Stats of a single RBE execution. This is a subset of
+// https://github.com/bazelbuild/remote-apis/blob/178b756a22d441d8d06873a70bcd0ef01d876467/build/bazel/remote/execution/v2/remote_execution.proto#L789-L819
+message ExecutionStats {
+  // When the worker started executing the action command.
+  optional google.protobuf.Timestamp execution_start_timestamp = 1;
+
+  // When the worker completed executing the action command.
+  optional google.protobuf.Timestamp execution_completed_timestamp = 2;
+}
+
+// NEXT ID TO USE: 82
 message ExecResp {
   enum ExecError {
     OK = 0;
@@ -362,7 +375,8 @@ message ExecResp {
   optional bool compiler_proxy_local_killed = 76;
 
   optional int32 compiler_proxy_exec_request_retry = 80;
-
+  // Execution stats collected from RBE
+  optional ExecutionStats execution_stats = 81;
   // 99 was used in experimental phase.
   reserved 99;
 }
