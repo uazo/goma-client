@@ -48,6 +48,8 @@ bool IsValidFileBlob(const FileBlob& blob) {
         return false;
       if (!blob.has_content())
         return false;
+      if (blob.content().size() != blob.file_size())
+        return false;
       if (blob.hash_key_size() > 0)
         return false;
       return true;
@@ -67,6 +69,15 @@ bool IsValidFileBlob(const FileBlob& blob) {
       if (!blob.has_content())
         return false;
       if (blob.hash_key_size() > 0)
+        return false;
+      return true;
+
+    case FileBlob::FILE_REF:
+      if (blob.has_offset())
+        return false;
+      if (blob.has_content())
+        return false;
+      if (blob.hash_key_size() != 1)
         return false;
       return true;
   }

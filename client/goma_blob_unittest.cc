@@ -240,6 +240,7 @@ TEST(FileBlobClient, ExampleDownloadEmbedded) {
   FileBlob* blob = output.mutable_blob();
   blob->set_blob_type(FileBlob::FILE);
   blob->set_content("The quick brown fox jumps over the lazy dog.");
+  blob->set_file_size(blob->content().size());
 
   BlobClient::Downloader::OutputFileInfo info_file;
   info_file.tmp_filename = filename;

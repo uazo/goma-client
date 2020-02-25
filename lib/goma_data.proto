@@ -16,15 +16,21 @@ package devtools_goma;
 
 // hash_key = sha256(serialized FileBlob)
 //
-// for small file (< 2MB)
+// for small file (< 2MB) embedded
 //   blob_type=FILE, !has_offset(), has_content()
 //                   has_file_size(), hash_key_size() == 0
+//
 // for large file
 //   blob_type=FILE_META, !has_offset(), !has_content()
 //                   has_file_size(), hash_key_size() > 0
 //  for each hash_key(i)
 //     blob_type=FILE_CHUNK, has_offset(), has_content(),
 //                   has_file_size(), hash_key_size() == 0
+//
+// for small file (< 2MB), stored as blob_type=FILE in file server with
+// key=hash_key[0]
+//   blob_type=FILE_REF, !hash_offset(), !has_content()
+//                   has_file_size(), hash_key_size() == 1
 message FileBlob {
   enum BlobType {
     FILE_UNSPECIFIED = 0;
@@ -32,6 +38,7 @@ message FileBlob {
     FILE_META = 2;
     FILE_CHUNK = 3;
     // ARCHIVE = 4;
+    FILE_REF = 5;
   }
   required BlobType blob_type = 1;
 

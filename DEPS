@@ -43,7 +43,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@7940ed1f304e82eee22fb072c05f204187f87cec",
+     "https://boringssl.googlesource.com/boringssl@b0921929650fb0a4a993a697baf8ad4f655748a3",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -112,7 +112,7 @@ deps = {
 
      # chromium's build.
      "client/third_party/chromium_build":
-     "https://chromium.googlesource.com/chromium/src/build/@408555bc71eae7cddecea98c2c4de0aa93f3a2b6",
+     "https://chromium.googlesource.com/chromium/src/build/@11be0fc00b386a35c5457e2d6366bf3c5db3082c",
 
      'client/tools/clang/dsymutil': {
        'packages': [

@@ -114,7 +114,7 @@ template("mac_toolchain") {
     tool("cc") {
       depfile = "{{output}}.d"
       precompiled_header_type = "gcc"
-      command = "$cc -MMD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_c}} -c {{source}} -o {{output}}"
+      command = "$cc -MD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_c}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "CC {{output}}"
       outputs = [
@@ -125,7 +125,7 @@ template("mac_toolchain") {
     tool("cxx") {
       depfile = "{{output}}.d"
       precompiled_header_type = "gcc"
-      command = "$cxx -MMD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_cc}} -c {{source}} -o {{output}}"
+      command = "$cxx -MD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_cc}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "CXX {{output}}"
       outputs = [
@@ -136,7 +136,7 @@ template("mac_toolchain") {
     tool("asm") {
       # For GCC we can just use the C compiler to compile assembly.
       depfile = "{{output}}.d"
-      command = "$cc -MMD -MF $depfile {{defines}} {{include_dirs}} {{asmflags}} -c {{source}} -o {{output}}"
+      command = "$cc -MD -MF $depfile {{defines}} {{include_dirs}} {{asmflags}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "ASM {{output}}"
       outputs = [
@@ -147,7 +147,7 @@ template("mac_toolchain") {
     tool("objc") {
       depfile = "{{output}}.d"
       precompiled_header_type = "gcc"
-      command = "$cc -MMD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_objc}} -c {{source}} -o {{output}}"
+      command = "$cc -MD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_objc}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "OBJC {{output}}"
       outputs = [
@@ -158,7 +158,7 @@ template("mac_toolchain") {
     tool("objcxx") {
       depfile = "{{output}}.d"
       precompiled_header_type = "gcc"
-      command = "$cxx -MMD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_objcc}} -c {{source}} -o {{output}}"
+      command = "$cxx -MD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_objcc}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "OBJCXX {{output}}"
       outputs = [

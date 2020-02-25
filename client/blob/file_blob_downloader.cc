@@ -19,6 +19,7 @@ bool FileBlobDownloader::Download(const ExecResult_Output& output,
   switch (blob_type) {
     case FileBlob::FILE:  // TODO: Add separate delegate for this.
     case FileBlob::FILE_META:
+    case FileBlob::FILE_REF:
       return file_service_downloader_->Download(output, info);
 
     case FileBlob::FILE_CHUNK:

@@ -182,6 +182,10 @@ bool FileServiceClient::OutputFileBlob(const FileBlob& blob,
     LOG(ERROR) << "invalid output:" << output->ToString();
     return false;
   }
+  if (!IsValidFileBlob(blob)) {
+    LOG(ERROR) << "invalid blob of type " << blob.blob_type();
+    return false;
+  }
   bool ret = false;
   switch (blob.blob_type()) {
     case FileBlob::FILE:
@@ -199,6 +203,17 @@ bool FileServiceClient::OutputFileBlob(const FileBlob& blob,
     case FileBlob::FILE_CHUNK:
       LOG(ERROR) << "Can't write FILE_CHUNK";
       break;
+
+    case FileBlob::FILE_REF: {
+      FileBlob stored_blob;
+      if (!GetFileBlob(blob.hash_key(0), &stored_blob) ||
+          stored_blob.blob_type() != FileBlob::FILE ||
+          !IsValidFileBlob(stored_blob)) {
+        LOG(ERROR) << "Blob of type=FILE_REF was invalid: " << blob.hash_key(0);
+        return false;
+      }
+      ret = output->WriteAt(0, stored_blob.content());
+    } break;
 
     default:
       LOG(ERROR) << "Unknown blob_type:" << blob.blob_type();

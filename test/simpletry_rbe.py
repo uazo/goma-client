@@ -87,6 +87,59 @@ class RunCompilerProxyTest(unittest.TestCase):
       if flag_key in os.environ:
         self.assertEqual(flag_value, os.environ.get(flag_key))
 
+  # TODO: Add separate test for Windows using clang-cl.
+  @unittest.skipIf(platform.system() == 'Windows', 'clang for non-Windows only')
+  def testClang(self):
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    test_dir = os.path.relpath(test_dir, self._dir)
+    temp_dir = os.path.relpath(tempfile.mkdtemp(dir=self._dir), self._dir)
+
+    os.chdir(self._dir)
+
+    # Run locally: clang -c foo.cc -o foo.o
+    clang_path = os.path.join(test_dir, '..', 'third_party', 'llvm-build',
+                              'Release+Asserts', 'bin', 'clang')
+    input_path = os.path.join(test_dir, 'src', 'foo.cc')
+    output_path = os.path.join(temp_dir, 'foo.o')
+    sysroot_path = os.path.join(test_dir, '..', 'third_party', 'chromium_build',
+                                'linux', 'debian_sid_amd64-sysroot', 'usr',
+                                'lib', 'gcc', 'x86_64-linux-gnu', '6')
+    clang_cmd = [
+        clang_path, '-c', input_path, '-o', output_path, '-g', '--sysroot',
+        sysroot_path
+    ]
+
+    result = subprocess.run(clang_cmd, capture_output=True)
+    self.assertEqual(len(result.stdout), 0, msg=result.stdout)
+    self.assertEqual(len(result.stderr), 0, msg=result.stderr)
+    self.assertTrue(os.path.exists(output_path))
+
+    # Save output file contents and delete it.
+    local_output_contents = _ReadFileContents(output_path)
+    os.remove(output_path)
+    self.assertFalse(os.path.exists(output_path))
+
+    # Run remotely: clang -c hello.c -o hello.o
+    gomacc_path = os.path.join(self._dir, 'gomacc')
+    gomacc_cmd = [gomacc_path]
+    gomacc_cmd.extend(clang_cmd)
+
+    result = subprocess.run(gomacc_cmd, capture_output=True)
+    self.assertEqual(len(result.stdout), 0, msg=result.stdout)
+    self.assertEqual(len(result.stderr), 0, msg=result.stderr)
+
+    # Remote output file contents must match local output file contents.
+    self.assertTrue(os.path.exists(output_path))
+    remote_output_contents = _ReadFileContents(output_path)
+
+    self.assertEqual(local_output_contents, remote_output_contents)
+
+    # Verify that this was not a false positive due to fallback after setup
+    # failure.
+    statz = _ReadFromCompilerProxyPath('statz')
+    self.assertNotIn('fallback by setup failure', statz, statz)
+    self.assertIn('success=1 failure=0', statz, statz)
+
   @unittest.skipIf(platform.system() != 'Linux', 'javac is used on Linux only')
   def testJavac(self):
     test_dir = os.path.relpath(

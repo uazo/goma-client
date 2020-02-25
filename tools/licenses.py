@@ -15,8 +15,9 @@ import sys
 
 # Skip these directories in third_party.
 PRUNE_DIRS = [
-  'config',
-  'llvm-build',
+    'chromium_build',
+    'config',
+    'llvm-build',
 ]
 
 # These libraries don't have LICENSE in the directory.
@@ -95,7 +96,7 @@ def main():
     result = AddLicenseFile(result, d, license)
 
   with open(args.output_file, 'w') as f:
-      f.write(result)
+    f.write(result)
 
 
 if __name__ == '__main__':

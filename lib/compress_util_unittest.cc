@@ -96,7 +96,7 @@ TEST(CompressUtilTest, GetEncodingFromHeader) {
 
 #ifdef ENABLE_LZMA
 // Creates a compressible string.
-static string MakeCompressibleTestString() {
+static std::string MakeCompressibleTestString() {
   std::ostringstream ss;
   static const int kNumberOfSubStrings = 10000;
   for (int i = 0; i < kNumberOfSubStrings; ++i) {
@@ -106,8 +106,9 @@ static string MakeCompressibleTestString() {
 }
 
 // Helper function for compression test.
-static bool ReadAllLZMAStream(absl::string_view input, lzma_stream* lzma,
-                              string* output) {
+static bool ReadAllLZMAStream(absl::string_view input,
+                              lzma_stream* lzma,
+                              std::string* output) {
   lzma->next_in = reinterpret_cast<const uint8_t*>(input.data());
   lzma->avail_in = input.size();
   char buf[4096];
@@ -135,8 +136,10 @@ static bool ReadAllLZMAStream(absl::string_view input, lzma_stream* lzma,
 
 class LZMATest : public testing::Test {
  protected:
-  void Compress(const string& input, uint32_t preset, lzma_check check,
-                string* output) {
+  void Compress(const std::string& input,
+                uint32_t preset,
+                lzma_check check,
+                std::string* output) {
     lzma_stream lzma = LZMA_STREAM_INIT;
     ASSERT_EQ(LZMA_OK, lzma_easy_encoder(&lzma, preset, check));
     ReadAllLZMAStream(input, &lzma, output);
@@ -145,7 +148,7 @@ class LZMATest : public testing::Test {
               << " check=" << check;
   }
 
-  void Uncompress(const string& input, string* output) {
+  void Uncompress(const std::string& input, std::string* output) {
     lzma_stream lzma = LZMA_STREAM_INIT;
     ASSERT_EQ(LZMA_OK,
               lzma_stream_decoder(&lzma, lzma_easy_decoder_memusage(9), 0));
@@ -154,24 +157,27 @@ class LZMATest : public testing::Test {
 
   // Compresses the input string, uncompresses the output, and checks
   // the original string is recovered.
-  void RunTest(const string& original_string,
-               uint32_t preset, lzma_check check) {
-    string compressed_string;
+  void RunTest(const std::string& original_string,
+               uint32_t preset,
+               lzma_check check) {
+    std::string compressed_string;
     Compress(original_string, preset, check, &compressed_string);
-    string uncompressed_string;
+    std::string uncompressed_string;
     Uncompress(compressed_string, &uncompressed_string);
     EXPECT_EQ(original_string, uncompressed_string);
   }
 
-  void ConvertToCompressed(const devtools_goma::ExecLog& elog, string* out) {
-    string pbuf;
+  void ConvertToCompressed(const devtools_goma::ExecLog& elog,
+                           std::string* out) {
+    std::string pbuf;
     elog.SerializeToString(&pbuf);
     LOG(INFO) << "orig size=" << pbuf.size();
     Compress(pbuf, 9, LZMA_CHECK_CRC64, out);
   }
 
-  void ConvertToUncompressed(const string& in, devtools_goma::ExecLog* elog) {
-    string pbuf;
+  void ConvertToUncompressed(const std::string& in,
+                             devtools_goma::ExecLog* elog) {
+    std::string pbuf;
     Uncompress(in, &pbuf);
     elog->ParseFromString(pbuf);
   }
@@ -186,7 +192,7 @@ TEST_F(LZMATest, CompressAndDecompress) {
 TEST_F(LZMATest, LZMAInputStreamTestSimple) {
   devtools_goma::ExecLog elog;
   elog.set_username("goma-user");
-  string compressed;
+  std::string compressed;
   ConvertToCompressed(elog, &compressed);
 
   LZMAInputStream lzma_input(
@@ -199,11 +205,11 @@ TEST_F(LZMATest, LZMAInputStreamTestSimple) {
 TEST_F(LZMATest, LZMAInputStreamTestChunked) {
   devtools_goma::ExecLog elog;
   elog.set_username("goma-user");
-  string compressed;
+  std::string compressed;
   ConvertToCompressed(elog, &compressed);
 
-  string former = compressed.substr(0, compressed.size() / 2);
-  string latter = compressed.substr(compressed.size() / 2);
+  std::string former = compressed.substr(0, compressed.size() / 2);
+  std::string latter = compressed.substr(compressed.size() / 2);
   std::vector<ZeroCopyInputStream*> inputs;
   inputs.push_back(new ArrayInputStream(&former[0], former.size()));
   inputs.push_back(new ArrayInputStream(&latter[0], latter.size()));
@@ -221,7 +227,7 @@ TEST_F(LZMATest, LZMAInputStreamTestChunked) {
 TEST_F(LZMATest, LZMAOutputStreamTestSimple) {
   devtools_goma::ExecLog elog;
   elog.set_username("goma-user");
-  string compressed;
+  std::string compressed;
   LZMAOutputStream lzstream(absl::make_unique<StringOutputStream>(&compressed));
   elog.SerializeToZeroCopyStream(&lzstream);
   EXPECT_TRUE(lzstream.Close());
@@ -234,7 +240,7 @@ TEST_F(LZMATest, LZMAOutputStreamTestSimple) {
 TEST_F(LZMATest, LZMAOutputStreamTestWithOption) {
   devtools_goma::ExecLog elog;
   elog.set_username("goma-user");
-  string compressed;
+  std::string compressed;
   LZMAOutputStream::Options options;
   options.preset = 1;
   options.check = LZMA_CHECK_NONE;
@@ -251,7 +257,7 @@ TEST_F(LZMATest, LZMAOutputStreamTestWithOption) {
 TEST_F(LZMATest, LZMAStreamEndToEnd) {
   devtools_goma::ExecLog elog;
   elog.set_username("goma-user");
-  string compressed;
+  std::string compressed;
   LZMAOutputStream lzstream(absl::make_unique<StringOutputStream>(&compressed));
   elog.SerializeToZeroCopyStream(&lzstream);
   EXPECT_TRUE(lzstream.Close());

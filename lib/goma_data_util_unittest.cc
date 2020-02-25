@@ -119,4 +119,74 @@ TEST(GomaProtoUtilTest, IsSameSubprogramShouldBeFalseOnContentsMismatch) {
   EXPECT_FALSE(IsSameSubprograms(req, resp));
 }
 
+TEST(GomaProtoUtilTest, IsValidFileBlob) {
+  // Make sure no false negatives.
+  {
+    FileBlob blob;
+    blob.set_blob_type(FileBlob::FILE);
+    blob.set_file_size(10);
+    blob.set_content("0123456789");
+    EXPECT_TRUE(IsValidFileBlob(blob));
+  }
+  {
+    FileBlob blob;
+    blob.set_blob_type(FileBlob::FILE_META);
+    blob.set_file_size(3 * 1024 * 1024);
+    blob.add_hash_key("9633160e593892033e6a323631000f36457383c2");
+    blob.add_hash_key("b155db10844d1ce7049a12e8c05e7eb6e45d7275");
+    EXPECT_TRUE(IsValidFileBlob(blob));
+  }
+  {
+    FileBlob blob;
+    blob.set_blob_type(FileBlob::FILE_CHUNK);
+    blob.set_file_size(2 * 1024 * 1024 + 10);
+    blob.set_offset(2 * 1024 * 1024);
+    blob.set_content("0123456789");
+    EXPECT_TRUE(IsValidFileBlob(blob));
+  }
+  {
+    FileBlob blob;
+    blob.set_blob_type(FileBlob::FILE_REF);
+    blob.set_file_size(10);
+    blob.add_hash_key("9633160e593892033e6a323631000f36457383c2");
+    EXPECT_TRUE(IsValidFileBlob(blob));
+  }
+  // We don't have to check each invalid case.
+  {
+    FileBlob blob;
+    // Unspecified type.
+    EXPECT_FALSE(IsValidFileBlob(blob));
+  }
+  {
+    FileBlob blob;
+    blob.set_blob_type(FileBlob::FILE);
+    blob.set_file_size(10);
+    blob.set_content("012345678");
+    // Content does not match size.
+    EXPECT_FALSE(IsValidFileBlob(blob));
+  }
+  {
+    FileBlob blob;
+    blob.set_blob_type(FileBlob::FILE_META);
+    blob.set_file_size(300);
+    blob.add_hash_key("9633160e593892033e6a323631000f36457383c2");
+    // Single hash key.
+    EXPECT_FALSE(IsValidFileBlob(blob));
+  }
+  {
+    FileBlob blob;
+    blob.set_blob_type(FileBlob::FILE_CHUNK);
+    blob.set_content("0123456789");
+    // No offset.
+    EXPECT_FALSE(IsValidFileBlob(blob));
+  }
+  {
+    FileBlob blob;
+    blob.set_blob_type(FileBlob::FILE_REF);
+    blob.set_content("0123456789");
+    // No file_size.
+    EXPECT_FALSE(IsValidFileBlob(blob));
+  }
+}
+
 }  // namespace devtools_goma
