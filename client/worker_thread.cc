@@ -45,7 +45,6 @@ namespace devtools_goma {
 
 namespace {
 
-constexpr WorkerThread::ThreadId kInvalidThreadId = 0;
 constexpr absl::Duration kDefaultPollInterval = absl::Milliseconds(500);
 constexpr int kMaxNumConsecutiveIdledLoops = 5000;
 

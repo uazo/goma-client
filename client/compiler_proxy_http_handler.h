@@ -220,6 +220,7 @@ class CompilerProxyHttpHandler : public ThreadpoolHttpServer::HttpHandler,
   std::map<std::string, HttpHandlerMethod> http_handlers_;
   std::map<std::string, HttpHandlerMethod> internal_http_handlers_;
 
+  const std::string mypath_;
   const std::string tmpdir_;
 
   mutable Lock memory_mu_;

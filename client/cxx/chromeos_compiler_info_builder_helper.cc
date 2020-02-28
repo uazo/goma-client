@@ -14,6 +14,7 @@
 #include "glog/logging.h"
 #include "lib/file_helper.h"
 #include "lib/gcc_flags.h"
+#include "lib/path_resolver.h"
 #include "path.h"
 
 #include <unistd.h>
@@ -25,18 +26,20 @@ namespace {
 constexpr absl::string_view kClang = "/usr/bin/clang";
 constexpr absl::string_view kClangxx = "/usr/bin/clang++";
 
-bool IsClangWrapperInChroot(const absl::string_view local_compiler_path) {
-  if (file::Dirname(local_compiler_path) != "/usr/bin") {
+bool IsClangWrapperInChroot(const std::string& abs_local_compiler_path) {
+  if (file::Dirname(abs_local_compiler_path) != "/usr/bin") {
     return false;
   }
-  absl::string_view basename = file::Basename(local_compiler_path);
+  absl::string_view basename = file::Basename(abs_local_compiler_path);
   return absl::EndsWith(basename, "-clang") ||
          absl::EndsWith(basename, "-clang++");
 }
 
-bool IsKnownClangInChroot(const absl::string_view local_compiler_path) {
-  return local_compiler_path == kClang || local_compiler_path == kClangxx ||
-         IsClangWrapperInChroot(local_compiler_path);
+bool IsKnownClangInChroot(const std::string& abs_local_compiler_path) {
+  const std::string resolved_path =
+      PathResolver::ResolvePath(abs_local_compiler_path);
+  return resolved_path == kClang || resolved_path == kClangxx ||
+         IsClangWrapperInChroot(resolved_path);
 }
 
 bool IsClangHostWrapper(const std::string& abs_local_compiler_path) {
@@ -157,9 +160,9 @@ bool ChromeOSCompilerInfoBuilderHelper::EstimateClangMajorVersion(
 
 // static
 bool ChromeOSCompilerInfoBuilderHelper::IsClangInChrootEnv(
-    absl::string_view local_compiler_path) {
-  if (!IsKnownClangInChroot(local_compiler_path) &&
-      !GCCFlags::IsClangCommand(local_compiler_path)) {
+    const std::string& abs_local_compiler_path) {
+  if (!IsKnownClangInChroot(abs_local_compiler_path) &&
+      !GCCFlags::IsClangCommand(abs_local_compiler_path)) {
     return false;
   }
 
@@ -297,7 +300,7 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
                      std::make_move_iterator(pnacl_deps.end()));
   }
 
-  if (!IsClangWrapperInChroot(local_compiler_path) ||
+  if (!IsClangWrapperInChroot(abs_local_compiler_path) ||
       IsClangHostWrapper(abs_local_compiler_path)) {
     return SetChrootClangResourcePaths(cwd, resources, local_compiler_path,
                                        real_compiler_path, resource_paths);
@@ -359,9 +362,10 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
 
 // static
 void ChromeOSCompilerInfoBuilderHelper::SetAdditionalFlags(
-    absl::string_view local_compiler_path,
+    const std::string& abs_local_compiler_path,
     google::protobuf::RepeatedPtrField<std::string>* additional_flags) {
-  if (IsClangWrapperInChroot(local_compiler_path)) {
+  if (IsClangWrapperInChroot(abs_local_compiler_path) &&
+      !IsClangHostWrapper(abs_local_compiler_path)) {
     // Wrapper tries to set up ccache, but it's meaningless in goma.
     // we have to set -noccache.
     additional_flags->Add("-noccache");

@@ -33,8 +33,8 @@ class ChromeOSCompilerInfoBuilderHelper {
                                         int* version);
 
   // Returns true if the current environment is chroot env, and
-  // local_compiler_path indicates a system clang in the chroot env.
-  static bool IsClangInChrootEnv(absl::string_view local_compiler_path);
+  // abs_local_compiler_path indicates a system clang in the chroot env.
+  static bool IsClangInChrootEnv(const std::string& abs_local_compiler_path);
   // Collects clang resources in chromeos chroot env.
   static bool CollectChrootClangResources(
       const std::string& cwd,
@@ -43,7 +43,7 @@ class ChromeOSCompilerInfoBuilderHelper {
       std::vector<std::string>* resource_paths);
 
   static void SetAdditionalFlags(
-      absl::string_view local_compiler_path,
+      const std::string& abs_local_compiler_path,
       google::protobuf::RepeatedPtrField<std::string>* additional_flags);
 };
 

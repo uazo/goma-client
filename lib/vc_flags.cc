@@ -646,6 +646,9 @@ void VCFlags::DefineFlags(FlagParser* parser) {
   parser->AddFlag("imsvc");  // both -imsvc, /imsvc.
   // http://b/148244706  /clang:<arg> pass <arg> to the clang driver.
   parser->AddPrefixFlag("clang:");
+  // http://b/150403114  /showIncludes:user
+  // omits system includes from /showIncludes outputs.
+  parser->AddBoolFlag("showIncludes:user");  // print info about included files
 
   // clang-cl flags. only accepts if it starts with '-'.
   opts->flag_prefix = '-';

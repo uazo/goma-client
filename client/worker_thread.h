@@ -339,6 +339,7 @@ class WorkerThread : public PlatformThread::Delegate {
   DISALLOW_COPY_AND_ASSIGN(WorkerThread);
 };
 
+constexpr WorkerThread::ThreadId kInvalidThreadId = 0;
 
 }  // namespace devtools_goma
 

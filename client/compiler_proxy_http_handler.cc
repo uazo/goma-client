@@ -113,6 +113,7 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(std::string myname,
       log_cleaner_closure_id_(kInvalidPeriodicClosureId),
       memory_tracker_closure_id_(kInvalidPeriodicClosureId),
       rpc_sent_count_(0),
+      mypath_(GetMyPathname()),
       tmpdir_(std::move(tmpdir)),
       last_memory_byte_(0)
 #if HAVE_HEAP_PROFILER
@@ -384,6 +385,8 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(std::string myname,
       "/includecachez", &CompilerProxyHttpHandler::HandleIncludeCacheRequest));
   http_handlers_.insert(
       std::make_pair("/flagz", &CompilerProxyHttpHandler::HandleFlagRequest));
+  // progz returns executable path at the startup time.
+  // i.e. doesn't follow pathname if compiler_proxy has been moved.
   http_handlers_.insert(
       std::make_pair("/progz", &CompilerProxyHttpHandler::HandleProgRequest));
   http_handlers_.insert(std::make_pair(
@@ -1133,7 +1136,7 @@ int CompilerProxyHttpHandler::HandleProgRequest(
     std::string* response) {
   std::ostringstream ss;
   OutputOkHeader("text/plain", &ss);
-  ss << GetMyPathname();
+  ss << mypath_;
   *response = ss.str();
   return 200;
 }

@@ -53,11 +53,13 @@ ConfigurableExecReqNormalizer::Config VCExecReqNormalizer::Configure(
   FlagParser::Flag* flag_fdiagnostics_absolute_paths =
       flag_parser.AddBoolFlag("fdiagnostics-absolute-paths");
   FlagParser::Flag* flag_show_include = flag_parser.AddBoolFlag("showIncludes");
+  FlagParser::Flag* flag_show_include_user =
+      flag_parser.AddBoolFlag("showIncludes:user");
   FlagParser::Flag* flag_fdebug_compilation_dir =
       flag_parser.AddBoolFlag("fdebug-compilation-dir");
   flag_parser.Parse(args);
 
-  if (flag_show_include->seen()) {
+  if (flag_show_include->seen() || flag_show_include_user->seen()) {
     // /showInclude outputs path as-is. So we need to preserve input path.
     keep_pathnames_in_input |= kAsIs;
 

@@ -364,6 +364,7 @@ static_library("compiler_proxy_lib") {
     "compiler_proxy_http_handler.h",
     "compiler_type_specific_collection.cc",
     "compiler_type_specific_collection.h",
+    "get_compiler_info_param.h",
     "goma_blob.cc",
     "goma_blob.h",
     "goma_file_dump.cc",

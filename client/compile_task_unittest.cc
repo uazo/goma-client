@@ -12,6 +12,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/ascii.h"
 #include "callback.h"
+#include "compile_service.h"
 #include "compile_stats.h"
 #include "compiler_flags.h"
 #include "compiler_flags_parser.h"

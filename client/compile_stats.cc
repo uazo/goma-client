@@ -12,6 +12,7 @@
 #include "absl/base/macros.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "google/protobuf/util/time_util.h"
 #include "task/output_file_task.h"
 #include "time_util.h"
 #include "util.h"
@@ -216,6 +217,11 @@ void CompileStats::AddStatsFromHttpStatus(const HttpClient::Status& status) {
 }
 
 void CompileStats::AddStatsFromExecResp(const ExecResp& response) {
+  const auto& execution_stats = response.execution_stats();
+  this->total_rbe_execution_time +=
+      absl::Nanoseconds(google::protobuf::util::TimeUtil::DurationToNanoseconds(
+          execution_stats.execution_completed_timestamp() -
+          execution_stats.execution_start_timestamp()));
 }
 
 void CompileStats::AddStatsFromOutputFileTask(const OutputFileTask& task) {
@@ -360,6 +366,8 @@ void CompileStats::DumpToJson(Json::Value* json,
     StoreDurationToJsonIfNotZero("output_file_rpc_resp_parse_time",
                                  this->output_file_rpc_resp_parse_time, json);
 
+    StoreDurationToJsonIfNotZero("rbe_execution_time",
+                                 this->total_rbe_execution_time, json);
 
     StoreArrayToJsonIfNotEmpty("exec_request_retry_reason",
                                exec_request_retry_reason().begin(),

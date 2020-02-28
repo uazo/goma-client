@@ -2633,8 +2633,7 @@ void CompileTask::FillCompilerInfo() {
     run_envs.push_back("TEMP=" + service_->tmp_dir());
   }
 #endif
-  std::unique_ptr<CompileService::GetCompilerInfoParam> param(
-      new CompileService::GetCompilerInfoParam);
+  auto param = std::make_unique<GetCompilerInfoParam>();
   param->thread_id = service_->wm()->GetCurrentThreadId();
   param->trace_id = trace_id_;
   DCHECK_NE(
@@ -2651,7 +2650,7 @@ void CompileTask::FillCompilerInfo() {
   param->flags = flags_.get();
   param->run_envs = run_envs;
 
-  CompileService::GetCompilerInfoParam* param_pointer = param.get();
+  GetCompilerInfoParam* param_pointer = param.get();
   service_->GetCompilerInfo(
       param_pointer,
       NewCallback(
@@ -2659,7 +2658,7 @@ void CompileTask::FillCompilerInfo() {
 }
 
 void CompileTask::FillCompilerInfoDone(
-    std::unique_ptr<CompileService::GetCompilerInfoParam> param) {
+    std::unique_ptr<GetCompilerInfoParam> param) {
   CHECK_EQ(SETUP, state_);
 
   const absl::Duration compiler_info_time = compiler_info_timer_.GetDuration();

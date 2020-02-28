@@ -820,7 +820,7 @@ class GomaDriver(object):
       print('running compiler_proxy version %s' % running_version)
       progz = self._env.ControlCompilerProxy('/progz', check_running=False)
       if progz['status']:
-        running_binary_path = progz['message'].strip()
+        running_binary_path = os.path.normcase(progz['message'].strip())
         print(' %s' % running_binary_path)
       else:
         # old binary doesn't support /progz. ignores
@@ -865,7 +865,7 @@ class GomaDriver(object):
       running_binary_path = ''
       progz = self._env.ControlCompilerProxy('/progz', check_running=False)
       if progz['status']:
-        running_binary_path = progz['message'].strip()
+        running_binary_path = os.path.normcase(progz['message'].strip())
       if binary_path == running_binary_path and \
         binary_version != running_version:
         print('update %s -> %s @%s' % (running_version, binary_version,
@@ -1426,9 +1426,9 @@ class GomaEnv(object):
 
   def __init__(self, script_dir=SCRIPT_DIR):
     self._dir = os.path.abspath(script_dir)
-    self._compiler_proxy_binary = os.environ.get(
-        'GOMA_COMPILER_PROXY_BINARY',
-        os.path.join(self._dir, self._COMPILER_PROXY))
+    self._compiler_proxy_binary = os.path.normcase(
+        os.environ.get('GOMA_COMPILER_PROXY_BINARY',
+                       os.path.join(self._dir, self._COMPILER_PROXY)))
     self._goma_fetch = None
     if os.path.exists(os.path.join(self._dir, self._GOMA_FETCH)):
       self._goma_fetch = os.path.join(self._dir, self._GOMA_FETCH)

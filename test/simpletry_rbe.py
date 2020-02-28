@@ -231,9 +231,8 @@ def GetParameterizedTestSuite(klass, **kwargs):
 
 def SetEnvVars():
   # Sets environment variables for connection.
-  # TODO: Use production mixer and backend.
-  os.environ['GOMA_SERVER_HOST'] = 'staging-goma.chromium.org'
-  os.environ['GOMA_RPC_EXTRA_PARAMS'] = '?staging'
+  os.environ['GOMA_SERVER_HOST'] = 'goma.chromium.org'
+  os.environ['GOMA_RPC_EXTRA_PARAMS'] = '?prod'
   # Sets environment variables for operation.
   os.environ['GOMA_COMPILER_PROXY_PORT'] = '8100'
   os.environ['GOMA_ARBITRARY_TOOLCHAIN_SUPPORT'] = str(_PlatformSupportsATS())

@@ -151,7 +151,7 @@ class FakeGomaEnv(object):
             'pid': 'unknown'}
 
   def CompilerProxyBinary(self):
-    return '/path/to/compiler_proxy'
+    return os.path.normpath('/path/to/compiler_proxy')
 
   def CompilerProxyRunning(self):
     return True
@@ -3353,6 +3353,70 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
           return {
               'status': True,
               'message': '/path/to/compiler_proxy',
+              'url': 'http://127.0.0.1:8088',
+              'pid': '1234'
+          }
+        if self.running:
+          return {
+              'status': True,
+              'message': 'ok',
+              'url': 'http://127.0.0.1:8088',
+              'pid': '1234'
+          }
+        return {
+            'status': False,
+            'message': 'goma is not running.',
+            'url': '',
+            'pids': 'unknown'
+        }
+
+      def CompilerProxyRunning(self):
+        return self.running
+
+      def ExecCompilerProxy(self):
+        self.running = True
+
+    env = SpyGomaEnv()
+    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver._UpdateHook()
+    self.assertFalse(env.shutdowned)
+    self.assertTrue(env.running)
+
+  def testUpdateHookRunningNoChangeDifferentCaseLetters(self):
+
+    class SpyGomaEnv(FakeGomaEnv):
+      """Spy GomaEnv for update check"""
+
+      def __init__(self):
+        super(SpyGomaEnv, self).__init__()
+        self.shutdowned = False
+        self.running = True
+
+      def CompilerProxyBinary(self):
+        return 'c:\\path\\to\\compiler_proxy.exe'
+
+      def GetCompilerProxyVersion(self):
+        return 'GOMA version versionhash@time'
+
+      def ControlCompilerProxy(self,
+                               command,
+                               check_running=True,
+                               need_pids=False):
+        if command == '/quitquitquit' and self.running:
+          self.shutdowned = True
+          self.running = False
+          return {'status': False, 'message': 'ok', 'url': '', 'pid': '1234'}
+        if command == '/versionz' and self.running:
+          return {
+              'status': True,
+              'message': 'versionhash@time',
+              'url': 'http://127.0.0.1:8088',
+              'pid': '1234'
+          }
+        if command == '/progz' and self.running:
+          return {
+              'status': True,
+              'message': 'C:\\path\\to\\compiler_proxy.exe',
               'url': 'http://127.0.0.1:8088',
               'pid': '1234'
           }

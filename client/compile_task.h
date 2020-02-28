@@ -19,13 +19,13 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/time/time.h"
 #include "basictypes.h"
-#include "compile_service.h"
 #include "compiler_info.h"
 #include "compiler_specific.h"
 #include "compiler_type_specific.h"
 #include "deps_cache.h"
 #include "file_stat.h"
 #include "file_stat_cache.h"
+#include "get_compiler_info_param.h"
 #include "goma_blob.h"
 #include "gtest/gtest_prod.h"
 #include "http_rpc.h"
@@ -45,11 +45,13 @@ namespace devtools_goma {
 
 class Closure;
 class CompileStats;
+class CompileService;
 class CompilerFlags;
 class CompilerProxyHistogram;
 class InputFileTask;
 class LocalOutputFileTask;
 class OutputFileTask;
+class RpcController;
 
 // CompileTask handles single compile request from gomacc.
 // It basically runs on the same thread it is created, but InputFileTask and
@@ -258,8 +260,7 @@ class CompileTask {
 
   // Methods used in state_: SETUP
   void FillCompilerInfo();
-  void FillCompilerInfoDone(
-      std::unique_ptr<CompileService::GetCompilerInfoParam> param);
+  void FillCompilerInfoDone(std::unique_ptr<GetCompilerInfoParam> param);
 #ifndef _WIN32
   bool MakeWeakRelativeInArgv();
 #endif

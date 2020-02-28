@@ -389,7 +389,7 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
       return;
     }
   } else if (ChromeOSCompilerInfoBuilderHelper::IsClangInChrootEnv(
-                 local_compiler_path)) {
+                 abs_local_compiler_path)) {
     if (!ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
             flags.cwd(), local_compiler_path, data->real_compiler_path(),
             &resource_paths_to_collect)) {
@@ -406,7 +406,7 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     }
 
     ChromeOSCompilerInfoBuilderHelper::SetAdditionalFlags(
-        local_compiler_path, data->mutable_additional_flags());
+        abs_local_compiler_path, data->mutable_additional_flags());
     data->add_dimensions("os:linux-hermetic");
   } else if (ElfParser::IsElf(abs_real_compiler_path)) {
     constexpr absl::string_view kLdSoConfPath = "/etc/ld.so.conf";

@@ -103,6 +103,9 @@ class CompileStats : public ExecLog {
   absl::Duration total_rpc_resp_parse_time;
 
 
+  // Duration for the RBE worker to execute the action command in Docker.
+  absl::Duration total_rbe_execution_time;
+
   // in FILE_RESP.
   absl::Duration file_response_time;
   absl::Duration output_file_time;

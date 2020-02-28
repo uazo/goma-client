@@ -25,6 +25,7 @@
 #include "compiler_info_state.h"
 #include "compiler_type_specific.h"
 #include "compiler_type_specific_collection.h"
+#include "get_compiler_info_param.h"
 #include "lockhelper.h"
 #include "subprocess_option_setter.h"
 #include "threadpool_http_server.h"
@@ -79,28 +80,6 @@ class CompileService {
   enum HumanReadability {
     kFastHumanUnreadable,
     kHumanReadable,
-  };
-
-  struct GetCompilerInfoParam {
-    GetCompilerInfoParam()
-        : flags(nullptr), cache_hit(false), updated(false) {}
-    // request
-    WorkerThread::ThreadId thread_id;
-    std::string trace_id;
-    CompilerInfoCache::Key key;
-    const CompilerFlags* flags;
-    std::vector<std::string> run_envs;
-
-    // response
-    ScopedCompilerInfoState state;
-    // cache_hit=true > fast cache hit, didn't run in worker thread
-    // cache_hit=false,updated=true > cache miss, updated with compiler output
-    // cache_hit=false,update=false > cache miss->cache hit in worker thread
-    bool cache_hit;
-    bool updated;
-
-   private:
-    DISALLOW_COPY_AND_ASSIGN(GetCompilerInfoParam);
   };
 
   CompileService(WorkerThreadManager* wm, int compiler_info_pool);
