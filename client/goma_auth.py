@@ -99,6 +99,7 @@ since last used.
 
 class Error(Exception):
   """Raised on Error."""
+  pass
 
 
 class GomaOAuth2Config(dict):
@@ -411,6 +412,8 @@ def Login():
     return 1
 
   config.Save()
+  flags = configFlags(config)
+  os.environ.update(flags)
   if not CheckPing():
     return 1
   return 0
@@ -446,10 +449,54 @@ def Info():
   return 0
 
 
-def enableSendInfo():
-  print('GOMA_PROVIDE_INFO=true')
-  print('GOMA_SEND_USER_INFO=true')
-  print('GOMA_COMPILER_PROXY_ENABLE_CRASH_DUMP=true')
+class FlagsValue(dict):
+  """compiler_proxy flags"""
+
+  def __init__(self):
+    dict.__init__(self)
+    self.comment = ''
+
+  def enableSendInfo(self):
+    self.update({
+        'GOMA_PROVIDE_INFO': 'true',
+        'GOMA_SEND_USER_INFO': 'true',
+        'GOMA_COMPILER_PROXY_ENABLE_CRASH_DUMP': 'true'
+    })
+
+
+def configFlags(config):
+  """returns compiler_proxy flags for login account
+
+  Args:
+    config: OAuth2 config
+  Returns:
+    FlagsValue
+  """
+  flags = FlagsValue()
+  if not config.Load():
+    # not logged in
+    try:
+      cmd = [GOMA_FETCH, '--auth', GOOGLE_GOMA_PING]
+      subprocess.check_call(cmd)
+      flags.comment = '# in google'
+      flags.update({'GOMA_SERVER_HOST': 'clients5.google.com'})
+      # TODO: only opt-in?
+      flags.enableSendInfo()
+      return flags
+    except subprocess.CalledProcessError:
+      raise Error('Need to login')
+  token_info = FetchTokenInfo(config)
+  if 'error_description' in token_info:
+    raise Error(
+        'Failed to fetch token info: %s' % token_info['error_description'])
+  if not 'email' in token_info:
+    raise Error('No email in token_info %s' % token_info)
+  if token_info['email'].endswith('@google.com'):
+    flags.comment = '# login as %s' % token_info['email']
+    flags.update({'GOMA_SERVER_HOST': 'clients5.google.com'})
+    flags.enableSendInfo()
+    return flags
+  return flags
 
 
 def Config():
@@ -459,35 +506,14 @@ def Config():
     non-zero value on error.
   """
   config = GomaOAuth2Config()
-  if not config.Load():
-    # not logged in.
-    try:
-      HttpGetRequest(GOOGLE_GOMA_PING)
-      print('# in google')
-      print('GOMA_SERVER_HOST=clients5.google.com')
-      # TODO: only opt-in?
-      enableSendInfo()
-      return 0
-    except subprocess.CalledProcessError:
-      sys.stderr.write('Need to login\n')
-      return 1
-  # refresh_token exists in config if Load returns True.
-  token_info = FetchTokenInfo(config)
-  if 'error_description' in token_info:
-    sys.stderr.write(
-        'Failed to fetch token info: %s' % token_info['error_description'])
+  try:
+    flags = configFlags(config)
+  except Error as e:
+    sys.stderr.write('%s' % e)
     return 1
-  if not 'email' in token_info:
-    sys.stderr.write('No email in token_info %s' % token_info)
-    return 1
-  if token_info['email'].endswith('@google.com'):
-    print('# login as %s' % token_info['email'])
-    # TODO: use goma.chromium.org?
-    print('GOMA_SERVER_HOST=clients5.google.com')
-    # TODO: only opt-in?
-    enableSendInfo()
-    return 0
-  # non googlers. use default.
+  print(flags.comment)
+  for k in flags:
+    print('%s=%s' % (k, flags.get(k)))
   return 0
 
 

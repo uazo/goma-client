@@ -583,6 +583,7 @@ class GomaDriver(object):
         'ensure_stop': self._EnsureStopCompilerProxy,
         'histogram': self._PrintHistogram,
         'jsonstatus': self._PrintJsonStatus,
+        'rbe_stats': self._PrintRbeStats,
         'report': self._Report,
         'restart': self._RestartCompilerProxy,
         'showflags': self._PrintFlags,
@@ -1069,6 +1070,9 @@ class GomaDriver(object):
   def _PrintStatistics(self):
     print(self._env.ControlCompilerProxy('/statz')['message'])
 
+  def _PrintRbeStats(self):
+    print(self._env.ControlCompilerProxy('/api/rbe_statsz')['message'])
+
   def _PrintHistogram(self):
     print(self._env.ControlCompilerProxy('/histogramz')['message'])
 
@@ -1374,6 +1378,7 @@ class GomaDriver(object):
     print('  goma_dir              show goma dir')
     print('  histogram             show histogram')
     print('  jsonstatus [outfile]  show status report in JSON')
+    print('  rbe_stats             show Goma-RBE compilation stats')
     print('  report                create a report file.')
     print('  restart               restart compiler proxy')
     print('  showflags             show flag settings in json')
@@ -1570,12 +1575,8 @@ class GomaEnv(object):
     if not _IsFlagTrue('GOMACTL_RBE_DOGFOOD'):
       return
 
-    _OverrideEnvVar('GOMA_SERVER_HOST', 'goma.chromium.org')
-    _OverrideEnvVar('GOMA_RPC_EXTRA_PARAMS', '?rbe')
-
-    # On Windows, ATS must be enabled.
-    if self.GetPlatform() != 'mac':
-      _OverrideEnvVar('GOMA_ARBITRARY_TOOLCHAIN_SUPPORT', 'true')
+    # Disabled for now, see b/150829808.
+    print('Goma RBE dogfooding has been suspended. b/150829808')
 
   def _GetCompilerProxyPort(self, proc=None):
     """Gets compiler_proxy's port by "gomacc port".

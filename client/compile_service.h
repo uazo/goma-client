@@ -27,6 +27,7 @@
 #include "compiler_type_specific_collection.h"
 #include "get_compiler_info_param.h"
 #include "lockhelper.h"
+#include "rbe/stats_manager.h"
 #include "subprocess_option_setter.h"
 #include "threadpool_http_server.h"
 #include "watchdog.h"
@@ -301,6 +302,7 @@ class CompileService {
   void DumpStatsToFile(const std::string& filename);
   // Dump stats in json form (converted from GomaStatzStats).
   void DumpStatsJson(std::string* json_string, HumanReadability human_readable);
+  Json::Value DumpRbeStats() const;
 
   void ClearTasks();
 
@@ -567,6 +569,8 @@ class CompileService {
 
   int num_forced_fallback_in_setup_[kNumForcedFallbackReasonInSetup];
   int max_compiler_disabled_tasks_ = -1;
+
+  rbe::StatsManager rbe_stats_mgr_;
 
   DISALLOW_COPY_AND_ASSIGN(CompileService);
 };

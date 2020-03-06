@@ -142,6 +142,9 @@ class CompilerProxyHttpHandler : public ThreadpoolHttpServer::HttpHandler,
   int HandleCompilerJSONRequest(const HttpServerRequest& /* request */,
                                 std::string* response);
 
+  int HandleRbeStatsRequest(const HttpServerRequest& /* request */,
+                            std::string* response);
+
   int HandleIncludeCacheRequest(const HttpServerRequest& /* request */,
                                 std::string* response);
 

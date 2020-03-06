@@ -300,6 +300,7 @@ void CompileService::ExecDone(WorkerThread::ThreadId thread_id,
 void CompileService::CompileTaskDone(CompileTask* task) {
   task->SetFrozenTimestamp(absl::Now());
   histogram_->UpdateCompileStat(task->stats());
+  rbe_stats_mgr_.Accumulate(task);
   if (log_service_client_.get())
     log_service_client_->SaveExecLog(task->stats());
 
@@ -898,6 +899,10 @@ void CompileService::DumpStatsJson(
                << " error_message=" << status.error_message();
     json_string->clear();
   }
+}
+
+Json::Value CompileService::DumpRbeStats() const {
+  return rbe_stats_mgr_.DumpStats();
 }
 
 void CompileService::ClearTasks() {

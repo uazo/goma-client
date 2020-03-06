@@ -580,37 +580,43 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
   }
 
   bool use_profile_input = false;
-  std::string profile_input_dir = ".";
+  absl::string_view profile_input_dir = ".";
 
-  for (const auto& flag : flag_fprofile->values()) {
-    compiler_info_flags_.emplace_back("-fprofile-" + flag);
+  for (absl::string_view value : flag_fprofile->values()) {
+    if (absl::StartsWith(value, "instr-use=")) {
+      continue;
+    }
+    compiler_info_flags_.emplace_back(absl::StrCat("-fprofile-", value));
 
     // Pick the last profile dir, this is how GCC works.
-    if (absl::StartsWith(flag, "dir=")) {
-      profile_input_dir = flag.substr(strlen("dir="));
-    } else if (absl::StartsWith(flag, "generate=")) {
-      profile_input_dir = flag.substr(strlen("generate="));
+    if (absl::ConsumePrefix(&value, "dir=") ||
+        absl::ConsumePrefix(&value, "generate=")) {
+      profile_input_dir = value;
     }
   }
 
-  for (const auto& flag : flag_fprofile->values()) {
-    use_profile_input |= absl::StartsWith(flag, "use");
+  for (absl::string_view value : flag_fprofile->values()) {
+    // -fprofile-use is alias of -fprofile-instr-use
+    // https://github.com/llvm/llvm-project/blob/90c78073f73eac58f4f8b4772a896dc8aac023bc/clang/include/clang/Driver/Options.td#L783
+    use_profile_input |= absl::StartsWith(value, "use");
+    use_profile_input |= absl::StartsWith(value, "instr-use");
 
-    if (absl::StartsWith(flag, "use=")) {
-      const std::string& use_path = flag.substr(strlen("use="));
-
+    if (absl::ConsumePrefix(&value, "use=")) {
       // https://clang.llvm.org/docs/ClangCommandLineReference.html#cmdoption-clang1-fprofile-use
       if (IsClangCommand(compiler_name_) &&
           file::IsDirectory(
-              file::JoinPathRespectAbsolute(cwd, profile_input_dir, use_path),
+              file::JoinPathRespectAbsolute(cwd, profile_input_dir, value),
               file::Defaults())
               .ok()) {
         optional_input_filenames_.push_back(file::JoinPathRespectAbsolute(
-            profile_input_dir, use_path, "default.profdata"));
+            profile_input_dir, value, "default.profdata"));
       } else {
         optional_input_filenames_.push_back(
-            file::JoinPathRespectAbsolute(profile_input_dir, use_path));
+            file::JoinPathRespectAbsolute(profile_input_dir, value));
       }
+    } else if (absl::ConsumePrefix(&value, "instr-use=")) {
+      optional_input_filenames_.push_back(
+          file::JoinPathRespectAbsolute(profile_input_dir, value));
     }
   }
 

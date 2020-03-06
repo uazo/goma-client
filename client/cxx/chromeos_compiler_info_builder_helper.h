@@ -38,6 +38,7 @@ class ChromeOSCompilerInfoBuilderHelper {
   // Collects clang resources in chromeos chroot env.
   static bool CollectChrootClangResources(
       const std::string& cwd,
+      const std::vector<std::string>& envs,
       absl::string_view local_compiler_path,
       absl::string_view real_compiler_path,
       std::vector<std::string>* resource_paths);

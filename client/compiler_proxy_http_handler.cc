@@ -7,6 +7,7 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 #include "absl/time/clock.h"
@@ -365,6 +366,8 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(std::string myname,
       "/api/accountz", &CompilerProxyHttpHandler::HandleAccountRequest));
   internal_http_handlers_.insert(std::make_pair(
       "/api/compilerz", &CompilerProxyHttpHandler::HandleCompilerJSONRequest));
+  internal_http_handlers_.insert(std::make_pair(
+      "/api/rbe_statsz", &CompilerProxyHttpHandler::HandleRbeStatsRequest));
   http_handlers_.insert(
       std::make_pair("/statz", &CompilerProxyHttpHandler::HandleStatsRequest));
   http_handlers_.insert(std::make_pair(
@@ -1107,6 +1110,18 @@ int CompilerProxyHttpHandler::HandleCompilerJSONRequest(
   CompilerInfoCache::instance()->DumpCompilersJSON(&json);
   ss << json.toStyledString() << std::endl;
   *response = ss.str();
+
+  return 200;
+}
+
+int CompilerProxyHttpHandler::HandleRbeStatsRequest(
+    const HttpServerRequest& request,
+    std::string* response) {
+  std::ostringstream ss;
+  OutputOkHeader("application/json", &ss);
+
+  const Json::Value json = service_.DumpRbeStats();
+  *response = absl::StrCat(ss.str(), json.toStyledString(), "\n");
 
   return 200;
 }

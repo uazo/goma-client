@@ -1877,4 +1877,19 @@ TEST_F(VCFlagsTest, FTimeTrace) {
   }
 }
 
+TEST_F(VCFlagsTest, ClangClWithFprofileInstrUse) {
+  // http://b/150377506
+  std::vector<std::string> args;
+  args.push_back("clang-cl.exe");
+  args.push_back("/c");
+  args.push_back("hello.cc");
+  args.push_back("-fprofile-instr-use=profile.data");
+  std::unique_ptr<CompilerFlags> flags(
+      CompilerFlagsParser::MustNew(args, "d:\\tmp"));
+  EXPECT_TRUE(flags->is_successful());
+  ASSERT_EQ(1U, flags->optional_input_filenames().size());
+  EXPECT_EQ(file::JoinPath(".", "profile.data"),
+            flags->optional_input_filenames()[0]);
+}
+
 }  // namespace devtools_goma

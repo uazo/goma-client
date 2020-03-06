@@ -391,8 +391,8 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
   } else if (ChromeOSCompilerInfoBuilderHelper::IsClangInChrootEnv(
                  abs_local_compiler_path)) {
     if (!ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
-            flags.cwd(), local_compiler_path, data->real_compiler_path(),
-            &resource_paths_to_collect)) {
+            flags.cwd(), compiler_info_envs, local_compiler_path,
+            data->real_compiler_path(), &resource_paths_to_collect)) {
       // HACK: we should not affect people not using ATS.
       if (FLAGS_SEND_COMPILER_BINARY_AS_INPUT) {
         AddErrorMessage("failed to add chromeos chroot env clang resources",

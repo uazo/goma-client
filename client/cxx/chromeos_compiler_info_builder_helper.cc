@@ -11,11 +11,15 @@
 #include "binutils/elf_dep_parser.h"
 #include "binutils/elf_parser.h"
 #include "binutils/elf_util.h"
+#include "file_path_util.h"
 #include "glog/logging.h"
+#include "glog/stl_logging.h"
+#include "lib/cmdline_parser.h"
 #include "lib/file_helper.h"
 #include "lib/gcc_flags.h"
 #include "lib/path_resolver.h"
 #include "path.h"
+#include "util.h"
 
 #include <unistd.h>
 
@@ -76,6 +80,52 @@ bool ParseEnvdPath(absl::string_view envd_path, std::string* path) {
   }
 
   return false;
+}
+
+// Parse Python 2.7 shell script wrapper used in ChromeOS.
+// e.g.
+// /build/amd64-generic/tmp/portage/chromeos-base/chromeos-chrome-9999/\
+// temp/python2.7/bin/python
+bool ParseShellScriptWrapper(absl::string_view python_wrapper_path,
+                             std::string* path) {
+  std::string content;
+  if (!ReadFileToString(python_wrapper_path, &content)) {
+    LOG(ERROR) << "failed to open/read " << python_wrapper_path;
+    return false;
+  }
+
+  for (absl::string_view line :
+       absl::StrSplit(content, '\n', absl::SkipEmpty())) {
+    if (absl::StartsWith(line, "exec ")) {
+      std::vector<std::string> argv;
+      if (ParsePosixCommandLineToArgv(line, &argv) && argv.size() > 1) {
+        *path = argv[1];
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+std::vector<std::string> GetPythonDeps(const std::string& cwd,
+                                       const std::vector<std::string>& envs) {
+  std::string python_path;
+  if (!GetRealExecutablePath(
+          nullptr, "python", cwd,
+          GetEnvFromEnvIter(envs.begin(), envs.end(), "PATH", true), "",
+          &python_path, nullptr)) {
+    LOG(INFO) << "failed to find python path."
+              << " cwd=" << cwd << " envs=" << envs;
+    return {};
+  }
+  std::string real_python_path;
+  if (!ParseShellScriptWrapper(python_path, &real_python_path)) {
+    LOG(INFO) << "failed to parse a file expecting shell script."
+              << " python_path=" << python_path;
+    return {};
+  }
+  return {"/bin/sh", std::move(python_path), std::move(real_python_path)};
 }
 
 }  // anonymous namespace
@@ -214,6 +264,7 @@ bool SetChrootClangResourcePaths(const std::string& cwd,
 // static
 bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
     const std::string& cwd,
+    const std::vector<std::string>& envs,
     absl::string_view local_compiler_path,
     absl::string_view real_compiler_path,
     std::vector<std::string>* resource_paths) {
@@ -225,11 +276,12 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
       file::JoinPathRespectAbsolute(cwd, local_compiler_path);
 
   if (GCCFlags::IsPNaClClangCommand(local_compiler_path)) {
+    std::vector<std::string> python_deps = GetPythonDeps(cwd, envs);
+    if (python_deps.empty()) {
+      LOG(ERROR) << "failed to get python deps.";
+      return false;
+    }
     std::vector<std::string> pnacl_deps = {
-        "/bin/sh",
-        "/etc/env.d/python/config",
-        "/usr/bin/python",
-        "/usr/bin/python2",
         "/usr/lib64/python2.7/_abcoll.py",
         "/usr/lib64/python2.7/abc.py",
         "/usr/lib64/python2.7/atexit.py",
@@ -295,6 +347,9 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
         "/usr/lib64/python2.7/weakref.py",
         "/usr/lib64/python2.7/_weakrefset.py",
     };
+    resources.insert(resources.end(),
+                     std::make_move_iterator(python_deps.begin()),
+                     std::make_move_iterator(python_deps.end()));
     resources.insert(resources.end(),
                      std::make_move_iterator(pnacl_deps.begin()),
                      std::make_move_iterator(pnacl_deps.end()));

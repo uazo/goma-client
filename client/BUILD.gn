@@ -395,6 +395,8 @@ static_library("compiler_proxy_lib") {
     "oauth2_token.h",
     "openssl_engine.cc",
     "openssl_engine.h",
+    "rbe/stats_manager.cc",
+    "rbe/stats_manager.h",
     "rpc_controller.cc",
     "rpc_controller.h",
     "settings.cc",
@@ -2243,6 +2245,18 @@ executable("json_util_unittest") {
   ]
   deps = [
     ":common",
+    ":goma_test_lib",
+    "//build/config:exe_and_shlib_deps",
+  ]
+}
+
+executable("rbe_stats_manager_unittest") {
+  testonly = true
+  sources = [
+    "rbe/stats_manager_unittest.cc",
+  ]
+  deps = [
+    ":compiler_proxy_lib",
     ":goma_test_lib",
     "//build/config:exe_and_shlib_deps",
   ]

@@ -115,6 +115,8 @@ class CompileTask {
 
   const CompileStats& stats() const { return *stats_; }
   CompileStats* mutable_stats() { return stats_.get(); }
+  // Dump a command spec fixed from |command_spec_|.
+  CommandSpec DumpCommandSpec() const;
 
   void DumpToJson(bool need_detail, Json::Value* root) const;
 

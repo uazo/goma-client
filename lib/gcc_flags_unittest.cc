@@ -988,6 +988,24 @@ TEST_F(GCCFlagsTest, ProfileClang) {
   }
 }
 
+TEST_F(GCCFlagsTest, ProfileClangInstrUse) {
+  // http://b/150377506
+  std::vector<std::string> args;
+  args.push_back("clang");
+  args.push_back("-c");
+  args.push_back("foo/hello.c");
+  args.push_back("-fprofile-instr-use=profile.data");
+#ifndef _WIN32
+  GCCFlags flags(args, "/tmp");
+#else
+  GCCFlags flags(args, "C:\\tmp");
+#endif
+  EXPECT_TRUE(flags.is_successful());
+  ASSERT_EQ(1U, flags.optional_input_filenames().size());
+  EXPECT_EQ(file::JoinPath(".", "profile.data"),
+            flags.optional_input_filenames()[0]);
+}
+
 TEST_F(GCCFlagsTest, AtFile) {
   std::vector<std::string> args;
   args.push_back("gcc");

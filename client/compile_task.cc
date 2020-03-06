@@ -4427,6 +4427,20 @@ void CompileTask::AddErrorToResponse(ErrDest dest,
   }
 }
 
+CommandSpec CompileTask::DumpCommandSpec() const {
+  CommandSpec command_spec = command_spec_;
+  command_spec.set_local_compiler_path(local_compiler_path_);
+  if (compiler_info_state_.get() != nullptr) {
+    const CompilerInfo& compiler_info = compiler_info_state_.get()->info();
+    std::vector<std::string> args(stats_->arg().begin(), stats_->arg().end());
+    std::unique_ptr<CompilerFlags> flags(
+        CompilerFlagsParser::New(std::move(args), stats_->cwd()));
+    FixCommandSpec(compiler_info, *flags, &command_spec);
+    FixSystemLibraryPath(system_library_paths_, &command_spec);
+  }
+  return command_spec;
+}
+
 std::string CompileTask::DumpRequest() const {
   if (!frozen_timestamp_.has_value()) {
     LOG(ERROR) << trace_id_ << " cannot dump an active task request";
@@ -4436,16 +4450,12 @@ std::string CompileTask::DumpRequest() const {
   LOG(INFO) << trace_id_ << " DumpRequest";
   std::string filename = "exec_req.data";
   ExecReq req;
-  CommandSpec* command_spec = req.mutable_command_spec();
-  *command_spec = command_spec_;
-  command_spec->set_local_compiler_path(local_compiler_path_);
+  *req.mutable_command_spec() = DumpCommandSpec();
   if (compiler_info_state_.get() != nullptr) {
     const CompilerInfo& compiler_info = compiler_info_state_.get()->info();
     std::vector<std::string> args(stats_->arg().begin(), stats_->arg().end());
     std::unique_ptr<CompilerFlags> flags(
         CompilerFlagsParser::New(args, stats_->cwd()));
-    FixCommandSpec(compiler_info, *flags, command_spec);
-    FixSystemLibraryPath(system_library_paths_, command_spec);
     MayFixSubprogramSpec(req.mutable_subprogram());
     if (service_->send_compiler_binary_as_input()) {
       SetToolchainSpecs(&req, compiler_info);

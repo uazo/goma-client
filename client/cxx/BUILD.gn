@@ -78,9 +78,12 @@ if (is_linux) {
     ]
 
     deps = [
+      "//client:common",
+      "//client:file_path_util_lib",
       "//client/binutils:elf_dep_parser_lib",
       "//client/binutils:elf_parser_lib",
       "//client/binutils:elf_util_lib",
+      "//lib",
       "//lib:gcc_specific",
       "//third_party:glog",
     ]

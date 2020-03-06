@@ -8,6 +8,8 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "base/filesystem.h"
+#include "base/options.h"
 #include "base/path.h"
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
@@ -231,6 +233,10 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     parser.AddBoolFlag("mno-incremental-linker-compatible")
         ->SetOutput(&incremental_linker_flags);
   }
+  // TODO: Consider split -fprofile-* flags? Some options take
+  // an extra arguement, other do not. Merging such kind of flags do not
+  // look good.
+  FlagParser::Flag* flag_fprofile = parser.AddPrefixFlag("fprofile-");
 
   parser.AddNonFlag()->SetOutput(&input_filenames_);
 
@@ -359,6 +365,45 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
       force_output = flag_Fe->GetLastValue();
     } else {
       force_output = "";
+    }
+  }
+
+  // copy from gcc_flags.cc
+  // TODO: share clang and clang-cl flag parsing?
+  absl::string_view profile_input_dir = ".";
+  for (absl::string_view value : flag_fprofile->values()) {
+    if (absl::StartsWith(value, "instr-use=")) {
+      continue;
+    }
+    if (absl::StartsWith(value, "sample-use=")) {
+      continue;
+    }
+
+    compiler_info_flags_.emplace_back(absl::StrCat("-fprofile-", value));
+    // Pick the last profile dir.
+    if (absl::ConsumePrefix(&value, "dir=") ||
+        absl::ConsumePrefix(&value, "generate=")) {
+      profile_input_dir = value;
+    }
+  }
+  for (absl::string_view value : flag_fprofile->values()) {
+    if (absl::ConsumePrefix(&value, "use=")) {
+      // https://clang.llvm.org/docs/ClangCommandLineReference.html#cmdoption-clang1-fprofile-use
+      if (IsClangClCommand(compiler_name_) &&
+          file::IsDirectory(
+              file::JoinPathRespectAbsolute(cwd, profile_input_dir, value),
+              file::Defaults())
+              .ok()) {
+        optional_input_filenames_.push_back(file::JoinPathRespectAbsolute(
+            profile_input_dir, value, "default.profdata"));
+      } else {
+        optional_input_filenames_.push_back(
+            file::JoinPathRespectAbsolute(profile_input_dir, value));
+      }
+    } else if (absl::ConsumePrefix(&value, "instr-use=") ||
+               absl::ConsumePrefix(&value, "sample-use=")) {
+      optional_input_filenames_.push_back(
+          file::JoinPathRespectAbsolute(profile_input_dir, value));
     }
   }
 
@@ -672,6 +717,7 @@ void VCFlags::DefineFlags(FlagParser* parser) {
   parser->AddFlag("-target");
   parser->AddFlag("fdebug-compilation-dir");
   parser->AddBoolFlag("fno-integrated-cc1");
+  parser->AddPrefixFlag("fprofile-");
 
   opts->flag_prefix = '-';
   opts->alt_flag_prefix = '/';

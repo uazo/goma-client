@@ -14,7 +14,7 @@ You need to do the following once you start using Goma.
 
 * A x86-64 machine with at least 8GB of RAM.
 * You must have python 2.7 or later installed already.
-* You must have [depot\_tools](https://chromium.googlesource.com/chromium/src/+/master/docs/linux_build_instructions.md#install) installed already.
+* You must have [depot\_tools](https://chromium.googlesource.com/chromium/src/+/master/docs/linux/build_instructions.md#install) installed already.
 
 Most development is done on Ubuntu (currently 16.04, Xenial Xerus).
 It might work on other distros, but they are mostly unsupported.
