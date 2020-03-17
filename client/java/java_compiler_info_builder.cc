@@ -20,13 +20,8 @@ namespace devtools_goma {
 
 namespace {
 
-void AddJavaLibraries(const std::string& compiler_path,
-                      const std::string& cwd,
-                      CompilerInfoData* data) {
-  // TODO: Verify that this is the smallest set of files needed to
-  // run javac.
-  const auto lib_dir = file::JoinPath(file::Dirname(compiler_path), "../lib");
-  constexpr absl::string_view kJavaLibs[] = {
+std::vector<std::string> GetJavaLibraryFiles() {
+  return {
       "jfr/default.jfc", "jfr/profile.jfc",
 
       "jli/libjli.so",
@@ -53,11 +48,6 @@ void AddJavaLibraries(const std::string& compiler_path,
       // Files that are excluded:
       // - src.zip
   };
-
-  for (const auto lib_file : kJavaLibs) {
-    JavacCompilerInfoBuilder::AddResourceAsExecutableBinary(
-        file::JoinPath(lib_dir, lib_file), cwd, data);
-  }
 }
 
 }  // namespace
@@ -84,12 +74,19 @@ void JavacCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
   }
   data->set_target("java");
 
+  absl::flat_hash_set<std::string> visited_paths;
   if (FLAGS_SEND_COMPILER_BINARY_AS_INPUT) {
     // TODO: Add Python wrapper if it is being used.
-    AddResourceAsExecutableBinary(real_javac_path, flags.cwd(), data);
+    AddResourceAsExecutableBinary(real_javac_path, flags.cwd(), &visited_paths,
+                                  data);
 
     // Add libs.
-    AddJavaLibraries(real_javac_path, flags.cwd(), data);
+    const auto lib_dir =
+        file::JoinPath(file::Dirname(real_javac_path), "../lib");
+    for (const auto& lib_file : GetJavaLibraryFiles()) {
+      AddResourceAsExecutableBinary(file::JoinPath(lib_dir, lib_file),
+                                    flags.cwd(), &visited_paths, data);
+    }
   }
 }
 
@@ -151,27 +148,5 @@ void JavaCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
     const std::string& abs_local_compiler_path,
     const std::vector<std::string>& compiler_info_envs,
     CompilerInfoData* data) const {}
-
-bool JavacCompilerInfoBuilder::AddResourceAsExecutableBinary(
-    const std::string& resource_path,
-    const std::string& cwd,
-    CompilerInfoData* data) {
-  CompilerInfoData::ResourceInfo r;
-  if (!CompilerInfoBuilder::ResourceInfoFromPath(
-          cwd, resource_path, CompilerInfoData::EXECUTABLE_BINARY, &r)) {
-    CompilerInfoBuilder::AddErrorMessage(
-        "failed to get resource info for " + resource_path, data);
-    LOG(ERROR) << "failed to get resource info for " + resource_path;
-    return false;
-  }
-
-  if (r.symlink_path().empty()) {
-    // Not a symlink, add it as a resource directly.
-    *data->add_resource() = std::move(r);
-    return true;
-  }
-  // TODO: handle symlinks?
-  return false;
-}
 
 }  // namespace devtools_goma

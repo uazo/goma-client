@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/container/flat_hash_set.h"
 #include "compiler_info_builder.h"
 #include "gtest/gtest_prod.h"
 
@@ -48,12 +47,6 @@ class DartAnalyzerCompilerInfoBuilder : public CompilerInfoBuilder {
   static bool CollectDartAnalyzerResources(
       absl::string_view real_compiler_path,
       std::vector<std::string>* resource_paths);
-
-  static bool AddResourceAsExecutableBinary(
-      const std::string& resource_path,
-      const std::string& cwd,
-      absl::flat_hash_set<std::string>* visited_paths,
-      CompilerInfoData* data);
 
   FRIEND_TEST(DartAnalyzerCompilerInfoBuilderTest,
               ParseDartAnalyzerVersionTarget);

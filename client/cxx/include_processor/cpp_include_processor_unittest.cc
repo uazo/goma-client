@@ -15,6 +15,7 @@
 #include "include_cache.h"
 #include "include_file_finder.h"
 #include "list_dir_cache.h"
+#include "options.h"
 #include "path.h"
 #include "unittest_util.h"
 

@@ -413,7 +413,9 @@ def Login():
 
   config.Save()
   flags = configFlags(config)
-  os.environ.update(flags)
+  for k in flags:
+    if k not in os.environ:
+      os.environ[k] = flags[k]
   if not CheckPing():
     return 1
   return 0

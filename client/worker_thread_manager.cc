@@ -39,25 +39,6 @@ static bool g_initialize_atfork = false;
 #endif
 static bool g_enable_fork = false;
 
-WorkerThreadManager::CancelableClosure::CancelableClosure(
-    const char* const location, Closure* closure)
-    : closure_(closure),
-      location_(location) {
-}
-
-WorkerThreadManager::CancelableClosure::~CancelableClosure() {
-  CHECK(closure_ == nullptr);
-}
-
-void WorkerThreadManager::CancelableClosure::Cancel() {
-  delete closure_;
-  closure_ = nullptr;
-}
-
-const char* WorkerThreadManager::CancelableClosure::location() const {
-  return location_;
-}
-
 #ifndef _WIN32
 static void DontCallForkInWorkerThreadManager() {
   if (!g_enable_fork)

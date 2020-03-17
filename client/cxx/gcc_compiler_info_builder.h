@@ -60,27 +60,6 @@ class GCCCompilerInfoBuilder : public CxxCompilerInfoBuilder {
   static std::string GetRealCompilerPath(const std::string& normal_gcc_path,
                                          const std::string& cwd,
                                          const std::vector<std::string>& envs);
-
- private:
-  // Add resource as EXECUTABLE_BINARY. If the resource is a symlink,
-  // the symlink and the actual files are both added as resource.
-  // |visited_paths| is used not to process the same resource twice.
-  //
-  // Returns true if succeeded (or ignored).
-  // Returns false if an error has occurred.
-  static bool AddResourceAsExecutableBinary(
-      const std::string& resource_path,
-      const GCCFlags& gcc_flags,
-      absl::flat_hash_set<std::string>* visited_paths,
-      CompilerInfoData* data);
-  // The same as AddResourceAsExecutableBinary, with limiting symlink follow
-  // count.
-  static bool AddResourceAsExecutableBinaryInternal(
-      const std::string& resource_path,
-      const GCCFlags& gcc_flags,
-      int rest_symlink_follow_count,
-      absl::flat_hash_set<std::string>* visited_paths,
-      CompilerInfoData* data);
 };
 
 };  // namespace devtools_goma

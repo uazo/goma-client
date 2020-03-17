@@ -50,6 +50,7 @@
 #include "glog/logging.h"
 #include "goma_hash.h"
 #include "histogram.h"
+#include "options.h"
 #include "path.h"
 #include "simple_timer.h"
 #include "worker_thread.h"

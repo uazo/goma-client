@@ -14,6 +14,7 @@
 #endif
 
 #include "base/config_win.h"
+#include "base/options.h"
 #include "base/path.h"
 #include "gtest/gtest.h"
 

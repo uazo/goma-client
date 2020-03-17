@@ -49,15 +49,6 @@ class RustcCompilerInfoBuilder : public CompilerInfoBuilder {
   static bool CollectRustcResources(absl::string_view real_compiler_path,
                                     std::vector<std::string>* resource_paths);
 
-  // Add resource as EXECUTABLE_BINARY. If the resource is a symlink,
-  // both the symlink and actual files are added. This is copied from
-  // gcc_compiler_info_builder.
-  static bool AddResourceAsExecutableBinary(
-      const std::string& resource_path,
-      const std::string& cwd,
-      absl::flat_hash_set<std::string>* visited_paths,
-      CompilerInfoData* data);
-
   FRIEND_TEST(RustCompilerInfoBuilderTest, ParseRustcVersionTarget);
 };
 

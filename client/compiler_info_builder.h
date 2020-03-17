@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
@@ -75,6 +76,18 @@ class CompilerInfoBuilder {
                                    const std::string& path,
                                    CompilerInfoData::ResourceType type,
                                    CompilerInfoData::ResourceInfo* r);
+
+  // Add resource as EXECUTABLE_BINARY. If the resource is a symlink,
+  // the symlink and the actual files are both added as resource.
+  // |visited_paths| is used not to process the same resource twice.
+  //
+  // Returns true if succeeded (or ignored).
+  // Returns false if an error has occurred.
+  static bool AddResourceAsExecutableBinary(
+      const std::string& resource_path,
+      const std::string& cwd,
+      absl::flat_hash_set<std::string>* visited_paths,
+      CompilerInfoData* data);
 
  protected:
   CompilerInfoBuilder() = default;

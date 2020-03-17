@@ -24,6 +24,7 @@
 #include "file_helper.h"
 #include "filesystem.h"
 #include "mypath.h"
+#include "options.h"
 #include "path.h"
 
 #ifdef _WIN32

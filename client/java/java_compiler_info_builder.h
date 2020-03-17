@@ -36,15 +36,6 @@ class JavacCompilerInfoBuilder : public CompilerInfoBuilder {
       const std::vector<std::string>& compiler_info_envs,
       const std::string& cwd,
       std::string* version);
-
-  // Adds compiler at |resource_path| to |data|.
-  // TODO: Combine with the function of the same name for Rust and
-  // DartAnalyzer.
-  static bool AddResourceAsExecutableBinary(const std::string& resource_path,
-                                            const std::string& cwd,
-                                            CompilerInfoData* data);
-
-  FRIEND_TEST(JavacCompilerInfoBuilderTest, AddResourceAsExecutableBinary);
 };
 
 class JavaCompilerInfoBuilder : public CompilerInfoBuilder {

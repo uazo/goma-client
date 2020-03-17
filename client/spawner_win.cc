@@ -23,6 +23,7 @@
 #include "filesystem.h"
 #include "glog/logging.h"
 #include "mypath.h"
+#include "options.h"
 #include "path.h"
 
 namespace devtools_goma {

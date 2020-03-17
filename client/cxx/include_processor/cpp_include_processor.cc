@@ -55,6 +55,7 @@
 #include "ioutil.h"
 #include "list_dir_cache.h"
 #include "lockhelper.h"
+#include "options.h"
 #include "path.h"
 #include "path_resolver.h"
 #include "scoped_fd.h"

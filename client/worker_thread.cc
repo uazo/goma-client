@@ -61,6 +61,23 @@ bool update_log_time(absl::Time* t, devtools_goma::Lock* mu) {
 
 }  // namespace
 
+WorkerThread::CancelableClosure::CancelableClosure(const char* const location,
+                                                   Closure* closure)
+    : closure_(closure), location_(location) {}
+
+WorkerThread::CancelableClosure::~CancelableClosure() {
+  CHECK(closure_ == nullptr);
+}
+
+void WorkerThread::CancelableClosure::Cancel() {
+  delete closure_;
+  closure_ = nullptr;
+}
+
+const char* WorkerThread::CancelableClosure::location() const {
+  return location_;
+}
+
 WorkerThread::ClosureData::ClosureData(
     const char* const location,
     Closure* closure,

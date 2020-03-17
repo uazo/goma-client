@@ -525,6 +525,13 @@ config("no_goma_code") {
   if (is_clang && treat_no_goma_code_warnings_as_errors) {
     cflags += [ "-Werror" ]
   }
+  if (is_clang) {
+    cflags += [
+      # TODO: Clean up and enable.
+      # minizip contains misleading-indentation code
+      "-Wno-misleading-indentation",
+    ]
+  }
 }
 
 config("no_chromium_code") {

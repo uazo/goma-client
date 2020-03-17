@@ -438,76 +438,11 @@ void GCCCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
 
   absl::flat_hash_set<std::string> visited_paths;
   for (const auto& resource_path : resource_paths_to_collect) {
-    if (!AddResourceAsExecutableBinary(resource_path, gcc_flags, &visited_paths,
-                                       data)) {
+    if (!AddResourceAsExecutableBinary(resource_path, gcc_flags.cwd(),
+                                       &visited_paths, data)) {
       return;
     }
   }
-}
-
-// static
-bool GCCCompilerInfoBuilder::AddResourceAsExecutableBinary(
-    const std::string& resource_path,
-    const GCCFlags& gcc_flags,
-    absl::flat_hash_set<std::string>* visited_paths,
-    CompilerInfoData* data) {
-  // On Linux, MAX_NESTED_LINKS is 8, so I chose 8 here.
-  static const int kMaxNestedLinks = 8;
-  return AddResourceAsExecutableBinaryInternal(
-      resource_path, gcc_flags, kMaxNestedLinks, visited_paths, data);
-}
-
-// static
-bool GCCCompilerInfoBuilder::AddResourceAsExecutableBinaryInternal(
-    const std::string& resource_path,
-    const GCCFlags& gcc_flags,
-    int rest_symlink_follow_count,
-    absl::flat_hash_set<std::string>* visited_paths,
-    CompilerInfoData* data) {
-  std::string abs_resource_path =
-      file::JoinPathRespectAbsolute(gcc_flags.cwd(), resource_path);
-  if (!visited_paths->insert(std::move(abs_resource_path)).second) {
-    // This path has been visited before. Don't proceed.
-    // This is not an error, so return true.
-    return true;
-  }
-
-  CompilerInfoData::ResourceInfo r;
-  if (!CompilerInfoBuilder::ResourceInfoFromPath(
-          gcc_flags.cwd(), resource_path, CompilerInfoData::EXECUTABLE_BINARY,
-          &r)) {
-    // HACK: we should not affect people not using ATS.
-    if (FLAGS_SEND_COMPILER_BINARY_AS_INPUT) {
-      AddErrorMessage("failed to get GCC resource info for " + resource_path,
-                      data);
-    }
-    LOG(ERROR) << "failed to get GCC resource info for " << resource_path;
-    return false;
-  }
-
-  if (r.symlink_path().empty()) {
-    // Not a symlink. Just add it as a resource.
-    *data->add_resource() = std::move(r);
-    return true;
-  }
-
-  // symlink.
-  if (rest_symlink_follow_count <= 0) {
-    // Needed to follow too many symlink. Return an error.
-    AddErrorMessage("too deep nested symlink: " + resource_path, data);
-    return false;
-  }
-  std::string symlink_path = file::JoinPathRespectAbsolute(
-      file::Dirname(resource_path), r.symlink_path());
-
-  // Implementation Note: the original resource must come first. If the resource
-  // is a symlink, the actual file must be added after the symlink. The server
-  // assumes the first resource is a compiler used in a command line, even
-  // if it's a symlink.
-  *data->add_resource() = std::move(r);
-  return AddResourceAsExecutableBinaryInternal(symlink_path, gcc_flags,
-                                               rest_symlink_follow_count - 1,
-                                               visited_paths, data);
 }
 
 void GCCCompilerInfoBuilder::SetCompilerPath(

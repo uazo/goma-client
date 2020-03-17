@@ -56,53 +56,6 @@ bool AddFilesFromDirectory(const std::string& dirname,
   return true;
 }
 
-bool AddResourceAsExecutableBinaryInternal(
-    const std::string& resource_path,
-    const std::string& cwd,
-    int remaining_symlink_follow_count,
-    absl::flat_hash_set<std::string>* visited_paths,
-    CompilerInfoData* data) {
-  std::string abs_resource_path =
-      file::JoinPathRespectAbsolute(cwd, resource_path);
-  if (!visited_paths->insert(PathResolver::ResolvePath(abs_resource_path))
-           .second) {
-    // This path has been visited before. Abort.
-    return true;
-  }
-
-  CompilerInfoData::ResourceInfo r;
-  if (!CompilerInfoBuilder::ResourceInfoFromPath(
-          cwd, resource_path, CompilerInfoData::EXECUTABLE_BINARY, &r)) {
-    CompilerInfoBuilder::AddErrorMessage(
-        "failed to get resource info for " + resource_path, data);
-    LOG(ERROR) << "failed to get resource info for " + resource_path;
-    return false;
-  }
-
-  if (r.symlink_path().empty()) {
-    // Not a symlink, add it as a resource directly.
-    *data->add_resource() = std::move(r);
-    return true;
-  }
-
-  // It's a symlink.
-  if (remaining_symlink_follow_count <= 0) {
-    // Too many nested symlink. Abort and return an error.
-    CompilerInfoBuilder::AddErrorMessage(
-        "too deep nested symlink: " + resource_path, data);
-    return false;
-  }
-  std::string symlink_path = file::JoinPathRespectAbsolute(
-      file::Dirname(resource_path), r.symlink_path());
-  // Implementation Note: the original resource must come first. If the resource
-  // is a symlink, the actual file must be added after the symlink. The server
-  // assumes the first resource is a compiler used in a command line, even
-  // if it's a symlink.
-  *data->add_resource() = std::move(r);
-  return AddResourceAsExecutableBinaryInternal(
-      symlink_path, cwd, remaining_symlink_follow_count - 1, visited_paths,
-      data);
-}
 }  // namespace
 
 void RustcCompilerInfoBuilder::SetTypeSpecificCompilerInfo(
@@ -279,18 +232,6 @@ bool RustcCompilerInfoBuilder::CollectRustcResources(
     }
   }
   return true;
-}
-
-// static
-bool RustcCompilerInfoBuilder::AddResourceAsExecutableBinary(
-    const std::string& resource_path,
-    const std::string& cwd,
-    absl::flat_hash_set<std::string>* visited_paths,
-    CompilerInfoData* data) {
-  // On Linux, MAX_NESTED_LINKS is 8.
-  constexpr int kMaxNestedLinks = 8;
-  return AddResourceAsExecutableBinaryInternal(
-      resource_path, cwd, kMaxNestedLinks, visited_paths, data);
 }
 
 }  // namespace devtools_goma

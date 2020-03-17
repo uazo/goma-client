@@ -16,6 +16,7 @@
 
 #include "file_dir.h"
 #include "glog/logging.h"
+#include "options.h"
 #include "path.h"
 
 namespace file {

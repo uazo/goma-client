@@ -12,6 +12,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "base/filesystem.h"
+#include "base/options.h"
 
 // convert foo.fake -> foo.out
 bool ToOutputName(absl::string_view input_path, std::string* output_path) {

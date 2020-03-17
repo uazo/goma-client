@@ -18,6 +18,7 @@
 #include "ioutil.h"
 #include "jar_parser.h"
 #include "mypath.h"
+#include "options.h"
 #include "path.h"
 #include "unittest_util.h"
 #include "util.h"

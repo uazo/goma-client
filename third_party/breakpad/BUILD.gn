@@ -37,6 +37,7 @@ config("tools_config") {
     cflags = [
       "-Wno-tautological-constant-out-of-range-compare",
       "-Wno-unused-parameter",  # argc of main in sym_upload.cc
+      "-Wno-non-c-typedef-for-linkage",  # typedef struct{} Options
     ]
   }
 }

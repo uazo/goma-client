@@ -13,6 +13,7 @@
 #include "filesystem.h"
 #include "glog/logging.h"
 #include "mypath.h"
+#include "options.h"
 #include "path.h"
 #include "rand_util.h"
 #include "scoped_fd.h"

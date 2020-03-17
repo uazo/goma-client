@@ -6,10 +6,11 @@
 #define DEVTOOLS_GOMA_BASE_FILESYSTEM_H_
 
 #include "absl/strings/string_view.h"
-#include "options.h"
 #include "status.h"
 
 namespace file {
+
+class Options;
 
 // Returns ok if dirname and its children are successfully deleted.
 ::util::Status RecursivelyDelete(absl::string_view path,

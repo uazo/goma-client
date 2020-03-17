@@ -299,7 +299,7 @@ class SubProcessTaskTest : public ::testing::Test {
         WorkerThread::PRIORITY_IMMEDIATE);
     WaitDone(&c.done_);
 
-    EXPECT_EQ(1, c.status_);
+    EXPECT_NE(0, c.status_);
     std::vector<DirEntry> sub_file_or_dirs;
     EXPECT_TRUE(ListDirectory(tmp_clang_dump_dir.dirname(), &sub_file_or_dirs));
     ASSERT_EQ(2, sub_file_or_dirs.size());

@@ -67,6 +67,7 @@
 #include "lockhelper.h"
 #include "multi_http_rpc.h"
 #include "mypath.h"
+#include "options.h"
 #include "path.h"
 #include "path_resolver.h"
 #include "path_util.h"

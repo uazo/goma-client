@@ -23,6 +23,7 @@
 #include "file_dir.h"
 #include "filesystem.h"
 #include "mypath.h"
+#include "options.h"
 #include "path.h"
 #include "vsvars.h"
 

@@ -19,7 +19,13 @@ namespace devtools_goma {
 
 class CompilerInfoBuilderTest : public testing::Test {
  protected:
-  void SetUp() override { CheckTempDirectory(GetGomaTmpDir()); }
+  void SetUp() override {
+    CheckTempDirectory(GetGomaTmpDir());
+
+    tmpdir_util_ =
+        std::make_unique<TmpdirUtil>("compiler_info_builder_unittest");
+    tmpdir_util_->SetCwd("");
+  }
 
   void AppendPredefinedMacros(const std::string& macro, CompilerInfoData* cid) {
     cid->mutable_cxx()->set_predefined_macros(cid->cxx().predefined_macros() +
@@ -34,6 +40,7 @@ class CompilerInfoBuilderTest : public testing::Test {
   }
 
   CompilerTypeSpecificCollection cts_collection_;
+  std::unique_ptr<TmpdirUtil> tmpdir_util_;
 };
 
 TEST_F(CompilerInfoBuilderTest, DependsOnCwd) {
@@ -192,5 +199,94 @@ TEST_F(CompilerInfoBuilderTest, ClangSmoke) {
     EXPECT_FALSE(compiler_info.HasError());
   }
 }
+
+TEST_F(CompilerInfoBuilderTest, AddResourceAsExecutableBinary) {
+  const auto cwd = tmpdir_util_->realcwd();
+  auto AddResourceAsExecutableBinary =
+      CompilerInfoBuilder::AddResourceAsExecutableBinary;
+#ifdef _WIN32
+  const std::string compiler_path = "compiler.exe";
+#else
+  const std::string compiler_path = "compiler";
+#endif  // _WIN32
+  const std::string compiler_data = "contents";
+
+  // Test compiler file that doesn't exist.
+  {
+    CompilerInfoData data;
+    absl::flat_hash_set<std::string> visited_paths;
+    EXPECT_FALSE(AddResourceAsExecutableBinary(compiler_path, cwd,
+                                               &visited_paths, &data));
+    EXPECT_TRUE(data.has_error_message());
+  }
+
+  // Test compiler file that does exist.
+  tmpdir_util_->CreateTmpFile(compiler_path, compiler_data);
+  const auto full_compiler_path = file::JoinPath(cwd, compiler_path);
+  EXPECT_EQ(0, chmod(full_compiler_path.c_str(), 0755));  // Make it executable.
+  {
+    CompilerInfoData data;
+    absl::flat_hash_set<std::string> visited_paths;
+    EXPECT_TRUE(AddResourceAsExecutableBinary(compiler_path, cwd,
+                                              &visited_paths, &data));
+    EXPECT_FALSE(data.has_error_message());
+
+    ASSERT_EQ(1U, data.resource_size());
+    const auto& resource = data.resource(0);
+    EXPECT_EQ(compiler_path, resource.name());
+    EXPECT_EQ(CompilerInfoData::EXECUTABLE_BINARY, resource.type());
+    EXPECT_TRUE(resource.is_executable());
+  }
+}
+
+#ifndef _WIN32
+TEST_F(CompilerInfoBuilderTest, AddResourceAsExecutableBinarySymlink) {
+  const auto cwd = tmpdir_util_->realcwd();
+  auto AddResourceAsExecutableBinary =
+      CompilerInfoBuilder::AddResourceAsExecutableBinary;
+  const std::string compiler_path = "compiler";
+  const std::string compiler_data = "contents";
+  const auto full_compiler_path = file::JoinPath(cwd, compiler_path);
+
+  const std::string dir_path = "other_dir";
+  tmpdir_util_->MkdirForPath(dir_path, true);
+  const auto symlink_path = file::JoinPath(dir_path, compiler_path);
+  const auto full_symlink_path = file::JoinPath(cwd, symlink_path);
+  EXPECT_EQ(0, symlink(full_compiler_path.c_str(), full_symlink_path.c_str()));
+
+  // Test compiler file under symlink that doesn't exist.
+  {
+    CompilerInfoData data;
+    absl::flat_hash_set<std::string> visited_paths;
+    EXPECT_FALSE(AddResourceAsExecutableBinary(symlink_path, cwd,
+                                               &visited_paths, &data));
+    EXPECT_TRUE(data.has_error_message());
+  }
+
+  // Test compiler file under symlink that does exist.
+  tmpdir_util_->CreateTmpFile(compiler_path, compiler_data);
+  EXPECT_EQ(0, chmod(full_compiler_path.c_str(), 0755));  // Make it executable.
+  {
+    CompilerInfoData data;
+    absl::flat_hash_set<std::string> visited_paths;
+    EXPECT_TRUE(AddResourceAsExecutableBinary(symlink_path, cwd, &visited_paths,
+                                              &data));
+    EXPECT_FALSE(data.has_error_message());
+
+    ASSERT_EQ(2U, data.resource_size());
+
+    const auto& resource0 = data.resource(0);
+    EXPECT_EQ(symlink_path, resource0.name());
+    EXPECT_EQ(CompilerInfoData::EXECUTABLE_BINARY, resource0.type());
+    EXPECT_EQ(full_compiler_path, resource0.symlink_path());
+    EXPECT_FALSE(resource0.is_executable());
+
+    const auto& resource1 = data.resource(1);
+    EXPECT_EQ(full_compiler_path, resource1.name());
+    EXPECT_EQ(CompilerInfoData::EXECUTABLE_BINARY, resource1.type());
+    EXPECT_TRUE(resource1.is_executable());
+  }
+}
+#endif  // _WIN32
 
 }  // namespace devtools_goma

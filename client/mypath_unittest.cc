@@ -13,6 +13,7 @@
 #include "filesystem.h"
 #include "glog/logging.h"
 #include "gtest/gtest.h"
+#include "options.h"
 #include "path.h"
 #include "path_resolver.h"
 #ifdef _WIN32

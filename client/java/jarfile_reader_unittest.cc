@@ -17,6 +17,7 @@
 #include "glog/stl_logging.h"
 #include "gtest/gtest.h"
 #include "mypath.h"
+#include "options.h"
 #include "path.h"
 #include "unittest_util.h"
 
