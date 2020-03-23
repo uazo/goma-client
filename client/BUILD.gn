@@ -999,6 +999,7 @@ copy("copy_diagnose_goma_log_py") {
 if (os != "win") {
   copy("goma_tool") {
     sources = [
+      "goma_auth",
       "report_env.sh",
     ]
     if (os == "linux") {
@@ -1120,6 +1121,7 @@ if (os != "win") {
   }
   copy("goma_tool") {
     sources = [
+      "goma_auth.bat",
       "goma_ctl.bat",
     ]
     outputs = [

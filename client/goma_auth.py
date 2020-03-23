@@ -486,7 +486,7 @@ def configFlags(config):
       flags.enableSendInfo()
       return flags
     except subprocess.CalledProcessError:
-      raise Error('Need to login')
+      raise Error('Need to login.  Run `goma_auth login` to login.')
   token_info = FetchTokenInfo(config)
   if 'error_description' in token_info:
     raise Error(

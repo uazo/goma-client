@@ -1522,6 +1522,8 @@ class GomaEnv(object):
     """Checks `goma_auth.py config` unless service accounts.
 
     Updates goma flags by `goma_auth.py config` outputs.
+    If `goma_auth.py config` exits with 1, it shows stdout/stderr
+    and exit the program. Other exit status raises ConfigError.
 
     Raises:
       ConfigError if `goma_auth.py config` failed.
@@ -1541,9 +1543,14 @@ class GomaEnv(object):
            os.path.join(SCRIPT_DIR, 'goma_auth.py'), 'config'],
           stdout=subprocess.PIPE,
           stderr=subprocess.PIPE).communicate()[0]
-    except Error as ex:
-      print(ex)
-      raise ConfigError('goma_auth.py config failed')
+    except CalledProcessError as ex:
+      if ex.stdout:
+        sys.stdout.write(ex.stdout + '\n')
+      if ex.stderr:
+        sys.stderr.write(ex.stderr + '\n')
+      if ex.returncode == 1:
+        sys.exit(1)
+      raise ConfigError('goma_auth.py config failed %s' % ex)
     for line in out.splitlines():
       if '=' not in line:
         print(line)

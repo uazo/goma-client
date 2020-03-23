@@ -104,8 +104,8 @@ def CreateAndroidDir(distname, platform):
     distname = os.path.join(distname, 'android')
     shutil.rmtree(distname, ignore_errors=True)
     os.mkdir(distname)
-    for cmd in ('gomacc', 'compiler_proxy', 'goma_fetch',
-                'goma_auth.py', 'goma_ctl.py'):
+    for cmd in ('gomacc', 'compiler_proxy', 'goma_fetch', 'goma_auth.py',
+                'goma_auth', 'goma_ctl.py'):
       os.symlink(os.path.join('..', cmd), os.path.join(distname, cmd))
     for cmd in GOMACC_CMDS:
       os.symlink('gomacc', os.path.join(distname, cmd))
@@ -242,15 +242,15 @@ def main():
       if not os.path.exists(pdb):
         pdb = cmd + '.pdb'
       shutil.copy(pdb, distname)
-    for f in ('.vpython', 'goma_auth.py', 'goma_ctl.py', 'goma_ctl.bat',
-              'diagnose_goma_log.py', 'compiler_proxy.sym', 'sha256.json',
-              'gomacc.sym', 'LICENSE'):
+    for f in ('.vpython', 'goma_auth.py', 'goma_auth.bat', 'goma_ctl.py',
+              'goma_ctl.bat', 'diagnose_goma_log.py', 'compiler_proxy.sym',
+              'sha256.json', 'gomacc.sym', 'LICENSE'):
       shutil.copy(f, distname)
   else:
     for f in ('.vpython', 'gomacc', 'compiler_proxy', 'goma_fetch',
               'report_env.sh', 'diagnose_goma_log.py', 'compiler_proxy.sym',
-              'goma_auth.py', 'goma_ctl.py', 'sha256.json', 'gomacc.sym',
-              'LICENSE'):
+              'goma_auth.py', 'goma_auth', 'goma_ctl.py', 'sha256.json',
+              'gomacc.sym', 'LICENSE'):
       shutil.copy(f, distname)
     CreatePlatformGomacc(distname, options.platform)
     InstallPlatformFiles(distname, options.platform)

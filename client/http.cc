@@ -329,6 +329,7 @@ class HttpClient::Task {
                    << " Throttled backoff=" << backoff
                    << " remaining="
                    << (kDefaultThrottleTimeout - status_->throttle_time);
+      auth_status_ = NEED_REFRESH;
       // TODO: might need to cancel this on shutdown?
       wm_->RunDelayedClosureInThread(
           FROM_HERE,
@@ -382,6 +383,7 @@ class HttpClient::Task {
       LOG(WARNING) << status_->trace_id
                    << " Can't establish connection to server"
                    << " retry after backoff=" << start_backoff;
+      auth_status_ = NEED_REFRESH;
       // TODO: might need to cancel this on shutdown?
       wm_->RunDelayedClosureInThread(
           FROM_HERE,
