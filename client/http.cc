@@ -68,6 +68,7 @@ namespace devtools_goma {
 
 namespace {
 
+constexpr absl::Duration kDefaultRefreshTokenTimeout = absl::Minutes(5);
 constexpr absl::Duration kDefaultThrottleTimeout = absl::Minutes(10);
 constexpr absl::Duration kDefaultTimeout = absl::Minutes(15);
 
@@ -286,7 +287,19 @@ class HttpClient::Task {
     // TODO: rethink the way refreshing OAuth2 access token.
     // Refreshing OAuth2 access token is a bit complex operation, and
     // difficult to track the behavior.  Refactoring must be needed.
+    bool should_refresh = client_->ShouldRefreshOAuth2AccessToken();
     if (auth_status_ == NEED_REFRESH) {
+      ++status_->num_oauth2_token_refreshed;
+      status_->oauth2_token_refresh_time += timer_.GetDuration();
+      if (status_->oauth2_token_refresh_time > kDefaultRefreshTokenTimeout) {
+        LOG(WARNING) << status_->trace_id
+                     << " Timeout in OAuth2 access token refresh. time="
+                     << status_->oauth2_token_refresh_time;
+        RunCallback(ERR_TIMEOUT, "Time-out in refresh OAuth2 access token");
+        return;
+      }
+    }
+    if (auth_status_ == NEED_REFRESH && !should_refresh) {
       const std::string& authorization = client_->GetOAuth2Authorization();
       if (authorization.empty()) {
         RunCallback(FAIL, "authorization not available");
@@ -299,10 +312,11 @@ class HttpClient::Task {
       LOG(INFO) << status_->trace_id
                 << " cloned HttpClient::Request to set authorization.";
     }
-    if (client_->ShouldRefreshOAuth2AccessToken()) {
+    if (should_refresh) {
       LOG(INFO) << status_->trace_id
                 << " authorization is not ready, going to run after refresh.";
       auth_status_ = NEED_REFRESH;
+      timer_.Start();
       client_->RunAfterOAuth2AccessTokenGetReady(
           wm_->GetCurrentThreadId(),
           NewCallback(this, &HttpClient::Task::Start));
@@ -746,31 +760,26 @@ HttpClient::Status::Status()
       raw_resp_size(0),
       num_retry(0),
       num_throttled(0),
-      num_connect_failed(0) {
-}
+      num_connect_failed(0),
+      num_oauth2_token_refreshed(0) {}
 
 std::string HttpClient::Status::DebugString() const {
   std::ostringstream ss;
   ss << "state=" << state
      << " timeout_should_be_http_error=" << timeout_should_be_http_error
-     << " connect_success=" << connect_success
-     << " finished=" << finished
-     << " err=" << err
-     << " http_return_code=" << http_return_code
-     << " req_size=" << req_size
-     << " resp_size=" << resp_size
-     << " raw_req_size=" << raw_req_size
-     << " raw_resp_size=" << raw_resp_size
-     << " throttle_time=" << throttle_time
-     << " pending_time=" << pending_time
+     << " connect_success=" << connect_success << " finished=" << finished
+     << " err=" << err << " http_return_code=" << http_return_code
+     << " req_size=" << req_size << " resp_size=" << resp_size
+     << " raw_req_size=" << raw_req_size << " raw_resp_size=" << raw_resp_size
+     << " throttle_time=" << throttle_time << " pending_time=" << pending_time
+     << " oauth2_token_refresh_time=" << oauth2_token_refresh_time
      << " req_build_time=" << req_build_time
-     << " req_send_time=" << req_send_time
-     << " wait_time=" << wait_time
+     << " req_send_time=" << req_send_time << " wait_time=" << wait_time
      << " resp_recv_time=" << resp_recv_time
-     << " resp_parse_time=" << resp_parse_time
-     << " num_retry=" << num_retry
+     << " resp_parse_time=" << resp_parse_time << " num_retry=" << num_retry
      << " num_throttled=" << num_throttled
-     << " num_connect_failed=" << num_connect_failed;
+     << " num_connect_failed=" << num_connect_failed
+     << " num_oauth2_token_refreshed=" << num_oauth2_token_refreshed;
   return ss.str();
 }
 
@@ -823,6 +832,7 @@ HttpClient::HttpClient(std::unique_ptr<SocketFactory> socket_factory,
       num_http_retry_(0),
       num_http_throttled_(0),
       num_http_connect_failed_(0),
+      num_http_oauth2_token_refreshed_(0),
       num_http_timeout_(0),
       num_http_error_(0),
       total_write_byte_(0),
@@ -1018,6 +1028,9 @@ void HttpClient::ReleaseDescriptor(
       socket_pool_->CloseSocket(std::move(fd), close_state == ERROR_CLOSE);
     }
   }
+  if (close_state == ERROR_CLOSE) {
+    InvalidateOAuth2AccessToken();
+  }
 }
 
 bool HttpClient::failnow() const {
@@ -1152,6 +1165,11 @@ std::string HttpClient::DebugString() const {
   ss << " Connect Failed: " << num_http_connect_failed_;
   if (num_query_ > 0)
     ss << " (" << (num_http_connect_failed_ * 100.0 / num_query_) << "%)";
+  ss << std::endl;
+  ss << " OAuth2 Token Refreshed: " << num_http_oauth2_token_refreshed_;
+  if (num_query_ > 0)
+    ss << " (" << (num_http_oauth2_token_refreshed_ * 100.0 / num_query_)
+       << "%)";
   ss << std::endl;
   ss << " Timeout: " << num_http_timeout_;
   if (num_query_ > 0)
@@ -1455,6 +1473,13 @@ void HttpClient::RunAfterOAuth2AccessTokenGetReady(
   oauth_refresh_task_->RunAfterRefresh(thread_id, closure);
 }
 
+void HttpClient::InvalidateOAuth2AccessToken() {
+  if (!oauth_refresh_task_) {
+    return;
+  }
+  return oauth_refresh_task_->Invalidate();
+}
+
 absl::Duration HttpClient::GetRandomizedBackoff() const {
   return RandomizeBackoff(retry_backoff_);
 }
@@ -1555,6 +1580,7 @@ void HttpClient::UpdateStats(const Status& status) {
   num_http_retry_ += status.num_retry;
   num_http_throttled_ += status.num_throttled;
   num_http_connect_failed_ += status.num_connect_failed;
+  num_http_oauth2_token_refreshed_ += status.num_oauth2_token_refreshed;
   total_resp_byte_ += status.resp_size;
   total_resp_time_ += status.resp_recv_time;
 

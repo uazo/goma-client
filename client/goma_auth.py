@@ -3,7 +3,7 @@
 # Copyright 2015 The Goma Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-"""A Script to set goma_oauth2_config."""
+"""A Script to set goma_client_oauth2_config."""
 
 from __future__ import print_function
 
@@ -446,6 +446,10 @@ def Info():
   if err:
     sys.stderr.write(err + '\n')
     return 1
+  flags = configFlags(config)
+  for k in flags:
+    if k not in os.environ:
+      os.environ[k] = flags[k]
   if not CheckPing():
     return 1
   return 0

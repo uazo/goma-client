@@ -188,6 +188,7 @@ class HttpClient {
 
     absl::Duration throttle_time;
     absl::Duration pending_time;
+    absl::Duration oauth2_token_refresh_time;
     absl::Duration req_build_time;
     absl::Duration req_send_time;
     absl::Duration wait_time;
@@ -197,6 +198,7 @@ class HttpClient {
     int num_retry;
     int num_throttled;
     int num_connect_failed;
+    int num_oauth2_token_refreshed;
 
     std::string trace_id;
     std::string master_trace_id;  // master request in multi http rpc.
@@ -590,6 +592,7 @@ class HttpClient {
   void RunAfterOAuth2AccessTokenGetReady(
       WorkerThread::ThreadId thread_id,
       OneshotClosure* callback);
+  void InvalidateOAuth2AccessToken();
 
   void UpdateBackoffUnlocked(bool in_error) EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
@@ -651,6 +654,7 @@ class HttpClient {
   int num_http_retry_ GUARDED_BY(mu_);
   int num_http_throttled_ GUARDED_BY(mu_);
   int num_http_connect_failed_ GUARDED_BY(mu_);
+  int num_http_oauth2_token_refreshed_ GUARDED_BY(mu_);
   int num_http_timeout_ GUARDED_BY(mu_);
   int num_http_error_ GUARDED_BY(mu_);
 

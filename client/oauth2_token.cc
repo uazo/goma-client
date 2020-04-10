@@ -43,6 +43,9 @@ constexpr absl::Duration kRefreshTimeout = absl::Seconds(10);
 // If something error happens in the refresh of access token, the refresh task
 // will not fetch access token again for this period.
 constexpr absl::Duration kErrorRefreshPendingTimeout = absl::Seconds(60);
+// If the access token is invalidated, the invalidation will not happen for this
+// duration to avoid too frequent update of the access token.
+constexpr absl::Duration kInvalidateTimeout = absl::Seconds(60);
 
 class AuthRefreshConfig {
  public:
@@ -87,13 +90,15 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
     std::string access_token;
     {
       AUTOLOCK(lock, &mu_);
-      access_token = access_token_;
-      if (access_token.empty()) {
-        return "";
-      }
+      // Keep showing the account email even after the access token is
+      // invalidated.
       if (!account_email_.empty()) {
         return account_email_;
       }
+      access_token = access_token_;
+    }
+    if (access_token.empty()) {
+      return "";
     }
 
     HttpClient::Options options = client_->options();
@@ -221,6 +226,35 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
               this, &GoogleOAuth2AccessTokenRefreshTask::RunRefresh),
           WorkerThread::PRIORITY_IMMEDIATE);
     }
+  }
+
+  void Invalidate() override LOCKS_EXCLUDED(mu_) {
+    const absl::Time now = absl::Now();
+    AUTOLOCK(lock, &mu_);
+    if (access_token_.empty()) {
+      LOG(WARNING) << "no token to invalidate.";
+      return;
+    }
+    if (last_invalidated_time_ &&
+        now < *last_invalidated_time_ + kInvalidateTimeout) {
+      LOG(WARNING) << "will not invalidate token."
+                   << " last_invalidated_time=" << *last_invalidated_time_;
+      return;
+    }
+    access_token_.clear();
+    token_expiration_time_ = absl::Time();
+    last_invalidated_time_ = now;
+
+    std::ostringstream ss;
+    if (last_network_error_time_) {
+      ss << " last_network_error_time=" << *last_network_error_time_;
+    }
+    LOG(INFO) << "access token is invalidated." << ss.str();
+
+    wm_->RunClosureInThread(
+        FROM_HERE, refresh_task_thread_id_,
+        NewCallback(this, &GoogleOAuth2AccessTokenRefreshTask::Cancel),
+        WorkerThread::PRIORITY_IMMEDIATE);
   }
 
   void Shutdown() override LOCKS_EXCLUDED(mu_) {
@@ -519,6 +553,7 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
   std::string account_email_ GUARDED_BY(mu_);
   absl::Time token_expiration_time_ GUARDED_BY(mu_);
   absl::optional<absl::Time> last_network_error_time_ GUARDED_BY(mu_);
+  absl::optional<absl::Time> last_invalidated_time_ GUARDED_BY(mu_);
   absl::Duration refresh_backoff_duration_ GUARDED_BY(mu_);
   std::vector<std::pair<WorkerThread::ThreadId, OneshotClosure*>>
       pending_tasks_ GUARDED_BY(mu_);

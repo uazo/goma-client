@@ -36,6 +36,7 @@ class OAuth2AccessTokenRefreshTask {
   virtual bool ShouldRefresh() const = 0;
   virtual void RunAfterRefresh(WorkerThread::ThreadId thread_id,
                                OneshotClosure* closure) = 0;
+  virtual void Invalidate() = 0;
   virtual void Shutdown() = 0;
   virtual void Wait() = 0;
  private:
