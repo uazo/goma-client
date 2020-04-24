@@ -4269,9 +4269,6 @@ void CompileTask::FinishSubProcess() {
       result->exit_status() != subproc->terminated().status())
     stats_->set_goma_error(true);
   result->set_exit_status(subproc->terminated().status());
-  if (result->exit_status() == 0) {
-    resp_->clear_error_message();
-  }
   if (subproc->terminated().has_term_signal()) {
     std::ostringstream ss;
     ss << "child process exited unexpectedly with signal."

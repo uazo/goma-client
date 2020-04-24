@@ -166,16 +166,6 @@ bool FileServiceClient::GetFileBlobs(const std::vector<std::string>& hash_keys,
   return true;
 }
 
-bool FileServiceClient::WriteFileBlob(const std::string& filename,
-                                      int mode,
-                                      const FileBlob& blob) {
-  VLOG(1) << "WriteFileBlob " << filename;
-  std::unique_ptr<FileDataOutput> output =
-      FileDataOutput::NewFileOutput(filename, mode);
-  bool r = OutputFileBlob(blob, output.get());
-  return r;
-}
-
 bool FileServiceClient::OutputFileBlob(const FileBlob& blob,
                                        FileDataOutput* output) {
   if (!output->IsValid()) {

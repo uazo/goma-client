@@ -91,12 +91,6 @@ class FileServiceClient {
   bool GetFileBlobs(const std::vector<std::string>& hash_keys,
                     std::vector<FileBlob*>* blobs);
 
-  // Writes |blob| to |filename|.
-  // convenient helper for OutputFileBlob().
-  bool WriteFileBlob(const std::string& filename,
-                     int mode,
-                     const FileBlob& blob);
-
   // OutputFileBlob outputs blob into output.
   // It doesn't take ownership of output.
   // If the blob_type is FILE_META, it will also fetch file chunks in

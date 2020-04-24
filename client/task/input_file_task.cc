@@ -105,8 +105,13 @@ void InputFileTask::Run(CompileTask* task, OneshotClosure* closure) {
   }
 
   if (need_to_upload_content(hash_key)) {
-    if (need_hash_only_ || file_stat_.size > kLargeFileThreshold) {
+    if (need_hash_only_ ||
+        (missed_content_ && file_stat_.size > kLargeFileThreshold)) {
       // upload in side channel.
+      // uploading large file in side channel has lots of penalty
+      // 12m (first time) / 7m (second time) for 1.2GB
+      // upload large file in side channel only if server reports it's missing.
+      // http://b/154783184
       LOG(INFO) << task->trace_id() << "(" << num_tasks() << " tasks)"
                 << " upload:" << filename_ << " size:" << file_stat_.size
                 << " reason:" << upload_reason(hash_key);
