@@ -8,7 +8,7 @@ syntax = "proto2";
 
 package devtools_goma;
 
-// NEXT ID TO USE: 95
+// NEXT ID TO USE: 96
 message ExecLog {
   enum AuthenticationType {
     NONE = 0;
@@ -45,6 +45,7 @@ message ExecLog {
   reserved 81;  // deprecated: use_case
   optional string build_id = 91;
   optional string service_account_id = 94;
+  optional string oauth2_email = 95;
 
   optional string compiler_proxy_user_agent = 51;
 

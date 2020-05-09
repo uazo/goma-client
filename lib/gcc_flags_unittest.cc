@@ -56,7 +56,7 @@ class GCCFlagsTest : public testing::Test {
     ASSERT_TRUE(file::CreateDir(tmp_dir_, file::CreationMode(0777)).ok());
   }
   void TearDown() override {
-    util::Status status = file::RecursivelyDelete(tmp_dir_, file::Defaults());
+    auto status = file::RecursivelyDelete(tmp_dir_, file::Defaults());
     if (!status.ok()) {
       LOG(ERROR) << "delete " << tmp_dir_;
     }

@@ -247,8 +247,24 @@ class CppParser {
       VLOG(1) << DebugStringPrefix() << " CompilerInfo is not set.";
       return Token(0);
     }
-    return ProcessHasCheckMacro("__has_extension", tokens,
-                                compiler_info_->has_extension());
+    Token token = ProcessHasCheckMacro("__has_extension", tokens,
+                                       compiler_info_->has_extension());
+    if (token == Token(0)) {
+      // https://github.com/llvm/llvm-project/blob/5c352e69e76a26e4eda075e20aa6a9bb7686042c/clang/docs/LanguageExtensions.rst#__has_feature-and-__has_extensio
+      // // __has_extension is superset of __has_feature.
+      // __has_feature is 1 if supported both by Clang and standard.
+      // __has_extension is 1 if supported by Clang
+
+      // ignore error here to avoid double reports by
+      // has_extension and has_feature.
+      // error is already reported when checking with has_extension.
+      ErrorObserver* obs = error_observer_;
+      error_observer_ = nullptr;
+      token = ProcessHasCheckMacro("__has_extension", tokens,
+                                   compiler_info_->has_feature());
+      error_observer_ = obs;
+    }
+    return token;
   }
   Token ProcessHasAttribute(const ArrayTokenList& tokens) {
     if (!compiler_info_) {

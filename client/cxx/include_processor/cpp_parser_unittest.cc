@@ -201,7 +201,7 @@ TEST(CppParserTest, HasFeatureResultValue) {
       "#if __has_feature(warning) == 0\n"
       "# define FEATURE_WARNING_OK\n"
       "#endif\n"
-      "#if __has_extension(feature) == 0\n"
+      "#if __has_extension(feature) == 2\n"
       "# define EXTENSION_FEATURE_OK\n"
       "#endif\n"
       "#if __has_extension(extension) == 3\n"
@@ -521,7 +521,9 @@ TEST(CppParserTest, DontCrashWithEmptyTokenInCheckMacro) {
   for (int i = 0; i < kNumExpectedErrors; ++i) {
     std::string error_prefix(
         absl::StrCat("CppParser((string):", (i + 1) * 2, ") "));
-    EXPECT_TRUE(absl::StartsWith(err_observer.errors()[i], error_prefix));
+    EXPECT_TRUE(absl::StartsWith(err_observer.errors()[i], error_prefix))
+        << "error=" << err_observer.errors()[i]
+        << " expect prefix=" << error_prefix;
   }
 }
 

@@ -101,7 +101,14 @@ void InitCompileStatsForTask(const CompileService& service,
   if (service.CanSendUserInfo()) {
     stats->set_username(service.username());
     stats->set_nodename(service.nodename());
-    stats->set_service_account_id(service.service_account_id());
+    const std::string& service_account_id = service.service_account_id();
+    const std::string& oauth2_email = service.oauth2_email();
+    if (!service_account_id.empty()) {
+      stats->set_service_account_id(service_account_id);
+    }
+    if (!oauth2_email.empty()) {
+      stats->set_oauth2_email(oauth2_email);
+    }
   }
 
   if (req.requester_info().has_build_id()) {
@@ -170,6 +177,11 @@ void CompileService::SetCompileTaskHistorySize(
 void CompileService::SetServiceAccountId(std::string account) {
   AUTOLOCK(lock, &mu_);
   service_account_id_ = std::move(account);
+}
+
+void CompileService::SetOAuth2Email(std::string email) {
+  AUTO_EXCLUSIVE_LOCK(lock, &id_mu_);
+  oauth2_email_ = std::move(email);
 }
 
 void CompileService::SetCompilerProxyIdPrefix(const std::string& prefix) {

@@ -67,6 +67,9 @@ GOMA_DECLARE_string(VERIFY_COMMAND);
 GOMA_DECLARE_string(LOAD_AVERAGE_LIMIT);
 GOMA_DECLARE_int32(MAX_SLEEP_TIME);
 #endif
+#ifdef _WIN32
+GOMA_DECLARE_bool(GOMACC_ALLOW_GDI32DLL);
+#endif
 
 using devtools_goma::CompilerFlags;
 using devtools_goma::CompilerFlagsParser;
@@ -250,12 +253,6 @@ void VerifyIntermediateStageOutput(bool args0_is_argv0,
 }  // anonymous namespace
 
 int main(int argc, char* argv[], const char* envp[]) {
-#ifdef _WIN32
-  DLOG_IF(FATAL, GetModuleHandleW(L"gdi32.dll"))
-      << "Error: gdi32.dll found in the process. This will harm performance "
-         "and cause hangs. See b/115990434.";
-#endif
-
   CheckFlagNames(envp);
 
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -265,6 +262,16 @@ int main(int argc, char* argv[], const char* envp[]) {
 #ifndef _WIN32
   google::InstallFailureSignalHandler();
 #else
+  if (GetModuleHandleW(L"gdi32.dll")) {
+    LOG_IF(FATAL, !FLAGS_GOMACC_ALLOW_GDI32DLL)
+        << "Error: gdi32.dll found in the process. This will harm performance "
+           "and cause hangs. "
+           "See "
+           "https://chromium.googlesource.com/infra/goma/client/+/refs/heads/"
+           "master/doc/gomacc_gdi32.dll.md for more details.";
+    LOG(WARNING) << "Warning: gdi32.dll found in the process. "
+                    "This will harm performance and cause hangs.";
+  }
   WinsockHelper wsa;
 #endif
   FLAGS_TMP_DIR = devtools_goma::GetGomaTmpDir();

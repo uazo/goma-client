@@ -6,7 +6,8 @@
 
 namespace util {
 
-// TODO: consider to use google/protobuf/stubs/status if necessary.
+// TODO: use absl::Status
+// http://b/153698919 roll abseil
 class Status {
  public:
   explicit Status(bool ok) : ok_(ok) {}

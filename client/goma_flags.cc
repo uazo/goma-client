@@ -157,6 +157,12 @@ GOMA_DEFINE_int32(MAX_SLEEP_TIME, 60,
 // 30 seconds default timeout is mitigation for b/36493466, b/70640154.
 GOMA_DEFINE_int32(NAMEDPIPE_WAIT_TIMEOUT_MS, 30000,
                   "Timeout(in milliseconds) to wait in ConnectNamedpipe.");
+
+GOMA_DEFINE_bool(GOMACC_ALLOW_GDI32DLL,
+                 false,
+                 "Allow gdi32.dll in gomacc.exe."
+                 "https://chromium.googlesource.com/infra/goma/client/+/refs/"
+                 "heads/master/doc/gomacc_gdi32.dll.md");
 #endif
 
 GOMA_DEFINE_bool(GOMACC_ENABLE_CRASH_DUMP,

@@ -41,7 +41,7 @@ class JavacFlagsTest : public testing::Test {
   }
 
   void TearDown() override {
-    util::Status status = file::RecursivelyDelete(tmp_dir_, file::Defaults());
+    auto status = file::RecursivelyDelete(tmp_dir_, file::Defaults());
     if (!status.ok()) {
       LOG(ERROR) << "failed to delete: " << tmp_dir_;
     }
@@ -266,7 +266,7 @@ class JavaFlagsTest : public testing::Test {
   }
 
   void TearDown() override {
-    util::Status status = file::RecursivelyDelete(tmp_dir_, file::Defaults());
+    auto status = file::RecursivelyDelete(tmp_dir_, file::Defaults());
     if (!status.ok()) {
       LOG(ERROR) << "failed to delete: " << tmp_dir_;
     }

@@ -143,8 +143,15 @@ ScopedSocket SocketPool::NewSocket() {
           return ScopedSocket();
         }
         DCHECK(!socket_pool_.empty());
-        DCHECK_LT(socket_pool_.front().second.GetDuration(),
-                  kIdleSocketTimeout);
+        const auto duration = socket_pool_.front().second.GetDuration();
+        if (duration > kIdleSocketTimeout) {
+          // This is expected to have been deleted from pool in NewSocket, but
+          // some time has been elapsed, so duration might exceed
+          // kIdleSocketTimeout here.
+          // http://b/155220622
+          LOG(WARNING) << "socket id=" << socket_pool_.front().first
+                       << " long duration=" << duration;
+        }
         new_fd = socket_pool_.front().first;
         socket_pool_.pop_front();
         DCHECK_GE(new_fd, 0);

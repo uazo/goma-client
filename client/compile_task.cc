@@ -2694,7 +2694,7 @@ void CompileTask::FillCompilerInfoDone(
     // In this case, it found local compiler, but failed to get necessary
     // information, such as system include paths.
     // It would happen when multiple -arch options are used.
-    if (want_fallback_) {
+    if (!service_->fail_fast() && want_fallback_) {
       // Force to fallback mode to handle this case.
       should_fallback_ = true;
       service_->RecordForcedFallbackInSetup(
@@ -2709,7 +2709,7 @@ void CompileTask::FillCompilerInfoDone(
   if (compiler_info_state_.disabled()) {
     // In this case, it found local compiler, but not in server side
     // (by past compile task).
-    if (want_fallback_) {
+    if (!service_->fail_fast() && want_fallback_) {
       should_fallback_ = true;
       service_->RecordForcedFallbackInSetup(CompileService::kCompilerDisabled);
     }

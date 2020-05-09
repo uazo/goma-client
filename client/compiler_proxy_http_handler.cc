@@ -140,6 +140,7 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(std::string myname,
   absl::Duration network_error_margin;
   if (FLAGS_FAIL_FAST) {
     LOG(INFO) << "fail fast mode";
+    service_.SetFailFast(true);
     if (FLAGS_ALLOWED_NETWORK_ERROR_DURATION < 0) {
       FLAGS_ALLOWED_NETWORK_ERROR_DURATION = 60;
       network_error_margin = absl::Seconds(30);
@@ -494,13 +495,14 @@ void CompilerProxyHttpHandler::HandleHttpRequest(
 
       HttpClient* client = service_.http_rpc()->client();
       const HttpClient::Options& options = client->options();
+      std::string account = client->GetAccount();
+      LOG(INFO) << "OAuth2 account id:" << account;
       if (!options.gce_service_account.empty() ||
           !options.service_account_json_filename.empty() ||
           options.luci_context_auth.enabled()) {
-        std::string account = client->GetAccount();
-        LOG(INFO) << "service account id:" << account;
-        service_.SetServiceAccountId(std::move(account));
+        service_.SetServiceAccountId(account);
       }
+      service_.SetOAuth2Email(std::move(account));
     } else {
       std::string hash;
       ComputeDataHashKey(ss.str(), &hash);

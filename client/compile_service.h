@@ -103,7 +103,12 @@ class CompileService {
   const std::string& nodename() const { return nodename_; }
 
   const std::string& service_account_id() const { return service_account_id_; }
-  void SetServiceAccountId(std::string account);
+  void SetServiceAccountId(std::string account) LOCKS_EXCLUDED(id_mu_);
+  const std::string& oauth2_email() const LOCKS_EXCLUDED(id_mu_) {
+    AUTO_SHARED_LOCK(lock, &id_mu_);
+    return oauth2_email_;
+  }
+  void SetOAuth2Email(std::string email);
 
   absl::Time start_time() const { return start_time_; }
   const std::string& compiler_proxy_id_prefix() const {
@@ -246,6 +251,9 @@ class CompileService {
   bool should_fail_for_unsupported_compiler_flag() const {
     return should_fail_for_unsupported_compiler_flag_;
   }
+
+  void SetFailFast(bool f) { fail_fast_ = f; }
+  bool fail_fast() const { return fail_fast_; }
 
   void SetTmpDir(const std::string& tmp_dir) { tmp_dir_ = tmp_dir; }
   const std::string& tmp_dir() const { return tmp_dir_; }
@@ -437,6 +445,10 @@ class CompileService {
   mutable ReadWriteLock failed_inputs_mu_;
   absl::flat_hash_set<std::string> failed_inputs_ GUARDED_BY(failed_inputs_mu_);
 
+  // TODO: add thread annotations to others.
+  mutable ReadWriteLock id_mu_;
+  std::string oauth2_email_ GUARDED_BY(id_mu_);
+
   std::string username_;
   std::string nodename_;
   std::string service_account_id_;
@@ -499,6 +511,7 @@ class CompileService {
   absl::Duration local_run_delay_;
   bool store_local_run_output_ = false;
   bool should_fail_for_unsupported_compiler_flag_ = false;
+  bool fail_fast_ = false;
   std::string tmp_dir_;
 
   // key: "req_ver - resp_ver", value: count
