@@ -15,6 +15,7 @@ You need to do the following once you start using Goma.
 * A x86-64 machine with at least 8GB of RAM.
 * You must have python 2.7 or later installed already.
 * You must have [depot\_tools](https://chromium.googlesource.com/chromium/src/+/master/docs/linux/build_instructions.md#install) installed already.
+  Please make sure your `PATH` environment variable has `depot_tools` path.
 
 Most development is done on Ubuntu (currently 16.04, Xenial Xerus).
 It might work on other distros, but they are mostly unsupported.
@@ -58,14 +59,13 @@ Note: `goma_ctl` understands `https_proxy` environment variable.
 
 ```shell
 $ cd ${chromium_src}
-$ gn gen out/Default \
-  --args="use_goma=true goma_dir=${depot_tools_dir}/.cipd_bin'
+$ gn gen out/Default --args="use_goma=true"
 ```
-Or, enable Goma by setting the GN arg `use_goma=true` and
-`goma_dir=${depot_tools_dir}/.cipd_bin`
 
-TODO: change gn default from `goma_dir=~/goma` to
-`goma_dir=${depot_tools_dir}/.cipd_bin`
+Or, execute `gn args out/Default` and add followings:
+```
+use_goma=true
+```
 
 Then, build chromium using Goma.
 
@@ -92,11 +92,11 @@ $ goma_ctl update_hook
 
 # Known issues
 
-## compiler_proxy takes CPU after builds
+## `compiler_proxy` takes CPU after builds
 
-compiler_proxy might take unnecessary CPU after build finished.
+`compiler_proxy` might take unnecessary CPU after build finished.
 
-It's ok to restart compiler_proxy when it happens.
+It's ok to restart `compiler_proxy` when it happens.
 
 ```shell
 $ goma_ctl restart
@@ -128,9 +128,8 @@ $ goma_ctl ensure_start
    $ goma_auth info
    ```
 
-1. Plese make sure you are registered as a Goma user.
-
-   TODO: write this.  We do not have available backend now.
+   This also shows your account is registered as a Goma user or not.
+   If not, please file an issue in crbug.com with `Infra>Goma` component.
 
 1. Please make sure you do not set `GOMA_*` environment by yourself.
 

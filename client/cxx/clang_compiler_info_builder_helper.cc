@@ -65,19 +65,16 @@ bool UpdateResourceInfo(
   return true;
 }
 
+bool IsCC1Line(absl::string_view line) {
+  return absl::StrContains(line, " -cc1 ") ||
+         absl::StrContains(line, " \"-cc1\" ");
+}
+
 bool ParseDriverArgs(absl::string_view display_output,
                      std::vector<std::string>* driver_args) {
   for (auto&& line : absl::StrSplit(display_output, absl::ByAnyChar("\r\n"),
                                     absl::SkipEmpty())) {
-    if (!absl::StartsWith(line, " ")) {
-      continue;
-    }
-    // clang11 without -fno-integrated-cc1 will produce (in-process)
-    // before command line.
-    // We'll ignore any line starts with paren, since it won't be
-    // used as argv0, so considered as some kind of annotations like
-    // (in-proccess).
-    if (absl::StartsWith(line, " (")) {
+    if (!IsCC1Line(line)) {
       continue;
     }
 #ifdef _WIN32
@@ -226,6 +223,7 @@ std::string GccDisplayPredefinedMacros(
 
 }  // anonymous namespace
 
+// TODO: merge this in ParseResourceOutput ?
 /* static */
 bool ClangCompilerInfoBuilderHelper::GetResourceDir(
     const std::string& c_display_output,
@@ -327,19 +325,9 @@ ClangCompilerInfoBuilderHelper::ParseResourceOutput(
 
       continue;
     }
-    if (!absl::StartsWith(line, " ")) {
+    if (!IsCC1Line(line)) {
       continue;
     }
-
-    // clang11 without -fno-integrated-cc1 will produce (in-process)
-    // before command line.
-    // We'll ignore any line starts with paren, since it won't be
-    // used as argv0, so considered as some kind of annotations like
-    // (in-proccess).
-    if (absl::StartsWith(line, " (")) {
-      continue;
-    }
-
     // The first command should be the "cc1" command.
     // We do not need to read anything else.
     std::vector<std::string> argv;

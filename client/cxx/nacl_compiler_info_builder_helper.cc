@@ -25,11 +25,21 @@ void CollectClangDependentLibs(absl::string_view clang_dir,
 #ifdef __linux__
   const std::string lib_dir = file::JoinPath(clang_dir, "..", "lib");
   resource_paths->push_back(file::JoinPath(lib_dir, "libLLVM-3.7svn.so"));
-  resource_paths->push_back(file::JoinPath(lib_dir, "libc++.so.1"));
+  std::string libcxxso = file::JoinPath(lib_dir, "libc++.so.1");
+  // new nacl toolchain link c++ stdlib statically, so there is no libc++.so.1.
+  // http://b/156639786
+  if (access(libcxxso.c_str(), R_OK) == 0) {
+    resource_paths->push_back(std::move(libcxxso));
+  }
 #elif defined(__MACH__)
   const std::string lib_dir = file::JoinPath(clang_dir, "..", "lib");
   resource_paths->push_back(file::JoinPath(lib_dir, "libLLVM-3.7svn.dylib"));
-  resource_paths->push_back(file::JoinPath(lib_dir, "libc++.1.dylib"));
+  std::string libcxxdylib = file::JoinPath(lib_dir, "libc++.1.dylib");
+  // new nacl toolchain link c++ stdlib statically, so there is no
+  // libc++.1.dylib. http://b/156639786
+  if (access(libcxxdylib.c_str(), R_OK) == 0) {
+    resource_paths->push_back(std::move(libcxxdylib));
+  }
 #elif defined(_WIN32)
   resource_paths->push_back(file::JoinPath(clang_dir, "LLVM-3.7svn.dll"));
   resource_paths->push_back(file::JoinPath(clang_dir, "libstdc++-6.dll"));

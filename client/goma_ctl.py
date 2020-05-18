@@ -2557,7 +2557,10 @@ class GomaEnvWin(GomaEnv):
         args.append('/F')
       for pid in pids:
         args.extend(['/PID', pid])
-      subprocess.check_call(['taskkill'] + args)
+      try:
+        subprocess.check_call(['taskkill'] + args)
+      except subprocess.CalledProcessError as e:
+        print('Failed to execute taskkill: %s' % e)
 
   def WarnNonProtectedFile(self, protocol):
     # TODO: warn for Win.
