@@ -3,8 +3,8 @@
 *Goma* is a distributed compiler service for open-source project such as
 Chromium and Android. It's some kind of replacement of distcc+ccache.
 
-NOTE: currently the Goma backend is not available for non googlers.
-We're working so that chromium developers can use it. Stay tuned.
+NOTE: For non-Googler usage, please see [Goma for Chromium
+Contributors](https://chromium.googlesource.com/infra/goma/client/+/refs/heads/master/doc/early-access-guide.md)
 
 [TOC]
 
