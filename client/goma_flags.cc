@@ -542,6 +542,13 @@ GOMA_DEFINE_int32(WATCHDOG_TIMER, 4 * 60 * 60,
 GOMA_DEFINE_int32(LOG_CLEAN_INTERVAL, 24 * 60 * 60,
                   "Interval seconds to clean old logs.");
 
+GOMA_DEFINE_int32(CHECK_LONG_ACTIVE_TASKS_INTERVAL,
+                  60,
+                  "Interval seconds to check long active tasks.");
+GOMA_DEFINE_int32(CHECK_LONG_ACTIVE_TASKS_THRESHOLD,
+                  10 * 60,
+                  "Threshold seconds to record as long active tasks.");
+
 GOMA_DEFINE_int32(MEMORY_TRACK_INTERVAL, 60,
                   "Interval seconds to track compiler_proxy memory. "
                   "Periodical memory tracking is disabled if this value is not "

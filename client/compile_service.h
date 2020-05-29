@@ -159,6 +159,11 @@ class CompileService {
     watchdog_->Start(server, count);
   }
 
+  void CheckLongActiveTasks();
+  void RunCheckLongActiveTasks();
+  void StartCheckLongActiveTasks(absl::Duration interval,
+                                 absl::Duration threshold);
+
   void SetNeedToSendContent(bool need_to_send_content) {
     need_to_send_content_ = need_to_send_content;
   }
@@ -584,6 +589,9 @@ class CompileService {
   int max_compiler_disabled_tasks_ = -1;
 
   rbe::StatsManager rbe_stats_mgr_;
+
+  absl::optional<PeriodicClosureId> check_long_active_tasks_closure_id_;
+  absl::Duration long_active_task_threshold_;
 
   DISALLOW_COPY_AND_ASSIGN(CompileService);
 };

@@ -2,7 +2,7 @@
 
 vars = {
      "chromium_git": "https://chromium.googlesource.com",
-     "clang_revision": "a0ee3ce7cc139e67e7ec156e91e8ba2fb61ebbfb",
+     "clang_revision": "8b9091fe8fc8e919e99b014907b264b2d81f241b",
 }
 
 deps = {
@@ -43,7 +43,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@78b3337a10a7f7b3495b6cb8140a74e265290898",
+     "https://boringssl.googlesource.com/boringssl@9701e84eff26d0110d21f024debbab88d97e9c81",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -135,6 +135,16 @@ deps = {
          ],
          # Used on Linux only.
          'condition': 'checkout_linux',
+         'dep_type': 'cipd',
+     },
+     # Go toolchain.
+     'client/third_party/go': {
+         'packages': [
+             {
+                 'package': 'infra/3pp/tools/go/${{platform}}',
+                 'version': 'version:1.14.3',
+             },
+         ],
          'dep_type': 'cipd',
      },
 }

@@ -100,6 +100,11 @@ def CheckChangeOnUpload(input_api, output_api):
       return False
     return source_file_filter(x)
 
+  def long_line_filter(x):
+    if x.LocalPath().endswith(".go"):
+      return False
+    return source_file_filter(x)
+
   results = []
   results += input_api.canned_checks.CheckChangeHasDescription(
       input_api, output_api)
@@ -114,7 +119,7 @@ def CheckChangeOnUpload(input_api, output_api):
   results += input_api.canned_checks.CheckChangeHasNoStrayWhitespace(
       input_api, output_api)
   results += input_api.canned_checks.CheckLongLines(
-      input_api, output_api, 80, source_file_filter=source_file_filter)
+      input_api, output_api, 80, source_file_filter=long_line_filter)
   results += input_api.canned_checks.CheckLicense(
       input_api,
       output_api,

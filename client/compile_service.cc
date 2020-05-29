@@ -253,6 +253,37 @@ void CompileService::SetWatchdog(std::unique_ptr<Watchdog> watchdog,
   watchdog_->SetTarget(this, goma_ipc_env);
 }
 
+void CompileService::CheckLongActiveTasks() {
+  AUTOLOCK(lock, &mu_);
+  for (const auto& task : active_tasks_) {
+    absl::Duration elapsed_time = task->ElapsedTime();
+    if (elapsed_time > long_active_task_threshold_) {
+      LOG(INFO) << "long active task: " << task->trace_id()
+                << " state=" << task->state() << " abort=" << task->abort()
+                << " elapsed_time=" << elapsed_time
+                << " stats=" << task->stats().DebugString();
+    }
+  }
+}
+
+void CompileService::RunCheckLongActiveTasks() {
+  // Switch from alarm worker to normal worker.
+  // The alarm worker invokes a task with IMMEDIATE priority (highest).
+  // However, we do not need to run CheckLongActiveTasks with such high
+  // priority.
+  wm_->RunClosure(FROM_HERE,
+                  NewCallback(this, &CompileService::CheckLongActiveTasks),
+                  WorkerThread::PRIORITY_LOW);
+}
+
+void CompileService::StartCheckLongActiveTasks(absl::Duration interval,
+                                               absl::Duration threshold) {
+  check_long_active_tasks_closure_id_ = wm_->RegisterPeriodicClosure(
+      FROM_HERE, interval,
+      NewPermanentCallback(this, &CompileService::RunCheckLongActiveTasks));
+  long_active_task_threshold_ = threshold;
+}
+
 void CompileService::Exec(
     RpcController* rpc,
     const ExecReq& req, ExecResp* resp,
@@ -453,8 +484,13 @@ void CompileService::Quit() {
   if (auto_updater_) {
     auto_updater_->Stop();
   }
-  if (log_service_client_.get())
+  if (log_service_client_.get()) {
     log_service_client_->Flush();
+  }
+  if (check_long_active_tasks_closure_id_.has_value()) {
+    wm_->UnregisterPeriodicClosure(*check_long_active_tasks_closure_id_);
+    check_long_active_tasks_closure_id_.reset();
+  }
 #ifndef GLOG_NO_ABBREVIATED_SEVERITIES
   google::FlushLogFiles(google::INFO);
 #else

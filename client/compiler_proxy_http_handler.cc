@@ -326,6 +326,14 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(std::string myname,
   } else {
     LOG(INFO) << "memory tracker disabled";
   }
+  if (FLAGS_CHECK_LONG_ACTIVE_TASKS_INTERVAL > 0 &&
+      FLAGS_CHECK_LONG_ACTIVE_TASKS_THRESHOLD > 0) {
+    service_.StartCheckLongActiveTasks(
+        absl::Seconds(FLAGS_CHECK_LONG_ACTIVE_TASKS_INTERVAL),
+        absl::Seconds(FLAGS_CHECK_LONG_ACTIVE_TASKS_THRESHOLD));
+  } else {
+    LOG(INFO) << "check long active tasks disabled";
+  }
 
   GCCCompilerTypeSpecific::SetEnableGchHack(FLAGS_ENABLE_GCH_HACK);
   GCCCompilerTypeSpecific::SetEnableRemoteLink(FLAGS_ENABLE_REMOTE_LINK);

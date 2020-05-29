@@ -40,7 +40,15 @@ def PredefinedMacros():
   print('#define dummy')
 
 def HandleFeatures(argv):
-  with open(argv[len(argv) - 1]) as f:
+  source = None
+  for candidate in argv[1:]:
+    # To handle "/dev/null", we cannot use os.path.isfile.
+    if os.path.exists(candidate):
+      source = candidate
+      break
+  else:
+    raise Exception('No file found in argv: %s' % argv)
+  with open(source) as f:
     prev_num = ''
     for line in f.readlines():
       matched = FEATURE_CHECK_PATTERN.match(line)

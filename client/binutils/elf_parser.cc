@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_split.h"
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
 #include "lib/path_util.h"
@@ -109,10 +110,16 @@ class ElfParserImpl : public ElfParser {
     if (!ReadDynamicNeeded(needed))
       return false;
 
-    ReadStringEntryInDynamic(DT_RUNPATH, rpath);
+    std::vector<std::string> rpath_entries;
+    ReadStringEntryInDynamic(DT_RUNPATH, &rpath_entries);
     // A loader checks DT_RPATH if and only if there are no DT_RUNPATH.
-    if (rpath->empty()) {
-      ReadStringEntryInDynamic(DT_RPATH, rpath);
+    if (rpath_entries.empty()) {
+      ReadStringEntryInDynamic(DT_RPATH, &rpath_entries);
+    }
+    for (const auto& entry : rpath_entries) {
+      for (const auto& path : absl::StrSplit(entry, ':')) {
+        rpath->push_back(std::string(path));
+      }
     }
     return true;
   }

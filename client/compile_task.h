@@ -136,6 +136,8 @@ class CompileTask {
     deref_cleanup_handler_ = handler;
   }
 
+  absl::Duration ElapsedTime() const { return handler_timer_.GetDuration(); }
+
  private:
   FRIEND_TEST(CompileTaskTest, DumpToJsonWithUnsuccessfulStart);
   FRIEND_TEST(CompileTaskTest, DumpToJsonWithValidCallToServer);

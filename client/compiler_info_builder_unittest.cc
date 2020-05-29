@@ -74,16 +74,23 @@ TEST_F(CompilerInfoBuilderTest, DependsOnCwd) {
   }
 }
 
+// FillFromCompilerOutputsShouldUseProperPath is a test to detect misuse
+// of a real compiler path.  The real compiler should always return non-zero
+// exit status, and failed_at will be non-zero.
+//
+// Goma uses a signature (SHA256 of a compiler binary, version, dumpmachine)
+// to dispatch a compiler in backend.  When a wrapper is used, SHA256 of
+// the wrapper won't usually change and we use SHA256 of a real compiler
+// to calculate SHA256.  However, a wrapper in simple chrome inject a
+// loader to make a compiler run in incompatible libc environment,
+// we should not execute the real compiler directly. (See b/63874437)
+//
+// Note: This test gets clang real path, which Windows does not do.
+#ifndef _WIN32
 TEST_F(CompilerInfoBuilderTest, FillFromCompilerOutputsShouldUseProperPath) {
   std::vector<std::string> envs;
-#ifdef _WIN32
-  const std::string clang = file::JoinPath(TestDir(), "clang.bat");
-  InstallReadCommandOutputFunc(ReadCommandOutputByRedirector);
-  envs.emplace_back("PATHEXT=" + GetEnv("PATHEXT").value_or(""));
-#else
   const std::string clang = file::JoinPath(TestDir(), "clang");
   InstallReadCommandOutputFunc(ReadCommandOutputByPopen);
-#endif
   std::vector<std::string> args = {
       clang,
   };
@@ -94,7 +101,9 @@ TEST_F(CompilerInfoBuilderTest, FillFromCompilerOutputsShouldUseProperPath) {
           ->BuildCompilerInfoData(*flags, clang, envs));
   EXPECT_TRUE(data.get());
   EXPECT_EQ(0, data->failed_at());
+  EXPECT_EQ("clang.dontexec", file::Basename(data->real_compiler_path()));
 }
+#endif  // !_WIN32
 
 TEST_F(CompilerInfoBuilderTest, DependsOnCwdWithResource) {
   TmpdirUtil tmpdir("is_cwd_relative");

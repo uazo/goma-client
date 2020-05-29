@@ -7,6 +7,7 @@ chromium_build
 depot_tools
 gflags/src
 glog
+go
 gtest
 jdk
 jinja2

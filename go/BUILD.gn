@@ -1,0 +1,30 @@
+# Copyright 2020 The Goma Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+group("go") {
+  deps = [
+    ":build_http_proxy",
+  ]
+}
+
+action("build_http_proxy") {
+  script = "build_http_proxy.py"
+  if (os == "win") {
+    ext = ".exe"
+  } else {
+    ext = ""
+  }
+  inputs = [
+    "//third_party/go/bin/go" + ext,
+    "proxy/proxy.go",
+  ]
+  outputs = [
+    "$root_out_dir/http_proxy" + ext,
+  ]
+  args = [
+           "--cache-dir",
+           rebase_path("$root_out_dir/gocache"),
+           "--output",
+         ] + rebase_path(outputs)
+}
+# TODO: test for http_proxy

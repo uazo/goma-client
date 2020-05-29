@@ -7,6 +7,7 @@ group("root") {
     "//base",
     "//benchmark",
     "//client",
+    "//go",
     "//lib",
   ]
 }
