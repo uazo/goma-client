@@ -2,6 +2,20 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+declare_args() {
+  # Define this to change default backend URL.
+  default_server_host = ""
+
+  # Define this to change default compiler_proxy port number.
+  default_compiler_proxy_port = -1
+
+  # Define this to change default compiler_proxy IPC filename.
+  default_compiler_proxy_socket_name = ""
+
+  # Define this to change default project suffic name.
+  default_project_suffix = ""
+}
+
 config("debug") {
   defines = [ "_DEBUG" ]
   if (os == "linux") {
@@ -82,5 +96,21 @@ config("feature_flags") {
   }
   if (is_msan) {
     defines += [ "MEMORY_SANITIZER" ]
+  }
+}
+
+config("defaults") {
+  defines = []
+  if (default_server_host != "") {
+    defines += [ "DEFAULT_SERVER_HOST=\"$default_server_host\"" ]
+  }
+  if (default_compiler_proxy_port != -1) {
+    defines += [ "DEFAULT_COMPILER_PROXY_PORT=$default_compiler_proxy_port" ]
+  }
+  if (default_compiler_proxy_socket_name != "") {
+    defines += [ "DEFAULT_COMPILER_PROXY_SOCKET_NAME=\"$default_compiler_proxy_socket_name\"" ]
+  }
+  if (default_project_suffix != "") {
+    defines += [ "DEFAULT_PROJECT_SUFFIX=\"$default_project_suffix\"" ]
   }
 }

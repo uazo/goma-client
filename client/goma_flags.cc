@@ -108,7 +108,11 @@ GOMA_DEFINE_bool(VERIFY_ASSEMBLER_CODE, false,
                  "Verify assembler code with local compiler.");
 GOMA_DEFINE_bool(VERIFY_PREPROCESS_CODE, false,
                  "Verify preprocessed code with local compiler.");
-GOMA_DEFINE_string(COMPILER_PROXY_SOCKET_NAME, "goma.ipc",
+#ifndef DEFAULT_COMPILER_PROXY_SOCKET_NAME
+#define DEFAULT_COMPILER_PROXY_SOCKET_NAME "goma.ipc"
+#endif
+GOMA_DEFINE_string(COMPILER_PROXY_SOCKET_NAME,
+                   DEFAULT_COMPILER_PROXY_SOCKET_NAME,
                    "The unix domain socket name of the compiler proxy. "
                    "On Windows, this is named pipe's name.");
 GOMA_DEFINE_int32(EXCLUSIVE_NUM_PROCS, 4,
@@ -183,7 +187,10 @@ GOMA_DEFINE_string(ASSERT_SETTINGS,
                    "",
                    "Assert settings name matches with this value, "
                    "if specified.");
+// Allow build time override of server host.
+#ifndef DEFAULT_SERVER_HOST
 #define DEFAULT_SERVER_HOST "goma.chromium.org"
+#endif
 GOMA_DEFINE_string(SERVER_HOST,
                    DEFAULT_SERVER_HOST,
                    "The hostname or IP address of goma server");
@@ -204,7 +211,10 @@ GOMA_DEFINE_string(COMPILER_PROXY_LISTEN_ADDR, "localhost",
                    "The address that compiler proxy listens for http."
                    "INADDR_LOOPBACK(127.0.0.1) for 'localhost'"
                    "INADDR_ANY for ''.");
-GOMA_DEFINE_int32(COMPILER_PROXY_PORT, 8088,
+#ifndef DEFAULT_COMPILER_PROXY_PORT
+#define DEFAULT_COMPILER_PROXY_PORT 8088
+#endif
+GOMA_DEFINE_int32(COMPILER_PROXY_PORT, DEFAULT_COMPILER_PROXY_PORT,
                   "The port of the compiler proxy.");
 
 GOMA_DEFINE_bool(COMPILER_PROXY_REUSE_CONNECTION, true,
@@ -679,3 +689,11 @@ GOMA_DEFINE_int32(FETCH_RETRY, 5,
 GOMA_DEFINE_string(
     DIR, "",
     "Not used by this program, but may be set by wrapper scripts.");
+
+#ifndef DEFAULT_PROJECT_SUFFIX
+#define DEFAULT_PROJECT_SUFFIX ""
+#endif
+GOMA_DEFINE_string(
+  PROJECT_SUFFIX, DEFAULT_PROJECT_SUFFIX,
+  "A suffix appended to some Goma exclusive paths to allow multiple goma "
+  "instances run in parallel");

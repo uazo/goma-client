@@ -52,8 +52,9 @@ class SpawnerWin : public Spawner {
   static void TearDown();
 
  private:
-  int RunRedirected(const std::string& command_line,
-                    std::vector<char>* env,
+  int RunRedirected(const std::string& abs_cmd,
+                    const std::string& command_line,
+                    const std::vector<char>& env,
                     const std::string& cwd,
                     const std::string& out_file,
                     const std::string& in_file);

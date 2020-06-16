@@ -21,10 +21,9 @@ def main():
   args = parser.parse_args()
 
   gopath = os.path.join(_TOP_DIR, 'third_party', 'go', 'bin', 'go')
-  env = {
-      'CGO_ENABLED': '0',
-      'GOCACHE': args.cache_dir,
-  }
+  env = os.environ.copy()
+  env['CGO_ENABLED'] = '0'
+  env['GOCACHE'] = args.cache_dir
   subprocess.check_call([
       gopath, 'build', '-o', args.output,
       os.path.join(_SCRIPT_DIR, 'proxy', 'proxy.go')

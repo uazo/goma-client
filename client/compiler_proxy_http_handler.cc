@@ -204,6 +204,18 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(std::string myname,
     }
     http_options.cookie = "GomaClient=" + cookie;
   }
+  if (FLAGS_CHECK_LONG_ACTIVE_TASKS_INTERVAL > 0 &&
+      FLAGS_CHECK_LONG_ACTIVE_TASKS_THRESHOLD > 0) {
+    http_options.check_long_active_tasks_interval =
+        absl::Seconds(FLAGS_CHECK_LONG_ACTIVE_TASKS_INTERVAL);
+    http_options.check_long_active_tasks_threshold =
+        absl::Seconds(FLAGS_CHECK_LONG_ACTIVE_TASKS_THRESHOLD);
+    service_.StartCheckLongActiveTasks(
+        absl::Seconds(FLAGS_CHECK_LONG_ACTIVE_TASKS_INTERVAL),
+        absl::Seconds(FLAGS_CHECK_LONG_ACTIVE_TASKS_THRESHOLD));
+  } else {
+    LOG(INFO) << "check for long active tasks is disabled";
+  }
   std::unique_ptr<HttpClient> client(
       new HttpClient(HttpClient::NewSocketFactoryFromOptions(http_options),
                      HttpClient::NewTLSEngineFactoryFromOptions(http_options),
@@ -325,14 +337,6 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(std::string myname,
         NewPermanentCallback(this, &CompilerProxyHttpHandler::RunTrackMemory));
   } else {
     LOG(INFO) << "memory tracker disabled";
-  }
-  if (FLAGS_CHECK_LONG_ACTIVE_TASKS_INTERVAL > 0 &&
-      FLAGS_CHECK_LONG_ACTIVE_TASKS_THRESHOLD > 0) {
-    service_.StartCheckLongActiveTasks(
-        absl::Seconds(FLAGS_CHECK_LONG_ACTIVE_TASKS_INTERVAL),
-        absl::Seconds(FLAGS_CHECK_LONG_ACTIVE_TASKS_THRESHOLD));
-  } else {
-    LOG(INFO) << "check long active tasks disabled";
   }
 
   GCCCompilerTypeSpecific::SetEnableGchHack(FLAGS_ENABLE_GCH_HACK);
@@ -831,6 +835,7 @@ void CompilerProxyHttpHandler::GetGlobalInfo(const HttpServerRequest& request,
       << ':' << kBuiltDirectoryString << kBr;
 
   *ss << "Built from changelist " << kBuiltRevisionString << kBr;
+  *ss << "Built from gn args " << kBuiltGNArgsString << kBr;
 #ifndef NDEBUG
   *ss << "WARNING: DEBUG BINARY -- Performance may suffer" << kBr;
 #endif

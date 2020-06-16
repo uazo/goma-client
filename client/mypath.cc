@@ -41,6 +41,7 @@
 #include "util.h"
 
 GOMA_DECLARE_string(CACHE_DIR);
+GOMA_DECLARE_string(PROJECT_SUFFIX);
 GOMA_DECLARE_string(TMP_DIR);
 
 namespace devtools_goma {
@@ -205,6 +206,9 @@ std::string GetGomaTmpDir() {
 #else
   std::string private_name(kGomaTmpDir);
 #endif
+  if (!FLAGS_PROJECT_SUFFIX.empty()) {
+    private_name.append("_" + FLAGS_PROJECT_SUFFIX);
+  }
   std::string private_tmpdir = file::JoinPath(tmpdir, private_name);
   return private_tmpdir;
 }

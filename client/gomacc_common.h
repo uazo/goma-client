@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/time/time.h"
 #include "basictypes.h"
 #include "goma_ipc.h"
 #include "scoped_fd.h"
@@ -42,6 +43,7 @@ class GomaClient {
   ~GomaClient();
   void OutputResp();
 
+  absl::Duration compiler_proxy_time() const;
   int retval() const;
   int id() const { return id_; }
   const IOChannel* chan() const { return ipc_chan_.get(); }

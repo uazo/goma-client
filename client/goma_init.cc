@@ -83,6 +83,7 @@ void InitLogging(const char* argv0) {
   LOG(INFO) << "public goma client";
 
   LOG(INFO) << "goma built revision " << kBuiltRevisionString;
+  LOG(INFO) << "goma built gn args " << kBuiltGNArgsString;
 #ifndef NDEBUG
   LOG(ERROR) << "WARNING: DEBUG BINARY -- Performance may suffer";
 #endif

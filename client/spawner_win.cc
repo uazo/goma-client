@@ -25,6 +25,7 @@
 #include "mypath.h"
 #include "options.h"
 #include "path.h"
+#include "path_util.h"
 
 namespace devtools_goma {
 
@@ -79,49 +80,12 @@ std::string EscapeCommandlineArg(const std::string& arg) {
 
 // Iter should be an iterator of string containers.
 template <typename Iter>
-std::string PrepareCommandLine(const char* cwd,
-                               const char* prog,
-                               Iter env_begin,
-                               Iter env_end,
-                               Iter argv_begin,
-                               Iter argv_end) {
-  // Check if we have PATH spec and/or PATHEXT spec.
-  static const size_t kPathLength = 5;
-  static const char* kPathStr = "PATH=";
-  static const size_t kPathExtLength = 8;
-  static const char* kPathExtStr = "PATHEXT=";
-
-  std::string path_spec;
-  std::string pathext_spec;
-  for (Iter i = env_begin; i != env_end; ++i) {
-    if (IsEnvVar(*i, kPathStr)) {
-      path_spec = i->substr(kPathLength);
-    }
-    if (IsEnvVar(*i, kPathExtStr)) {
-      pathext_spec = i->substr(kPathExtLength);
-    }
-  }
-
-  // TODO: remove this when |prog| become full path.
-  CHECK(!path_spec.empty()) << "PATH env. should be set.";
-  CHECK(!pathext_spec.empty()) << "PATHEXT env. should be set.";
+std::string PrepareCommandLine(Iter argv_begin, Iter argv_end) {
   std::string command_line;
-  if (!GetRealExecutablePath(nullptr, prog, cwd, path_spec, pathext_spec,
-                             &command_line, nullptr)) {
-    LOG(ERROR) << "Failed GetRealExecutablePath prog=" << prog << " cwd=" << cwd
-               << " path_spec=" << path_spec
-               << " pathext_spec=" << pathext_spec;
-    return std::string();
-  }
-
-  if (command_line[0] != '\"') {
-    command_line = EscapeCommandlineArg(command_line);
-  }
   for (Iter i = argv_begin; i != argv_end; ++i) {
-    // argv[0] should be prog.
-    if (i == argv_begin)
-      continue;
-    command_line.append(" ");
+    if (i != argv_begin) {
+      command_line.append(" ");
+    }
     command_line.append(EscapeCommandlineArg(*i));
   }
 
@@ -251,6 +215,7 @@ int SpawnerWin::Run(const std::string& cmd,
                     const std::vector<std::string>& envs,
                     const std::string& cwd) {
   DCHECK(!child_process_.valid());
+  const std::string abs_cmd = file::JoinPathRespectAbsolute(cwd, cmd);
 
   std::vector<std::string> environs;
   if (keep_env_) {
@@ -289,8 +254,7 @@ int SpawnerWin::Run(const std::string& cmd,
         << " stderr_filename_=" << stderr_filename_;
 
     const std::string command_line =
-        PrepareCommandLine(cwd.c_str(), cmd.c_str(), environs.cbegin(),
-                           environs.cend(), args.begin(), args.end());
+        PrepareCommandLine(args.cbegin(), args.cend());
     if (command_line.empty()) {
       LOG(ERROR) << "command line is empty."
                  << " cwd=" << cwd << " cmd=" << cmd;
@@ -298,7 +262,7 @@ int SpawnerWin::Run(const std::string& cmd,
     }
     std::vector<char> env;
     PrepareEnvBlock(environs.cbegin(), environs.cend(), &env);
-    return RunRedirected(command_line, &env, cwd, stdout_filename_,
+    return RunRedirected(abs_cmd, command_line, env, cwd, stdout_filename_,
                          stdin_filename_);
   }
   PROCESS_INFORMATION pi;
@@ -313,9 +277,7 @@ int SpawnerWin::Run(const std::string& cmd,
     create_flag |= DETACHED_PROCESS;
   }
 
-  std::string command_line =
-      PrepareCommandLine(cwd.c_str(), cmd.c_str(), environs.cbegin(),
-                         environs.cend(), args.begin(), args.end());
+  std::string command_line = PrepareCommandLine(args.cbegin(), args.cend());
   if (command_line.empty()) {
     return Spawner::kInvalidPid;
   }
@@ -324,12 +286,11 @@ int SpawnerWin::Run(const std::string& cmd,
 
   std::vector<char> envp;
   PrepareEnvBlock(environs.cbegin(), environs.cend(), &envp);
-  // If environment is empty, use parent process's environment.
-  LPVOID env_ptr = envp[0] ? &(envp[0]) : nullptr;
   const DWORD process_create_flag =
       create_flag | CREATE_SUSPENDED | CREATE_BREAKAWAY_FROM_JOB;
-  if (CreateProcessA(nullptr, &(command_line[0]), nullptr, nullptr, FALSE,
-                     process_create_flag, env_ptr, cwd.c_str(), &si, &pi)) {
+  if (CreateProcessA(abs_cmd.c_str(), &(command_line[0]), nullptr, nullptr,
+                     FALSE, process_create_flag, &(envp[0]), cwd.c_str(), &si,
+                     &pi)) {
     child_process_.reset(pi.hProcess);
     job_name_ = CreateJobName(pi.dwProcessId, command_line);
     VLOG(1) << "Job name:" << job_name_;
@@ -500,8 +461,9 @@ Spawner::ProcessStatus SpawnerWin::Wait(Spawner::WaitPolicy wait_policy) {
 }
 
 // TODO: make stderr stored to the specified file.
-int SpawnerWin::RunRedirected(const std::string& command_line,
-                              std::vector<char>* env,
+int SpawnerWin::RunRedirected(const std::string& abs_cmd,
+                              const std::string& command_line,
+                              const std::vector<char>& env,
                               const std::string& cwd,
                               const std::string& out_file,
                               const std::string& in_file) {
@@ -535,8 +497,8 @@ int SpawnerWin::RunRedirected(const std::string& command_line,
   if (!CreatePipe(stdout_read_tmp.ptr(), stdout_write.ptr(), &sa, 0)) {
     LOG_SYSRESULT(GetLastError());
     LOG(ERROR) << "Failed to create pipe for stdout. "
-               << " cmd: " << command_line
-               << " cwd: " << cwd;
+               << " abs_cmd=" << abs_cmd << " command_line=" << command_line
+               << " cwd=" << cwd;
     return kInvalidPid;
   }
 
@@ -545,8 +507,8 @@ int SpawnerWin::RunRedirected(const std::string& command_line,
       stderr_write.reset(ScopedFd::OpenNull());
       if (!stderr_write.valid()) {
         LOG(ERROR) << "Failed to open NUL."
-                   << " cmd: " << command_line
-                   << " cwd: " << cwd;
+                   << " abs_cmd=" << abs_cmd << " command_line=" << command_line
+                   << " cwd=" << cwd;
         return kInvalidPid;
       }
       break;
@@ -562,8 +524,8 @@ int SpawnerWin::RunRedirected(const std::string& command_line,
                            0, TRUE, DUPLICATE_SAME_ACCESS)) {
         LOG_SYSRESULT(GetLastError());
         LOG(ERROR) << "Failed to duplicate stderr handle."
-                   << " cmd: " << command_line
-                   << " cwd: " << cwd;
+                   << " abs_cmd=" << abs_cmd << " command_line=" << command_line
+                   << " cwd=" << cwd;
         return kInvalidPid;
       }
       break;
@@ -577,8 +539,8 @@ int SpawnerWin::RunRedirected(const std::string& command_line,
   if (!CreatePipe(stdin_read.ptr(), stdin_write_tmp.ptr(), &sa, 0)) {
     LOG_SYSRESULT(GetLastError());
     LOG(ERROR) << "Failed to create pipe for stdin. "
-               << " cmd: " << command_line
-               << " cwd: " << cwd;
+               << " abs_cmd=" << abs_cmd << " command_line=" << command_line
+               << " cwd=" << cwd;
     return kInvalidPid;
   }
 
@@ -587,8 +549,8 @@ int SpawnerWin::RunRedirected(const std::string& command_line,
                        0, FALSE, DUPLICATE_SAME_ACCESS)) {
     LOG_SYSRESULT(GetLastError());
     LOG(ERROR) << "Failed to duplicate stdout handle."
-               << " cmd: " << command_line
-               << " cwd: " << cwd;
+               << " abs_cmd=" << abs_cmd << " command_line=" << command_line
+               << " cwd=" << cwd;
     return kInvalidPid;
   }
 
@@ -597,8 +559,8 @@ int SpawnerWin::RunRedirected(const std::string& command_line,
                        0, FALSE, DUPLICATE_SAME_ACCESS)) {
     LOG_SYSRESULT(GetLastError());
     LOG(ERROR) << "Failed to duplicate stdin handle."
-               << " cmd: " << command_line
-               << " cwd: " << cwd;
+               << " abs_cmd=" << abs_cmd << " command_line=" << command_line
+               << " cwd=" << cwd;
     return kInvalidPid;
   }
 
@@ -619,27 +581,20 @@ int SpawnerWin::RunRedirected(const std::string& command_line,
   si.wShowWindow = SW_HIDE;
   si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
 
-  // If environment is empty, use parent process's environment.
-  LPVOID env_ptr = (*env)[0] ? &((*env)[0]) : nullptr;
-
-  // compiler_proxy's cwd and build's expected cwd are different. If the
-  // compiler path (in command_line) is relative, a compiler will be searched
-  // from compiler_proxy relative path, however, it should be build's expected
-  // cwd relative. So, we inject "cmd /c" to set cwd to build's expected one.
-  std::string cmd = "cmd /c " + command_line;
   // TODO: Code around here looks like Run().
   // Can we share some code?
   const DWORD process_create_flag =
       CREATE_NEW_CONSOLE | CREATE_SUSPENDED | CREATE_BREAKAWAY_FROM_JOB;
-  BOOL result = CreateProcessA(nullptr, &(cmd[0]), nullptr, nullptr, TRUE,
-                               process_create_flag,
-                               env_ptr, cwd.c_str(), &si, &pi);
+  BOOL result = CreateProcessA(
+      abs_cmd.c_str(), &(const_cast<std::string&>(command_line)[0]), nullptr,
+      nullptr, TRUE, process_create_flag,
+      &(const_cast<std::vector<char>&>(env)[0]), cwd.c_str(), &si, &pi);
 
   if (!result) {
     LOG_SYSRESULT(GetLastError());
     LOG(ERROR) << "Failed to create process."
-               << " cmd: " << command_line
-               << " cwd: " << cwd;
+               << " abs_cmd=" << abs_cmd << " command_line=" << command_line
+               << " cwd=" << cwd;
     return kInvalidPid;
   }
   // Child launched, close parent copy of pipe handles.

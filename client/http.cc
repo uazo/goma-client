@@ -271,7 +271,7 @@ class HttpClient::Task {
     if (status_->timeouts.empty()) {
       status_->timeouts.push_back(kDefaultTimeout);
     }
-    client_->IncNumActive();
+    client_->AddActiveTask(this);
     resp_->SetRequestPath(req_->request_path());
     resp_->SetTraceId(status_->trace_id);
   }
@@ -434,6 +434,10 @@ class HttpClient::Task {
         timeout, NewCallback(this, &HttpClient::Task::DoTimeout));
     timer_.Start();
   }
+
+  absl::Duration ElapsedTimeInStep() const { return timer_.GetDuration(); }
+  absl::Duration ElapsedTime() const { return total_timer_.GetDuration(); }
+  const Status* status() const { return status_; }
 
  private:
   enum AuthorizationStatus {
@@ -691,7 +695,7 @@ class HttpClient::Task {
     if (callback)
       callback->Run();
     client_->ReleaseDescriptor(d, close_state_);
-    client_->DecNumActive();
+    client_->DelActiveTask(this);
     delete this;
   }
 
@@ -719,6 +723,7 @@ class HttpClient::Task {
   const bool is_ping_;
 
   SimpleTimer timer_;
+  SimpleTimer total_timer_;
 
   // Callback that is called when RPC is received and has completed.
   OneshotClosure* callback_;
@@ -868,6 +873,12 @@ HttpClient::HttpClient(std::unique_ptr<SocketFactory> socket_factory,
   traffic_history_closure_id_ = wm_->RegisterPeriodicClosure(
       FROM_HERE, absl::Seconds(1), NewPermanentCallback(
           this, &HttpClient::UpdateTrafficHistory));
+  if (options_.check_long_active_tasks_interval.has_value() &&
+      options_.check_long_active_tasks_threshold.has_value()) {
+    check_long_active_tasks_closure_id_ = wm_->RegisterPeriodicClosure(
+        FROM_HERE, *options_.check_long_active_tasks_interval,
+        NewPermanentCallback(this, &HttpClient::RunCheckLongActiveTasks));
+  }
 
   if (options_.use_ssl) {
     DCHECK(tls_engine_factory_.get() != nullptr);
@@ -896,6 +907,10 @@ HttpClient::~HttpClient() {
   if (oauth_refresh_task_.get()) {
     oauth_refresh_task_->Shutdown();
     oauth_refresh_task_->Wait();
+  }
+  if (check_long_active_tasks_closure_id_ != kInvalidPeriodicClosureId) {
+    wm_->UnregisterPeriodicClosure(check_long_active_tasks_closure_id_);
+    check_long_active_tasks_closure_id_ = kInvalidPeriodicClosureId;
   }
   if (traffic_history_closure_id_ != kInvalidPeriodicClosureId) {
     wm_->UnregisterPeriodicClosure(traffic_history_closure_id_);
@@ -1501,15 +1516,35 @@ absl::Duration HttpClient::TryStart() {
 
 void HttpClient::IncNumActive() {
   AUTOLOCK(lock, &mu_);
+  IncNumActiveUnlocked();
+}
+
+void HttpClient::IncNumActiveUnlocked() {
   ++num_active_;
 }
 
 void HttpClient::DecNumActive() {
   AUTOLOCK(lock, &mu_);
+  DecNumActiveUnlocked();
+}
+
+void HttpClient::DecNumActiveUnlocked() {
   --num_active_;
   DCHECK_GE(num_active_, 0);
   if (num_active_ == 0)
     cond_.Signal();
+}
+
+void HttpClient::AddActiveTask(const HttpClient::Task* const task) {
+  AUTOLOCK(lock, &mu_);
+  active_tasks_.insert(task);
+  IncNumActiveUnlocked();
+}
+
+void HttpClient::DelActiveTask(const HttpClient::Task* const task) {
+  AUTOLOCK(lock, &mu_);
+  active_tasks_.erase(task);
+  DecNumActiveUnlocked();
 }
 
 void HttpClient::WaitNoActive() {
@@ -1615,6 +1650,29 @@ void HttpClient::UpdateTrafficHistory() {
   traffic_history_.push_back(TrafficStat());
   if (traffic_history_.size() >= kMaxTrafficHistory) {
     traffic_history_.pop_front();
+  }
+}
+
+void HttpClient::RunCheckLongActiveTasks() {
+  // Switch from alarm worker to normal worker.
+  // The alarm worker invokes a task with IMMEDIATE priority (highest).
+  // However, we do not need to run CheckLongActiveTasks with such high
+  // priority.
+  wm_->RunClosure(FROM_HERE,
+                  NewCallback(this, &HttpClient::CheckLongActiveTasks),
+                  WorkerThread::PRIORITY_LOW);
+}
+
+void HttpClient::CheckLongActiveTasks() {
+  AUTOLOCK(lock, &mu_);
+  for (const auto* const task : active_tasks_) {
+    absl::Duration elapsed_time = task->ElapsedTime();
+    if (elapsed_time > *options_.check_long_active_tasks_threshold) {
+      LOG(INFO) << "long active task: " << task->status()->trace_id
+                << " elapsed_time=" << elapsed_time
+                << " elapsed_time_in_step=" << task->ElapsedTimeInStep() << " "
+                << task->status()->DebugString();
+    }
   }
 }
 

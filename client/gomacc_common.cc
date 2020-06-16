@@ -517,6 +517,11 @@ void GomaClient::OutputResp() {
   OutputExecResp(exec_resp_.get());
 }
 
+absl::Duration GomaClient::compiler_proxy_time() const {
+  CHECK(exec_resp_.get());
+  return absl::Milliseconds(exec_resp_->compiler_proxy_time());
+}
+
 int GomaClient::retval() const {
   CHECK(exec_resp_.get());
   return exec_resp_->result().exit_status();

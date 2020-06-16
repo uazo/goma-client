@@ -75,6 +75,8 @@ class HttpClient {
     absl::Duration socket_read_timeout = absl::Seconds(1);
     absl::Duration min_retry_backoff = absl::Milliseconds(500);
     absl::Duration max_retry_backoff = absl::Seconds(5);
+    absl::optional<absl::Duration> check_long_active_tasks_interval;
+    absl::optional<absl::Duration> check_long_active_tasks_threshold;
 
     OAuth2Config oauth2_config;
     std::string gce_service_account;
@@ -602,6 +604,13 @@ class HttpClient {
   void IncNumPending() LOCKS_EXCLUDED(mu_);
   void DecNumPending() LOCKS_EXCLUDED(mu_);
 
+  void AddActiveTask(const Task* const task) LOCKS_EXCLUDED(mu_);
+  void DelActiveTask(const Task* const task) LOCKS_EXCLUDED(mu_);
+  void IncNumActiveUnlocked() EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void DecNumActiveUnlocked() EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void RunCheckLongActiveTasks() LOCKS_EXCLUDED(mu_);
+  void CheckLongActiveTasks() LOCKS_EXCLUDED(mu_);
+
   // Returns randomized duration to wait in the queue on error.
   absl::Duration GetRandomizedBackoff() const;
 
@@ -674,6 +683,8 @@ class HttpClient {
   std::map<int, int> num_http_status_code_ GUARDED_BY(mu_);
   TrafficHistory traffic_history_ GUARDED_BY(mu_);
   PeriodicClosureId traffic_history_closure_id_ GUARDED_BY(mu_);
+  PeriodicClosureId check_long_active_tasks_closure_id_ GUARDED_BY(mu_) =
+      kInvalidPeriodicClosureId;
   // TODO: Either wrap |retry_backoff_| inside ThreadSafeVariable
   // or read it under |mu_| in `GetRandomizedBackoff()`.
   absl::Duration retry_backoff_;
@@ -685,6 +696,8 @@ class HttpClient {
 
   int num_network_error_ GUARDED_BY(mu_);
   int num_network_recovered_ GUARDED_BY(mu_);
+
+  absl::flat_hash_set<const Task*> active_tasks_ GUARDED_BY(mu_);
 
   FRIEND_TEST(NetworkErrorStatusTest, Basic);
   DISALLOW_COPY_AND_ASSIGN(HttpClient);

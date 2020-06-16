@@ -14,6 +14,7 @@ MSVC_PUSH_DISABLE_WARNING_FOR_PROTO()
 MSVC_POP_WARNING()
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
+#include "mypath.h"
 #include "util.h"
 
 #include <glog/logging.h>
@@ -37,9 +38,6 @@ TEST(SpawnerWin, SpawnerAndLogToFile) {
   std::vector<std::string> envs;
   envs.push_back("TEST_STRING1=goma");
   envs.push_back("TEST_STRING2=win");
-  // TODO: remove these when spawn_win do not find command.
-  envs.push_back("PATH=" + devtools_goma::GetEnv("PATH").value_or(""));
-  envs.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
 
   const std::string stdout_filename("dump_env.stdout.log");
   const std::string stderr_filename("dump_env.stderr.log");
@@ -65,26 +63,17 @@ TEST(SpawnerWin, SpawnerAndLogToFile) {
   ASSERT_TRUE(fp != nullptr);
   char temp[PATH_MAX];
   fgets(temp, PATH_MAX, fp);  // first line is the exe name
-  EXPECT_STREQ(".\\dump_env.exe\n", temp);
+  EXPECT_STREQ("dump_env.exe\n", temp);
 
   fgets(temp, PATH_MAX, fp);
   EXPECT_STREQ("arg1\n", temp);
   fgets(temp, PATH_MAX, fp);
   EXPECT_STREQ("arg2\n", temp);
 
-  // These envs are come from "cmd /c" prepending
   fgets(temp, PATH_MAX, fp);
-  EXPECT_TRUE(absl::StartsWith(temp, "COMSPEC="));
-  EXPECT_EQ("comspec=c:\\windows\\system32\\cmd.exe\n",
-            absl::AsciiStrToLower(temp));
-
+  EXPECT_STRCASEEQ("TEST_STRING1=goma\n", temp);
   fgets(temp, PATH_MAX, fp);
-  EXPECT_STREQ("PROMPT=$P$G\n", temp);
-
-  fgets(temp, PATH_MAX, fp);
-  EXPECT_STREQ("TEST_STRING1=goma\n", temp);
-  fgets(temp, PATH_MAX, fp);
-  EXPECT_STREQ("TEST_STRING2=win\n", temp);
+  EXPECT_STRCASEEQ("TEST_STRING2=win\n", temp);
 
   fclose(fp);
 }
@@ -102,9 +91,6 @@ TEST(SpawnerWin, SpawnerAndLogToString) {
   argv.push_back("arg2");
   env.push_back("TEST_STRING1=goma");
   env.push_back("TEST_STRING2=win");
-  // TODO: remove these when spawn_win do not find command.
-  env.push_back("PATH=" + devtools_goma::GetEnv("PATH").value_or(""));
-  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
 
   // priority not supported yet
   // req.set_priority(devtools_goma::SubProcessReq_Priority_HIGH_PRIORITY);
@@ -121,7 +107,7 @@ TEST(SpawnerWin, SpawnerAndLogToString) {
   char* next_token;
   char* token = strtok_s(&output[0], "\r\n", &next_token);
   EXPECT_TRUE(token != nullptr);
-  EXPECT_STREQ(".\\dump_env.exe", token);
+  EXPECT_STREQ("dump_env.exe", token);
   token = strtok_s(nullptr, "\r\n", &next_token);
   EXPECT_TRUE(token != nullptr);
   EXPECT_STREQ("arg1", token);
@@ -129,23 +115,12 @@ TEST(SpawnerWin, SpawnerAndLogToString) {
   EXPECT_TRUE(token != nullptr);
   EXPECT_STREQ("arg2", token);
 
-  // These envs are come from "cmd /c" prepending
   token = strtok_s(nullptr, "\r\n", &next_token);
   EXPECT_TRUE(token != nullptr);
-  EXPECT_TRUE(absl::StartsWith(token, "COMSPEC="));
-  EXPECT_EQ("comspec=c:\\windows\\system32\\cmd.exe",
-            absl::AsciiStrToLower(token));
-
+  EXPECT_STRCASEEQ("TEST_STRING1=goma", token);
   token = strtok_s(nullptr, "\r\n", &next_token);
   EXPECT_TRUE(token != nullptr);
-  EXPECT_STREQ("PROMPT=$P$G", token);
-
-  token = strtok_s(nullptr, "\r\n", &next_token);
-  EXPECT_TRUE(token != nullptr);
-  EXPECT_STREQ("TEST_STRING1=goma", token);
-  token = strtok_s(nullptr, "\r\n", &next_token);
-  EXPECT_TRUE(token != nullptr);
-  EXPECT_STREQ("TEST_STRING2=win", token);
+  EXPECT_STRCASEEQ("TEST_STRING2=win", token);
 }
 
 TEST(SpawnerWin, SpawnerAbspath) {
@@ -156,10 +131,7 @@ TEST(SpawnerWin, SpawnerAbspath) {
   std::string cwd(buffer);
   std::string prog(file::JoinPathRespectAbsolute(cwd, "dump_env.exe"));
   std::vector<std::string> argv{prog};
-  std::vector<std::string> env{
-      "PATH=" + devtools_goma::GetEnv("PATH").value_or(""),
-      "PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""),
-  };
+  std::vector<std::string> env{};
 
   devtools_goma::SpawnerWin spawner;
   std::string output;
@@ -221,10 +193,6 @@ TEST(SpawnerWin, SpawnerEscapeArgs) {
   argv.push_back("de fg");
   argv.push_back("a\\\"b");
   argv.push_back("a\\\\b c");
-
-  // TODO: remove these when spawn_win do not find command.
-  env.push_back("PATH=" + devtools_goma::GetEnv("PATH").value_or(""));
-  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
 
   // priority not supported yet
   // req.set_priority(devtools_goma::SubProcessReq_Priority_HIGH_PRIORITY);
@@ -340,10 +308,6 @@ TEST(SpawnerWin, SpawnerLongArgs) {
   argv.push_back(prog);
   argv.push_back(std::string(MAX_PATH + 10, 'a'));
 
-  // TODO: remove these when spawn_win do not find command.
-  env.push_back("PATH=" + devtools_goma::GetEnv("PATH").value_or(""));
-  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
-
   // priority not supported yet
   // req.set_priority(devtools_goma::SubProcessReq_Priority_HIGH_PRIORITY);
 
@@ -377,9 +341,6 @@ TEST(SpawnerWin, SpawnerFailed) {
   argv.push_back("arg2");
   env.push_back("TEST_STRING1=goma");
   env.push_back("TEST_STRING2=win");
-  // TODO: remove these when spawn_win do not find command.
-  env.push_back("PATH=C:\\non_exist_folder;C:\\non_exist_folder2");
-  env.push_back("PATHEXT=" + devtools_goma::GetEnv("PATHEXT").value_or(""));
 
   devtools_goma::SpawnerWin spawner;
   std::string output;

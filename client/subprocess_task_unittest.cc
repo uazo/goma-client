@@ -33,6 +33,12 @@
 
 GOMA_DECLARE_bool(COMPILER_PROXY_ENABLE_CRASH_DUMP);
 
+namespace {
+
+static const char* kCmdExePath = "C:\\Windows\\System32\\cmd.exe";
+
+}  // namespace
+
 namespace devtools_goma {
 
 class SubProcessTaskTest : public ::testing::Test {
@@ -131,11 +137,8 @@ class SubProcessTaskTest : public ::testing::Test {
     argv.push_back("hello");
     std::vector<std::string> env;
 #ifdef _WIN32
-    // TODO: remove env after I revise redirector_win.cc.
-    env.push_back("PATHEXT=" + GetEnv("PATHEXT").value_or(""));
-    env.push_back("PATH=" + GetEnv("PATH").value_or(""));
     EXPECT_EQ("hello\r\n",
-              SubProcessTask::ReadCommandOutput("cmd", argv, env, "",
+              SubProcessTask::ReadCommandOutput(kCmdExePath, argv, env, "",
                                                 MERGE_STDOUT_STDERR, nullptr));
 #else
     EXPECT_EQ("hello\n",
@@ -157,7 +160,7 @@ class SubProcessTaskTest : public ::testing::Test {
 #elif !_WIN32
         "/bin/true";
 #else
-        "cmd";
+        kCmdExePath;
 #endif
 
     std::vector<std::string> env;
@@ -182,7 +185,7 @@ class SubProcessTaskTest : public ::testing::Test {
 #elif !_WIN32
         "/bin/false";
 #else
-        "cmd";
+        kCmdExePath;
 #endif
 
     std::vector<std::string> env;
@@ -200,7 +203,7 @@ class SubProcessTaskTest : public ::testing::Test {
 #ifdef _WIN32
     const char* const argv[] = {"cmd", "/c", "timeout", "/t", "1", "/nobreak",
                                 ">NUL", nullptr};
-    SubProcessContext c("sleep", "cmd", argv, &env);
+    SubProcessContext c("sleep", kCmdExePath, argv, &env);
 #else
     const char* const argv[] = {"sleep", "100", nullptr};
     SubProcessContext c("sleep", "/bin/sleep", argv, &env);
@@ -323,11 +326,6 @@ class SubProcessTaskTest : public ::testing::Test {
       c->s_->mutable_req()->add_env(std::move(env_var));
     }
 
-#ifdef _WIN32
-    // TODO: remove env after I revise redirector_win.cc.
-    c->s_->mutable_req()->add_env("PATH=" + GetEnv("PATH").value_or(""));
-    c->s_->mutable_req()->add_env("PATHEXT=" + GetEnv("PATHEXT").value_or(""));
-#endif
     c->s_->Start(NewCallback(this, &SubProcessTaskTest::TestSubProcessDone, c));
     EXPECT_NE(SubProcessState::SETUP, c->s_->state());
 

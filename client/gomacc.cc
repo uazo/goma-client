@@ -250,18 +250,8 @@ void VerifyIntermediateStageOutput(bool args0_is_argv0,
 #endif
 }
 
-}  // anonymous namespace
-
-int main(int argc, char* argv[], const char* envp[]) {
-  CheckFlagNames(envp);
-
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-  // TODO: Check their overhead if they are acceptable.
-  //               We might want to eliminate them in release version?
-  google::InitGoogleLogging(argv[0]);
-#ifndef _WIN32
-  google::InstallFailureSignalHandler();
-#else
+#ifdef _WIN32
+void CheckGdi32Dll() {
   if (GetModuleHandleW(L"gdi32.dll")) {
     LOG_IF(FATAL, !FLAGS_GOMACC_ALLOW_GDI32DLL)
         << "Error: gdi32.dll found in the process. This will harm performance "
@@ -272,6 +262,23 @@ int main(int argc, char* argv[], const char* envp[]) {
     LOG(WARNING) << "Warning: gdi32.dll found in the process. "
                     "This will harm performance and cause hangs.";
   }
+}
+#endif
+
+}  // anonymous namespace
+
+int main(int argc, char* argv[], const char* envp[]) {
+  devtools_goma::SimpleTimer timer;
+  CheckFlagNames(envp);
+
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+  // TODO: Check their overhead if they are acceptable.
+  //               We might want to eliminate them in release version?
+  google::InitGoogleLogging(argv[0]);
+#ifndef _WIN32
+  google::InstallFailureSignalHandler();
+#else
+  CheckGdi32Dll();
   WinsockHelper wsa;
 #endif
   FLAGS_TMP_DIR = devtools_goma::GetGomaTmpDir();
@@ -410,16 +417,23 @@ int main(int argc, char* argv[], const char* envp[]) {
   int retval = (r != GomaClient::IPC_OK) ? EXIT_FAILURE : client.retval();
 
   client.OutputResp();
+
+  absl::Duration compiler_proxy_time = client.compiler_proxy_time();
+  absl::Duration gomacc_time = timer.GetDuration();
+  absl::Duration overhead = gomacc_time - compiler_proxy_time;
+  LOG_IF(WARNING, overhead > absl::Seconds(1))
+      << "Too long gomacc overhead=" << overhead
+      << " compiler_proxy_time=" << compiler_proxy_time
+      << " gomacc_time=" << gomacc_time;
+#ifdef _WIN32
+  // Check gdi32.dll again to make sure it was not lazy-loaded
+  // during execution.
+  CheckGdi32Dll();
+#endif
   // normalize exit status code to what could be handled by caller.
   if (retval < 0 || retval > 0xff) {
     return EXIT_FAILURE;
   }
-
-#ifdef _WIN32
-  DLOG_IF(FATAL, GetModuleHandleW(L"gdi32.dll"))
-      << "Error: gdi32.dll found in the process. This will harm performance "
-         "and cause hangs. See b/115990434.";
-#endif
 
   return retval;
 }
