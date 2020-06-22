@@ -223,9 +223,9 @@ class AuthorizationCodeHandler(BaseHTTPRequestHandler):
     self.send_response(200, "OK")
     self.send_header('Content-type', 'text/html')
     self.end_headers()
-    self.wfile.write('<html><head><title>Authentication Status</title></head>')
-    self.wfile.write('<body><p>The authentication flow has completed.</p>')
-    self.wfile.write('</body></html>')
+    self.wfile.write(b'<html><head><title>Authentication Status</title></head>')
+    self.wfile.write(b'<body><p>The authentication flow has completed.</p>')
+    self.wfile.write(b'</body></html>')
 
   def log_message(self, _format, *args):
     """Do not log messages to stdout while running as command line program."""
