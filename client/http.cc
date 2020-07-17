@@ -1904,12 +1904,14 @@ void HttpClient::Response::SetTraceId(const std::string& trace_id) {
 
 void HttpClient::Response::Reset() {
   result_ = FAIL;
-  buffer_.Reset();
+  err_message_.clear();
+  // preserve trace_id_ and request_path_.
   total_recv_len_ = 0UL;
   body_offset_ = 0UL;
   content_length_.reset();
-  status_code_ = 0;
+  buffer_.Reset();
   body_ = nullptr;
+  status_code_ = 0;
 }
 
 bool HttpClient::Response::HasHeader() const {

@@ -833,11 +833,12 @@ namespace {
 
 // ShrinkExecReq returns the number of content drop.
 int ShrinkExecReq(absl::string_view trace_id, ExecReq* req) {
-  // Drop embedded content randomly if it is larger than 32MiB +
+  // Drop embedded content randomly if it is larger than 1MiB +
   // 2MB (max chunk size).
+  // http://b/161513480 reduce max execreq msg size
   // TODO: size limit is still configurable.
   size_t total_embedded_size = 0;
-  constexpr size_t kEmbeddedThreshold = 32 * 1024 * 1024;  // 32MiB;
+  constexpr size_t kEmbeddedThreshold = 1 * 1024 * 1024;  // 1MiB;
   int cleared = 0;
 
   absl::c_shuffle(*req->mutable_input(), MyCryptographicSecureRNG());

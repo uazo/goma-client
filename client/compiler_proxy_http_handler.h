@@ -43,11 +43,6 @@ class CompilerProxyHttpHandler : public ThreadpoolHttpServer::HttpHandler,
 
   void FinishHandle(const ThreadpoolHttpServer::Stat& stat) override;
 
-  // Takes ownership of auto_upadter.
-  void SetAutoUpdater(std::unique_ptr<AutoUpdater> auto_updater) {
-    service_.SetAutoUpdater(std::move(auto_updater));
-  }
-
   // Takes ownership of watchdog.
   void SetWatchdog(std::unique_ptr<Watchdog> watchdog,
                    const std::vector<std::string>& goma_ipc_env,

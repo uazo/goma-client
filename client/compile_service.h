@@ -36,7 +36,6 @@
 
 namespace devtools_goma {
 
-class AutoUpdater;
 class BlobClient;
 class CompileTask;
 class CompilerFlags;
@@ -149,8 +148,6 @@ class CompileService {
   void SetLogServiceClient(
       std::unique_ptr<LogServiceClient> log_service_client);
   LogServiceClient* log_service() const { return log_service_client_.get(); }
-
-  void SetAutoUpdater(std::unique_ptr<AutoUpdater> auto_updater);
 
   void SetWatchdog(std::unique_ptr<Watchdog> watchdog,
                    const std::vector<std::string>& goma_ipc_env);
@@ -486,7 +483,6 @@ class CompileService {
 
   std::unique_ptr<CompilerProxyHistogram> histogram_;
 
-  std::unique_ptr<AutoUpdater> auto_updater_;
   std::unique_ptr<Watchdog> watchdog_;
 
   bool need_to_send_content_ = false;

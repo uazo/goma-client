@@ -22,6 +22,8 @@ def main():
 
   gopath = os.path.join(_TOP_DIR, 'third_party', 'go', 'bin', 'go')
   env = os.environ.copy()
+  for key in ('GOROOT', 'GOPATH'):
+    env.pop(key, None)
   env['CGO_ENABLED'] = '0'
   env['GOCACHE'] = args.cache_dir
   subprocess.check_call([

@@ -24,7 +24,6 @@
 #include "absl/time/clock.h"
 #include "absl/types/optional.h"
 #include "atomic_stats_counter.h"
-#include "auto_updater.h"
 #include "autolock_timer.h"
 #include "callback.h"
 #include "compile_stats.h"
@@ -241,10 +240,6 @@ void CompileService::StartIncludeProcessorWorkers(int num_threads) {
 void CompileService::SetLogServiceClient(
     std::unique_ptr<LogServiceClient> log_service_client) {
   log_service_client_ = std::move(log_service_client);
-}
-
-void CompileService::SetAutoUpdater(std::unique_ptr<AutoUpdater> auto_updater) {
-  auto_updater_ = std::move(auto_updater);
 }
 
 void CompileService::SetWatchdog(std::unique_ptr<Watchdog> watchdog,
@@ -481,9 +476,6 @@ void CompileService::Quit() {
     AUTOLOCK(lock, &quit_mu_);
     quit_ = true;
   }
-  if (auto_updater_) {
-    auto_updater_->Stop();
-  }
   if (log_service_client_.get()) {
     log_service_client_->Flush();
   }
@@ -508,9 +500,6 @@ void CompileService::Wait() {
   if (log_service_client_.get())
     log_service_client_->Flush();
 
-  if (auto_updater_) {
-    auto_updater_->Wait();
-  }
   http_client_->Shutdown();
   wm_->Shutdown();
   {
@@ -674,16 +663,6 @@ void CompileService::DumpToJson(Json::Value* json, absl::Time after) {
     (*json)["http_rpc"] = std::move(http_rpc);
   }
 
-  if (auto_updater_.get()) {
-    int version = auto_updater_->my_version();
-    if (version > 0) {
-      Json::Value goma_version(Json::arrayValue);
-      goma_version.append(version);
-      goma_version.append(auto_updater_->pulled_version());
-
-      (*json)["goma_version"] = std::move(goma_version);
-    }
-  }
   (*json)["last_update_ms"] =
       static_cast<long long>(absl::ToUnixMillis(last_update_time));
 }

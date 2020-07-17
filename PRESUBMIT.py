@@ -32,7 +32,7 @@ def CheckChangeLintsClean(input_api, output_api):
   def Filter(affected_file):
     return input_api.FilterSourceFile(
         affected_file,
-        black_list=input_api.DEFAULT_BLACK_LIST+(r".+\.pb\.(h|cc)$",))
+        block_list=input_api.DEFAULT_BLOCK_LIST + (r".+\.pb\.(h|cc)$",))
 
   files = [f.AbsoluteLocalPath() for f in
            input_api.AffectedSourceFiles(Filter)]
@@ -130,8 +130,9 @@ def CheckChangeOnUpload(input_api, output_api):
   results += input_api.canned_checks.CheckDoNotSubmit(
       input_api, output_api)
   results += input_api.canned_checks.RunPylint(
-      input_api, output_api,
-      black_list=(
+      input_api,
+      output_api,
+      block_list=(
           r'build[\\/]config[\\/]mac[\\/].*',
           r'build[\\/]mac[\\/].*',
           r'build[\\/]mac_toolchain.py',

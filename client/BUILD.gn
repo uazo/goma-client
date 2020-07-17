@@ -336,8 +336,6 @@ static_library("compiler_proxy_base_lib") {
 static_library("compiler_proxy_lib") {
   libs = []
   sources = [
-    "auto_updater.cc",
-    "auto_updater.h",
     "blob/file_blob_downloader.cc",
     "blob/file_blob_downloader.h",
     "blob/file_service_blob_downloader.cc",

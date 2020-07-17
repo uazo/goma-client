@@ -12,7 +12,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "auto_updater.h"
 #include "chart.bundle.min.h"
 #include "compiler_proxy_contentionz_script.h"
 #include "compiler_proxy_histogram.h"

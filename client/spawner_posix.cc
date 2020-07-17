@@ -137,8 +137,15 @@ int SpawnerPosix::Run(const std::string& cmd,
     argvp.push_back(arg.c_str());
   argvp.push_back(nullptr);
   std::vector<const char*> envp;
-  for (const auto& env : envs)
+  for (const auto& env : envs) {
     envp.push_back(env.c_str());
+  }
+  // TMPDIR is set for making clang use GOMA_TMP_DIR instead of /tmp.
+  // /tmp may not be mounted to a high performance storage, and
+  // some users may not want Goma to change a global state on the host.
+  // (See b/161073061)
+  const std::string tmpdir_env = "TMPDIR=" + GetGomaTmpDir();
+  envp.push_back(tmpdir_env.c_str());
   envp.push_back(nullptr);
 
   // SubprocessImpl will try to send SIGINT or SIGTERM to kill the subprocess

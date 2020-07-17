@@ -421,7 +421,7 @@ int main(int argc, char* argv[], const char* envp[]) {
   absl::Duration compiler_proxy_time = client.compiler_proxy_time();
   absl::Duration gomacc_time = timer.GetDuration();
   absl::Duration overhead = gomacc_time - compiler_proxy_time;
-  LOG_IF(WARNING, overhead > absl::Seconds(1))
+  LOG_IF(WARNING, overhead > absl::Seconds(10))
       << "Too long gomacc overhead=" << overhead
       << " compiler_proxy_time=" << compiler_proxy_time
       << " gomacc_time=" << gomacc_time;

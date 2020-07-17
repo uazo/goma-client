@@ -540,10 +540,9 @@ GOMA_DEFINE_string(COMPILER_PROXY_DAEMON_STDERR, "goma_compiler_proxy.stderr",
                    "Used only when COMPILER_PROXY_DAEMON_MODE is true.");
 #endif
 
-GOMA_DEFINE_bool(ENABLE_AUTO_UPDATE, true, "Enable auto updater.");
-GOMA_DEFINE_int32(AUTO_UPDATE_IDLE_COUNT, 4 * 60 * 60,
-                  "Try to update to the latest version if compiler_proxy "
-                  "has been idle for approx this number of seconds.");
+// TODO: remove following flags after the next client release.
+GOMA_DEFINE_bool(ENABLE_AUTO_UPDATE, false, "(deprecated)");
+GOMA_DEFINE_int32(AUTO_UPDATE_IDLE_COUNT, 0, "(depreacted)");
 
 GOMA_DEFINE_int32(WATCHDOG_TIMER, 4 * 60 * 60,
                   "Watchdog timer in seconds."

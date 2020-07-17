@@ -138,44 +138,6 @@ def _ParseManifestContents(manifest):
   return output
 
 
-def _IsBadVersion(cur_ver, bad_vers):
-  """Check cur_ver is in bad_vers.
-
-  Args:
-    cur_ver: current version number.
-    bad_vers: a string for bad version, '|' separated.
-  Returns:
-    True if cur_ver is in bad_vers.
-  """
-  for ver in bad_vers.split('|'):
-    if str(cur_ver) == ver:
-      return True
-  return False
-
-
-def _ShouldUpdate(cur_ver, next_ver, bad_vers):
-  """Check to update from cur_ver to next_ver.
-
-  Basically, update to newer version (i.e. cur_ver < next_ver).
-  If cur_ver is the same as next_ver, then should not update (because
-  it is already up-to-date).
-  If cur_ver is listed in bad_vers, then
-  should update to next_ver even if cur_ver > next_ver.
-
-  Args:
-    cur_ver: current version number
-    next_ver: next version number
-    bad_vers: a string for bad versions, '|' separated.
-  Returns:
-    True to update cur_ver to next_ver. False otherwise.
-  """
-  if cur_ver < next_ver:
-    return True
-  if cur_ver == next_ver:
-    return False
-  return _IsBadVersion(cur_ver, bad_vers)
-
-
 def _ParseTaskList(data):
   """Parse tasklist command result.
 
@@ -610,50 +572,6 @@ class GomaDriver(object):
     if 'GOMA_API_KEY_FILE' in self._manifest:
       sys.stderr.write('WARNING: GOMA_API_KEY_FILE is deprecated\n')
 
-  def _UpdateManifest(self):
-    """Write self._manifest to in MANIFEST."""
-    self._env.WriteManifest(self._manifest)
-
-  def _ValidFiles(self, files):
-    """Validate files."""
-    for f in files:
-      filename = os.path.join(self._latest_package_dir, f)
-      if not self._env.IsValidMagic(filename):
-        print('%s is broken.' % filename)
-        return False
-    return True
-
-  def _Pull(self):
-    """Download the latest package to goma_dir/latest."""
-    latest_version, bad_version = self._GetLatestVersion()
-    files_to_download = ['MANIFEST', self._env.GetPackageName()]
-    if ((_ShouldUpdate(self._DownloadedVersion(), latest_version,
-                       bad_version) or
-         not self._ValidFiles(files_to_download)) and
-        _ShouldUpdate(self._version, latest_version, bad_version)):
-      self._env.RemoveDirectory(self._latest_package_dir)
-      self._env.MakeDirectory(self._latest_package_dir)
-      base_url = self._backend.GetDownloadBaseUrl()
-      for f in files_to_download:
-        url = '%s/%s' % (base_url, f)
-        destination = os.path.join(self._latest_package_dir, f)
-        print('Downloading %s' % url)
-        self._env.HttpDownload(url,
-                               rewrite_url=self._backend.RewriteRequest,
-                               headers=self._backend.GetHeaders(),
-                               destination_file=destination)
-      manifest = self._env.ReadManifest(self._latest_package_dir)
-      manifest['PLATFORM'] = self._env.GetPlatform()
-      self._env.WriteManifest(manifest, self._latest_package_dir)
-    else:
-      print('Downloaded package is already the latest version.')
-
-      # update the timestamp of MANIFEST in self._latest_package_dir
-      # to skip unnecessary download in ensure_start if the file is valid.
-      if self._env.IsValidManifest(self._latest_package_dir):
-        manifest = self._env.ReadManifest(directory=self._latest_package_dir)
-        self._env.WriteManifest(manifest, directory=self._latest_package_dir)
-
   def _GetRunningCompilerProxyVersion(self):
     versionz = self._env.ControlCompilerProxy('/versionz', check_running=True)
     if versionz['status']:
@@ -696,37 +614,8 @@ class GomaDriver(object):
       self._KillStakeholders()
       self._compiler_proxy_running = False
 
-    can_auto_update = self._env.CanAutoUpdate()
-    if can_auto_update:
-      bad_version = ''
-
-      if (self._env.ReadManifest(self._latest_package_dir) and
-          self._env.IsManifestModifiedRecently(self._latest_package_dir)):
-        print('Auto update is skipped'
-              ' because %s/MANIFEST was updated recently.' %
-              self._latest_package_dir)
-        latest_version = self._version
-      else:
-        latest_version, bad_version = self._GetLatestVersion()
-      do_update = False
-      if self._version < latest_version:
-        print('new goma client found (VERSION=%d).' % latest_version)
-        do_update = True
-      if _IsBadVersion(self._version, bad_version):
-        print('your version (VERSION=%d) is marked as bad version (%s)' % (
-            self._version, bad_version))
-        do_update = True
-      if do_update:
-        print('Updating...')
-        self._env.AutoUpdate()
-        # AutoUpdate may change running status.
-        self._compiler_proxy_running = self._env.CompilerProxyRunning()
-        self._ReadManifest()
-
     if 'VERSION' in self._manifest:
-      print('Using goma VERSION=%s (%s)' % (
-          self._manifest['VERSION'],
-          'latest' if can_auto_update else 'no_auto_update'))
+      print('Using goma VERSION=%s' % self._manifest['VERSION'])
     disk_version = self._GetDiskCompilerProxyVersion()
     print('GOMA version %s' % disk_version)
     if ensure and self._compiler_proxy_running:
@@ -749,7 +638,6 @@ class GomaDriver(object):
       print()
       return
 
-    # AutoUpdate may restart compiler proxy.
     if not self._compiler_proxy_running:
       self._env.ExecCompilerProxy()
       self._compiler_proxy_running = True
@@ -880,48 +768,6 @@ class GomaDriver(object):
     else:
       print('compiler_proxy is not running')
 
-  def _GetLatestVersion(self):
-    """Get latest version of goma.
-
-    Returns:
-      A tuple of the version number and bad_version string from MANIFEST
-
-    Raises:
-      Error: if failed to determine the latest version.
-    """
-    try:
-      url = self._backend.GetDownloadBaseUrl() + '/MANIFEST'
-    except Error as ex:
-      oauth2_config_file = os.environ.get('GOMA_OAUTH2_CONFIG_FILE')
-      if (oauth2_config_file and
-          "not_initialized" in open(oauth2_config_file).read()):
-        return 0, ""
-      raise ex
-    contents = self._env.HttpDownload(
-        url,
-        rewrite_url=self._backend.RewriteRequest,
-        headers=self._backend.GetHeaders())
-    manifest = _ParseManifestContents(contents)
-    if 'VERSION' in manifest:
-      return (int(manifest['VERSION']), manifest.get('bad_version', ''))
-    raise Error('Unable to determine the latest version. '
-                'Failed to download the latest valid MANIFEST '
-                'from the server.\n'
-                'Response from server: %s' % contents)
-
-  def _DownloadedVersion(self):
-    """Check version of already downloaded goma package.
-
-    Returns:
-      The version as integer.
-    """
-    version = 0
-    try:
-      version = int(self._env.ReadManifest(self._latest_package_dir)['VERSION'])
-    except (KeyError, ValueError):
-      pass
-    return version
-
   def _WaitCooldown(self, wait_seconds=_MAX_COOLDOWN_WAIT):
     """Wait until compiler_proxy process have finished.
 
@@ -957,84 +803,6 @@ class GomaDriver(object):
       print('Could not kill compiler_proxy.')
       print('Probably, somebody else also runs compiler_proxy.')
 
-  def _UpdatePackage(self):
-    """Update or install latest package.
-
-    We raise error immediately when there is anything wrong instead of
-    trying to do something smart. When things go wrong it can be disk
-    issues and it's better to have human intervention instead.
-
-    Raises:
-      Error: if failed to install the package.
-    """
-    update_dir = 'update'
-    self._env.RemoveDirectory(update_dir)
-    self._env.MakeDirectory(update_dir)
-    manifest = self._env.ReadManifest(self._latest_package_dir)
-    if not manifest or 'VERSION' not in manifest:
-      manifest_file = os.path.join(self._latest_package_dir, 'MANIFEST')
-      print('MANIFEST (%s) seems to be broken.' % manifest_file)
-      print('Going to remove MANIFEST.')
-      self._env.RemoveFile(manifest_file)
-      print('Please execute update again.')
-      raise Error('MANIFEST in downloaded version is broken.')
-    latest_version = int(manifest['VERSION'])
-    package_file = os.path.join(self._latest_package_dir,
-                                self._env.GetPackageName())
-    if not self._env.ExtractPackage(package_file, update_dir):
-      print('Package file (%s) seems to be broken.' % package_file)
-      print('Going to remove package_file.')
-      self._env.RemoveFile(package_file)
-      print('Please execute update again.')
-      raise Error('Failed to extract downloaded package')
-    if not self._Audit(update_dir=update_dir):
-      print('Failed to verify a file in package.')
-      print('Going to remove package_file and update_dir')
-      self._env.RemoveFile(package_file)
-      self._env.RemoveDirectory(update_dir)
-      raise Error('downloaded package is broken')
-    if self._env.IsGomaInstalledBefore():
-      # This is an update rather than fresh install.
-      print('Stopping compiler_proxy ...')
-      self._ShutdownCompilerProxy()
-      if not self._WaitCooldown():
-        self._KillStakeholders()
-      self._compiler_proxy_running = False
-    print('Updating package to %s ...' % self._env.GetScriptDir())
-    if not self._env.InstallPackage(update_dir):
-      raise Error('Failed to install package')
-    self._version = latest_version
-    self._manifest.update(manifest)
-    self._UpdateManifest()
-    self._env.RemoveDirectory(update_dir)
-
-  def _Update(self):
-    """Update goma binary to latest version."""
-    latest_version, bad_version = self._GetLatestVersion()
-    if _ShouldUpdate(self._version, latest_version, bad_version):
-      self._Pull()
-      self._env.BackupCurrentPackage()
-      rollback = True
-      if self._compiler_proxy_running is None:
-        self._compiler_proxy_running = self._env.CompilerProxyRunning()
-      is_goma_running = self._compiler_proxy_running
-      try:
-        self._UpdatePackage()
-        rollback = False
-      finally:
-        if rollback:
-          print('Failed to update. Rollback...')
-          try:
-            self._env.RollbackUpdate()
-          except Error as inst:
-            print(inst)
-        if is_goma_running and not self._env.CompilerProxyRunning():
-          print(self._env.GetCompilerProxyVersion())
-          self._env.ExecCompilerProxy()
-          self._compiler_proxy_running = True
-    else:
-      print('Goma is already up-to-date.')
-
   def _RestartCompilerProxy(self):
     if self._compiler_proxy_running is None:
       self._compiler_proxy_running = self._env.CompilerProxyRunning()
@@ -1044,28 +812,6 @@ class GomaDriver(object):
         self._KillStakeholders()
       self._compiler_proxy_running = False
     self._StartCompilerProxy()
-
-  def _Fetch(self):
-    """Fetch requested goma package."""
-    if len(self._args) < 2:
-      raise ConfigError('At least platform should be specified to fetch.')
-    platform = self._args[1]
-    pkg_name = _GetPackageName(platform)
-    if len(self._args) > 2:
-      outfile = os.path.join(os.getcwd(), self._args[2])
-    else:
-      outfile = os.path.join(os.getcwd(), pkg_name)
-    url = '%s/%s' % (self._backend.GetDownloadBaseUrl(), pkg_name)
-    print('Downloading %s' % url)
-    self._env.HttpDownload(url,
-                           rewrite_url=self._backend.RewriteRequest,
-                           headers=self._backend.GetHeaders(),
-                           destination_file=outfile)
-
-  def _PrintLatestVersion(self):
-    """Print latest version on stdout."""
-    latest_version, _ = self._GetLatestVersion()
-    print('VERSION=%d' % latest_version)
 
   def _PrintStatistics(self):
     print(self._env.ControlCompilerProxy('/statz')['message'])
@@ -1485,10 +1231,6 @@ class GomaEnv(object):
   def GetScriptDir(self):
     return self._dir
 
-  def IsManifestModifiedRecently(self, directory='', threshold=4*60*60):
-    manifest_path = os.path.join(self._dir, directory, 'MANIFEST')
-    return time.time() - os.stat(manifest_path).st_mtime < threshold
-
   def ReadManifest(self, directory=''):
     """Read manifest from MANIFEST file in the directory.
 
@@ -1503,20 +1245,6 @@ class GomaEnv(object):
     if not os.path.isfile(manifest_path):
       return {}
     return _ParseManifestContents(open(manifest_path, 'r').read())
-
-  def WriteManifest(self, manifest, directory=''):
-    """Write manifest dictionary to MANIFEST file in the directory.
-
-    Args:
-      manifest: a dictionary of the manifest.
-      directory: a string of directory name to write the manifest file.
-    """
-    manifest_path = os.path.join(self._dir, directory, 'MANIFEST')
-    if os.path.exists(manifest_path):
-      os.chmod(manifest_path, 0o644)
-    with open(manifest_path, 'w') as manifest_file:
-      for key, value in manifest.items():
-        manifest_file.write('%s=%s\n' % (key, value))
 
   def CheckAuthConfig(self):
     """Checks `goma_auth.py config` unless service accounts.
@@ -1718,18 +1446,13 @@ class GomaEnv(object):
       msg = repr(ex)
     return {'status': False, 'message': msg, 'url': url_prefix, 'pid': pids}
 
-  def HttpDownload(self, source_url,
-                   rewrite_url=None, headers=None, destination_file=None):
+  def HttpDownload(self, source_url):
     """Download data from the given URL to the file.
 
     If self._goma_fetch defined, prefer goma_fetch to urllib2.
 
     Args:
       source_url: URL to retrieve data.
-      rewrite_url: rewrite source_url for urllib2.
-      headers: a dictionary to be used in the HTTP header.
-      destination_file: file name to store data, if specified None, return
-                        contents as string.
 
     Returns:
       None if provided destination_file, downloaded contents otherwise.
@@ -1744,38 +1467,17 @@ class GomaEnv(object):
       # increate timeout.
       env = os.environ.copy()
       env['GOMA_HTTP_SOCKET_READ_TIMEOUT_SECS'] = '300.0'
-      if destination_file:
-        destination_file = os.path.join(self._dir, destination_file)
-        with open(destination_file, 'wb') as f:
-          retcode = subprocess.call([self._goma_fetch, '--auth', source_url],
-                                    env=env,
-                                    stdout=f)
-          if retcode:
-            raise Error('failed to fetch %s: %d' % (source_url, retcode))
-        return
       return PopenWithCheck([self._goma_fetch, '--auth', source_url],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             env=env).communicate()[0]
 
-    if rewrite_url:
-      source_url = rewrite_url(source_url)
-
     if sys.hexversion < 0x2070900:
       raise Error('Please use python version >= 2.7.9')
 
     http_req = URLREQUEST(source_url)
-    if headers:
-      for name, value in headers.items():
-        http_req.add_header(name, value)
-
     r = URLOPEN2(http_req)
-    if destination_file:
-      with open(os.path.join(self._dir, destination_file), 'wb') as f:
-        shutil.copyfileobj(r, f)
-      return
-    else:
-      return r.read()
+    return r.read()
 
   def GetGomaTmpDir(self):
     """Get a directory path for goma.
@@ -2022,42 +1724,6 @@ class GomaEnv(object):
     filename = os.path.join(self._dir, filename)
     os.remove(filename)
 
-  def _ReadBytesFromFile(self, filename, length):
-    filename = os.path.join(self._dir, filename)
-    with open(filename, 'rb') as f:
-      return f.read(length)
-
-  def IsValidManifest(self, directory=''):
-    contents = self.ReadManifest(directory=directory)
-
-    if 'PLATFORM' in contents and 'VERSION' in contents:
-      return True
-    return False
-
-  def IsValidMagic(self, filename):
-    # MANIFEST is special case.
-    if os.path.basename(filename) == 'MANIFEST':
-      return self.IsValidManifest(os.path.dirname(filename))
-
-    filename = os.path.join(self._dir, filename)
-
-    if not os.path.exists(filename):
-      return False
-
-    magics = {
-        '.tgz': b'\x1F\x8B',
-        '.txz': b'\xFD7zXZ\x00',
-        '.zip': b'PK',
-    }
-    magic = magics.get(os.path.splitext(filename)[1])
-    if not magic:
-      return True
-    return self._ReadBytesFromFile(filename, len(magic)) == magic
-
-  def RemoveDirectory(self, directory):
-    directory = os.path.join(self._dir, directory)
-    shutil.rmtree(directory, ignore_errors=True)
-
   def MakeDirectory(self, directory):
     directory = os.path.join(self._dir, directory)
     os.mkdir(directory, 0o700)
@@ -2068,9 +1734,6 @@ class GomaEnv(object):
     directory = os.path.join(self._dir, directory)
     # To avoid symlink attack, the directory should not be symlink.
     return os.path.isdir(directory) and not os.path.islink(directory)
-
-  def IsGomaInstalledBefore(self):
-    return os.path.exists(self._compiler_proxy_binary)
 
   def IsOldFile(self, filename):
     log_clean_interval = int(os.environ.get('GOMA_LOG_CLEAN_INTERVAL', '-1'))
@@ -2126,103 +1789,6 @@ class GomaEnv(object):
     except (ValueError, IndexError):
       raise Error('Invalid selection')
     return self._platform
-
-  def CanAutoUpdate(self):
-    """Checks auto update is allowed or not.
-
-    Returns:
-      True if auto-update is allowed.  Otherwise, False.
-    """
-    if self._version:
-      if not os.path.isfile(os.path.join(self._dir, 'no_auto_update')):
-        return True
-    return False
-
-  def AutoUpdate(self):
-    """Automatically update the client."""
-    # Just call myself with update option.
-    script = os.path.join(self._dir,
-                          os.path.basename(os.path.realpath(__file__)))
-    subprocess.check_call(['python', script, 'update'])
-
-  def BackupCurrentPackage(self, backup_dir='backup'):
-    """Back up current pacakge.
-
-    Args:
-      backup_dir: a string of back up directory name.
-    """
-    self._backup = []
-    # ignore parameter in shutil.copytree can be used to remember the copied
-    # files.
-    # See Also: http://docs.python.org/2/library/shutil.html
-
-    def RememberCopiedFiles(path, names):
-      self._backup.append((path, names))
-      return []
-
-    self.RemoveDirectory(backup_dir)
-    shutil.copytree(self._dir, os.path.join(self._dir, backup_dir),
-                    symlinks=True, ignore=RememberCopiedFiles)
-
-  def RollbackUpdate(self, backup_dir='backup'):
-    """Best-effort-rollback from the backup.
-
-    Args:
-      backup_dir: a string of back up directory name.
-
-    Raises:
-      Error: if the caller did not executed BackupCurrentPackage before.  Or,
-             rollback failed.
-    """
-    if not self._backup:
-      raise Error('You should backup files before calling rollback.')
-    for entry in self._backup:
-      backup_dir_path = entry[0].replace(self._dir,
-                                         os.path.join(self._dir, backup_dir))
-      # Note:
-      # Somebody may ask "Why not shutil.copytree?"
-      # It is good for back up but not good for rollback.
-      # Since shutil.copytree try to create directories even if it exist,
-      # it will try to make existing directory and cause OSError if we use it
-      # in rollback process.
-      for filename in entry[1]:
-        from_name = os.path.join(backup_dir_path, filename)
-        to_name = os.path.join(entry[0], filename)
-        # After we started to use gomacc to get GomaTmpDir, a file named
-        # UNKNOWN.INFO started to be detected on ChromeOS, which does not exist
-        # on rollback.
-        # Following code is a workaround to avoid failure due to missing
-        # UNKNOWN.INFO.
-        try:
-          from_stat = os.stat(from_name)
-        except OSError as e:
-          sys.stderr.write('cannot access backuped file: %s' % e)
-          continue
-        to_stat = os.stat(to_name) if os.path.exists(to_name) else None
-        # Skip unchanged file / dir.
-        # I expect this also skips running processes since we cannot update it
-        # on Windows.
-        if (to_stat and
-            from_stat.st_size == to_stat.st_size and
-            from_stat.st_mode == to_stat.st_mode and
-            from_stat.st_mtime == to_stat.st_mtime):
-          continue
-
-        if os.path.isfile(from_name) and os.path.isfile(to_name):
-          shutil.copy2(from_name, to_name)
-        elif os.path.isfile(from_name) and not os.path.exists(to_name):
-          shutil.copy2(from_name, to_name)
-        elif os.path.isdir(from_name) and os.path.isdir(to_name):
-          continue  # do nothing if directory exist.
-        elif os.path.isdir(from_name) and not os.path.exists(to_name):
-          self.MakeDirectory(to_name)
-        else:
-          raise Error('Rollback failed.  We cannot rollback %s to %s' %
-                      (from_name, to_name))
-
-  def GetPackageName(self):
-    """Returns package name based on platform."""
-    return _GetPackageName(self.GetPlatform())
 
   def IsProductionBinary(self):
     """Returns True if compiler_proxy is release version.
@@ -2316,29 +1882,6 @@ class GomaEnv(object):
     """Gets detailed failure reason if possible."""
     pass
 
-  def ExtractPackage(self, package_file, update_dir):
-    """Extract a platform dependent package.
-
-    Args:
-      package_file: a filename of package to extract.
-      update_dir: where to extract
-
-    Returns:
-      boolean indicating success or failure.
-    """
-    raise NotImplementedError('ExtractPackage should be implemented.')
-
-  def InstallPackage(self, update_dir):
-    """Overwrite self._dir with files in update_dir.
-
-    Args:
-      update_dir: directory containing latest goma files
-
-    Returns:
-      boolean indicating success or failure.
-    """
-    raise NotImplementedError('InstallPackage should be implemented.')
-
   def GetGomaCtlScriptName(self):
     """Get the name of goma_ctl script to be executed by command line."""
     # Subclass may uses its specific variable.
@@ -2426,7 +1969,6 @@ class GomaEnvWin(GomaEnv):
   # posix and win.
   _COMPILER_PROXY_IDENTIFIER_ENV_NAME = 'GOMA_COMPILER_PROXY_SOCKET_NAME'
   _DEFAULT_ENV = [
-      ('RPC_EXTRA_PARAMS', '?win'),
       ('COMPILER_PROXY_SOCKET_NAME', 'goma.ipc'),
       ]
   _DEFAULT_SSL_ENV = [
@@ -2484,47 +2026,6 @@ class GomaEnvWin(GomaEnv):
       print(PopenWithCheck(['tasklist', '/FI', 'PID eq %s' % pid],
                            stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT).communicate()[0])
-
-  def ExtractPackage(self, package_file, update_dir):
-    """Extract a platform dependent package.
-
-    Args:
-      package_file: a filename of package to extract.
-      update_dir: where to extract
-
-    Returns:
-      boolean indicating success or failure.
-
-    Raises:
-      Error: if package does not exist.
-    """
-    package_file = os.path.join(self._dir, package_file)
-    if not os.path.exists(package_file):
-      raise Error('Expected package file %s does not exist' % package_file)
-    update_dir = os.path.join(self._dir, update_dir)
-    print('Extracting package %s to %s ...' % (package_file, update_dir))
-    archive = zipfile.ZipFile(package_file)
-    archive.extractall(update_dir)
-    return True
-
-  def InstallPackage(self, update_dir):
-    """Overwrite self._dir with files in update_dir.
-
-    Args:
-      update_dir: directory containing latest goma files
-
-    Returns:
-      boolean indicating success or failure.
-    """
-    assert update_dir != ''
-    source_dir = self._GetExtractedDir(update_dir)
-    # return code may return non zero even if success.
-    return_code = subprocess.call(['robocopy', source_dir, self._dir,
-                                   '/ns', '/nc', '/nfl', '/ndl', '/np',
-                                   '/njh', '/njs'])
-    # ROBOCOPY has very, very interesting error codes.
-    # see http://ss64.com/nt/robocopy-exit.html
-    return return_code < 8
 
   def GetGomaCtlScriptName(self):
     return os.environ.get('GOMA_CTL_SCRIPT_NAME', self._GOMA_CTL_SCRIPT_NAME)
@@ -2652,46 +2153,6 @@ class GomaEnvPosix(GomaEnv):
     return PopenWithCheck([self._compiler_proxy_binary],
                           stdout=open(os.devnull, "w"),
                           stderr=subprocess.STDOUT)
-
-  def ExtractPackage(self, package_file, update_dir):
-    """Extract a platform dependent package.
-
-    Args:
-      package_file: a filename of package to extract.
-      update_dir: where to extract
-
-    Returns:
-      boolean indicating success or failure.
-
-    Raises:
-      Error: if package does not exist.
-    """
-    package_file = os.path.join(self._dir, package_file)
-    if not os.path.exists(package_file):
-      raise Error('Expected package file %s does not exist' % package_file)
-    update_dir = os.path.join(self._dir, update_dir)
-    print('Extracting package to %s ...' % update_dir)
-    if os.path.splitext(package_file)[1] == '.tgz':
-      tar_options = '-zxf'
-    else:
-      tar_options = '-Jxf'
-    return subprocess.call(['tar', tar_options, package_file, '-C',
-                            update_dir]) == 0
-
-  def InstallPackage(self, update_dir):
-    """Overwrite self._dir with files in update_dir.
-
-    Args:
-      update_dir: directory containing latest goma files
-
-    Returns:
-      boolean indicating success or failure.
-    """
-    assert update_dir != ''
-    # TODO: implement a better version for POSIX
-    source_files = os.path.join(self._GetExtractedDir(update_dir), '*')
-    return subprocess.call(['cp -aRf %s %s' % (source_files, self._dir)],
-                           shell=True) == 0
 
   def _ExecLsof(self, cmd):
     if self._lsof_path is None:
@@ -2874,26 +2335,6 @@ _GOMA_ENVS = {
     }
 
 
-def _GetPackageName(platform):
-  """Get name of package.
-
-  Args:
-    platform: a string of platform name.
-
-  Returns:
-    a string of package name of the given platform.
-
-  Raises:
-    ConfigError: when given platform is invalid.
-  """
-  for goma_env in _GOMA_ENVS.values():
-    supported = [x[1] for x in goma_env.PLATFORM_CANDIDATES]
-    if platform in supported:
-      return 'goma-%s.%s' % (platform, goma_env.GetPackageExtension(platform))
-  raise ConfigError('Unknown platform %s specified to get package name.' %
-                    platform)
-
-
 class GomaBackend(object):
   """Backend specific configs."""
 
@@ -2908,47 +2349,9 @@ class GomaBackend(object):
     """Set up backend specific environmental variables."""
     pass
 
-  def _NormalizeBaseUrl(self, resp):
-    """Check the URL is valid, and normalize it if needed.
-
-    Args:
-      resp: response to the download URL request.
-
-    Returns:
-      a string of the download base URL.
-
-    Raises:
-      Error: if the given resp is invalid.
-    """
-    raise NotImplementedError('Please implement _NormalizeBaseUrl')
-
   def _MakeServerUrl(self, suffix):
     return URLJOIN('https://%s' % self._server_host,
                    posixpath.join(self._path_prefix, suffix))
-
-  def GetDownloadBaseUrl(self):
-    """Orchestrate download base url for retrieving manifest file.
-
-    Returns:
-      The URL string.
-
-    Raises:
-      Error: if failed to obtain download base URL.
-    """
-    if self._download_base_url:
-      return self._download_base_url
-
-    downloadurl = self._MakeServerUrl('downloadurl')
-    url = self._NormalizeBaseUrl(
-        self._env.HttpDownload(downloadurl,
-                               rewrite_url=self.RewriteRequest,
-                               headers=self.GetHeaders()))
-    if 'GOMACHANNEL' in os.environ:
-      url += '/%s' % os.environ.get('GOMACHANNEL')
-    if url.startswith('http:'):
-      url = 'https:' + url[5:]
-    self._download_base_url = url
-    return url
 
   def GetPingUrl(self):
     """Get ping url.
@@ -2958,24 +2361,12 @@ class GomaBackend(object):
     """
     return self._MakeServerUrl('ping')
 
-  def RewriteRequest(self, request):
-    """Rewrite request based on backend needs."""
-    # This usually do not rewrite but subclass may rewrite.
-    # pylint: disable=R0201
-    return request
-
-  def GetHeaders(self):
-    """Return headers if there are backend specific headers."""
-    # This usually returns nothing but subclass may return.
-    # pylint: disable=R0201
-    return {}
-
 
 class Clients5Backend(GomaBackend):
   """Backend specific config for Clients5."""
 
   def __init__(self, env):
-    # Set member variables for GetDownloadBaseUrl.
+    # Set member variables for _MakeServerUrl.
     super(Clients5Backend, self).__init__(
         env,
         server_host='clients5.google.com',
@@ -2988,28 +2379,6 @@ class Clients5Backend(GomaBackend):
     if (isinstance(self._env, GomaEnvWin) and
         not os.environ.get('GOMA_RPC_EXTRA_PARAMS', '')):
       sys.stderr.write('Please set GOMA_RPC_EXTRA_PARAMS=?win\n')
-
-  def _NormalizeBaseUrl(self, resp):
-    """Check the URL is valid, and normalize it if needed.
-
-    Args:
-      resp: response to the download URL request.
-
-    Returns:
-      a string of the download base URL.
-
-    Raises:
-      Error: if the given resp is invalid.
-    """
-    if resp.startswith('http'):
-      return resp
-    msg = 'Could not obtain the download base URL.\n'
-    msg += ('Server response: %s' % resp)
-    raise Error(msg)
-
-  def GetHeaders(self):
-    """Return headers if there are backend specific headers."""
-    return {}
 
 
 def GetGomaDriver():

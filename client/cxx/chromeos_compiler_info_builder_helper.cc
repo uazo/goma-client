@@ -4,6 +4,10 @@
 
 #include "chromeos_compiler_info_builder_helper.h"
 
+#include <limits.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -20,8 +24,6 @@
 #include "lib/path_resolver.h"
 #include "path.h"
 #include "util.h"
-
-#include <unistd.h>
 
 namespace devtools_goma {
 
@@ -52,6 +54,18 @@ bool IsClangHostWrapper(const std::string& abs_local_compiler_path) {
   ssize_t size = readlink(abs_local_compiler_path.c_str(), buf, sizeof(buf));
   if (size > 0) {
     return absl::string_view(buf, size) == kClangHostWrapper;
+  }
+  return false;
+}
+
+bool IsSysrootWrapperHardenedCcache(
+    const std::string& abs_local_compiler_path) {
+  std::unique_ptr<char, decltype(&free)> clang_realpath(
+      realpath(abs_local_compiler_path.c_str(), nullptr), free);
+  constexpr absl::string_view kSysrootWrapperHardendCcache =
+      "sysroot_wrapper.hardened.ccache";
+  if (clang_realpath) {
+    return file::Basename(clang_realpath.get()) == kSysrootWrapperHardendCcache;
   }
   return false;
 }
@@ -356,7 +370,8 @@ bool ChromeOSCompilerInfoBuilderHelper::CollectChrootClangResources(
   }
 
   if (!IsClangWrapperInChroot(abs_local_compiler_path) ||
-      IsClangHostWrapper(abs_local_compiler_path)) {
+      IsClangHostWrapper(abs_local_compiler_path) ||
+      IsSysrootWrapperHardenedCcache(abs_local_compiler_path)) {
     return SetChrootClangResourcePaths(cwd, resources, local_compiler_path,
                                        real_compiler_path, resource_paths);
   }

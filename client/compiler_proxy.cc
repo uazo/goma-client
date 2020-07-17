@@ -34,7 +34,6 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 #include "absl/time/time.h"
-#include "auto_updater.h"
 #include "breakpad.h"
 #include "clang_modules/modulemap/cache.h"
 #include "compiler_info_cache.h"
@@ -303,18 +302,6 @@ int main(int argc, char* argv[], const char* envp[]) {
     LOG(INFO) << "breakpad is enabled";
   }
 
-  std::unique_ptr<devtools_goma::AutoUpdater> auto_updater;
-  if (FLAGS_ENABLE_AUTO_UPDATE) {
-    auto_updater =
-        absl::make_unique<devtools_goma::AutoUpdater>(FLAGS_CTL_SCRIPT_NAME);
-    if (auto_updater->my_version() > 0) {
-      LOG(INFO) << "goma version:" << auto_updater->my_version();
-    }
-    auto_updater->SetEnv(envp);
-  } else {
-    LOG(INFO) << "auto updater is disabled";
-  }
-
   int max_nfile = 0;
   devtools_goma::InitResourceLimits(&max_nfile);
   CHECK_GT(max_nfile, 0);
@@ -371,11 +358,6 @@ int main(int argc, char* argv[], const char* envp[]) {
                   FLAGS_COMPILER_PROXY_THREADS,
                   FLAGS_MAX_OVERCOMMIT_INCOMING_SOCKETS);
   LOG(INFO) << "Started IPC server: " << compiler_proxy_addr;
-  // TCP serves only status pages, no limit.
-  if (auto_updater) {
-    auto_updater->Start(&server, FLAGS_AUTO_UPDATE_IDLE_COUNT);
-    handler->SetAutoUpdater(std::move(auto_updater));
-  }
   if (FLAGS_WATCHDOG_TIMER > 0) {
     std::unique_ptr<devtools_goma::Watchdog> watchdog(
         new devtools_goma::Watchdog);

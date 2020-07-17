@@ -2,7 +2,7 @@
 
 vars = {
      "chromium_git": "https://chromium.googlesource.com",
-     "clang_revision": "0d67b22eb5a41adfe6da73749a39e3ec56aa39fe",
+     "clang_revision": "6412135b3979b680c20cf007ab242d968025fc3e",
 }
 
 deps = {
@@ -43,7 +43,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@72b095d0d483e6b9df002427054a0b150ee76f49",
+     "https://boringssl.googlesource.com/boringssl@8f88b27d6add3fc8f9ee548050e4958efa239f1f",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
