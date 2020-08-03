@@ -122,7 +122,7 @@ class FakeGomaEnv(object):
   # pylint: disable=R0201
   # pylint: disable=W0613
 
-  def CalculateChecksum(self, _, update_dir=''):
+  def CalculateChecksum(self, _):
     return 'dummy_checksum'
 
   def CheckAuthConfig(self):
@@ -199,7 +199,7 @@ class FakeGomaEnv(object):
   def KillStakeholders(self, force=False):
     pass
 
-  def LoadChecksum(self, update_dir=''):
+  def LoadChecksum(self):
     return {}
 
   def MakeDirectory(self, _):
@@ -1579,11 +1579,11 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.load_checksum = False
         self.calculate_checksum = False
 
-      def LoadChecksum(self, update_dir=''):
+      def LoadChecksum(self):
         self.load_checksum = True
         return {}
 
-      def CalculateChecksum(self, _, update_dir=''):
+      def CalculateChecksum(self, _):
         self.calculate_checksum = True
 
     env = SpyGomaEnv()
@@ -1599,11 +1599,11 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.load_checksum = False
         self.calculate_checksum = False
 
-      def LoadChecksum(self, update_dir=''):
+      def LoadChecksum(self):
         self.load_checksum = True
         return {'compiler_proxy': 'valid_checksum'}
 
-      def CalculateChecksum(self, filename, update_dir=''):
+      def CalculateChecksum(self, filename):
         self.calculate_checksum = True
         assert filename == 'compiler_proxy'
         return 'valid_checksum'
@@ -1621,11 +1621,11 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.load_checksum = False
         self.calculate_checksum = False
 
-      def LoadChecksum(self, update_dir=''):
+      def LoadChecksum(self):
         self.load_checksum = True
         return {'compiler_proxy': 'valid_checksum'}
 
-      def CalculateChecksum(self, filename, update_dir=''):
+      def CalculateChecksum(self, filename):
         self.calculate_checksum = True
         assert filename == 'compiler_proxy'
         return 'invalid_checksum'

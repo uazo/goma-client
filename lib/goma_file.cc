@@ -173,7 +173,13 @@ bool FileServiceClient::OutputFileBlob(const FileBlob& blob,
     return false;
   }
   if (!IsValidFileBlob(blob)) {
-    LOG(ERROR) << "invalid blob of type " << blob.blob_type();
+    LOG(ERROR) << "invalid blob of type "
+               << FileBlob_BlobType_Name(blob.blob_type()) << "["
+               << blob.blob_type() << "]"
+               << " offset=" << blob.offset()
+               << " content_size=" << blob.content().size()
+               << " file_size=" << blob.file_size()
+               << " num_hash_keys=" << blob.hash_key().size();
     return false;
   }
   bool ret = false;
@@ -182,7 +188,8 @@ bool FileServiceClient::OutputFileBlob(const FileBlob& blob,
       if (blob.file_size() >= 0) {
         ret = output->WriteAt(0, blob.content());
       } else {
-        LOG(ERROR) << "Invalid FileBlob";
+        LOG(ERROR) << "Invalid FileBlob "
+                   << "blob_type=FILE file_size=" << blob.file_size();
       }
       break;
 

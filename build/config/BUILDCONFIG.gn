@@ -32,7 +32,8 @@ declare_args() {
   # revision differ, a user will see warnings.
   enable_revision_check = false
 
-  enable_lzma = false
+  # TODO: remove the flag when we confirm it works well.
+  enable_lzma = true
   cpu_arch = host_cpu
 
   # Enabling this generates symbol files and sha256 hash.

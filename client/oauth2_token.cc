@@ -251,10 +251,7 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
     }
     LOG(INFO) << "access token is invalidated." << ss.str();
 
-    wm_->RunClosureInThread(
-        FROM_HERE, refresh_task_thread_id_,
-        NewCallback(this, &GoogleOAuth2AccessTokenRefreshTask::Cancel),
-        WorkerThread::PRIORITY_IMMEDIATE);
+    DoCancel();
   }
 
   void Shutdown() override LOCKS_EXCLUDED(mu_) {
@@ -264,36 +261,7 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
         return;
       }
       shutting_down_ = true;
-      if (cancel_refresh_now_ || cancel_refresh_) {
-        if (THREAD_ID_IS_SELF(refresh_task_thread_id_)) {
-          // in goma_fetch.cc, refresh_task_thread_id_ and current thread
-          // is same, so call cancel in the same thread.
-          // since Wait() is also called on the same thread, there would be
-          // no chance to run Cancel on the thread and never get cond_
-          // signalled.
-          if (cancel_refresh_now_) {
-            LOG(INFO) << "cancel now " << cancel_refresh_now_;
-            cancel_refresh_now_->Cancel();
-            cancel_refresh_now_ = nullptr;
-            cond_.Signal();
-          }
-          if (cancel_refresh_) {
-            LOG(INFO) << "cancel " << cancel_refresh_now_;
-            cancel_refresh_now_->Cancel();
-            cancel_refresh_now_ = nullptr;
-            cond_.Signal();
-          }
-        } else {
-          LOG(INFO) << "cancelling now..." << cancel_refresh_now_;
-          LOG(INFO) << "cancelling..." << cancel_refresh_;
-          wm_->RunClosureInThread(
-              FROM_HERE,
-              refresh_task_thread_id_,
-              NewCallback(
-                  this, &GoogleOAuth2AccessTokenRefreshTask::Cancel),
-              WorkerThread::PRIORITY_IMMEDIATE);
-        }
-      }
+      DoCancel();
     }
     client_->Shutdown();
   }
@@ -519,6 +487,42 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
     RunRefreshUnlocked();
   }
 
+  void DoCancel() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    if (cancelling_) {
+      LOG(INFO) << "already cancelling...";
+      return;
+    }
+    if (!cancel_refresh_now_ && !cancel_refresh_) {
+      return;
+    }
+    if (THREAD_ID_IS_SELF(refresh_task_thread_id_)) {
+      // in goma_fetch.cc, refresh_task_thread_id_ and current thread
+      // is same, so call cancel in the same thread.
+      // since Wait() is also called on the same thread, there would be
+      // no chance to run Cancel on the thread and never get cond_
+      // signalled.
+      if (cancel_refresh_now_) {
+        LOG(INFO) << "cancel now " << cancel_refresh_now_;
+        cancel_refresh_now_->Cancel();
+        cancel_refresh_now_ = nullptr;
+      }
+      if (cancel_refresh_) {
+        LOG(INFO) << "cancel " << cancel_refresh_;
+        cancel_refresh_->Cancel();
+        cancel_refresh_ = nullptr;
+      }
+      cond_.Signal();
+    } else {
+      LOG(INFO) << "cancelling now... " << cancel_refresh_now_;
+      LOG(INFO) << "cancelling... " << cancel_refresh_;
+      cancelling_ = true;
+      wm_->RunClosureInThread(
+          FROM_HERE, refresh_task_thread_id_,
+          NewCallback(this, &GoogleOAuth2AccessTokenRefreshTask::Cancel),
+          WorkerThread::PRIORITY_IMMEDIATE);
+    }
+  }
+
   void Cancel() LOCKS_EXCLUDED(mu_) {
     AUTOLOCK(lock, &mu_);
     DCHECK(THREAD_ID_IS_SELF(refresh_task_thread_id_));
@@ -534,6 +538,7 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
       cond_.Signal();
       LOG(INFO) << "cancelled";
     }
+    cancelling_ = false;
   }
 
   WorkerThreadManager* wm_;
@@ -569,6 +574,7 @@ class GoogleOAuth2AccessTokenRefreshTask : public OAuth2AccessTokenRefreshTask {
       nullptr;
   WorkerThreadManager::CancelableClosure* cancel_refresh_ GUARDED_BY(mu_) =
       nullptr;
+  bool cancelling_ GUARDED_BY(mu_) = false;
   WorkerThread::ThreadId refresh_task_thread_id_ GUARDED_BY(mu_);
   bool has_set_thread_id_ GUARDED_BY(mu_) = false;
   bool shutting_down_ GUARDED_BY(mu_) = false;

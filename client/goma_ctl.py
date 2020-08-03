@@ -980,18 +980,13 @@ class GomaDriver(object):
       sys.exit(1)
     return
 
-  def _Audit(self, update_dir=''):
+  def _Audit(self):
     """Audit files in the goma client package.
-
-    If update_dir is an empty string, it audit current goma files.
-
-    Args:
-      update_dir: directory containing goma files to verify.
 
     Returns:
       False if failed to verify.
     """
-    cksums = self._env.LoadChecksum(update_dir=update_dir)
+    cksums = self._env.LoadChecksum()
     if not cksums:
       print('No checksum could be loaded.')
       return True
@@ -1000,7 +995,7 @@ class GomaDriver(object):
       # Windows checksum file has non-existing .pdb files.
       if os.path.splitext(filename)[1] == '.pdb':
         continue
-      digest = self._env.CalculateChecksum(filename, update_dir=update_dir)
+      digest = self._env.CalculateChecksum(filename)
       if checksum != digest:
         print('%s differs: %s != %s' % (filename, checksum, digest))
         return False
@@ -1171,7 +1166,6 @@ class GomaEnv(object):
   _COMPILER_PROXY = ''
   _GOMA_FETCH = ''
   _COMPILER_PROXY_IDENTIFIER_ENV_NAME = ''
-  PLATFORM_CANDIDATES = []
   _DEFAULT_ENV = []
   _DEFAULT_SSL_ENV = []
 
@@ -1763,33 +1757,6 @@ class GomaEnv(object):
     proc = self._ExecCompilerProxy()
     return self._GetCompilerProxyPort(proc=proc)  # set the new gomacc_port.
 
-  def GetPlatform(self):
-    """Get platform.
-
-    If the script do not know the platform, it will ask and set platform member
-    varible automatically.
-
-    Returns:
-      a string of platform.
-    """
-    if self._platform:
-      return self._platform
-
-    idx = 1
-    to_show = []
-    for candidate in self.PLATFORM_CANDIDATES:
-      to_show.append('%d. %s' % (idx, candidate[0]))
-      idx += 1
-    print('What is your platform?')
-    print('%s ? --> ' % '  '.join(to_show), end="")
-    selected = sys.stdin.readline()
-    selected = selected.strip()
-    try:
-      self._platform = self.PLATFORM_CANDIDATES[int(selected) - 1][1]
-    except (ValueError, IndexError):
-      raise Error('Invalid selection')
-    return self._platform
-
   def IsProductionBinary(self):
     """Returns True if compiler_proxy is release version.
 
@@ -1806,36 +1773,17 @@ class GomaEnv(object):
                           stderr=subprocess.STDOUT).communicate()[0].rstrip()
     return 'built by chrome-bot' in info
 
-  def _GetExtractedDir(self, update_dir):
-    """Returns a full path directory name where a package is extracted.
-
-    Args:
-      update_dir: a name of update_dir.  This option should be specified when
-                  this method is used in update process.
-
-    Returns:
-      a directory name goma client files are extracted.
-    """
-    if not update_dir:
-      return self._dir
-    return os.path.join(self._dir, update_dir,
-                        'goma-%s' % self.GetPlatform())
-
-  def LoadChecksum(self, update_dir=''):
+  def LoadChecksum(self):
     """Returns a dictionary of checksum.
 
     For backward compatibility, it returns an empty dictionary if a JSON
     file does not exist.
 
-    Args:
-      update_dir: directory containing latest goma files.
-                  if empty, load checksum from current goma client directory.
-
     Returns:
       a dictionary of filename and checksum.
       e.g. {'compiler_proxy': 'abcdef...', ...}
     """
-    json_file = os.path.join(self._GetExtractedDir(update_dir), _CHECKSUM_FILE)
+    json_file = os.path.join(self._dir, _CHECKSUM_FILE)
     if not os.path.exists(json_file):
       print('%s not exist' % json_file)
       return {}
@@ -1843,20 +1791,16 @@ class GomaEnv(object):
     with open(json_file) as f:
       return json.load(f)
 
-  def CalculateChecksum(self, filename, update_dir=''):
+  def CalculateChecksum(self, filename):
     """Returns checksum of a file.
 
     Args:
       filename: a string filename under script dir.
-      update_dir: directory containing latest goma files
-                  if empty, calculate checksum of files in current goma client
-                  directory.
 
     Returns:
       a checksum of a file.
     """
-    return _CalculateChecksum(os.path.join(self._GetExtractedDir(update_dir),
-                                           filename))
+    return _CalculateChecksum(os.path.join(self._dir, filename))
 
   # methods need to be implemented in subclasses.
   def _ProcessRunning(self, image_name):
@@ -1974,9 +1918,6 @@ class GomaEnvWin(GomaEnv):
   _DEFAULT_SSL_ENV = [
       # Longer read timeout seems to be required on Windows.
       ('HTTP_SOCKET_READ_TIMEOUT_SECS', '90.0'),
-      ]
-  PLATFORM_CANDIDATES = [
-      ('Win64', 'win64'),
       ]
   _GOMA_CTL_SCRIPT_NAME = 'goma_ctl.bat'
   _DEPOT_TOOLS_DIR_PATTERN = re.compile(r'.*[/\\]depot_tools[/\\]?$')
@@ -2116,11 +2057,6 @@ class GomaEnvPosix(GomaEnv):
       ('COMPILER_PROXY_SOCKET_NAME', 'goma.ipc'),
       ('COMPILER_PROXY_LOCK_FILENAME', 'goma_compiler_proxy.lock'),
       ('COMPILER_PROXY_PORT', '8088'),
-      ]
-  PLATFORM_CANDIDATES = [
-      # (Shown name, platform)
-      ('Goobuntu', 'goobuntu'),
-      ('MacOS', 'mac'),
       ]
   _LSOF = 'lsof'
   _FUSER = 'fuser'
@@ -2343,11 +2279,6 @@ class GomaBackend(object):
     self._download_base_url = None
     self._server_host = server_host
     self._path_prefix = path_prefix
-    self._SetupEnviron()
-
-  def _SetupEnviron(self):
-    """Set up backend specific environmental variables."""
-    pass
 
   def _MakeServerUrl(self, suffix):
     return URLJOIN('https://%s' % self._server_host,
@@ -2371,14 +2302,6 @@ class Clients5Backend(GomaBackend):
         env,
         server_host='clients5.google.com',
         path_prefix='/cxx-compiler-service')
-
-  def _SetupEnviron(self):
-    """Set up clients5 backend specific environmental variables."""
-    # TODO: provide better way to make server know Windows client.
-    # Fool proof until we provide the way.
-    if (isinstance(self._env, GomaEnvWin) and
-        not os.environ.get('GOMA_RPC_EXTRA_PARAMS', '')):
-      sys.stderr.write('Please set GOMA_RPC_EXTRA_PARAMS=?win\n')
 
 
 def GetGomaDriver():
