@@ -13,6 +13,7 @@ to do the equivalent of:
 """
 
 import argparse
+import errno
 import os
 import subprocess
 import sys
@@ -56,7 +57,7 @@ def main():
   try:
     os.remove(args.output)
   except OSError as e:
-    if e.errno != os.errno.ENOENT:
+    if e.errno != errno.ENOENT:
       raise
 
   # Now just run the ar command.
