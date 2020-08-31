@@ -330,8 +330,11 @@ GOMA_DEFINE_bool(STORE_LOCAL_RUN_OUTPUT, false,
 GOMA_DEFINE_bool(ENABLE_REMOTE_LINK, false, "Enable remote link.");
 GOMA_DEFINE_bool(USE_RELATIVE_PATHS_IN_ARGV, false,
                  "Use relative paths in argv, except system directories.");
-GOMA_DEFINE_bool(SEND_EXPECTED_OUTPUTS, false,
-                 "Send expected output files and dirs to the goma server.");
+GOMA_DEFINE_bool(SEND_EXPECTED_OUTPUTS,
+                 true,
+                 "Send expected output files and dirs to the goma server."
+                 " Moreover, files/dirs to be used as output are decied by the"
+                 " client.");
 GOMA_DEFINE_string(TMP_DIR, "",
                    "Temporary Directory.  Ignored on Windows.");
 GOMA_DEFINE_string(CACHE_DIR, "",

@@ -1229,4 +1229,28 @@ TEST(CppParserTest, MissingHeader) {
   EXPECT_FALSE(cpp_parser.ProcessDirectives());
 }
 
+// regression test for b/167131595
+TEST(CppParserTest, ObjectiveCXXIsCPlusPlus) {
+  CppParser cpp_parser;
+  std::unique_ptr<CompilerInfoData> info_data =
+      absl::make_unique<CompilerInfoData>();
+  info_data->set_lang("objective-c++");
+  info_data->mutable_cxx();
+  CxxCompilerInfo compiler_info(std::move(info_data));
+  cpp_parser.SetCompilerInfo(&compiler_info);
+
+  CppIncludeObserver include_observer(&cpp_parser);
+  cpp_parser.set_include_observer(&include_observer);
+
+  cpp_parser.AddStringInput(
+      "#define DCHECK_IS_ON() true\n"
+      "#if DCHECK_IS_ON()\n"
+      "# define OK 1\n"
+      "#endif\n",
+      "foo.cc");
+
+  EXPECT_TRUE(cpp_parser.ProcessDirectives());
+  EXPECT_TRUE(cpp_parser.IsMacroDefined("OK"));
+}
+
 }  // namespace devtools_goma

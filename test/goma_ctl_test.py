@@ -233,12 +233,6 @@ class FakeGomaEnv(object):
     pass
 
 
-class FakeGomaBackend(object):
-  """Fake GomaBackend class for test."""
-  # pylint: disable=R0201
-  # pylint: disable=W0613
-
-
 def _ClearGomaEnv():
   """Clear goma-related environmental variables."""
   to_delete = []
@@ -634,36 +628,36 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
     self.assertFalse(self._module._IsGomaFlagUpdated(expected))
 
   def testStartCompilerProxyShouldRun(self):
-    driver = self._module.GomaDriver(FakeGomaEnv(), FakeGomaBackend())
+    driver = self._module.GomaDriver(FakeGomaEnv())
     driver._StartCompilerProxy()
 
   def testGetStatusShouldCallControlCompilerProxyWithHealthz(self):
     env = self.CreateSpyControlCompilerProxy()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._GetStatus()
     self.assertEqual(env.command, '/healthz')
 
   def testShutdownCompilerProxyShouldCallControlCompilerProxyWith3Quit(self):
     env = self.CreateSpyControlCompilerProxy()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._ShutdownCompilerProxy()
     self.assertEqual(env.command, '/quitquitquit')
 
   def testPrintStatisticsShouldCallControlCompilerProxyWithStatz(self):
     env = self.CreateSpyControlCompilerProxy()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._PrintStatistics()
     self.assertEqual(env.command, '/statz')
 
   def testPrintHistogramShouldCallControlCompilerProxyWithStatz(self):
     env = self.CreateSpyControlCompilerProxy()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._PrintHistogram()
     self.assertEqual(env.command, '/histogramz')
 
   def testGetJsonStatusShouldCallControlCompilerProxyWithErrorz(self):
     env = self.CreateSpyControlCompilerProxy()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._GetJsonStatus()
     self.assertEqual(env.command, '/errorz')
 
@@ -695,7 +689,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.written = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._Report()
     self.assertTrue(env.written)
     for f in env.output_files:
@@ -746,7 +740,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.written = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._Report()
     self.assertTrue(env.written)
     for f in env.output_files:
@@ -799,7 +793,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.written = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._Report()
     self.assertTrue(env.written)
     for f in env.output_files:
@@ -807,7 +801,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
     self.assertTrue(env.tgz_file.startswith(self._module._GetTempDirectory()))
 
   def testRestartCompilerProxyShouldRun(self):
-    driver = self._module.GomaDriver(FakeGomaEnv(), FakeGomaBackend())
+    driver = self._module.GomaDriver(FakeGomaEnv())
     driver._RestartCompilerProxy()
 
   def testGomaStatusShouldTrueForOK(self):
@@ -826,7 +820,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
                                                             need_pids)
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     self.assertTrue(driver._GetStatus())
     self.assertTrue(env.compiler_proxy_healthz_called)
 
@@ -846,7 +840,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
                                                             need_pids)
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     self.assertTrue(driver._GetStatus())
     self.assertTrue(env.compiler_proxy_healthz_called)
 
@@ -866,7 +860,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
                                                             need_pids)
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     self.assertFalse(driver._GetStatus())
     self.assertTrue(env.compiler_proxy_healthz_called)
 
@@ -886,7 +880,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
                                                             need_pids)
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     self.assertFalse(driver._GetStatus())
     self.assertTrue(env.compiler_proxy_healthz_called)
 
@@ -929,7 +923,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.kill_stakeholders = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._EnsureStartCompilerProxy()
     self.assertTrue(env.compiler_proxy_running)
     self.assertTrue(env.get_version)
@@ -999,7 +993,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.status_healthy = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._EnsureStartCompilerProxy()
     self.assertTrue(env.compiler_proxy_running)
     self.assertTrue(env.get_version)
@@ -1058,7 +1052,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
 
     os.environ['GOMA_TEST'] = 'flag should be different'
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._EnsureStartCompilerProxy()
     self.assertTrue(env.compiler_proxy_running)
     self.assertTrue(env.get_version)
@@ -1117,7 +1111,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.kill_stakeholders = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._EnsureStartCompilerProxy()
     self.assertTrue(env.compiler_proxy_running)
     self.assertTrue(env.get_version)
@@ -1175,7 +1169,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.kill_stakeholders = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._EnsureStartCompilerProxy()
     self.assertTrue(env.compiler_proxy_running)
     self.assertTrue(env.get_version)
@@ -1231,7 +1225,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.kill_stakeholders = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._EnsureStartCompilerProxy()
     self.assertTrue(env.compiler_proxy_running)
     self.assertTrue(env.get_version)
@@ -1259,7 +1253,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
                   'pid': 'unknown'}
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     self.assertTrue(driver._IsCompilerProxySilentlyUpdated())
     self.assertTrue(env.get_version)
     self.assertTrue(env.control_with_version)
@@ -1283,7 +1277,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
                   'pid': 'unknown'}
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     self.assertFalse(driver._IsCompilerProxySilentlyUpdated())
     self.assertTrue(env.get_version)
     self.assertTrue(env.control_with_version)
@@ -1301,7 +1295,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
           return {'status': False, 'pid': 'unknown'}
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     printed_json = json.loads(driver._GetJsonStatus())
     self.assertTrue(env.control_compiler_proxy)
     self.assertEqual(printed_json['notice'][0]['compile_error'],
@@ -1322,7 +1316,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
                   'pid': 'unknown'}
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     returned = driver._GetJsonStatus()
     self.assertTrue(env.control_compiler_proxy)
     self.assertEqual(returned, compiler_proxy_output)
@@ -1351,7 +1345,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         return True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     orig_goma_tmp_dir = os.environ.get('GOMA_TMP_DIR')
     self.assertNotEqual(orig_goma_tmp_dir, fake_tmpdir)
     driver._CreateGomaTmpDirectory()
@@ -1389,7 +1383,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         return True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     orig_goma_tmp_dir = os.environ.get('GOMA_TMP_DIR')
     self.assertNotEqual(orig_goma_tmp_dir, fake_tmpdir)
     driver._CreateGomaTmpDirectory()
@@ -1437,7 +1431,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         return True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._CreateCrashDumpDirectory()
     self.assertTrue(env.get_crash_dump_directory)
     self.assertTrue(env.is_directory_exist)
@@ -1479,7 +1473,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         return True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._CreateCrashDumpDirectory()
     self.assertTrue(env.get_crash_dump_directory)
     self.assertTrue(env.is_directory_exist)
@@ -1521,7 +1515,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         return True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._CreateCacheDirectory()
     self.assertTrue(env.get_cache_directory)
     self.assertTrue(env.is_directory_exist)
@@ -1564,7 +1558,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         return True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._CreateCacheDirectory()
     self.assertTrue(env.get_cache_directory)
     self.assertTrue(env.is_directory_exist)
@@ -1587,7 +1581,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         self.calculate_checksum = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     self.assertTrue(driver._Audit())
     self.assertTrue(env.load_checksum)
     self.assertFalse(env.calculate_checksum)
@@ -1609,7 +1603,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         return 'valid_checksum'
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     self.assertTrue(driver._Audit())
     self.assertTrue(env.load_checksum)
     self.assertTrue(env.calculate_checksum)
@@ -1631,7 +1625,7 @@ class GomaCtlSmallTest(GomaCtlTestCommon):
         return 'invalid_checksum'
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     self.assertFalse(driver._Audit())
     self.assertTrue(env.load_checksum)
     self.assertTrue(env.calculate_checksum)
@@ -1762,7 +1756,7 @@ class GomaEnvTest(GomaCtlTestCommon):
     self.assertNotEqual(env.GetUsername(), '')
 
 
-class GomaCtlLargeTestCommon(GomaCtlTestCommon):
+class GomaCtlLargeTest(GomaCtlTestCommon):
   """Large tests for goma_ctl.py.
 
   All tests in this class may affect external environment.  It may try to
@@ -1782,20 +1776,24 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
       oauth2_file: a string of OAuth2 service account JSON filename.
       port: a string or an integer port number of compiler_proxy.
     """
-    super(GomaCtlLargeTestCommon, self).__init__(method_name, goma_ctl_path,
-                                                 platform_specific)
+    super(GomaCtlLargeTest, self).__init__(method_name, goma_ctl_path,
+                                           platform_specific)
     self._oauth2_file = oauth2_file
     self._port = int(port)
     self._driver = None
 
   def setUp(self):
-    super(GomaCtlLargeTestCommon, self).setUp()
+    super(GomaCtlLargeTest, self).setUp()
     self._platform_specific.SetCompilerProxyEnv(self._tmp_dir, self._port)
+
+    os.environ['GOMA_SERVICE_ACCOUNT_JSON_FILE'] = self._oauth2_file
+    sys.stderr.write('Using GOMA_SERVICE_ACCOUNT_JSON_FILE = %s\n' %
+                     self._oauth2_file)
 
   def tearDown(self):
     if self._driver:
       self._driver._EnsureStopCompilerProxy()
-    super(GomaCtlLargeTestCommon, self).tearDown()
+    super(GomaCtlLargeTest, self).tearDown()
 
   def StartWithModifiedVersion(self, version=None):
     """Start compiler proxy with modified version.
@@ -1893,7 +1891,8 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
 
       def CompilerProxyRunning(self):
         return False
-    driver = self._module.GomaDriver(SpyGomaEnv(), FakeGomaBackend())
+
+    driver = self._module.GomaDriver(SpyGomaEnv())
     driver._PrintVersion()
 
   def testVersionRunning(self):
@@ -1915,7 +1914,8 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
         return super(SpyGomaEnv, self).ControlCompilerProxy(command,
                                                             check_running,
                                                             need_pids)
-    driver = self._module.GomaDriver(SpyGomaEnv(), FakeGomaBackend())
+
+    driver = self._module.GomaDriver(SpyGomaEnv())
     driver._PrintVersion()
 
   def testUpdateHookNotRunning(self):
@@ -1970,7 +1970,7 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
         self.running = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._UpdateHook()
     self.assertFalse(env.running)
 
@@ -2026,7 +2026,7 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
         self.running = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._UpdateHook()
     self.assertFalse(env.shutdowned)
     self.assertTrue(env.running)
@@ -2090,7 +2090,7 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
         self.running = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._UpdateHook()
     self.assertFalse(env.shutdowned)
     self.assertTrue(env.running)
@@ -2154,7 +2154,7 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
         self.running = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._UpdateHook()
     self.assertTrue(env.shutdowned)
     self.assertTrue(env.running)
@@ -2222,75 +2222,10 @@ class GomaCtlLargeTestCommon(GomaCtlTestCommon):
         self.running = True
 
     env = SpyGomaEnv()
-    driver = self._module.GomaDriver(env, FakeGomaBackend())
+    driver = self._module.GomaDriver(env)
     driver._UpdateHook()
     self.assertFalse(env.shutdowned)
     self.assertTrue(env.running)
-
-
-class GomaCtlLargeClients5Test(GomaCtlLargeTestCommon):
-  """Large Clients5 tests for goma_ctl.py."""
-
-  def setUp(self):
-    super(GomaCtlLargeClients5Test, self).setUp()
-
-    os.environ['GOMA_SERVICE_ACCOUNT_JSON_FILE'] = self._oauth2_file
-    sys.stderr.write(
-        'Using GOMA_SERVICE_ACCOUNT_JSON_FILE = %s\n' % self._oauth2_file)
-
-
-class GomaBackendTest(GomaCtlTestCommon):
-  """Tests basic operation of class GomaBackend."""
-
-  _SERVER_HOST = 'example.com'
-  _PATH_PREFIX = 'cxx-compiler-service'
-
-  def __init__(self, method_name, goma_ctl_path):
-    super(GomaBackendTest, self).__init__(
-        method_name, goma_ctl_path, platform_specific=None)
-
-  def setUp(self):
-    super(GomaBackendTest, self).setUp()
-
-    class TestGomaBackend(self._module.GomaBackend):
-      """Implements methods that were not implemented in its parent class."""
-
-      def __init__(self, env):
-        super(TestGomaBackend, self).__init__(env, GomaBackendTest._SERVER_HOST,
-                                              GomaBackendTest._PATH_PREFIX)
-
-    self._backend = TestGomaBackend(self._module.GomaEnv())
-
-  def testMakeServerUrl(self):
-    self.assertEqual(
-        self._backend._MakeServerUrl('foo'),
-        'https://example.com/cxx-compiler-service/foo')
-
-  def testGetPingUrl(self):
-    self.assertEqual(self._backend.GetPingUrl(),
-                     'https://example.com/cxx-compiler-service/ping')
-
-
-class Clients5BackendTest(GomaCtlTestCommon):
-  """Tests basic operation of class Clients5BackendTest."""
-
-  def __init__(self, method_name, goma_ctl_path):
-    super(Clients5BackendTest, self).__init__(
-        method_name, goma_ctl_path, platform_specific=None)
-
-  def setUp(self):
-    super(Clients5BackendTest, self).setUp()
-
-    self._backend = self._module.Clients5Backend(self._module.GomaEnv())
-
-  def testMakeServerUrl(self):
-    self.assertEqual(
-        self._backend._MakeServerUrl('foo'),
-        'https://clients5.google.com/cxx-compiler-service/foo')
-
-  def testGetPingUrl(self):
-    self.assertEqual(self._backend.GetPingUrl(),
-                     'https://clients5.google.com/cxx-compiler-service/ping')
 
 
 def GetParameterizedTestSuite(klass, **kwargs):
@@ -2345,26 +2280,22 @@ def main():
       GetParameterizedTestSuite(GomaCtlSmallTest,
                                 goma_ctl_path=goma_ctl_path,
                                 platform_specific=platform_specific))
-  suite.addTest(
-      GetParameterizedTestSuite(GomaBackendTest, goma_ctl_path=goma_ctl_path))
-  suite.addTest(
-      GetParameterizedTestSuite(
-          Clients5BackendTest, goma_ctl_path=goma_ctl_path))
   if not options.small:
     suite.addTest(
         GetParameterizedTestSuite(GomaEnvTest,
                                   goma_ctl_path=goma_ctl_path,
                                   platform_specific=platform_specific))
-    clients5_key = options.goma_service_account_json_file
-    if not clients5_key and platform_specific.GetCred():
-      clients5_key = platform_specific.GetCred()
-    assert clients5_key
+    oauth2_file = options.goma_service_account_json_file
+    if not oauth2_file and platform_specific.GetCred():
+      oauth2_file = platform_specific.GetCred()
+    assert oauth2_file
     suite.addTest(
-        GetParameterizedTestSuite(GomaCtlLargeClients5Test,
-                                  goma_ctl_path=goma_ctl_path,
-                                  platform_specific=platform_specific,
-                                  oauth2_file=clients5_key,
-                                  port=options.port))
+        GetParameterizedTestSuite(
+            GomaCtlLargeTest,
+            goma_ctl_path=goma_ctl_path,
+            platform_specific=platform_specific,
+            oauth2_file=oauth2_file,
+            port=options.port))
   result = unittest.TextTestRunner(verbosity=options.verbosity).run(suite)
 
   # Return test status as exit status.

@@ -13,6 +13,7 @@ You need to do the following once you start using Goma.
 ## System requirements
 
 * A x86-64 machine with at least 8GB of RAM.
+* Linux
 * You must have python 2.7 or later installed already.
 * You must have [depot\_tools](https://chromium.googlesource.com/chromium/src/+/master/docs/linux/build_instructions.md#install) installed already.
   Please make sure your `PATH` environment variable has `depot_tools` path.

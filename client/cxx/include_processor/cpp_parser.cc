@@ -104,7 +104,10 @@ void CppParser::SetCompilerInfo(const CxxCompilerInfo* compiler_info) {
   if (compiler_info_ == nullptr)
     return;
 
-  set_is_cplusplus(compiler_info_->lang() == "c++");
+  // is_cplusplus if c++ / objective-c++ / c++-header
+  // see GCCFlags::GetLanguage
+  // http://b/167131595
+  set_is_cplusplus(absl::StrContains(compiler_info_->lang(), "c++"));
 
   AddPredefinedMacros(*compiler_info);
   AddPreparsedDirectivesInput(compiler_info->predefined_directives());

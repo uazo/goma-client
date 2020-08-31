@@ -56,6 +56,8 @@ std::string GetClangClSharpOutput(
     const std::string& cwd) {
   std::vector<std::string> argv;
   argv.push_back(clang_path);
+  argv.push_back("-Qunused-arguments");
+  argv.push_back("-Wno-unknown-argument");
   copy(compiler_info_flags.begin(), compiler_info_flags.end(),
        back_inserter(argv));
   argv.push_back("-###");

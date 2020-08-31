@@ -529,15 +529,13 @@ def _CheckOutput(args, **kwargs):
 class GomaDriver(object):
   """Driver of Goma control."""
 
-  def __init__(self, env, backend):
+  def __init__(self, env):
     """Initialize GomaDriver.
 
     Args:
       env: an instance of GomaEnv subclass.
-      backend: an instance of GomaBackend subclass.
     """
     self._env = env
-    self._backend = backend
     self._latest_package_dir = 'latest'
     self._action_mappings = {
         'audit': self._CheckAudit,
@@ -2271,46 +2269,12 @@ _GOMA_ENVS = {
     }
 
 
-class GomaBackend(object):
-  """Backend specific configs."""
-
-  def __init__(self, env, server_host=None, path_prefix=None):
-    self._env = env
-    self._download_base_url = None
-    self._server_host = server_host
-    self._path_prefix = path_prefix
-
-  def _MakeServerUrl(self, suffix):
-    return URLJOIN('https://%s' % self._server_host,
-                   posixpath.join(self._path_prefix, suffix))
-
-  def GetPingUrl(self):
-    """Get ping url.
-
-    Returns:
-       URL for ping
-    """
-    return self._MakeServerUrl('ping')
-
-
-class Clients5Backend(GomaBackend):
-  """Backend specific config for Clients5."""
-
-  def __init__(self, env):
-    # Set member variables for _MakeServerUrl.
-    super(Clients5Backend, self).__init__(
-        env,
-        server_host='clients5.google.com',
-        path_prefix='/cxx-compiler-service')
-
-
 def GetGomaDriver():
   """Returns a proper instance of GomaEnv subclass based on os.name."""
   if os.name not in _GOMA_ENVS:
     raise Error('Could not find proper GomaEnv for "%s"' % os.name)
   env = _GOMA_ENVS[os.name]()
-  backend = Clients5Backend(env)
-  return GomaDriver(env, backend)
+  return GomaDriver(env)
 
 
 def main():
