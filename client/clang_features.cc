@@ -3,9 +3,10 @@
 // found in the LICENSE file.
 //
 // This is auto-generated file by
-//   go run generate_feature_lists.go -o client/clang_features.cc.
+//   go run generate_feature_lists.go --revision
+//   33ce275fc156c8b015acfad918937028b2cc235c -o client/clang_features.cc.
 //
-// LLVM revison: e885f336fd78e35ccb8e967e0664b356de333963
+// LLVM revison: 33ce275fc156c8b015acfad918937028b2cc235c
 // *** DO NOT EDIT ***
 
 #include "absl/base/macros.h"
@@ -293,6 +294,7 @@ static const char* KNOWN_ATTRIBUTES[] = {
     "analyzer_noreturn",
     "annotate",
     "argument_with_type_tag",
+    "arm_sve_vector_bits",
     "artificial",
     "asm",
     "assert_capability",
@@ -444,6 +446,7 @@ static const char* KNOWN_ATTRIBUTES[] = {
     "novtable",
     "ns_consumed",
     "ns_consumes_self",
+    "ns_error_domain",
     "ns_returns_autoreleased",
     "ns_returns_not_retained",
     "ns_returns_retained",
@@ -476,6 +479,8 @@ static const char* KNOWN_ATTRIBUTES[] = {
     "opencl_constant",
     "opencl_generic",
     "opencl_global",
+    "opencl_global_device",
+    "opencl_global_host",
     "opencl_local",
     "opencl_private",
     "opencl_unroll_hint",
@@ -826,6 +831,7 @@ static const char* KNOWN_BUILTINS[] = {
     "__builtin_clogl",
     "__builtin_clrsbll",
     "__builtin_clzll",
+    "__builtin_complex",
     "__builtin_conj",
     "__builtin_conjf",
     "__builtin_conjl",

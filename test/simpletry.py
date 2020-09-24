@@ -35,7 +35,6 @@ except ImportError:
 
 _GOMA_CTL = 'goma_ctl.py'
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_CRED = 'c:\\creds\\service_accounts\\service-account-goma-client.json'
 
 
 class Error(Exception):
@@ -390,7 +389,7 @@ class CompilerProxyManager(object):
   # TODO: fix this.
   # pylint: disable=W0212
 
-  def __init__(self, goma_ctl_path, port, kill=False, api_key_file=None,
+  def __init__(self, goma_ctl_path, port, kill=False,
                service_account_file=None):
     """Initialize.
 
@@ -398,7 +397,6 @@ class CompilerProxyManager(object):
       goma_ctl_path: a string of path goma_ctl.py is located.
       port: a string or an integer port number of compiler_proxy.
       kill: True to kill the GOMA processes before starting compiler_proxy.
-      api_key_file: a string of API key filename.
       service_account_file: a string of service account filename.
     """
     # create goma_ctl.
@@ -409,16 +407,9 @@ class CompilerProxyManager(object):
     self._tmpdir = None
     self._port = int(port)
     self._goma = None
-    self._api_key_file = None
-    if api_key_file and os.path.isfile(api_key_file):
-      self._api_key_file = api_key_file
     self._service_account_file = None
     if service_account_file and os.path.isfile(service_account_file):
       self._service_account_file = service_account_file
-      self._api_key_file = None
-    elif os.path.isfile(_CRED):
-      self._service_account_file = _CRED
-      self._api_key_file = None
 
   def __enter__(self):
     self._tmpdir = tempfile.mkdtemp()
@@ -438,9 +429,6 @@ class CompilerProxyManager(object):
     # os.environ['GOMA_COMPILER_PROXY_LOCK_FILENAME']
     # Windows locks
     # 'Global\$GOMA_COMPILER_PROXY_LOCK_FILENAME.$GOMA_COMPILER_PROXY_PORT'
-    if self._api_key_file:
-      os.environ['GOMA_API_KEY_FILE'] = self._api_key_file
-      print('Use GOMA_API_KEY_FILE=%s' % self._api_key_file)
     if self._service_account_file:
       os.environ['GOMA_SERVICE_ACCOUNT_JSON_FILE'] = self._service_account_file
       print(
@@ -615,7 +603,6 @@ def main():
     with CompilerProxyManager(
         goma_dir, options.port,
         kill=options.kill,
-        api_key_file=options.goma_api_key_file,
         service_account_file=options.goma_service_account_file):
       exit_code = ExecuteTests(goma_dir)
   else:

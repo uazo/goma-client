@@ -256,17 +256,6 @@ export GOMA_ENABLE_REMOTE_LINK=true
 export GOMA_HERMETIC=error
 export GOMA_FALLBACK_INPUT_FILES=""
 
-# Set service account JSON file if exists.
-CRED="/creds/service_accounts/service-account-goma-client.json"
-if [ -z "$GOMA_SERVICE_ACCOUNT_JSON_FILE" -a -f "$CRED" ]; then
-  export GOMA_SERVICE_ACCOUNT_JSON_FILE="$CRED"
-fi
-if [ -n "$GOMA_SERVICE_ACCOUNT_JSON_FILE" -a \
-  ! -f "$GOMA_SERVICE_ACCOUNT_JSON_FILE" ]; then
-  echo "GOMA_SERVICE_ACCOUNT_JSON_FILE $GOMA_SERVICE_ACCOUNT_JSON_FILE " \
-    "not found." >&2
-  unset GOMA_SERVICE_ACCOUNT_JSON_FILE
-fi
 GOMACC=$goma_bin_dir/gomacc
 
 # on buildslave:/b/build/slave/$builddir/build/client

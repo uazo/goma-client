@@ -40,7 +40,7 @@ OAUTH_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 TOKEN_INFO_ENDPOINT = 'https://oauth2.googleapis.com/tokeninfo'
 OOB_CALLBACK_URN = 'urn:ietf:wg:oauth:2.0:oob'
 
-GOOGLE_GOMA_PING = 'https://clients5.google.com/cxx-compiler-service/ping'
+GOMA_PING_URL = 'https://goma.chromium.org/cxx-compiler-service/ping'
 
 DEFAULT_GOMA_OAUTH2_CONFIG_FILE_NAME = '.goma_client_oauth2_config'
 
@@ -355,11 +355,26 @@ def VerifyRefreshToken(config):
   return ''
 
 
-def CheckPing():
+def CheckPing(ping_url):
   """Check ping with current login user.
 
   Returns:
-    true if user is ready to use Goma.
+    true if ping success.
+  """
+  cmd = [GOMA_FETCH, '--auth', ping_url]
+  try:
+    subprocess.check_output(cmd, stderr=subprocess.STDOUT)  # discard outputs.
+    return True
+  except subprocess.CalledProcessError:
+    pass  # expected if ping fails.
+  return False
+
+
+def CheckBackendAccess():
+  """Check the current login user can access backend.
+
+  Returns:
+    true if the user can access.
   """
   server = os.environ.get('GOMA_SERVER_HOST', 'goma.chromium.org')
   port = os.environ.get('GOMA_SERVER_PORT', '443')
@@ -374,12 +389,11 @@ def CheckPing():
   path_prefix = os.environ.get('GOMA_URL_PATH_PREFIX', '/cxx-compiler-service')
   rpc_extra_params = os.environ.get('GOMA_RPC_EXTRA_PARAMS', '')
   url = '%s%s/ping%s' % (server_url, path_prefix, rpc_extra_params)
-  cmd = [GOMA_FETCH, '--auth', url]
-  try:
-    subprocess.check_output(cmd, stderr=subprocess.STDOUT)  # discard outputs.
+
+  if CheckPing(url):
     print('Ready to use Goma service at %s' % server_url)
     return True
-  except subprocess.CalledProcessError:
+  else:
     print(('Current user is not registered with Goma service at %s with ' +
            'GOMA_RPC_EXTRA_PARAMS="%s". ' +
            'Unable to use Goma.') % (server_url, rpc_extra_params))
@@ -416,7 +430,7 @@ def Login():
   for k in flags:
     if k not in os.environ:
       os.environ[k] = flags[k]
-  if not CheckPing():
+  if not CheckBackendAccess():
     return 1
   return 0
 
@@ -450,7 +464,7 @@ def Info():
   for k in flags:
     if k not in os.environ:
       os.environ[k] = flags[k]
-  if not CheckPing():
+  if not CheckBackendAccess():
     return 1
   return 0
 
@@ -481,16 +495,8 @@ def configFlags(config):
   flags = FlagsValue()
   if not config.Load():
     # not logged in
-    try:
-      cmd = [GOMA_FETCH, '--auth', GOOGLE_GOMA_PING]
-      subprocess.check_call(cmd)
-      flags.comment = '# in google'
-      flags.update({'GOMA_SERVER_HOST': 'clients5.google.com'})
-      # TODO: only opt-in?
-      flags.enableSendInfo()
-      return flags
-    except subprocess.CalledProcessError:
-      raise Error('Need to login.  Run `goma_auth login` to login.')
+    raise Error('Need to login.  Run `goma_auth login` to login.')
+
   token_info = FetchTokenInfo(config)
   if 'error_description' in token_info:
     raise Error(
@@ -499,7 +505,11 @@ def configFlags(config):
     raise Error('No email in token_info %s' % token_info)
   if token_info['email'].endswith('@google.com'):
     flags.comment = '# login as %s' % token_info['email']
-    flags.update({'GOMA_SERVER_HOST': 'clients5.google.com'})
+    if not os.environ.get('GOMA_SERVER_HOST'):
+      if CheckPing(GOMA_PING_URL):
+        flags.update({'GOMA_SERVER_HOST': DEFAULT_GOMA_SERVER_HOST})
+      else:
+        flags.update({'GOMA_SERVER_HOST': 'clients5.google.com'})
     flags.enableSendInfo()
     return flags
   return flags

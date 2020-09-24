@@ -62,16 +62,9 @@ class PlatformSpecific(object):
     """
     raise NotImplementedError('GetDefaultGomaCtlPath should be implemented.')
 
-  def GetCred(self):
-    if os.path.isfile(self._CRED):
-      return self._CRED
-    return None
-
 
 class WindowsSpecific(PlatformSpecific):
   """class for Windows specific commands / data."""
-
-  _CRED = 'c:\\creds\\service_accounts\\service-account-goma-client.json'
 
   @staticmethod
   def GetDefaultGomaCtlPath(test_dir):
@@ -85,8 +78,6 @@ class WindowsSpecific(PlatformSpecific):
 
 class PosixSpecific(PlatformSpecific):
   """class for Windows specific commands / data."""
-
-  _CRED = '/creds/service_accounts/service-account-goma-client.json'
 
   @staticmethod
   def GetDefaultGomaCtlPath(test_dir):
@@ -1786,9 +1777,10 @@ class GomaCtlLargeTest(GomaCtlTestCommon):
     super(GomaCtlLargeTest, self).setUp()
     self._platform_specific.SetCompilerProxyEnv(self._tmp_dir, self._port)
 
-    os.environ['GOMA_SERVICE_ACCOUNT_JSON_FILE'] = self._oauth2_file
-    sys.stderr.write('Using GOMA_SERVICE_ACCOUNT_JSON_FILE = %s\n' %
-                     self._oauth2_file)
+    if self._oauth2_file:
+      os.environ['GOMA_SERVICE_ACCOUNT_JSON_FILE'] = self._oauth2_file
+      sys.stderr.write('Using GOMA_SERVICE_ACCOUNT_JSON_FILE = %s\n' %
+                       self._oauth2_file)
 
   def tearDown(self):
     if self._driver:
@@ -2286,9 +2278,6 @@ def main():
                                   goma_ctl_path=goma_ctl_path,
                                   platform_specific=platform_specific))
     oauth2_file = options.goma_service_account_json_file
-    if not oauth2_file and platform_specific.GetCred():
-      oauth2_file = platform_specific.GetCred()
-    assert oauth2_file
     suite.addTest(
         GetParameterizedTestSuite(
             GomaCtlLargeTest,

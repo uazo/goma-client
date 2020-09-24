@@ -46,7 +46,7 @@ const (
 	llvmTop  = "https://raw.githubusercontent.com/llvm/llvm-project/"
 )
 
-var commitHashRE = regexp.MustCompile("[^0-9a-f]{40}")
+var commitHashRE = regexp.MustCompile("[0-9a-f]{40}")
 
 func latestRevision(ctx context.Context, revision string) (string, error) {
 	if commitHashRE.MatchString(revision) {
