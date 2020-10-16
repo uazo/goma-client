@@ -40,9 +40,11 @@ OAUTH_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 TOKEN_INFO_ENDPOINT = 'https://oauth2.googleapis.com/tokeninfo'
 OOB_CALLBACK_URN = 'urn:ietf:wg:oauth:2.0:oob'
 
-GOMA_PING_URL = 'https://goma.chromium.org/cxx-compiler-service/ping'
-
+DEFAULT_GOMA_SERVER_HOST = 'goma.chromium.org'
 DEFAULT_GOMA_OAUTH2_CONFIG_FILE_NAME = '.goma_client_oauth2_config'
+
+GOMA_PING_URL = ('https://%s/cxx-compiler-service/ping' %
+                 DEFAULT_GOMA_SERVER_HOST)
 
 OAUTH_STATE_LENGTH = 64
 
@@ -426,7 +428,7 @@ def Login():
     return 1
 
   config.Save()
-  flags = configFlags(config)
+  flags = ConfigFlags(config)
   for k in flags:
     if k not in os.environ:
       os.environ[k] = flags[k]
@@ -460,7 +462,7 @@ def Info():
   if err:
     sys.stderr.write(err + '\n')
     return 1
-  flags = configFlags(config)
+  flags = ConfigFlags(config)
   for k in flags:
     if k not in os.environ:
       os.environ[k] = flags[k]
@@ -484,7 +486,7 @@ class FlagsValue(dict):
     })
 
 
-def configFlags(config):
+def ConfigFlags(config):
   """returns compiler_proxy flags for login account
 
   Args:
@@ -523,7 +525,7 @@ def Config():
   """
   config = GomaOAuth2Config()
   try:
-    flags = configFlags(config)
+    flags = ConfigFlags(config)
   except Error as e:
     sys.stderr.write('%s' % e)
     return 1

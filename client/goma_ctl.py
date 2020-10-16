@@ -29,6 +29,7 @@ import posixpath
 import random
 import re
 import shutil
+import signal
 import socket
 import string
 import subprocess
@@ -59,6 +60,7 @@ _DEFAULT_ENV = [
 _DEFAULT_NO_SSL_ENV = [
     ('SERVER_PORT', '80'),
     ]
+_DEFAULT_PROXY_PORT = '8000'
 _MAX_COOLDOWN_WAIT = 10  # seconds to wait for compiler_proxy to shutdown.
 _COOLDOWN_SLEEP = 1  # seconds to each wait for compiler_proxy to shutdown.
 _CRASH_DUMP_DIR = 'goma_crash'
@@ -526,6 +528,57 @@ def _CheckOutput(args, **kwargs):
                         **kwargs).communicate()[0]
 
 
+class HttpProxyDriver(object):
+  """Driver of http_proxy."""
+
+  _PID_FILENAME = 'http_proxy.pid'
+
+  def __init__(self, http_proxy_dir, pid_dir):
+    """initialize.
+
+    Args:
+      http_proxy_dir: a directory name where the http_proxy exists.
+      pid_dir: a directory name to store the pid.
+    """
+    self._http_proxy_dir = http_proxy_dir
+    self._pid_file = os.path.join(pid_dir, self._PID_FILENAME)
+
+  def Start(self):
+    if not _IsFlagTrue('GOMACTL_USE_PROXY'):
+      return
+    host = os.environ['GOMA_SERVER_HOST']
+    server_port = os.environ.get('GOMA_SERVER_PORT', '')
+    if server_port:
+      host += ':%s' % server_port
+    proxy_port = os.environ.get('GOMACTL_PROXY_PORT', _DEFAULT_PROXY_PORT)
+    p = subprocess.Popen([
+        os.path.join(self._http_proxy_dir, 'http_proxy'), '--server-host', host,
+        '--port', proxy_port
+    ],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    with open(self._pid_file, 'w') as f:
+      f.write(str(p.pid))
+
+    _OverrideEnvVar('GOMA_SERVER_HOST', '127.0.0.1')
+    _OverrideEnvVar('GOMA_SERVER_PORT', proxy_port)
+    _OverrideEnvVar('GOMA_USE_SSL', 'false')
+
+  def Stop(self):
+    pid = -1
+    try:
+      with open(self._pid_file) as f:
+        pid = int(f.read())
+    except IOError:  # http_proxy might not be started by goma_ctl before.
+      pass
+    if pid > 0:  # http_proxy should not need to be killed gracefully.
+      try:
+        os.kill(pid, signal.SIGTERM)
+      except OSError as ex:
+        sys.stderr.write('failed to kill http_proxy: %s' % ex)
+      os.remove(self._pid_file)
+
+
 class GomaDriver(object):
   """Driver of Goma control."""
 
@@ -560,6 +613,8 @@ class GomaDriver(object):
     self._args = []
     self._ReadManifest()
     self._compiler_proxy_running = None
+    self._http_proxy_driver = HttpProxyDriver(self._env.GetScriptDir(),
+                                              self._env.GetGomaTmpDir())
 
   def _ReadManifest(self):
     """Reads MANIFEST file.
@@ -637,6 +692,7 @@ class GomaDriver(object):
       return
 
     if not self._compiler_proxy_running:
+      self._http_proxy_driver.Start()
       self._env.ExecCompilerProxy()
       self._compiler_proxy_running = True
 
@@ -670,12 +726,14 @@ class GomaDriver(object):
     self._ShutdownCompilerProxy()
     if not self._WaitCooldown():
       self._KillStakeholders()
+    self._http_proxy_driver.Stop()
 
   def _StopCompilerProxyAndWait(self):
     self._ShutdownCompilerProxy()
     if not self._WaitCooldown(wait_seconds=5):
       print('Compiler proxy is still running, consider running '
             '`goma_ctl ensure_stop` or manually killing the process.')
+    self._http_proxy_driver.Stop()
 
   def _CheckStatus(self):
     status = self._GetStatus()
@@ -2241,7 +2299,6 @@ class GomaEnvPosix(GomaEnv):
     return True
 
   def _WaitWithTimeout(self, proc, timeout_sec):
-    import signal
     class TimeoutError(Exception):
       """Raised on timeout."""
 
