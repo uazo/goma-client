@@ -532,16 +532,18 @@ class HttpProxyDriver(object):
   """Driver of http_proxy."""
 
   _PID_FILENAME = 'http_proxy.pid'
+  _LOG_FILENAME = 'http_proxy.log'
 
-  def __init__(self, http_proxy_dir, pid_dir):
+  def __init__(self, http_proxy_dir, var_dir):
     """initialize.
 
     Args:
       http_proxy_dir: a directory name where the http_proxy exists.
-      pid_dir: a directory name to store the pid.
+      var_dir: a directory name to store the pid, log.
     """
     self._http_proxy_dir = http_proxy_dir
-    self._pid_file = os.path.join(pid_dir, self._PID_FILENAME)
+    self._pid_file = os.path.join(var_dir, self._PID_FILENAME)
+    self._log_file = os.path.join(var_dir, self._LOG_FILENAME)
 
   def Start(self):
     if not _IsFlagTrue('GOMACTL_USE_PROXY'):
@@ -551,12 +553,16 @@ class HttpProxyDriver(object):
     if server_port:
       host += ':%s' % server_port
     proxy_port = os.environ.get('GOMACTL_PROXY_PORT', _DEFAULT_PROXY_PORT)
+    logfile = open(self._log_file, 'w')
+    logfile.write(
+        '%s --server-host %s --port %s\n' %
+        (os.path.join(self._http_proxy_dir, 'http_proxy'), host, proxy_port))
     p = subprocess.Popen([
         os.path.join(self._http_proxy_dir, 'http_proxy'), '--server-host', host,
         '--port', proxy_port
     ],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stdout=logfile,
+                         stderr=subprocess.STDOUT)
     with open(self._pid_file, 'w') as f:
       f.write(str(p.pid))
 
@@ -572,11 +578,15 @@ class HttpProxyDriver(object):
     except IOError:  # http_proxy might not be started by goma_ctl before.
       pass
     if pid > 0:  # http_proxy should not need to be killed gracefully.
+      print('killing http_proxy...')
       try:
         os.kill(pid, signal.SIGTERM)
       except OSError as ex:
         sys.stderr.write('failed to kill http_proxy: %s' % ex)
       os.remove(self._pid_file)
+
+  def log_filename(self):
+    return self._log_file
 
 
 class GomaDriver(object):
@@ -692,6 +702,7 @@ class GomaDriver(object):
       return
 
     if not self._compiler_proxy_running:
+      print('server: %s' % os.environ.get('GOMA_SERVER_HOST', '<default>'))
       self._http_proxy_driver.Start()
       self._env.ExecCompilerProxy()
       self._compiler_proxy_running = True
@@ -726,14 +737,12 @@ class GomaDriver(object):
     self._ShutdownCompilerProxy()
     if not self._WaitCooldown():
       self._KillStakeholders()
-    self._http_proxy_driver.Stop()
 
   def _StopCompilerProxyAndWait(self):
     self._ShutdownCompilerProxy()
     if not self._WaitCooldown(wait_seconds=5):
       print('Compiler proxy is still running, consider running '
             '`goma_ctl ensure_stop` or manually killing the process.')
-    self._http_proxy_driver.Stop()
 
   def _CheckStatus(self):
     status = self._GetStatus()
@@ -752,6 +761,7 @@ class GomaDriver(object):
     print('Killing compiler proxy.')
     reply = self._env.ControlCompilerProxy('/quitquitquit')
     print('compiler proxy status: %(url)s %(message)s' % reply)
+    self._http_proxy_driver.Stop()
 
   def _PrintVersion(self):
     """Print binary/running version of goma. """
@@ -995,6 +1005,11 @@ class GomaDriver(object):
       self._CopyLatestInfoFile('compiler_proxy-subproc', tempdir)
       self._CopyLatestInfoFile('goma_fetch', tempdir)
       self._CopyGomaccInfoFiles(tempdir)
+      http_proxy_log = self._http_proxy_driver.log_filename()
+      if os.path.exists(http_proxy_log):
+        self._env.CopyFile(
+            http_proxy_log,
+            os.path.join(tempdir, os.path.basename(http_proxy_log)))
 
       build_dir = self._InferBuildDirectory()
       if build_dir:
@@ -1334,7 +1349,7 @@ class GomaEnv(object):
         print(line)
         continue
       k, v = line.split('=', 1)
-      if not k.startswith('GOMA_'):
+      if not k.startswith('GOMA_') and not k.startswith('GOMACTL_'):
         continue
       if k in os.environ:
         continue

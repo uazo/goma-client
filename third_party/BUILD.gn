@@ -50,6 +50,7 @@ if (os == "win" &&
 if (os != "win") {
   glog_cflags_cc = [ "-Wno-sign-compare" ]
 } else {
+  glog_defines += [ "DISABLE_RTTI" ]
   glog_cflags_cc = [
     "/wd4541",
 

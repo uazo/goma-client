@@ -286,8 +286,7 @@ int SpawnerWin::Run(const std::string& cmd,
 
   std::vector<char> envp;
   PrepareEnvBlock(environs.cbegin(), environs.cend(), &envp);
-  const DWORD process_create_flag =
-      create_flag | CREATE_SUSPENDED | CREATE_BREAKAWAY_FROM_JOB;
+  const DWORD process_create_flag = create_flag | CREATE_SUSPENDED;
   if (CreateProcessA(abs_cmd.c_str(), &(command_line[0]), nullptr, nullptr,
                      FALSE, process_create_flag, &(envp[0]), cwd.c_str(), &si,
                      &pi)) {
@@ -583,8 +582,7 @@ int SpawnerWin::RunRedirected(const std::string& abs_cmd,
 
   // TODO: Code around here looks like Run().
   // Can we share some code?
-  const DWORD process_create_flag =
-      CREATE_NEW_CONSOLE | CREATE_SUSPENDED | CREATE_BREAKAWAY_FROM_JOB;
+  const DWORD process_create_flag = CREATE_NEW_CONSOLE | CREATE_SUSPENDED;
   BOOL result = CreateProcessA(
       abs_cmd.c_str(), &(const_cast<std::string&>(command_line)[0]), nullptr,
       nullptr, TRUE, process_create_flag,

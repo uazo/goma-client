@@ -485,6 +485,11 @@ class FlagsValue(dict):
         'GOMA_COMPILER_PROXY_ENABLE_CRASH_DUMP': 'true'
     })
 
+  def enableATS(self):
+    self.update({
+        'GOMA_ARBITRARY_TOOLCHAIN_SUPPORT': 'true',
+    })
+
 
 def ConfigFlags(config):
   """returns compiler_proxy flags for login account
@@ -513,6 +518,10 @@ def ConfigFlags(config):
       else:
         flags.update({'GOMA_SERVER_HOST': 'clients5.google.com'})
     flags.enableSendInfo()
+    if flags.get('GOMA_SERVER_HOST', '') != 'clients5.google.com':
+      flags.update({'GOMACTL_USE_PROXY': 'true'})
+      if sys.platform in ('win32', 'cygwin'):
+        flags.enableATS()
     return flags
   return flags
 

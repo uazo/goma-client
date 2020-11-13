@@ -60,6 +60,7 @@ class GomaAuthTest(unittest.TestCase):
     flags = self._module.ConfigFlags(config)
     self.assertEqual(
         flags.get('GOMA_SERVER_HOST'), self._module.DEFAULT_GOMA_SERVER_HOST)
+    self.assertEqual(flags.get('GOMACTL_USE_PROXY'), 'true')
 
 
 def GetParameterizedTestSuite(klass, **kwargs):
