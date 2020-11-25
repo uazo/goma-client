@@ -520,7 +520,7 @@ def ConfigFlags(config):
     flags.enableSendInfo()
     if flags.get('GOMA_SERVER_HOST', '') != 'clients5.google.com':
       flags.update({'GOMACTL_USE_PROXY': 'true'})
-      if sys.platform in ('win32', 'cygwin'):
+      if sys.platform in ('cygwin', 'linux', 'linux2', 'win32'):
         flags.enableATS()
     return flags
   return flags

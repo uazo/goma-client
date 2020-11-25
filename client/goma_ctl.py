@@ -60,7 +60,7 @@ _DEFAULT_ENV = [
 _DEFAULT_NO_SSL_ENV = [
     ('SERVER_PORT', '80'),
     ]
-_DEFAULT_PROXY_PORT = '8000'
+_DEFAULT_PROXY_PORT = '19080'
 _MAX_COOLDOWN_WAIT = 10  # seconds to wait for compiler_proxy to shutdown.
 _COOLDOWN_SLEEP = 1  # seconds to each wait for compiler_proxy to shutdown.
 _CRASH_DUMP_DIR = 'goma_crash'
