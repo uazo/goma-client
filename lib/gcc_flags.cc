@@ -337,7 +337,7 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
   }
   if (flag_fdebug_prefix_map->seen()) {
     for (const auto& value : flag_fdebug_prefix_map->values()) {
-      size_t pos = value.find("=");
+      size_t pos = value.find('=');
       if (pos == std::string::npos) {
         LOG(ERROR) << "invalid argument is given to -fdebug-prefix-map:"
                    << value;

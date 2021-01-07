@@ -140,6 +140,8 @@ std::vector<std::string> LoadLdSoConf(const absl::string_view filename) {
 bool IsInSystemLibraryPath(
     const absl::string_view path,
     const std::vector<std::string>& system_library_paths) {
+  static const std::vector<std::string> kTrustedPaths = {"/lib64", "/usr/lib64",
+                                                         "/lib", "/usr/lib"};
   if (!IsPosixAbsolutePath(path)) {
     return false;
   }
@@ -148,8 +150,9 @@ bool IsInSystemLibraryPath(
     return true;
   }
   absl::string_view dirname = file::Dirname(path);
-  return absl::c_find(system_library_paths, dirname) !=
-         system_library_paths.end();
+  return (absl::c_find(kTrustedPaths, dirname) != kTrustedPaths.end()) ||
+         (absl::c_find(system_library_paths, dirname) !=
+          system_library_paths.end());
 }
 
 }  // namespace devtools_goma

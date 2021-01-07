@@ -32,7 +32,7 @@ def CheckChangeLintsClean(input_api, output_api):
   def Filter(affected_file):
     return input_api.FilterSourceFile(
         affected_file,
-        block_list=input_api.DEFAULT_FILES_TO_SKIP + (r".+\.pb\.(h|cc)$",))
+        files_to_skip=input_api.DEFAULT_FILES_TO_SKIP + (r".+\.pb\.(h|cc)$",))
 
   files = [f.AbsoluteLocalPath() for f in
            input_api.AffectedSourceFiles(Filter)]
@@ -93,6 +93,10 @@ def CheckChangeOnUpload(input_api, output_api):
         '.style.yapf',
         'third_party/boringssl/err_data.c',
     )
+    # We don't write assembly by ourselves.  We assume them auto-generated
+    # files.
+    if x.LocalPath().endswith('.S') or x.LocalPath().endswith('.asm'):
+      return False
     return x.LocalPath() not in third_party_files
 
   def license_header_filter(x):
@@ -117,7 +121,7 @@ def CheckChangeOnUpload(input_api, output_api):
   results += input_api.canned_checks.CheckChangeTodoHasOwner(
       input_api, output_api, source_file_filter=source_file_filter)
   results += input_api.canned_checks.CheckChangeHasNoStrayWhitespace(
-      input_api, output_api)
+      input_api, output_api, source_file_filter=source_file_filter)
   results += input_api.canned_checks.CheckLongLines(
       input_api, output_api, 80, source_file_filter=long_line_filter)
   results += input_api.canned_checks.CheckLicense(

@@ -12,14 +12,18 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"os"
+	"os/signal"
 )
 
 var (
 	serverHost = flag.String("server-host", "goma.chromium.org", "server host to connect to")
-	listenPort = flag.Int("port", 8000, "port to listen connections from compiler_proxy")
+	listenPort = flag.Int("port", 19080, "port to listen connections from compiler_proxy")
 )
 
 func main() {
+	signal.Ignore(os.Interrupt)
+	log.SetOutput(os.Stderr)
 	flag.Parse()
 	listenHostPort := fmt.Sprintf("127.0.0.1:%d", *listenPort)
 	proxy := &httputil.ReverseProxy{

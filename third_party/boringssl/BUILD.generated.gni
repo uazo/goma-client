@@ -88,10 +88,8 @@ crypto_sources = [
   "src/crypto/curve25519/curve25519_tables.h",
   "src/crypto/curve25519/internal.h",
   "src/crypto/curve25519/spake25519.c",
-  "src/crypto/dh/check.c",
-  "src/crypto/dh/dh.c",
-  "src/crypto/dh/dh_asn1.c",
-  "src/crypto/dh/params.c",
+  "src/crypto/dh_extra/dh_asn1.c",
+  "src/crypto/dh_extra/params.c",
   "src/crypto/digest_extra/digest_extra.c",
   "src/crypto/dsa/dsa.c",
   "src/crypto/dsa/dsa_asn1.c",
@@ -182,6 +180,7 @@ crypto_sources = [
   "src/crypto/rand_extra/deterministic.c",
   "src/crypto/rand_extra/forkunsafe.c",
   "src/crypto/rand_extra/fuchsia.c",
+  "src/crypto/rand_extra/passive.c",
   "src/crypto/rand_extra/rand_extra.c",
   "src/crypto/rand_extra/windows.c",
   "src/crypto/rc4/rc4.c",
@@ -411,6 +410,27 @@ ssl_headers = [
   "src/include/openssl/ssl.h",
   "src/include/openssl/ssl3.h",
   "src/include/openssl/tls1.h",
+]
+
+tool_sources = [
+  "src/tool/args.cc",
+  "src/tool/ciphers.cc",
+  "src/tool/client.cc",
+  "src/tool/const.cc",
+  "src/tool/digest.cc",
+  "src/tool/fd.cc",
+  "src/tool/file.cc",
+  "src/tool/generate_ed25519.cc",
+  "src/tool/genrsa.cc",
+  "src/tool/internal.h",
+  "src/tool/pkcs12.cc",
+  "src/tool/rand.cc",
+  "src/tool/server.cc",
+  "src/tool/sign.cc",
+  "src/tool/speed.cc",
+  "src/tool/tool.cc",
+  "src/tool/transport_common.cc",
+  "src/tool/transport_common.h",
 ]
 
 crypto_sources_ios_aarch64 = [
