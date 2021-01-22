@@ -30,6 +30,9 @@ the Goma service (i.e. using Goma backend server paid for by Google).
 
 For contributors who has [tryjob access](https://www.chromium.org/getting-involved/become-a-committer#TOC-Try-job-access),
 sign up [the form](https://docs.google.com/forms/d/e/1FAIpQLScltm4nUfbKOaOe141YYW2_MzKQWHAjxdg1K_FfIXTAEMzUkA/viewform).
+Then, follow up with Googlers you work together to nominate yourself.
+Note that this is a best-effort process.  We do not guarantee when you will be
+invited.
 
 The rest of the procedures will work after you are registered as a Goma user.
 

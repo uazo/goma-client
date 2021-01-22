@@ -1009,6 +1009,13 @@ class GomaDriver(object):
     try:
       tempdir = tempfile.mkdtemp()
 
+      self._env.WriteFile(
+          os.path.join(tempdir, 'goma_env'), '\n'.join([
+              '%s=%s' % (k, v)
+              for k, v in os.environ.items()
+              if k.startswith('GOMA_') or k.startswith('GOMACTL_')
+          ]))
+
       compiler_proxy_is_working = True
       # Check compiler_proxy is working.
       ret = self._env.ControlCompilerProxy('/healthz')
@@ -1031,15 +1038,26 @@ class GomaDriver(object):
           self._env.WriteFile(os.path.join(tempdir, key + '-output'),
                               ret['message'])
 
+      print('copy compiler_proxy log')
       self._CopyLatestInfoFile('compiler_proxy', tempdir)
+      print('copy compiler_proxy-subproc log')
       self._CopyLatestInfoFile('compiler_proxy-subproc', tempdir)
+      print('copy goma_fetch log')
       self._CopyLatestInfoFile('goma_fetch', tempdir)
+      print('copy gomacc log')
       self._CopyGomaccInfoFiles(tempdir)
+      print('copy http_proxy log')
       http_proxy_log = self._http_proxy_driver.log_filename()
       if os.path.exists(http_proxy_log):
         self._env.CopyFile(
             http_proxy_log,
             os.path.join(tempdir, os.path.basename(http_proxy_log)))
+      print('copy goma_auth config')
+      try:
+        self._env.WriteFile(
+            os.path.join(tempdir, 'goma_auth_config'), self._env.AuthConfig())
+      except ConfigError as ex:
+        print('failed to get auth config %s' % ex)
 
       build_dir = self._InferBuildDirectory()
       if build_dir:
@@ -1343,6 +1361,37 @@ class GomaEnv(object):
       return {}
     return _ParseManifestContents(open(manifest_path, 'r').read())
 
+  def AuthConfig(self):
+    """Get `goma_auth.py config` output.
+
+    Returns:
+      output of `goma_auth.py config`.
+    Raises:
+      ConfigError if `goma_auth.py config` failed.
+    """
+    for k in [
+        'GOMA_SERVICE_ACCOUNT_JSON_FILE', 'GOMA_GCE_SERVICE_ACCOUNT',
+        'LUCI_CONTEXT'
+    ]:
+      if k in os.environ:
+        return '# %s=%s\n' % (k, os.environ[k])
+    # not service account.
+    try:
+      out = PopenWithCheck(
+          [sys.executable,
+           os.path.join(SCRIPT_DIR, 'goma_auth.py'), 'config'],
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE).communicate()[0]
+      return out
+    except CalledProcessError as ex:
+      if ex.stdout:
+        sys.stdout.write(ex.stdout + '\n')
+      if ex.stderr:
+        sys.stderr.write(ex.stderr + '\n')
+      if ex.returncode == 1:
+        sys.exit(1)
+      raise ConfigError('goma_auth.py config failed %s' % ex)
+
   def CheckAuthConfig(self):
     """Checks `goma_auth.py config` unless service accounts.
 
@@ -1355,35 +1404,20 @@ class GomaEnv(object):
     """
     if _IsFlagTrue('GOMACTL_SKIP_AUTH'):
       return
-    if 'GOMA_SERVICE_ACCOUNT_JSON_FILE' in os.environ:
-      return
-    if 'GOMA_GCE_SERVICE_ACCOUNT' in os.environ:
-      return
-    if 'LUCI_CONTEXT' in os.environ:
-      return
-    # not service account.
-    try:
-      out = PopenWithCheck(
-          [sys.executable,
-           os.path.join(SCRIPT_DIR, 'goma_auth.py'), 'config'],
-          stdout=subprocess.PIPE,
-          stderr=subprocess.PIPE).communicate()[0]
-    except CalledProcessError as ex:
-      if ex.stdout:
-        sys.stdout.write(ex.stdout + '\n')
-      if ex.stderr:
-        sys.stderr.write(ex.stderr + '\n')
-      if ex.returncode == 1:
-        sys.exit(1)
-      raise ConfigError('goma_auth.py config failed %s' % ex)
+    out = self.AuthConfig()
     for line in out.splitlines():
+      if line.startswith('#'):
+        print(line)
+        continue
       if '=' not in line:
         print(line)
         continue
       k, v = line.split('=', 1)
       if not k.startswith('GOMA_') and not k.startswith('GOMACTL_'):
+        print('bad goma_auth config?: %s=%s', k, v)
         continue
       if k in os.environ:
+        print('user set %s=%s (ignore %s)', k, os.environ[k], v)
         continue
       _OverrideEnvVar(k, v)
 

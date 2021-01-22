@@ -116,6 +116,9 @@ class FakeGomaEnv(object):
   def CalculateChecksum(self, _):
     return 'dummy_checksum'
 
+  def AuthConfig(self):
+    return '# login as dummy\n'
+
   def CheckAuthConfig(self):
     pass
 

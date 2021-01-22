@@ -512,16 +512,10 @@ def ConfigFlags(config):
     raise Error('No email in token_info %s' % token_info)
   if token_info['email'].endswith('@google.com'):
     flags.comment = '# login as %s' % token_info['email']
-    if not os.environ.get('GOMA_SERVER_HOST'):
-      if CheckPing(GOMA_PING_URL):
-        flags.update({'GOMA_SERVER_HOST': DEFAULT_GOMA_SERVER_HOST})
-      else:
-        flags.update({'GOMA_SERVER_HOST': 'clients5.google.com'})
     flags.enableSendInfo()
-    if flags.get('GOMA_SERVER_HOST', '') != 'clients5.google.com':
-      flags.update({'GOMACTL_USE_PROXY': 'true'})
-      if sys.platform in ('cygwin', 'linux', 'linux2', 'win32'):
-        flags.enableATS()
+    flags.update({'GOMACTL_USE_PROXY': 'true'})
+    if sys.platform in ('cygwin', 'linux', 'linux2', 'win32'):
+      flags.enableATS()
     return flags
   return flags
 

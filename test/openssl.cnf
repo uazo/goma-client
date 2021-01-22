@@ -1,12 +1,14 @@
+# Copyright 2021 Google LLC. All Rights Reserved.
+
 [ req ]
 distinguished_name = req_distinguished_name
 x509_extensions = v3_ca
 prompt = no
 
 [ req_distinguished_name ]
-O  = Google
+O  = The Chromium Project
 OU = for testing purpose only
-CN = www.google.com
+CN = www.chromium.org
 
 [ v3_ca ]
-subjectAltName = DNS:*.google.com
+subjectAltName = DNS:*.chromium.org

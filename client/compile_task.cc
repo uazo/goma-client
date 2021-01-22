@@ -280,6 +280,12 @@ bool IsSameErrorMessage(absl::string_view remote_stdout,
   return false;
 }
 
+struct PlatformPropertyFormatter {
+  void operator()(std::string* out, const PlatformProperty& p) {
+    out->append(p.DebugString());
+  }
+};
+
 }  // namespace
 
 absl::once_flag CompileTask::init_once_;
@@ -415,9 +421,11 @@ void CompileTask::Start() {
     // It should fallback.
   } else if (flags_->is_precompiling_header()) {
     LOG(INFO) << trace_id_ << " Start precompile "
-              << (flags_->input_filenames().empty() ? "(no input)" :
-                  flags_->input_filenames()[0])
-              << " gomacc_pid=" << gomacc_pid_;
+              << (flags_->input_filenames().empty()
+                      ? "(no input)"
+                      : flags_->input_filenames()[0])
+              << " gomacc_pid=" << gomacc_pid_
+              << " build_dir=" << flags_->cwd();
     if (!flags_->input_filenames().empty() && !flags_->output_files().empty()) {
       DCHECK_EQ(1U, flags_->input_filenames().size()) << trace_id_;
       const std::string& input_filename = file::JoinPathRespectAbsolute(
@@ -478,6 +486,13 @@ void CompileTask::Start() {
     AddErrorToResponse(TO_USER, "Failed to find local compiler path", true);
     ProcessFinished("fail to find local compiler");
     return;
+  }
+  if (requester_info_.has_exec_root() ||
+      requester_info_.platform_properties_size() > 0) {
+    LOG(INFO) << trace_id_ << " exec_root=" << requester_info_.exec_root()
+              << " platform_properties="
+              << absl::StrJoin(requester_info_.platform_properties(), ",",
+                               PlatformPropertyFormatter());
   }
   VLOG(1) << trace_id_
           << " local_compiler:" << req_->command_spec().local_compiler_path();

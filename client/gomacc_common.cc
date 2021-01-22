@@ -730,6 +730,26 @@ bool GomaClient::PrepareExecRequest(const CompilerFlags& flags, ExecReq* req) {
           std::move(*autoninja_build_id));
     }
   }
+  {
+    // TODO: support config file? command line flags?
+    absl::optional<std::string> rbe_exec_root = GetEnv("RBE_exec_root");
+    if (rbe_exec_root) {
+      req->mutable_requester_info()->set_exec_root(std::move(*rbe_exec_root));
+    }
+
+    absl::optional<std::string> rbe_platform = GetEnv("RBE_platform");
+    if (rbe_platform) {
+      for (const auto& p :
+           absl::StrSplit(*rbe_platform, ',', absl::SkipEmpty())) {
+        std::vector<std::string> kv =
+            absl::StrSplit(p, absl::MaxSplits('=', 1));
+        PlatformProperty* pp =
+            req->mutable_requester_info()->add_platform_properties();
+        pp->set_name(std::move(kv[0]));
+        pp->set_value(std::move(kv[1]));
+      }
+    }
+  }
 
   if (FLAGS_STORE_ONLY) {
     if (FLAGS_USE_SUCCESS) {

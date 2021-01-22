@@ -220,6 +220,7 @@ class SimpleTryTest(unittest.TestCase):
                        msg='gomacc cl help')
     self.AssertNoGomaccInfo()
 
+  @unittest.skip('b/178169217')
   def testClHello(self):
     # Since object file contains a file name, an output file name should be
     # the same.
@@ -238,6 +239,7 @@ class SimpleTryTest(unittest.TestCase):
     self.AssertSuccess(['hello.exe'], msg='run hello.exe')
     self.AssertNoGomaccInfo()
 
+  @unittest.skip('b/178169217')
   def testDashFlag(self):
     self.AssertSuccess([self.gomacc, self.local_cl, '-c', '-Fotest.obj',
                         os.path.join('test', 'hello.c')],
@@ -248,6 +250,7 @@ class SimpleTryTest(unittest.TestCase):
     self.AssertSuccess(['hello.exe'], msg='run hello.exe')
     self.AssertNoGomaccInfo()
 
+  @unittest.skip('b/178169217')
   def testPchSupport(self):
     # Since object file contains a file name, an output file name should be
     # the same.
@@ -310,13 +313,6 @@ class SimpleTryTest(unittest.TestCase):
     self.assertNotEqual(request_line_before, request_line_after)
     self.AssertNoGomaccInfo()
 
-  def testClInPathShouldCompile(self):
-    self.AssertSuccess([self.gomacc, 'clang-cl', '/c', '/Fotest.obj',
-                        os.path.join('test', 'hello.c')],
-                       msg='clang-cl.exe in path env. compile')
-    self.AssertNotEmptyFile('test.obj', msg='cl_test_obj')
-    self.AssertNoGomaccInfo()
-
   def testStdoutStderr(self):
     local_proc, local_out, local_err = self.ExecCommand(
         ['clang-cl', '/c', '/Fotest.obj',
@@ -327,6 +323,8 @@ class SimpleTryTest(unittest.TestCase):
         msg=('local clang-cl\n%s\n%s\n' % (local_out, local_err)))
     env = os.environ.copy()
     env['GOMA_STORE_ONLY'] = 'true'
+    env['GOMA_USE_LOCAL'] = 'true'
+    env['GOMA_FALLBACK'] = 'true'
     remote_proc, remote_out, remote_err = self.ExecCommand([
         self.gomacc, 'clang-cl', '/c', '/Fotest.obj',
         os.path.join('test', 'hello.c')
@@ -419,6 +417,8 @@ class CompilerProxyManager(object):
     os.environ['TMPDIR'] = self._tmpdir
     os.environ['TMP'] = self._tmpdir
     os.environ['GOMA_DEPS_CACHE_FILE'] = 'deps_cache'
+    os.environ['GOMA_RPC_EXTRA_PARAMS'] = '?prod'
+    os.environ['GOMA_ARBITRARY_TOOLCHAIN_SUPPORT'] = 'true'
     assert self._module._GetLogDirectory() == self._tmpdir
 
     os.environ['GOMA_COMPILER_PROXY_PORT'] = str(self._port)

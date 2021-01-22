@@ -127,6 +127,16 @@ function is_cros_gcc() {
       ;;
   esac
 }
+
+function wait_no_active_tasks() {
+  while [ -z "$("${goma_bin_dir}/goma_ctl.py" jsonstatus| \
+    grep '"num_active_tasks":0')" ]
+  do
+    sleep 1
+    echo "waiting for active tasks become 0"
+  done
+}
+
 # keep the list of failed tests in an array
 FAIL=()
 KNOWN_FAIL=()
@@ -301,6 +311,11 @@ if [ "$GOMATEST_USE_RUNNING_COMPILER_PROXY" = ""  ]; then
     # Test uses SSL by default.
     export GOMA_USE_SSL=true
     export GOMA_SERVER_PORT=443
+    # Test uses ?prod by default.
+    export GOMA_RPC_EXTRA_PARAMS="?prod"
+    if [ "$(uname)" = "Linux" ]; then
+      export GOMA_ARBITRARY_TOOLCHAIN_SUPPORT="true"
+    fi
   fi
   expect_failure "gomacc_port_no_compiler_proxy" "$GOMACC port"
   (cd /tmp && ${GOMA_COMPILER_PROXY_BINARY} & )
@@ -333,17 +348,10 @@ fi
 # set HERMETIC_GCC=FAIL_ for workaround.
 HERMETIC_GCC=
 
-DEFAULT_CC=gcc
-DEFAULT_CXX=g++
+DEFAULT_CC=clang
+DEFAULT_CXX=clang++
+export PATH=$CLANG_PATH:$PATH
 if [ "$(uname)" = "Darwin" ]; then
-  # recent macosx uses llvm-gcc as gcc, but goma doesn't support it.
-  # test with chromium clang by default.
-  DEFAULT_CC=clang
-  DEFAULT_CXX=clang++
-  if [ "$GOMATEST_USE_SYSTEM_CLANG" = "" ]; then
-    PATH=$CLANG_PATH:$PATH
-    GOMATEST_USE_CHROMIUM_CLANG=1
-  fi
   # Should set SDKROOT if we use non system clang.
   export SDKROOT="$("$goma_top_dir"/third_party/chromium_build/mac/find_sdk.py \
     --print_sdk_path 10.7 | head -1)"
@@ -418,26 +426,20 @@ fi
 echo_title "CFLAGS=${CFLAGS}"
 echo_title "CXXFLAGS=${CXXFLAGS}"
 
-expect_success "${CC}_v" "${GOMA_CC} -v"
-# test $CC
-rm -f out_plain.o
-# build a control binary to test against.
-assert_success "${LOCAL_CC} ${CFLAGS} test/hello.c -c -o out_plain.o"
-rm -f out.o
-expect_success "${CC}_hello" "${GOMA_CC} ${CFLAGS} test/hello.c -c -o out.o"
-expect_success "${HERMETIC_GCC}${CC}_hello.o" "objcmp out_plain.o out.o"
-rm -f a.out
-expect_success "${CC}_hello_run" \
-     "${LOCAL_CC} out.o -o a.out && test \"\$(./a.out)\" = \"Hello world\""
-
 GOMA_FALLBACK=true
 expect_success "${CC}_hello_fallback" "${GOMA_CC} ${CFLAGS} \
   test/hello.c -c -o out.o"
 GOMA_USE_LOCAL=true
 expect_success "${CC}_hello_fallback_use_local" \
     "${GOMA_CC} ${CFLAGS} test/hello.c -c -o out.o"
+
+MAYBE_FAIL=
+if [ "$(uname)" = "Linux" ]; then
+MAYBE_FAIL="FAIL_"
+fi
 GOMA_FALLBACK=false
-expect_success "${CC}_hello_use_local" "${GOMA_CC} ${CFLAGS} \
+wait_no_active_tasks
+expect_success "${MAYBE_FAIL}${CC}_hello_use_local" "${GOMA_CC} ${CFLAGS} \
   test/hello.c -c -o out.o"
 GOMA_USE_LOCAL=false
 
@@ -449,191 +451,9 @@ curl -s http://localhost:$GOMA_COMPILER_PROXY_PORT/statz | grep fallback > stat_
 expect_failure "check_fallback" "diff -u stat_before.txt stat_after.txt"
 GOMA_FALLBACK_INPUT_FILES=""
 
-rm -f a.out2
-expect_success "FAIL_${CC}_hello_remote_link" \
-     "${GOMA_CC} ${CFLAGS} out.o -o a.out2 && test \
-     \"\$(./a.out2)\" = \"Hello world\""
-
-rm -f out_plain.o
-assert_success "${LOCAL_CC} ${CFLAGS} -std=c99 test/hello.c -c -o out_plain.o"
-expect_success "${CC}_stdc99_hello" \
-    "${GOMA_CC} ${CFLAGS} -std=c99 test/hello.c -c -o out.o"
-expect_success "${HERMETIC_GCC}${CC}_stdc99_hello.o" "objcmp out_plain.o out.o"
-
-rm -f out.o out_plain.o
-assert_success "${LOCAL_CC} ${CFLAGS} -m32 test/hello.c -c -o out_plain.o"
-expect_success "${CC}_m32" "${GOMA_CC} ${CFLAGS} -m32 test/hello.c -c -o out.o"
-expect_success "${HERMETIC_GCC}${CC}_m32_out.o" "objcmp out_plain.o out.o"
-
-# test $CXX
-rm -f out_plain.o out.o out2.o
-# build a control binary to test against.
-assert_success "${LOCAL_CXX} ${CXXFLAGS} test/oneinclude.cc -c -o out_plain.o"
-
-expect_success "${CXX}_oneinclude" \
-    "${GOMA_CXX} ${CXXFLAGS} test/oneinclude.cc -c -o out.o"
-expect_success "${HERMETIC_GCC}${CXX}_oneinclude.o" \
-    "objcmp out_plain.o out.o"
-expect_success "${CXX}_oneinclude_run" \
-     "${LOCAL_CXX} out.o -o a.out && test \"\$(./a.out)\" = \"Hello world\""
-rm -f a.out2
-expect_success "FAIL_${CXX}_oneinclude_remote_link" \
-     "${GOMA_CXX} out.o -o a.out2 && test \"\$(./a.out2)\" = \"Hello world\""
-
-rm -f out.o
-expect_success "gomacc_${CXX}" \
-     "${GOMACC} ${CXX} ${CXXFLAGS} test/oneinclude.cc -c -o out.o"
-expect_success "${HERMETIC_GCC}gomacc_${CXX}_oneinclude.o" \
-    "objcmp out_plain.o out.o"
-rm -f out.o
-expect_success "gomacc_local_${CXX}" \
-     "${GOMACC} ${LOCAL_CXX} ${CXXFLAGS} test/oneinclude.cc -c -o out.o"
-expect_success "${HERMETIC_GCC}gomacc_local_${CXX}_oneinclude.o" \
-    "objcmp out_plain.o out.o"
-rm -f out.o out_plain.o
-
-CURRENT_DIR_BACKUP=$PWD
-cd $LOCAL_CXX_DIR
-assert_success "${LOCAL_CXX} ${CXXFLAGS} $CURRENT_DIR_BACKUP/test/oneinclude.cc\
-  -c -o $CURRENT_DIR_BACKUP/out_plain.o"
-expect_success "gomacc_relative_path_${CXX}" \
-     "${GOMACC} ./${CXX} ${CXXFLAGS} $CURRENT_DIR_BACKUP/test/oneinclude.cc \
-     -c -o $CURRENT_DIR_BACKUP/out.o"
-expect_success "${HERMETIC_GCC}gomacc_relative_path_${CXX}_oneinclude.o" \
-    "objcmp ${CURRENT_DIR_BACKUP}/out_plain.o ${CURRENT_DIR_BACKUP}/out.o"
-
-cd $CURRENT_DIR_BACKUP
-
-# ignore PWD if it differs from . even when mtime and size matches.
-# http://b/122976726
-mkdir -p test/dir/subdir
-cd test/dir
-TEST_PWD="$PWD"
-cd subdir;
-expect_success "gomacc_${CXX}_bad_pwd" \
-  "PWD=$TEST_PWD ${GOMACC} ${LOCAL_CXX} ${CXXFLAGS} -c -o out.o ../../hello.c"
-rm -f out.o
-cd $CURRENT_DIR_BACKUP
-rm -rf test/dir
-
-rm -f out2.o out_plain.o
-assert_success "${LOCAL_CXX} ${CXXFLAGS} -xc++ - -c -o out_plain.o \
-  < test/oneinclude.cc"
-expect_success "${CXX}_oneinclude_from_stdin" \
-     "${GOMA_CXX} ${CXXFLAGS} -xc++ - -c -o out2.o < test/oneinclude.cc"
-expect_success "${HERMETIC_GCC}${CXX}_oneinclude.o_from_stdin" \
-     "objcmp out_plain.o out2.o"
-
-
-# oneinclude2
-rm -f out.o
-# - no precompiled header
-expect_success "${CXX}_oneinclude2" \
-   "${GOMA_CXX} ${CXXFLAGS} -xc++ -Itest -c -o out.o test/oneinclude2.cc"
-# - precompile header
-rm -rf test/tmp
-mkdir -p test/tmp
-expect_success "${CXX}_precompile_common" \
-   "${GOMA_CXX} ${CXXFLAGS} -xc++-header -c -o test/tmp/common.h.gch \
-   test/common.h"
-expect_success "${CXX}_precompile_common_local_output" \
-   "test -f test/tmp/common.h.gch"
-expect_success "${CXX}_precompile_common_remote_output" \
-   "test -f test/tmp/common.h"
-rm -rf test/tmp
-mkdir -p test/tmp
-expect_success "${CXX}_no_x_precompile_common" \
-   "${GOMA_CXX} ${CXXFLAGS} -c -o test/tmp/common.h.gch test/common.h"
-expect_success "${CXX}_no_x_precompile_common_local_output" \
-   "test -f test/tmp/common.h.gch"
-expect_success "${CXX}_no_x_precompile_common_remote_output" \
-   "test -f test/tmp/common.h"
-
-rm -f out.o out_local.o
-expect_success "${CXX}_oneinclude2_with_precompiled_common" \
-   "${GOMA_CXX} ${CXXFLAGS} -xc++ -Itest/tmp -c -o out.o test/oneinclude2.cc"
-expect_success "${CXX}_oneinclude2_with_local_precompiled_common" \
-   "${LOCAL_CXX} ${CXXFLAGS} -xc++ -Itest/tmp -c -o out_local.o \
-   test/oneinclude2.cc"
-rm -rf test/tmp out.o out_local.o
-
-# If TSAN tests succeed with LOCAL_CXX, they should also succeed with GOMA_CXX.
-if (${LOCAL_CXX} ${CXXFLAGS} -DTHREAD_SANITIZER -fsanitize=thread -fPIC \
-    -mllvm -tsan-blacklist=test/tsan-ign.txt \
-    -o out.o -c test/oneinclude.cc \
-    >/dev/null 2>/dev/null); then
-  expect_success "${CXX}_tsan_blacklist" \
-   "${GOMA_CXX} ${CXXFLAGS} -DTHREAD_SANITIZER -fsanitize=thread -fPIC \
-    -mllvm -tsan-blacklist=test/tsan-ign.txt \
-    -o out.o -c test/oneinclude.cc"
-fi
-if (${LOCAL_CXX} ${CXXFLAGS} -DTHREAD_SANITIZER -fsanitize=thread -fPIC \
-    -fsanitize-blacklist=test/tsan-ign.txt \
-    -o out.o -c test/oneinclude.cc \
-    >/dev/null 2>/dev/null); then
-  expect_success "${CXX}_thread_sanitize_blacklist" \
-   "${GOMA_CXX} ${CXXFLAGS} -DTHREAD_SANITIZER -fsanitize=thread -fPIC \
-    -fsanitize-blacklist=test/tsan-ign.txt \
-    -o out.o -c test/oneinclude.cc"
-fi
-
-if [ "$CXX" = "g++" ]; then
-  # CQ of goma client uses gcc 4.8.4 and has_include is not supported.
-  # TODO: Remove this if we update gcc.
-  MAYBE_FAIL="FAIL_"
-fi
-
-expect_success "${MAYBE_FAIL}has_include" \
-  "${LOCAL_CXX} ${CXXFLAGS} -c test/has_include.cc -o has_include.o"
-expect_success "${MAYBE_FAIL}has_include" \
-  "${GOMACC} ${CXX} ${CXXFLAGS} -c test/has_include.cc -o has_include.o"
-rm -f has_include.o
-
-MAYBE_FAIL=
-
-# TODO: From 2015-07-22, -fprofile-generate looks creating
-# default.profraw instead of test.profdata. We need to convert test.profraw
-# to test.profdata with llvm-profdata to use it with -fprofile-use.
-# However, chromium clang does not provide it yet. So, this test might fail.
-# See http://b/22723864
-
-if [ "$CXX" = "clang++" ]; then
-  # chrome's clang doesn't have libprofile_rt.a in lib, so it will fail
-  # /usr/bin/ld: error: cannot open
-  #   /path/to/llvm-build/Release+Asserts/bin/../lib/libprofile_rt.a:
-  #   No such file or directory
-  # clang: error: linker command failed with exit code 1
-  MAYBE_FAIL="FAIL_"
-fi
-expect_success "${MAYBE_FAIL}${CXX}_fprofile_generate" \
-   "${LOCAL_CXX} ${CXXFLAGS} -xc++ -fprofile-generate test/hello.c"
-
-./a.out > /dev/null
-expect_success "${MAYBE_FAIL}${CXX}_fprofile_use" \
-   "${GOMA_CXX} ${CXXFLAGS} -xc++ -c -fprofile-use test/hello.c 2> warning"
-expect_success "${MAYBE_FAIL}${CXX}_fprofile_use_local" \
-   "${LOCAL_CXX} ${CXXFLAGS} -xc++ -c -fprofile-use test/hello.c \
-   2> warning.local"
-expect_success "${MAYBE_FAIL}${CXX}_fprofile_use_warning" \
-   "cmp warning warning.local"
-diff -u warning warning.local
-rm -f out.o a.out hello.o hello.gcda warning.local warning a.out \
-   default.profraw test.profdata
-
-MAYBE_FAIL=
-
-if [ "$(uname)" = "Darwin" ]; then
-  rm -f out.o
-  # failure without fallback
-  expect_failure "${CXX}_multi_arch_no_fallback" \
-   "${GOMA_CXX} ${CXXFLAGS} -arch i386 -arch x86_64 -c -o out.o test/hello.c"
-  rm -f out.o
-fi
-
-
 rm -f test/compile_error.{out,err} test/compile_error_fallback.{out,err}
 expect_failure "${CXX}_compile_error.cc" \
-  "${GOMA_CXX} ${CXXFLAGS} test/compile_error.cc -c -o test/compile_error.o \
+  "${LOCAL_CXX} ${CXXFLAGS} test/compile_error.cc -c -o test/compile_error.o \
     > test/compile_error.out 2> test/compile_error.err"
 
 GOMA_FALLBACK=true  # run local when remote failed.
@@ -653,15 +473,6 @@ if [ "$(uname)" = "Darwin" ]; then
    "${GOMA_CXX} ${CXXFLAGS} -arch i386 -arch x86_64 -c -o out.o test/hello.c"
   rm -f out.o
 fi
-
-expect_success "no_path_env" \
-  "(unset PATH; ${goma_bin_dir}/gomacc ${LOCAL_CXX} ${CXXFLAGS} \
-  -c -o out.o test/hello.c)"
-rm -f out.o
-expect_success "empty_path_env" \
-  "PATH= ${goma_bin_dir}/gomacc ${LOCAL_CXX} ${CXXFLAGS} \
-  -c -o out.o test/hello.c"
-rm -f out.o
 
 expect_failure "gomacc_gomacc" \
   "${GOMACC} ${GOMA_CC} ${CFLAGS} -c -o out.o test/hello.c"
@@ -702,148 +513,9 @@ expect_success "disabled_true_gomacc_gcc_in_local_path" \
    ${GOMACC} ${CC} ${CFLAGS} -c -o out.o test/hello.c"
 rm -f out.o
 
-# GOMA_HERMETIC=error
-
-if [ "$(uname)" = "Linux" ]; then
-  AS=$test_dir/third_party/binutils/Linux_x64/Release/bin/as
-  if [ ! -f $AS ]; then
-    AS=$test_dir/third_party/binutils/Linux_ia32/Release/bin/as
-  fi
-  #if as does not exist, fallbacks to system's as.
-  if [ ! -f $AS ]; then
-    AS=$(which as)
-  fi
-  echo "Using as: ${AS}" 1>&2
-  cp -p ${AS} ./as
-  expect_success "${CC}_unmodified_as_with_hermetic" \
-    "${GOMACC} ${LOCAL_CC} ${CFLAGS} -gsplit-dwarf -B. -c -o out.o test/hello.c"
-  rm -f ./as
-  rm -f out.o
-
-  # create as with different SHA256.
-  cp -p ${AS} ./as
-  echo >> ./as
-  if [ "$CC" = "gcc" -a "$(is_cros_gcc $CC)" = "yes" ]; then
-    expect_success "unknown_as_with_hermetic_for_cros_gcc" \
-      "${GOMACC} ${LOCAL_CC} ${CFLAGS} -B. -c -o out.o test/hello.c"
-  elif [ "$CC" = "clang" ]; then
-    expect_failure "${CC}_unknown_as_with_hermetic" \
-      "${GOMACC} ${LOCAL_CC} ${CFLAGS} -no-integrated-as -B. \
-      -c -o out.o test/hello.c"
-  else
-    expect_failure "${CC}_unknown_as_with_hermetic" \
-      "${GOMACC} ${LOCAL_CC} ${CFLAGS} -B. -c -o out.o test/hello.c"
-  fi
-  rm -f ./as
-
-  cp -p ${AS} ./as
-  expect_success "${CC}_after_unknown_as_with_hermetic" \
-    "${GOMACC} ${LOCAL_CC} ${CFLAGS} -gsplit-dwarf -B. -c -o out.o test/hello.c"
-  rm -f ./as
-  rm -f out.o
-
-  # check PWD=/proc/self/cwd gcc -fdebug-prefix-map=/proc/self/cwd=
-  # http://b/27487704
-  mkdir dir1 dir2
-  cp test/hello.c dir1
-  (cd dir1; expect_success "${CC}_no_pwd_in_dir1" \
-     "PWD=/proc/self/cwd ${GOMACC} ${LOCAL_CC} ${CFLAGS} \
-     -fdebug-prefix-map=/proc/self/cwd= -g -c -o out.o hello.c")
-  cp test/hello.c dir2
-  (cd dir2; expect_success "${CC}_no_pwd_in_dir2" \
-     "PWD=/proc/self/cwd ${GOMACC} ${LOCAL_CC} ${CFLAGS} \
-      -fdebug-prefix-map=/proc/self/cwd= -g -c -o out.o hello.c")
-  expect_success "${CC}_deterministic_no_pwd" \
-     "cmp dir1/out.o dir2/out.o"
-  readelf --debug-dump dir1/out.o > dir1/out.debug
-  readelf --debug-dump dir2/out.o > dir2/out.debug
-  diff -u dir1/out.debug dir2/out.debug
-  rm -rf dir1 dir2
-
-  # check PWD=/proc/self/cwd ~/goma/gomacc linux-x86/clang-2690385/bin/clang -c
-  # -g -fdebug-prefix-map=/proc/self/cwd= -no-canonical-prefixes test.c
-  # b/28088682
-  if [ "$GOMATEST_USE_CHROMIUM_CLANG" = "1" ]; then
-    clang_path="../$(basename "$(dirname "$(dirname ${LOCAL_CC})")")/bin/clang"
-    cp -rp "$(dirname "$(dirname ${LOCAL_CC})")" .
-    # Local case.
-    mkdir dir1 dir2
-    cp test/test_pwd_hack.c dir1
-    (cd dir1; expect_success "${CC}_no_pwd_in_include_wo_goma_local" \
-      "GOMA_USE_LOCAL=true PWD=/proc/self/cwd ${clang_path} ${CFLAGS} -c -g \
-      -fdebug-prefix-map=/proc/self/cwd= -no-canonical-prefixes \
-      -o out.o test_pwd_hack.c")
-    cp test/test_pwd_hack.c dir2
-    (cd dir2; expect_success "${CC}_no_pwd_in_include_with_goma_local" \
-      "GOMA_USE_LOCAL=true PWD=/proc/self/cwd ${GOMACC} ${clang_path} \
-       ${CFLAGS} -c -g \
-       -fdebug-prefix-map=/proc/self/cwd= -no-canonical-prefixes \
-      -o out.o test_pwd_hack.c")
-    expect_success "${CC}_deterministic_no_pwd_in_include_local" \
-      "cmp dir1/out.o dir2/out.o"
-    readelf --debug-dump dir1/out.o > dir1/out.debug
-    readelf --debug-dump dir2/out.o > dir2/out.debug
-    diff -u dir1/out.debug dir2/out.debug
-    rm -rf dir1 dir2
-
-    # TODO: implement this when the issue for remote case fixed.
-  fi
-fi
-
-
-ext=".so"
-if [ "$(uname -s)" == "Darwin" ]; then
-    ext=".dylib"
-fi
-CLANG_PLUGIN="third_party/llvm-build/Release+Asserts/lib/libFindBadConstructs${ext}"
-
-# TODO: Remove this test? (b/122436038)
-if [ "$CXX" = "clang++" -a -f "${CLANG_PLUGIN}" ]; then
-  # See: b/16826568
-  expect_success "${CXX}_load_plugin_in_relative_path" \
-  "${GOMACC} ${LOCAL_CXX} ${CXXFLAGS} -Xclang -load -Xclang ${CLANG_PLUGIN} \
-   -o out.o -c test/oneinclude.cc"
-fi
-
-# TODO: Remove plugin test? (b/122436038)
-if [ "$GOMATEST_USE_CHROMIUM_CLANG" = "1" -a -f "${CLANG_PLUGIN}" ]; then
-  CLANG_PLUGIN_BASE=$(basename $CLANG_PLUGIN)
-
-  cp -p ${CLANG_PLUGIN} ./${CLANG_PLUGIN_BASE}
-  expect_success "${CXX}_unmodified_plugin_with_hermetic" \
-    "${GOMACC} ${LOCAL_CXX} ${CXXFLAGS} \
-    -Xclang -load -Xclang ./${CLANG_PLUGIN_BASE} \
-    -c -o out.o test/hello.c"
-  rm -f ${CLANG_PLUGIN_BASE}
-  rm -f out.o
-
-  cp -p ${CLANG_PLUGIN} ./${CLANG_PLUGIN_BASE}
-  echo >> ./${CLANG_PLUGIN_BASE}
-  expect_failure "${CXX}_unknown_plugin_with_hermetic" \
-    "${GOMACC} ${LOCAL_CXX} ${CXXFLAGS} \
-    -Xclang -load -Xclang ./${CLANG_PLUGIN_BASE} \
-    -c -o out.o test/hello.c"
-  rm -f ${CLANG_PLUGIN_BASE}
-  rm -f out.o
-
-  cp -p ${CLANG_PLUGIN} ./${CLANG_PLUGIN_BASE}
-  expect_success "${CXX}_after_unknown_plugin_with_hermetic" \
-    "${GOMACC} ${LOCAL_CXX} ${CXXFLAGS} \
-    -Xclang -load -Xclang ./${CLANG_PLUGIN_BASE} \
-    -c -o out.o test/hello.c"
-  rm -f ${CLANG_PLUGIN_BASE}
-  rm -f out.o
-fi
-
-GOMA_USE_LOCAL=false
-GOMA_FALLBACK=false
-expect_success "${CXX}_compile_with_umask_remote" \
-  "(umask 777; ${GOMACC} ${LOCAL_CC} ${CFLAGS} -o out.o -c test/hello.c)"
-expect_success "${CXX}_expected_umask_remote" \
-  "[ \"$(ls -l out.o | awk '{ print $1}')\" = \"----------\" ]"
-rm -f out.o
-
+GOMA_FALLBACK=true
 GOMA_USE_LOCAL=true
+wait_no_active_tasks
 expect_success "${CXX}_compile_with_umask_local" \
   "(umask 777; ${GOMACC} ${LOCAL_CC} ${CFLAGS} -o out.o -c test/hello.c)"
 expect_success "${CXX}_expected_umask_local" \
@@ -889,29 +561,6 @@ if [ "${#KNOWN_FAIL[@]}" -ne 0 ]; then
 fi
 if [ "${#FAIL[@]}" -eq 0 -a "${#KNOWN_FAIL[@]}" -eq 0 ]; then
   echo_ok "All tests passed: $CC $CXX"
-fi
-
-if [ "$GOMATEST_USE_CHROMIUM_CLANG" = "" ]; then
- if [ -x "$CLANG_PATH/clang" -a -x "$CLANG_PATH/clang++" ]; then
-   PATH=$CLANG_PATH:$PATH
-   # clang (clang version 1.1) shipped in ubuntu/lucid are too old and
-   # don't support -dumpmachine option.
-   if clang -v > /dev/null 2>&1 && clang++ -v > /dev/null 2>&1 && \
-      clang -dumpmachine > /dev/null 2>&1 && \
-      clang++ -dumpmachine > /dev/null 2>&1 ; then
-     GOMATEST_USE_RUNNING_COMPILER_PROXY=1 \
-      GOMATEST_USE_CHROMIUM_CLANG=1 \
-      CC=clang CXX=clang++ \
-       $test_dir/$(basename $0)
-     if [ "$?" != 0 ]; then
-       FAIL+=("clang");
-     fi
-   else
-     echo_warn "WARNING: clang in $CLANG_PATH is too old."
-   fi
- else
-   echo_warn "WARNING: no clang in $CLANG_PATH"
- fi
 fi
 
 if [ "$FLAGS_dump" != "" ]; then

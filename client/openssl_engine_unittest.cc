@@ -35,6 +35,8 @@ static const size_t kBufsize = 4096;
  *
  * 3. copy generated key.pem and cert.pem to tests directory.
  * $ cp {key,cert}.pem /where/you/have/tests
+ *
+ * 4. prepend the Copyright header to PEM files.
  */
 static const char* kCert = "cert.pem";
 static const char* kKey = "key.pem";
@@ -218,7 +220,7 @@ class OpenSSLEngineTest : public :: testing::Test {
   void SetUp() override {
     OpenSSLEngineCache* openssl_engine_cache = new OpenSSLEngineCache;
     openssl_engine_cache->AddCertificateFromFile(GetTestFilePath(kCert));
-    openssl_engine_cache->SetHostname("clients5.google.com");
+    openssl_engine_cache->SetHostname("goma.chromium.org");
     factory_.reset(openssl_engine_cache);
   }
 

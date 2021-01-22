@@ -162,7 +162,7 @@ TEST_F(HttpRPCTest, EnableCompression) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(-1));
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 80;
   HttpClient http_client(
       std::move(socket_factory), nullptr, options, wm_.get());
@@ -430,7 +430,7 @@ TEST_F(HttpRPCTest, PingFail) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       new MockSocketFactory(-1));
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 80;
   HttpClient http_client(
       std::move(socket_factory), nullptr, options, wm_.get());
@@ -450,7 +450,7 @@ TEST_F(HttpRPCTest, PingRejected) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -470,11 +470,11 @@ TEST_F(HttpRPCTest, PingRejected) {
   MockSocketFactory::SocketStatus socket_status;
   std::unique_ptr<MockSocketFactory> socket_factory(
       new MockSocketFactory(socks[1], &socket_status));
-  socket_factory->set_dest("clients5.google.com:80");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:80");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(80);
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 80;
   HttpClient http_client(
       std::move(socket_factory), nullptr, options, wm_.get());
@@ -499,7 +499,7 @@ TEST_F(HttpRPCTest, PingOk) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -519,11 +519,11 @@ TEST_F(HttpRPCTest, PingOk) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       new MockSocketFactory(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:80");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:80");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(80);
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 80;
   HttpClient http_client(
       std::move(socket_factory), nullptr, options, wm_.get());
@@ -549,7 +549,7 @@ TEST_F(HttpRPCTest, CallLookupFile) {
   req.SerializeToString(&serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /l HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: " << serialized_req.size() << "\r\n\r\n"
@@ -573,11 +573,11 @@ TEST_F(HttpRPCTest, CallLookupFile) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       new MockSocketFactory(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:80");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:80");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(80);
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 80;
   HttpClient http_client(
       std::move(socket_factory), nullptr, options, wm_.get());
@@ -615,7 +615,7 @@ TEST_F(HttpRPCTest, CallAsyncLookupFile) {
   req.SerializeToString(&serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /l HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: " << serialized_req.size() << "\r\n\r\n"
@@ -638,11 +638,11 @@ TEST_F(HttpRPCTest, CallAsyncLookupFile) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       new MockSocketFactory(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:80");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:80");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(80);
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 80;
   HttpClient http_client(
       std::move(socket_factory), nullptr, options, wm_.get());
@@ -694,7 +694,7 @@ TEST_F(HttpRPCTest, TLSEnginePingFail) {
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(
@@ -717,7 +717,7 @@ TEST_F(HttpRPCTest, TLSEnginePingRejected) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -738,13 +738,13 @@ TEST_F(HttpRPCTest, TLSEnginePingRejected) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -771,7 +771,7 @@ TEST_F(HttpRPCTest, TLSEnginePingOk) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -791,13 +791,13 @@ TEST_F(HttpRPCTest, TLSEnginePingOk) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -825,7 +825,7 @@ TEST_F(HttpRPCTest, TLSEngineCallLookupFile) {
   req.SerializeToString(&serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /l HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: " << serialized_req.size() << "\r\n\r\n"
@@ -849,13 +849,13 @@ TEST_F(HttpRPCTest, TLSEngineCallLookupFile) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -896,7 +896,7 @@ TEST_F(HttpRPCTest, TLSEngineCallLookupFileDeflate) {
   SerializeCompressToString(req, kCompressionLevel, &serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /l HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: " << serialized_req.size() << "\r\n"
@@ -926,13 +926,13 @@ TEST_F(HttpRPCTest, TLSEngineCallLookupFileDeflate) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -974,7 +974,7 @@ TEST_F(HttpRPCTest, TLSEngineCallAsyncLookupFile) {
   req.SerializeToString(&serialized_req);
   std::ostringstream req_ss;
   req_ss << "POST /l HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: " << serialized_req.size() << "\r\n\r\n"
@@ -997,13 +997,13 @@ TEST_F(HttpRPCTest, TLSEngineCallAsyncLookupFile) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -1056,7 +1056,7 @@ TEST_F(HttpRPCTest, TLSEngineFailWithTLSErrorAtSetData) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -1077,14 +1077,14 @@ TEST_F(HttpRPCTest, TLSEngineFailWithTLSErrorAtSetData) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   tls_engine_factory->SetBroken(FakeTLSEngine::FAKE_TLS_SET_BROKEN);
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -1111,7 +1111,7 @@ TEST_F(HttpRPCTest, TLSEngineFailWithTLSErrorAtRead) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -1126,14 +1126,14 @@ TEST_F(HttpRPCTest, TLSEngineFailWithTLSErrorAtRead) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   tls_engine_factory->SetBroken(FakeTLSEngine::FAKE_TLS_READ_BROKEN);
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -1164,14 +1164,14 @@ TEST_F(HttpRPCTest, TLSEngineFailWithTLSErrorAtWrite) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   tls_engine_factory->SetBroken(FakeTLSEngine::FAKE_TLS_WRITE_BROKEN);
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -1200,7 +1200,7 @@ TEST_F(HttpRPCTest, TLSEngineServerTimeoutSendingHeaderShouldBeError) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -1219,13 +1219,13 @@ TEST_F(HttpRPCTest, TLSEngineServerTimeoutSendingHeaderShouldBeError) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -1250,7 +1250,7 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutContentLengthShouldBeOk) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -1270,13 +1270,13 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutContentLengthShouldBeOk) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -1302,7 +1302,7 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseBeforeSendingHeaderShouldBeError) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -1320,13 +1320,13 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseBeforeSendingHeaderShouldBeError) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -1355,30 +1355,29 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseBeforeReadingAnythingShouldBeError) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
     HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
-  options.dest_port = 443;
-  options.use_ssl = true;
-  HttpClient http_client(std::move(socket_factory),
-                         std::move(tls_engine_factory),
-                         options, wm_.get());
-  HttpRPC::Options rpc_options;
-  rpc_options.content_type_for_protobuf = "binary/x-protocol-buffer";
-  HttpRPC http_rpc(&http_client, rpc_options);
-  HttpRPC::Status status;
-  int r = http_rpc.Ping(wm_.get(), "/pingz", &status);
-  EXPECT_EQ(500, r);
-  EXPECT_EQ(FAIL, status.err);
-  http_client.WaitNoActive();
-  EXPECT_FALSE(socket_status.is_owned());
-  EXPECT_TRUE(socket_status.is_closed());
-  EXPECT_TRUE(socket_status.is_err());
-  EXPECT_FALSE(socket_status.is_released());
+    options.dest_host_name = "goma.chromium.org";
+    options.dest_port = 443;
+    options.use_ssl = true;
+    HttpClient http_client(std::move(socket_factory),
+                           std::move(tls_engine_factory), options, wm_.get());
+    HttpRPC::Options rpc_options;
+    rpc_options.content_type_for_protobuf = "binary/x-protocol-buffer";
+    HttpRPC http_rpc(&http_client, rpc_options);
+    HttpRPC::Status status;
+    int r = http_rpc.Ping(wm_.get(), "/pingz", &status);
+    EXPECT_EQ(500, r);
+    EXPECT_EQ(FAIL, status.err);
+    http_client.WaitNoActive();
+    EXPECT_FALSE(socket_status.is_owned());
+    EXPECT_TRUE(socket_status.is_closed());
+    EXPECT_TRUE(socket_status.is_err());
+    EXPECT_FALSE(socket_status.is_released());
 }
 
 TEST_F(HttpRPCTest, TLSEngineServerCloseBeforeSendingEnoughDataShouldBeError) {
@@ -1386,7 +1385,7 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseBeforeSendingEnoughDataShouldBeError) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -1407,13 +1406,13 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseBeforeSendingEnoughDataShouldBeError) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -1438,7 +1437,7 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutContentLengthShouldNotHangUp) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -1458,14 +1457,14 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutContentLengthShouldNotHangUp) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   tls_engine_factory->SetMaxReadSize(10);
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -1490,7 +1489,7 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutEndOfChunkShouldNotHangUp) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -1511,14 +1510,14 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutEndOfChunkShouldNotHangUp) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   tls_engine_factory->SetMaxReadSize(10);
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
@@ -1544,7 +1543,7 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutAllChunksShouldNotHangUp) {
   ASSERT_EQ(0, OpenSocketPairForTest(socks));
   std::ostringstream req_ss;
   req_ss << "POST /pingz HTTP/1.1\r\n"
-         << "Host: clients5.google.com\r\n"
+         << "Host: goma.chromium.org\r\n"
          << "User-Agent: " << kUserAgentString << "\r\n"
          << "Content-Type: binary/x-protocol-buffer\r\n"
          << "Content-Length: 0\r\n\r\n";
@@ -1565,14 +1564,14 @@ TEST_F(HttpRPCTest, TLSEngineServerCloseWithoutAllChunksShouldNotHangUp) {
   std::unique_ptr<MockSocketFactory> socket_factory(
       absl::make_unique<MockSocketFactory>(socks[1], &socket_status));
 
-  socket_factory->set_dest("clients5.google.com:443");
-  socket_factory->set_host_name("clients5.google.com");
+  socket_factory->set_dest("goma.chromium.org:443");
+  socket_factory->set_host_name("goma.chromium.org");
   socket_factory->set_port(443);
   std::unique_ptr<FakeTLSEngineFactory> tls_engine_factory(
       absl::make_unique<FakeTLSEngineFactory>());
   tls_engine_factory->SetMaxReadSize(10);
   HttpClient::Options options;
-  options.dest_host_name = "clients5.google.com";
+  options.dest_host_name = "goma.chromium.org";
   options.dest_port = 443;
   options.use_ssl = true;
   HttpClient http_client(std::move(socket_factory),
