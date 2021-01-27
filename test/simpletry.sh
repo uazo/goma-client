@@ -268,21 +268,8 @@ export GOMA_FALLBACK_INPUT_FILES=""
 
 GOMACC=$goma_bin_dir/gomacc
 
-# on buildslave:/b/build/slave/$builddir/build/client
-# api key can be found at /b/build/goma/goma.key
-if [ -d "$goma_top_dir/../../../../goma" ]; then
-  bot_goma_dir=$(cd "$goma_top_dir/../../../../goma"; pwd)
-  GOMA_API_KEY_FILE=${GOMA_API_KEY_FILE:-$bot_goma_dir/goma.key}
-fi
 if [ -n "$GOMA_SERVICE_ACCOUNT_JSON_FILE" ]; then
   echo "Use GOMA_SERVICE_ACCOUNT_JSON_FILE=$GOMA_SERVICE_ACCOUNT_JSON_FILE"
-  unset GOMA_API_KEY_FILE
-elif [ -f "$GOMA_API_KEY_FILE" ]; then
-  echo "Use GOMA_API_KEY_FILE=$GOMA_API_KEY_FILE"
-  export GOMA_API_KEY_FILE
-elif [ -n "$GOMA_API_KEY_FILE" ]; then
-  echo "GOMA_API_KEY_FILE $GOMA_API_KEY_FILE not found." >&2
-  unset GOMA_API_KEY_FILE
 fi
 
 if [ "$GOMATEST_USE_RUNNING_COMPILER_PROXY" = ""  ]; then

@@ -184,6 +184,7 @@ HttpRPC::HttpRPC(HttpClient* client,
       << options_.content_type_for_protobuf;
   std::vector<EncodingType> encodings =
       ParseAcceptEncoding(options_.accept_encoding);
+  // TODO: deprecate deflate compression.
   std::vector<EncodingType> capable{EncodingType::GZIP, EncodingType::DEFLATE};
   request_encoding_type_ = PickEncoding(capable, encodings);
   LOG(INFO) << "request encoding=" << GetEncodingName(request_encoding_type_);
@@ -393,6 +394,7 @@ void HttpRPC::EnableCompression(absl::string_view header) {
       ExtractHeaderField(header, kAcceptEncoding);
   std::vector<EncodingType> server_accepts =
       ParseAcceptEncoding(accept_encoding);
+  // TODO: deprecate deflate compression.
   std::vector<EncodingType> capable{EncodingType::GZIP, EncodingType::DEFLATE};
   EncodingType encoding = PickEncoding(capable, server_accepts);
   if (request_encoding_type_ == encoding) {
@@ -437,11 +439,11 @@ HttpRPC::CallRequest::NewStream() const {
   if (!accept_encoding_.empty()) {
     headers.push_back(CreateHeader(kAcceptEncoding, accept_encoding_));
   }
-  // TODO: gzip support.
   // note: we don't send with lzma2.
   if (request_encoding_type_ != EncodingType::NO_ENCODING &&
       compression_level_ > 0 && req_) {
     switch (request_encoding_type_) {
+      // TODO: deprecate deflate compression.
       case EncodingType::DEFLATE:
         {
         std::string compressed;

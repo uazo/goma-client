@@ -195,16 +195,6 @@ GOMA_DEFINE_string(SERVER_HOST,
                    DEFAULT_SERVER_HOST,
                    "The hostname or IP address of goma server");
 GOMA_DEFINE_int32(SERVER_PORT, 443, "The port of the goma server.");
-// deprecated STUBBY_PROXY name. use SERVER above instead.
-// TODO: remove this in VERSION=173 or so.
-GOMA_DEFINE_string(STUBBY_PROXY_IP_ADDRESS,
-                   "",
-                   "The IP address or hostname of the goma server, "
-                   "for backward compatibility");
-GOMA_DEFINE_int32(STUBBY_PROXY_PORT,
-                  0,
-                  "The port of the goma server, "
-                  "for backward compatibility");
 GOMA_DEFINE_string(URL_PATH_PREFIX, "/cxx-compiler-service",
                    "The HTTP RPC URL path prefix.");
 GOMA_DEFINE_string(COMPILER_PROXY_LISTEN_ADDR, "localhost",
@@ -543,10 +533,6 @@ GOMA_DEFINE_string(COMPILER_PROXY_DAEMON_STDERR, "goma_compiler_proxy.stderr",
                    "Used only when COMPILER_PROXY_DAEMON_MODE is true.");
 #endif
 
-// TODO: remove following flags after the next client release.
-GOMA_DEFINE_bool(ENABLE_AUTO_UPDATE, false, "(deprecated)");
-GOMA_DEFINE_int32(AUTO_UPDATE_IDLE_COUNT, 0, "(depreacted)");
-
 GOMA_DEFINE_int32(WATCHDOG_TIMER, 4 * 60 * 60,
                   "Watchdog timer in seconds."
                   "Watchdog is disabled if this value is not positive.");
@@ -653,8 +639,8 @@ GOMA_DEFINE_string(INCLUDE_PROCESSOR_CPU_PROFILE_FILE,
 GOMA_DEFINE_int32(HTTP_RPC_COMPRESSION_LEVEL, 3,
                   "Compression level in HttpRPC [0..9]."
                   "0 forces to disable compression.");
-// TODO: drop deflate support http://b/111907136
-GOMA_DEFINE_string(HTTP_ACCEPT_ENCODING, "gzip, deflate",
+GOMA_DEFINE_string(HTTP_ACCEPT_ENCODING,
+                   "gzip",
                    "Accept-Encoding of goma's requests (e.g., lzma2)");
 GOMA_DEFINE_bool(HTTP_RPC_START_COMPRESSION, true,
                  "Starts with compressed request. "

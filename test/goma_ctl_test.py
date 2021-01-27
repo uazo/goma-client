@@ -144,6 +144,11 @@ class FakeGomaEnv(object):
   def ExecCompilerProxy(self):
     pass
 
+  def ExecHttpProxy(self):
+    # Note: this cannot be raise NotImplementedError otherwise it is recognized
+    # as abstract method by pylint.
+    raise Exception('this function is not implemented yet.')
+
   @staticmethod
   def FindLatestLogFile(command_name, log_type):
     return 'dummy_info'
@@ -207,6 +212,9 @@ class FakeGomaEnv(object):
       return {'VERSION': 1}
     return {}
 
+  def UpdateEnvForHttpProxy(self):
+    pass
+
   def WriteFile(self, filename, content):
     pass
 
@@ -225,6 +233,14 @@ class FakeGomaEnv(object):
 
   def WarnNonProtectedFile(self, filename):
     pass
+
+  @property
+  def server_host(self):
+    return 'fake_server.example.com'
+
+  @property
+  def use_http_proxy(self):
+    return False
 
 
 def _ClearGomaEnv():

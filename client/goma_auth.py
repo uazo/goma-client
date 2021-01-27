@@ -378,7 +378,7 @@ def CheckBackendAccess():
   Returns:
     true if the user can access.
   """
-  server = os.environ.get('GOMA_SERVER_HOST', 'goma.chromium.org')
+  server = os.environ.get('GOMA_SERVER_HOST', DEFAULT_GOMA_SERVER_HOST)
   port = os.environ.get('GOMA_SERVER_PORT', '443')
   use_ssl = re.match('[tTyY1]', os.environ.get('GOMA_USE_SSL', 'True'))
   scheme = 'https' if use_ssl else 'http'

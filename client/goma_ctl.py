@@ -453,13 +453,12 @@ def _GetLogFileTimestamp(glog_log):
 
 
 def _OverrideEnvVar(key, value):
-  """
-    Sets env var `key` to `value`, overriding the existing value.
+  """Sets env var `key` to `value`, overriding the existing value.
 
-    Args:
-      key: The environment variable name
-      value: The value to set the environment variable. Use value=None to unset.
-    """
+  Args:
+    key: The environment variable name
+    value: The value to set the environment variable. Use value=None to unset.
+  """
   if value is not None:
     print('override %s=%s' % (key, value))
     os.environ[key] = value
@@ -546,50 +545,37 @@ class HttpProxyDriver(object):
     self._pid_file = os.path.join(var_dir, self._PID_FILENAME)
     self._log_file = os.path.join(var_dir, self._LOG_FILENAME)
     self._host_file = os.path.join(var_dir, self._HOST_FILENAME)
-    self._server_host = None
-    self._server_port = None
-    self._proxy_port = None
-    self._host = None
 
-  def CheckConfig(self):
-    self._server_host = os.environ.get('GOMA_SERVER_HOST')
-    self._server_port = os.environ.get('GOMA_SERVER_PORT')
-    self._proxy_port = os.environ.get('GOMACTL_PROXY_PORT', _DEFAULT_PROXY_PORT)
-    if not _IsFlagTrue('GOMACTL_USE_PROXY'):
+  def UpdateEnvIfNeeded(self):
+    if not self._env.use_http_proxy:
       return
     print('Enable http_proxy')
-    self._host = self._server_host
-    if self._server_port:
-      self._host += ':%s' % self._server_port
-    _OverrideEnvVar('GOMA_SERVER_HOST', '127.0.0.1')
-    _OverrideEnvVar('GOMA_SERVER_PORT', self._proxy_port)
-    _OverrideEnvVar('GOMA_USE_SSL', 'false')
+    self._env.UpdateEnvForHttpProxy()
 
   def IsUpdated(self):
-    if not _IsFlagTrue('GOMACTL_USE_PROXY'):
-      # if GOMACTL_USE_PROXY is false and http_proxy not running,
+    if not self._env.use_http_proxy:
+      # if |use_http_proxy| is false and http_proxy not running,
       # then considered as updated.
       return os.path.exists(self._host_file)
-    # if GOMACTL_USE_PROXY is true and http_proxy is not running
+    # if |use_http_proxy| is true and http_proxy is not running
     # or it is running for different server host, then considered
     # as updated.
     try:
       with open(self._host_file) as f:
-        return f.read() != self._host
+        return f.read() != self._env.server_host
     except IOError:
       pass
     return True
 
   def Start(self):
-    if not _IsFlagTrue('GOMACTL_USE_PROXY'):
+    if not self._env.use_http_proxy:
       return
-    proxy_port = self._proxy_port
-    logfile = open(self._log_file, 'w')
-    p = self._env.ExecHttpProxy(self._host, proxy_port, logfile)
+    with open(self._log_file, 'w') as logfile:
+      p = self._env.ExecHttpProxy(logfile)
     with open(self._pid_file, 'w') as f:
       f.write(str(p.pid))
     with open(self._host_file, 'w') as f:
-      f.write(self._host)
+      f.write(self._env.server_host)
 
   def Stop(self):
     pid = -1
@@ -607,13 +593,9 @@ class HttpProxyDriver(object):
       os.remove(self._pid_file)
       os.remove(self._host_file)
 
+  @property
   def log_filename(self):
     return self._log_file
-
-  def server_host(self):
-    if not _IsFlagTrue('GOMACTL_USE_PROXY'):
-      return self._server_host
-    return '%s (via http_proxy)' % self._server_host
 
 
 class GomaDriver(object):
@@ -659,8 +641,6 @@ class GomaDriver(object):
     self._manifest = self._env.ReadManifest()
     if 'VERSION' in self._manifest:
       self._version = int(self._manifest['VERSION'])
-    if 'GOMA_API_KEY_FILE' in self._manifest:
-      sys.stderr.write('WARNING: GOMA_API_KEY_FILE is deprecated\n')
 
   def _GetRunningCompilerProxyVersion(self):
     versionz = self._env.ControlCompilerProxy('/versionz', check_running=True)
@@ -697,8 +677,7 @@ class GomaDriver(object):
   def _GenericStartCompilerProxy(self, ensure=False):
     self._env.CheckAuthConfig()
     self._env.CheckConfig()
-    self._env.CheckRBEDogfood()
-    self._http_proxy_driver.CheckConfig()
+    self._http_proxy_driver.UpdateEnvIfNeeded()
     if self._compiler_proxy_running is None:
       self._compiler_proxy_running = self._env.CompilerProxyRunning()
     if (not ensure and self._env.MayUsingDefaultIPCPort() and
@@ -726,13 +705,13 @@ class GomaDriver(object):
 
     if ensure and self._compiler_proxy_running:
       print()
-      print('server: %s' % self._http_proxy_driver.server_host())
+      print('server: %s' % self._env.server_host)
       print('goma is already running.')
       print()
       return
 
     if not self._compiler_proxy_running:
-      print('server: %s' % self._http_proxy_driver.server_host())
+      print('server: %s' % self._env.server_host)
       self._http_proxy_driver.Start()
       self._env.ExecCompilerProxy()
       self._compiler_proxy_running = True
@@ -1047,7 +1026,7 @@ class GomaDriver(object):
       print('copy gomacc log')
       self._CopyGomaccInfoFiles(tempdir)
       print('copy http_proxy log')
-      http_proxy_log = self._http_proxy_driver.log_filename()
+      http_proxy_log = self._http_proxy_driver.log_filename
       if os.path.exists(http_proxy_log):
         self._env.CopyFile(
             http_proxy_log,
@@ -1316,6 +1295,9 @@ class GomaEnv(object):
     # TODO: remove this in python3
     self._delete_tmp_dir = False
     self._SetupEnviron()
+    self._server_host = None
+    self._use_http_proxy = None
+    self._http_proxy_port = None
 
   def __del__(self):
     if self._delete_tmp_dir:
@@ -1435,14 +1417,6 @@ class GomaEnv(object):
     if not os.path.isfile(self._gomacc_binary):
       raise ConfigError('gomacc(%s) not exist' % self._gomacc_binary)
     self._CheckPlatformConfig()
-
-  def CheckRBEDogfood(self):
-    """Enables RBE dogfood if flag is set."""
-    if not _IsFlagTrue('GOMACTL_RBE_DOGFOOD'):
-      return
-
-    # Disabled for now, see b/150829808.
-    print('Goma RBE dogfooding has been suspended. b/150829808')
 
   def _GetCompilerProxyPort(self, proc=None):
     """Gets compiler_proxy's port by "gomacc port".
@@ -1888,9 +1862,30 @@ class GomaEnv(object):
       for flag_name, default_value in self._DEFAULT_SSL_ENV:
         _SetGomaFlagDefaultValueIfEmpty(flag_name, default_value)
 
-  def ExecHttpProxy(self, host, proxy_port, logfile):
-    """Execute http proxy in platform dependent way."""
-    return self._ExecHttpProxy(host, proxy_port, logfile)
+  def _GenerateHttpProxyCommand(self):
+    """Generate a command line to execute http_proxy."""
+    cmd = [self._http_proxy_binary]
+    # TODO: fix http_proxy behavior.
+    host, _ = self.server_host.split(':', 1)
+    if host:
+      cmd += ['--server-host', host]
+    if self._http_proxy_port:
+      cmd += ['--port', self._http_proxy_port]
+    return cmd
+
+  def ExecHttpProxy(self, logfile):
+    """Execute http proxy in platform dependent way.
+
+    Args:
+      logfile: a file descriptor to write logs.
+
+    Returns:
+      An instance of PopenWithCheck that runs http_proxy.
+    """
+    cmd = self._GenerateHttpProxyCommand()
+    logfile.write('%s\n' % ' '.join(cmd))
+    return self._CreateDetachedProcess(
+        cmd, stdout=logfile, stderr=subprocess.STDOUT)
 
   def ExecCompilerProxy(self):
     """Execute compiler proxy in platform dependent way."""
@@ -1959,9 +1954,17 @@ class GomaEnv(object):
     """Checks platform dependent GomaEnv configurations."""
     pass
 
-  def _ExecHttpProxy(self, host, proxy_port, logfile):
-    """Execute http proxy in platform dependent way."""
-    raise NotImplementedError('_ExecHttpProxy should be implemented.')
+  def _CreateDetachedProcess(self, cmd, **kwargs):
+    """Execute a program in a detached way.
+
+    Args:
+      cmd: a list of string to be executed with detached.
+      kwargs: kwargs used by PopenWithCheck.
+
+    Returns:
+      An instance of PopenWithCheck that runs http_proxy.
+    """
+    raise NotImplementedError('_CreateDetachedProcess should be implemented.')
 
   def _ExecCompilerProxy(self):
     """Execute compiler proxy in platform dependent way."""
@@ -2047,6 +2050,39 @@ class GomaEnv(object):
     """
     raise NotImplementedError
 
+  def _GetServerHost(self):
+    """Returns server host used by compiler_proxy."""
+    try:
+      return PopenWithCheck(
+          [self._compiler_proxy_binary, '--print-server-host'],
+          stdout=subprocess.PIPE,
+          stderr=subprocess.STDOUT).communicate()[0].rstrip()
+    except (CalledProcessError, subprocess.CalledProcessError):
+      return 'unknown'
+
+  def UpdateEnvForHttpProxy(self):
+    self._server_host = self._GetServerHost()
+    self._http_proxy_port = os.environ.get('GOMACTL_PROXY_PORT',
+                                           _DEFAULT_PROXY_PORT)
+    _OverrideEnvVar('GOMA_SERVER_HOST', '127.0.0.1')
+    _OverrideEnvVar('GOMA_SERVER_PORT', self._http_proxy_port)
+    _OverrideEnvVar('GOMA_USE_SSL', 'false')
+
+  @property
+  def server_host(self):
+    if self._server_host is None:
+      self._server_host = self._GetServerHost()
+    ret = self._server_host
+    if self.use_http_proxy:
+      ret += ' (via http_proxy)'
+    return ret
+
+  @property
+  def use_http_proxy(self):
+    if self._use_http_proxy is None:
+      self._use_http_proxy = _IsFlagTrue('GOMACTL_USE_PROXY')
+    return self._use_http_proxy
+
 
 class GomaEnvWin(GomaEnv):
   """Goma running environment for Windows."""
@@ -2100,27 +2136,13 @@ class GomaEnvWin(GomaEnv):
     if not os.path.isfile(os.path.join(self._dir, 'vcflags.exe')):
       raise ConfigError('vcflags.exe not found')
 
-  def _ExecHttpProxy(self, host, proxy_port, logfile):
-    logfile.write('%s --server-host %s --port %s\n' %
-                  (self._http_proxy_binary, host, proxy_port))
+  def _CreateDetachedProcess(self, cmd, **kwargs):
     # https://docs.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
     DETACHED_PROCESS = 8
-    return PopenWithCheck([
-        self._http_proxy_binary,
-        '--server-host',
-        host,
-        '--port',
-        proxy_port,
-    ],
-                          stdout=logfile,
-                          stderr=subprocess.STDOUT,
-                          creationflags=DETACHED_PROCESS)
+    return PopenWithCheck(cmd, creationflags=DETACHED_PROCESS, **kwargs)
 
   def _ExecCompilerProxy(self):
-    # https://docs.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
-    DETACHED_PROCESS = 8
-    return PopenWithCheck([self._compiler_proxy_binary],
-                          creationflags=DETACHED_PROCESS)
+    return self._CreateDetachedProcess([self._compiler_proxy_binary])
 
   def _GetDetailedFailureReason(self, proc=None):
     pids = self._GetStakeholderPids()
@@ -2246,25 +2268,15 @@ class GomaEnvPosix(GomaEnv):
     output = process.communicate()[0]
     return image_name in output
 
-  def _ExecHttpProxy(self, host, proxy_port, logfile):
-    logfile.write('%s --server-host %s --port %s\n' %
-                  (self._http_proxy_binary, host, proxy_port))
-    return PopenWithCheck([
-        self._http_proxy_binary,
-        '--server-host',
-        host,
-        '--port',
-        proxy_port,
-    ],
-                          stdout=logfile,
-                          stderr=subprocess.STDOUT)
+  def _CreateDetachedProcess(self, cmd, **kwargs):
+    return PopenWithCheck(cmd, **kwargs)
 
   def _ExecCompilerProxy(self):
     if _IsFlagTrue('GOMA_COMPILER_PROXY_DAEMON_MODE'):
       self._is_daemon_mode = True
-    return PopenWithCheck([self._compiler_proxy_binary],
-                          stdout=open(os.devnull, "w"),
-                          stderr=subprocess.STDOUT)
+    return self._CreateDetachedProcess([self._compiler_proxy_binary],
+                                       stdout=open(os.devnull, "w"),
+                                       stderr=subprocess.STDOUT)
 
   def _ExecLsof(self, cmd):
     if self._lsof_path is None:

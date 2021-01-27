@@ -14,6 +14,9 @@
 #include "mypath.h"
 #include "ioutil.h"
 
+GOMA_DECLARE_string(SERVER_HOST);
+GOMA_DECLARE_int32(SERVER_PORT);
+
 namespace {
 
 void ProtobufLogHandler(google::protobuf::LogLevel level,
@@ -55,6 +58,10 @@ void Init(int argc, char* argv[], const char* envp[]) {
   }
   if (argc == 2 && strcmp(argv[1], "--build-info") == 0) {
     std::cout << kUserAgentString << std::endl;
+    exit(0);
+  }
+  if (argc == 2 && strcmp(argv[1], "--print-server-host") == 0) {
+    std::cout << FLAGS_SERVER_HOST << ':' << FLAGS_SERVER_PORT << std::endl;
     exit(0);
   }
 #ifndef NO_AUTOLOCK_STAT

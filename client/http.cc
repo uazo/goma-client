@@ -2215,6 +2215,7 @@ HttpResponse::Body::ParsedStream() const {
       = absl::make_unique<ChainedInputStream>(std::move(chunk_streams));
 
   switch (encoding_type_) {
+    // TODO: deprecate deflate compression.
     case EncodingType::DEFLATE:
       return absl::make_unique<InflateInputStream>(std::move(input));
     case EncodingType::GZIP:
