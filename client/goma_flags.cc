@@ -609,6 +609,10 @@ GOMA_DEFINE_bool(
     "GOMA_SEND_EXPECTED_OUTPUTS, GOMA_SEND_COMPILER_BINARY_AS_INPUT "
     "and GOMA_USE_USER_SPECIFIED_PATH_FOR_SUBPROGRAMS.");
 
+GOMA_DEFINE_bool(ENABLE_CWD_NORMALIZATION,
+                 true,
+                 "Normalize cwd if -fdebug-compilation-dir with \".\" is set.");
+
 #if HAVE_HEAP_PROFILER
 GOMA_DEFINE_string(COMPILER_PROXY_HEAP_PROFILE_FILE, "goma_compiler_proxy_heapz",
                    "heap profile filename.");

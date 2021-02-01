@@ -2,7 +2,7 @@
 
 vars = {
      "chromium_git": "https://chromium.googlesource.com",
-     "clang_revision": "eb5ab41f3801e2085208204fd71a490573d72dfd",
+     "clang_revision": "df7daef465e8a233c7dfb97af08b8b72471a9661",
 }
 
 deps = {

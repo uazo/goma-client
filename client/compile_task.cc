@@ -1046,6 +1046,9 @@ void CompileTask::ProcessCallExec() {
   }
 
   exec_resp_ = absl::make_unique<ExecResp>();
+
+  ModifyRequestCWD();
+
   service_->exec_service_client()->ExecAsync(
       req_.get(), exec_resp_.get(), http_rpc_status_.get(),
       NewCallback(this, &CompileTask::ProcessCallExecDone));
@@ -3079,6 +3082,51 @@ void CompileTask::ModifyRequestArgs() {
                               << absl::StrJoin(req_->arg(), " ");
 }
 
+void CompileTask::ModifyRequestCWD() {
+  if (!service_->enable_cwd_normalization()) {
+    return;
+  }
+
+  const char fixed_cwd[] =
+#ifdef _WIN32
+      "C:\\this\\path\\is\\set\\by\\goma";
+#else
+      "/this/path/is/set/by/goma";
+#endif
+
+  if (req_->cwd() == fixed_cwd) {
+    return;
+  }
+
+  switch (flags_->type()) {
+    case CompilerFlagType::Clexe:
+      if (static_cast<const VCFlags&>(*flags_).fdebug_compilation_dir() !=
+          ".") {
+        return;
+      }
+      break;
+    case CompilerFlagType::Gcc:
+      if (static_cast<const GCCFlags&>(*flags_).fdebug_compilation_dir() !=
+          ".") {
+        return;
+      }
+      break;
+    default:
+      return;
+  }
+
+  for (const auto& input : req_->input()) {
+    if (file::IsAbsolutePath(input.filename())) {
+      return;
+    }
+  }
+
+  LOG(INFO) << trace_id_ << "cwd is changed from " << req_->cwd() << " to "
+            << fixed_cwd;
+  req_->set_original_cwd(req_->cwd());
+  req_->set_cwd(fixed_cwd);
+}
+
 void CompileTask::ModifyRequestEnvs() {
   std::vector<std::string> envs;
   for (const auto& env : req_->env()) {
@@ -4108,7 +4156,7 @@ void CompileTask::SetupSubProcess() {
       req_->command_spec().local_compiler_path().c_str(),
       const_cast<char**>(&argv[0]));
   SubProcessReq* req = subproc_->mutable_req();
-  req->set_cwd(req_->cwd());
+  req->set_cwd(flags_->cwd());
   if (requester_env_.has_umask()) {
     req->set_umask(requester_env_.umask());
   }

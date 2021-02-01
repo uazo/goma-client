@@ -254,6 +254,9 @@ class CompileService {
     return should_fail_for_unsupported_compiler_flag_;
   }
 
+  void SetEnableCWDNormalization(bool b) { enable_cwd_normalization_ = b; }
+  bool enable_cwd_normalization() const { return enable_cwd_normalization_; }
+
   void SetFailFast(bool f) { fail_fast_ = f; }
   bool fail_fast() const { return fail_fast_; }
 
@@ -513,6 +516,7 @@ class CompileService {
   bool store_local_run_output_ = false;
   bool should_fail_for_unsupported_compiler_flag_ = false;
   bool fail_fast_ = false;
+  bool enable_cwd_normalization_ = false;
   std::string tmp_dir_;
 
   // key: "req_ver - resp_ver", value: count

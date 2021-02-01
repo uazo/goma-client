@@ -1570,6 +1570,32 @@ TEST_F(VCFlagsTest, ClangClWithFNoSanitizeBlacklist) {
             flags->optional_input_filenames());
 }
 
+TEST_F(VCFlagsTest, ClangClXclangFdebugCompilationDir) {
+  std::vector<std::string> args = {
+      "clang-cl.exe", "-Xclang", "-fdebug-compilation-dir", "-Xclang", ".",
+  };
+  VCFlags flags(args, "d:\\tmp");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_EQ(flags.fdebug_compilation_dir(), ".");
+}
+
+TEST_F(VCFlagsTest, ClangClFdebugCompilationDir) {
+  std::vector<std::string> args = {
+      "clang-cl.exe",
+      "-fdebug-compilation-dir",
+      ".",
+  };
+  VCFlags flags(args, "d:\\tmp");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_EQ(flags.fdebug_compilation_dir(), ".");
+}
+
 TEST_F(VCFlagsTest, ClShouldNotRecognizeAnyFsanitize) {
   std::vector<std::string> args;
   args.push_back("cl.exe");
@@ -1890,6 +1916,51 @@ TEST_F(VCFlagsTest, ClangClWithFprofileInstrUse) {
   ASSERT_EQ(1U, flags->optional_input_filenames().size());
   EXPECT_EQ(file::JoinPath(".", "profile.data"),
             flags->optional_input_filenames()[0]);
+}
+
+TEST_F(VCFlagsTest, ClangClWithWinsysroot) {
+  // http://b/150377506
+  std::vector<std::string> args{
+      "clang-cl.exe", "/c", "hello.cc", "/winsysroot", "path",
+  };
+  std::unique_ptr<CompilerFlags> flags(
+      CompilerFlagsParser::MustNew(args, "d:\\tmp"));
+  EXPECT_TRUE(flags->is_successful());
+  EXPECT_EQ(std::vector<std::string>{"hello.cc"}, flags->input_filenames());
+  EXPECT_EQ((std::vector<std::string>{"/winsysroot", "path"}),
+            flags->compiler_info_flags());
+}
+
+TEST_F(VCFlagsTest, ClangClWithVCToolsandWinSDK) {
+  // http://b/150377506
+  std::vector<std::string> args{
+      "clang-cl.exe",
+      "/c",
+      "hello.cc",
+      "/vctoolsversion",
+      "14.26.28801",
+      "/vctoolsdir",
+      "winsysroot/VC/Tools",
+      "/winsdkversion",
+      "10.0.19041.0",
+      "/winsdkdir",
+      "winsysroot/win_sdk",
+  };
+  std::unique_ptr<CompilerFlags> flags(
+      CompilerFlagsParser::MustNew(args, "d:\\tmp"));
+  EXPECT_TRUE(flags->is_successful());
+  EXPECT_EQ(std::vector<std::string>{"hello.cc"}, flags->input_filenames());
+  EXPECT_EQ((std::vector<std::string>{
+                "/vctoolsversion",
+                "14.26.28801",
+                "/vctoolsdir",
+                "winsysroot/VC/Tools",
+                "/winsdkversion",
+                "10.0.19041.0",
+                "/winsdkdir",
+                "winsysroot/win_sdk",
+            }),
+            flags->compiler_info_flags());
 }
 
 }  // namespace devtools_goma

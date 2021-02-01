@@ -13,6 +13,7 @@
 #include "base/path.h"
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
+#include "lib/clang_flags_helper.h"
 #include "lib/cmdline_parser.h"
 #include "lib/compiler_flags.h"
 #include "lib/file_helper.h"
@@ -115,6 +116,8 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
       parser.AddFlag("fprofile-sample-use");
   FlagParser::Flag* flag_fthinlto_index =
       parser.AddPrefixFlag("fthinlto-index=");
+  FlagParser::Flag* flag_fdebug_compilation_dir =
+      parser.AddFlag("fdebug-compilation-dir");
 
   parser.AddFlag("wrapper")->SetSeenOutput(&has_wrapper_);
   parser.AddPrefixFlag("fplugin=")->SetSeenOutput(&has_fplugin_);
@@ -231,6 +234,14 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
 
   parser.Parse(expanded_args_);
   unknown_flags_ = parser.unknown_flag_args();
+
+  ClangFlagsHelper clang_flags_helper(expanded_args_);
+
+  if (flag_fdebug_compilation_dir->seen()) {
+    fdebug_compilation_dir_ = flag_fdebug_compilation_dir->GetLastValue();
+  } else if (clang_flags_helper.fdebug_compilation_dir()) {
+    fdebug_compilation_dir_ = *clang_flags_helper.fdebug_compilation_dir();
+  }
 
   // We need to handle -Xclang specially.
   ProcessXclangFlags(xclang_flags);

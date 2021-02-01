@@ -2816,6 +2816,32 @@ TEST_F(GCCFlagsTest, ClangFtrivialAutoVarInitShouldBeIgnored) {
   EXPECT_TRUE(flags.compiler_info_flags().empty());
 }
 
+TEST_F(GCCFlagsTest, ClangXclangFdebugCompilationDir) {
+  std::vector<std::string> args = {
+      "clang++", "-Xclang", "-fdebug-compilation-dir", "-Xclang", ".",
+  };
+  GCCFlags flags(args, "/usr/src/chrome/src");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_EQ(flags.fdebug_compilation_dir(), ".");
+}
+
+TEST_F(GCCFlagsTest, ClangFdebugCompilationDir) {
+  std::vector<std::string> args = {
+      "clang++",
+      "-fdebug-compilation-dir",
+      ".",
+  };
+  GCCFlags flags(args, "/usr/src/chrome/src");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_EQ(flags.fdebug_compilation_dir(), ".");
+}
+
 TEST_F(GCCFlagsTest, ClangFTimeTrace) {
   std::vector<std::string> common_args;
   common_args.push_back("clang++");

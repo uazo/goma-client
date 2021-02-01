@@ -50,6 +50,9 @@ class GCCFlags : public CxxFlags {
     return fdebug_prefix_map_;
   }
   const std::string& thinlto_index() const { return thinlto_index_; }
+  const std::string& fdebug_compilation_dir() const {
+    return fdebug_compilation_dir_;
+  }
 
   bool is_cplusplus() const override { return is_cplusplus_; }
   bool has_nostdinc() const { return has_nostdinc_; }
@@ -124,6 +127,7 @@ class GCCFlags : public CxxFlags {
   std::string isysroot_;
   std::string resource_dir_;
   std::string thinlto_index_;
+  std::string fdebug_compilation_dir_;
   // -fsanitize can be specified multiple times, and can be comma separated
   // values.
   std::set<std::string> fsanitize_;

@@ -26,6 +26,9 @@ class VCFlags : public CxxFlags {
     return commandline_macros_;
   }
   const std::string& thinlto_index() const { return thinlto_index_; }
+  const std::string& fdebug_compilation_dir() const {
+    return fdebug_compilation_dir_;
+  }
 
   bool is_cplusplus() const override { return is_cplusplus_; }
   bool ignore_stdinc() const { return ignore_stdinc_; }
@@ -82,6 +85,7 @@ class VCFlags : public CxxFlags {
   std::string implicit_macros_;
   bool has_ftime_trace_;
   std::string thinlto_index_;
+  std::string fdebug_compilation_dir_;
 };
 
 }  // namespace devtools_goma

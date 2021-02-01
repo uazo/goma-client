@@ -282,6 +282,7 @@ CompilerProxyHttpHandler::CompilerProxyHttpHandler(std::string myname,
                << " should be one of \"off\", \"fallback\" or \"error\"";
   }
   service_.SetDontKillSubprocess(FLAGS_DONT_KILL_SUBPROCESS);
+  service_.SetEnableCWDNormalization(FLAGS_ENABLE_CWD_NORMALIZATION);
   service_.SetMaxSubProcsPending(FLAGS_MAX_SUBPROCS_PENDING);
   service_.SetLocalRunPreference(FLAGS_LOCAL_RUN_PREFERENCE);
   service_.SetLocalRunForFailedInput(FLAGS_LOCAL_RUN_FOR_FAILED_INPUT);

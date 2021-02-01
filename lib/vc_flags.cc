@@ -13,6 +13,7 @@
 #include "base/path.h"
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
+#include "lib/clang_flags_helper.h"
 #include "lib/cmdline_parser.h"
 #include "lib/compiler_flags.h"
 #include "lib/file_helper.h"
@@ -176,6 +177,7 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
   FlagParser::Flag* flag_fms_compatibility_version =
       parser.AddPrefixFlag("fms-compatibility-version=");
   FlagParser::Flag* flag_resource_dir = nullptr;
+  FlagParser::Flag* flag_fdebug_compilation_dir = nullptr;
   FlagParser::Flag* flag_fsanitize = parser.AddFlag("fsanitize");
   FlagParser::Flag* flag_fthinlto_index =
       parser.AddPrefixFlag("fthinlto-index=");
@@ -186,6 +188,11 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
   // TODO: check -iquote?
   // http://clang.llvm.org/docs/UsersManual.html#id8
   FlagParser::Flag* flag_imsvc = parser.AddFlag("imsvc");
+  FlagParser::Flag* flag_vctoolsdir = parser.AddFlag("vctoolsdir");
+  FlagParser::Flag* flag_vctoolsversion = parser.AddFlag("vctoolsversion");
+  FlagParser::Flag* flag_winsdkdir = parser.AddFlag("winsdkdir");
+  FlagParser::Flag* flag_winsdkversion = parser.AddFlag("winsdkversion");
+  FlagParser::Flag* flag_winsysroot = parser.AddFlag("winsysroot");
   FlagParser::Flag* flag_clang_std = parser.AddFlag("std");  // e.g. -std=c11
   FlagParser::Flag* flag_no_canonical_prefixes =
       parser.AddBoolFlag("no-canonical-prefixes");
@@ -200,6 +207,8 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     flag_fms_compatibility_version->SetOutput(&compiler_info_flags_);
     flag_resource_dir = parser.AddFlag("resource-dir");
     flag_resource_dir->SetOutput(&compiler_info_flags_);
+    flag_fdebug_compilation_dir = parser.AddFlag("fdebug-compilation-dir");
+    flag_fdebug_compilation_dir->SetOutput(&compiler_info_flags_);
     flag_fsanitize->SetOutput(&compiler_info_flags_);
     // TODO: do we need to support more sanitize options?
     flag_fno_sanitize_blacklist = parser.AddBoolFlag("fno-sanitize-blacklist");
@@ -207,6 +216,11 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     flag_mllvm->SetOutput(&compiler_info_flags_);
     flag_isystem->SetOutput(&compiler_info_flags_);
     flag_imsvc->SetOutput(&compiler_info_flags_);
+    flag_vctoolsdir->SetOutput(&compiler_info_flags_);
+    flag_vctoolsversion->SetOutput(&compiler_info_flags_);
+    flag_winsdkdir->SetOutput(&compiler_info_flags_);
+    flag_winsdkversion->SetOutput(&compiler_info_flags_);
+    flag_winsysroot->SetOutput(&compiler_info_flags_);
     flag_clang_std->SetOutput(&compiler_info_flags_);
     flag_no_canonical_prefixes->SetOutput(&compiler_info_flags_);
     flag_target->SetOutput(&compiler_info_flags_);
@@ -242,6 +256,14 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
 
   parser.Parse(expanded_args_);
   unknown_flags_ = parser.unknown_flag_args();
+
+  ClangFlagsHelper clang_flags_helper(expanded_args_);
+
+  if (flag_fdebug_compilation_dir && flag_fdebug_compilation_dir->seen()) {
+    fdebug_compilation_dir_ = flag_fdebug_compilation_dir->GetLastValue();
+  } else if (clang_flags_helper.fdebug_compilation_dir()) {
+    fdebug_compilation_dir_ = *clang_flags_helper.fdebug_compilation_dir();
+  }
 
   is_successful_ = true;
 
@@ -689,6 +711,14 @@ void VCFlags::DefineFlags(FlagParser* parser) {
   parser->AddBoolFlag("G1");
   parser->AddBoolFlag("G2");
   parser->AddFlag("imsvc");  // both -imsvc, /imsvc.
+
+  // http://b/178986079 support clang-cl /winsysroot
+  parser->AddFlag("vctoolsdir");
+  parser->AddFlag("vctoolsversion");
+  parser->AddFlag("winsdkdir");
+  parser->AddFlag("winsdkversion");
+  parser->AddFlag("winsysroot");
+
   // http://b/148244706  /clang:<arg> pass <arg> to the clang driver.
   parser->AddPrefixFlag("clang:");
   // http://b/150403114  /showIncludes:user

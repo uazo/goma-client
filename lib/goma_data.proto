@@ -239,6 +239,9 @@ message ExecReq {
   repeated string env = 3;
   optional string cwd = 4;
 
+  // Set original cwd if cwd is normalized.
+  optional string original_cwd = 5;
+
   repeated group Input = 10 {
     optional string filename = 11;  // relative to cwd or full path
     required string hash_key = 12;

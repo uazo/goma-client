@@ -273,6 +273,7 @@ class CompileTask {
   void SetCompilerResources();
   void SetToolchainSpecs(ExecReq* req, const CompilerInfo& compiler_info) const;
   void ModifyRequestArgs();
+  void ModifyRequestCWD();
   void ModifyRequestEnvs();
   void UpdateCommandSpec();
   void UpdateRequesterInfo();
