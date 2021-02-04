@@ -749,6 +749,13 @@ bool GomaClient::PrepareExecRequest(const CompilerFlags& flags, ExecReq* req) {
         pp->set_value(std::move(kv[1]));
       }
     }
+
+    absl::optional<std::string> rbe_cache_silo = GetEnv("RBE_cache_silo");
+    if (rbe_cache_silo) {
+      auto* pp = req->mutable_requester_info()->add_platform_properties();
+      pp->set_name("cache-silo");
+      pp->set_value(std::move(rbe_cache_silo.value()));
+    }
   }
 
   if (FLAGS_STORE_ONLY) {
