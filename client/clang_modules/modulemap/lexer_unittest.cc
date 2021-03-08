@@ -113,5 +113,17 @@ TEST(LexerTest, CommentNotEnded) {
   EXPECT_FALSE(Lexer::Run(*content, &tokens));
 }
 
+TEST(LexerTest, Stackoverflow) {
+  // http://b/180017609 lexer_fuzzer: Stack-overflow in
+  // devtools_goma::modulemap::Lexer::Next
+  std::string s;
+  for (int i = 0; i < 1024 * 1024; i++) {
+    s += "//\n";
+  }
+  std::unique_ptr<Content> content = Content::CreateFromString(s);
+  std::vector<Token> tokens;
+  EXPECT_TRUE(Lexer::Run(*content, &tokens));
+}
+
 }  // namespace modulemap
 }  // namespace devtools_goma

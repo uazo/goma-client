@@ -12,6 +12,7 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "content.h"
 #include "glog/logging.h"
 
@@ -69,6 +70,40 @@ const char* DirectiveFilter::NextLineHead(const char* pos, const char* end) {
   }
 
   return end;
+}
+
+// static
+int DirectiveFilter::CaptureRawStringLiteral(const char* pos, const char* end) {
+  absl::string_view input(pos, end - pos);
+  absl::string_view s = input;
+  CHECK(absl::ConsumePrefix(&s, "R\"")) << input;
+  absl::string_view::size_type p = s.find('(');
+  if (p == absl::string_view::npos) {
+    s = input;
+    if (s.size() >= 80UL) {
+      s = s.substr(0, 80);
+    }
+    LOG(ERROR) << "failed to detect raw string literal:" << s;
+    return input.size();
+  }
+  absl::string_view delimiter = s.substr(0, p);
+  CHECK_EQ(s[p], '(');
+  s = s.substr(p + 1);
+  while (!s.empty()) {
+    p = s.find(')');
+    if (p == absl::string_view::npos) {
+      return input.size();
+    }
+    CHECK_EQ(s[p], ')');
+    absl::string_view r = s.substr(p + 1);
+    if (absl::ConsumePrefix(&r, delimiter) && !r.empty() && r[0] == '"') {
+      // raw string literal ends.
+      return strlen("R\"") + delimiter.size() + strlen("(") + p + strlen(")") +
+             delimiter.size() + strlen("\"");
+    }
+    s = r;
+  }
+  return input.size();
 }
 
 // static
@@ -133,6 +168,10 @@ int DirectiveFilter::IsEscapedNewLine(const char* pos, const char* end) {
 }
 
 // Copied |src| to |dst| with removing comments.
+// It also removes raw string literal that contains "#", because
+// such string literal confuses include processor (detect it as
+// directives) and assumes such literal may not be used for
+// C preprocessor. http://b/123493120
 // TODO: We assume '"' is not in include pathname.
 // When such pathname exists, this won't work well. e.g. #include <foo"bar>
 // static
@@ -141,6 +180,20 @@ size_t DirectiveFilter::RemoveComments(const char* src, const char* end,
   const char* original_dst = dst;
 
   while (src != end) {
+    // Raw string literal starts.
+    if (*src == 'R' && src + 1 < end && *(src + 1) == '\"') {
+      int num = CaptureRawStringLiteral(src, end);
+      const absl::string_view literal(src, num);
+      if (literal.find('#') != absl::string_view::npos) {
+        src += num;
+        continue;
+      }
+      // copy it as is.
+      memcpy(dst, src, num);
+      src += num;
+      dst += num;
+      continue;
+    }
     // String starts.
     if (*src == '\"') {
       int num_copied = CopyStringLiteral(src, end, dst);

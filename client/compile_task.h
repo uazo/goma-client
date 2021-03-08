@@ -150,6 +150,8 @@ class CompileTask {
   FRIEND_TEST(CompileTaskTest, OmitDurationFromUserError);
   FRIEND_TEST(CompileTaskTest, SetCompilerResourcesNoSendCompilerBinary);
   FRIEND_TEST(CompileTaskTest, SetCompilerResourcesSendCompilerBinary);
+  FRIEND_TEST(CompileTaskTest, ModifyRequestCWDAndPWD);
+  FRIEND_TEST(CompileTaskTest, IsRelocatableCompilerFlags);
 
   enum ErrDest {
     // To log: write in log file, and show on status page.
@@ -273,7 +275,9 @@ class CompileTask {
   void SetCompilerResources();
   void SetToolchainSpecs(ExecReq* req, const CompilerInfo& compiler_info) const;
   void ModifyRequestArgs();
-  void ModifyRequestCWD();
+  // Returns true if the request does not depends on CWD.
+  static bool IsRelocatableCompilerFlags(const CompilerFlags& flags);
+  void ModifyRequestCWDAndPWD();
   void ModifyRequestEnvs();
   void UpdateCommandSpec();
   void UpdateRequesterInfo();

@@ -21,10 +21,15 @@ ClangFlagsHelper::ClangFlagsHelper(const std::vector<std::string>& args) {
 
   FlagParser::Flag* flag_fdebug_compilation_dir =
       xclang_flag_parser.AddFlag("fdebug-compilation-dir");
+  FlagParser::Flag* flag_fcoverage_compilation_dir =
+      xclang_flag_parser.AddPrefixFlag("fcoverage-compilation-dir=");
   xclang_flag_parser.Parse(xclang_flags);
 
   if (flag_fdebug_compilation_dir->seen()) {
     fdebug_compilation_dir_ = flag_fdebug_compilation_dir->GetLastValue();
+  }
+  if (flag_fcoverage_compilation_dir->seen()) {
+    fcoverage_compilation_dir_ = flag_fcoverage_compilation_dir->GetLastValue();
   }
 }
 

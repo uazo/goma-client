@@ -11,12 +11,45 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_cat.h"
 #include "content.h"
 
 namespace devtools_goma {
 
 class DirectiveFilterTest : public testing::Test {
 };
+
+TEST_F(DirectiveFilterTest, CaptureRawStringLiteral) {
+  const std::string kRawString1 = "R\"(\n#include <stdio.h>\n)\"";
+  const std::string kRawString2 = "R\"(\nstdio.h)\"";
+  const std::string kRawString3 =
+      "R\"cpp(\n  class $Class[[A]] {\n   "
+      "  #include \"imp.h\"\n"
+      " };\n"
+      ")cpp\"";
+  std::string src =
+      absl::StrCat(kRawString1, "\n", kRawString2, "\n", kRawString3, "\n");
+  const char* pos = src.c_str();
+  const char* end = src.c_str() + src.size();
+
+  int num = DirectiveFilter::CaptureRawStringLiteral(pos, end);
+  EXPECT_EQ(kRawString1, absl::string_view(pos, num));
+  pos += num;
+  EXPECT_NE(pos, end);
+  EXPECT_EQ('\n', *pos);
+  pos++;
+  num = DirectiveFilter::CaptureRawStringLiteral(pos, end);
+  EXPECT_EQ(kRawString2, absl::string_view(pos, num));
+  pos += num;
+  EXPECT_NE(pos, end);
+  EXPECT_EQ('\n', *pos);
+  pos++;
+  num = DirectiveFilter::CaptureRawStringLiteral(pos, end);
+  EXPECT_EQ(kRawString3, absl::string_view(pos, num));
+  pos += num;
+  EXPECT_NE(pos, end);
+  EXPECT_EQ('\n', *pos);
+}
 
 TEST_F(DirectiveFilterTest, SkipSpaces) {
   std::string src = "    12   3 \\\n 4 \\\n\\\n   5  \\\r\n  6  \\\n";
@@ -152,6 +185,25 @@ TEST_F(DirectiveFilterTest, BlockCommentIsNotFinished) {
 
   EXPECT_EQ(
       "", std::string(filtered->buf(), filtered->buf_end() - filtered->buf()));
+}
+
+TEST_F(DirectiveFilterTest, RemoveRawStringLiteralWithDirective) {
+  const std::string kRawString1 = "R\"(\n#include <stdio.h>\n)\"";
+  const std::string kRawString2 = "R\"(stdio.h)\"";
+  const std::string kRawString3 =
+      "R\"cpp(\n  class $Class[[A]] {\n   "
+      "  #include \"imp.h\"\n"
+      " };\n"
+      ")cpp\"";
+  const std::string src =
+      absl::StrCat(kRawString1, "\n", kRawString2, "\n", kRawString3, "\n");
+
+  std::unique_ptr<Content> content(Content::CreateFromString(src));
+  std::unique_ptr<Content> filtered(
+      DirectiveFilter::MakeFilteredContent(*content));
+
+  EXPECT_EQ("", absl::string_view(filtered->buf(),
+                                  filtered->buf_end() - filtered->buf()));
 }
 
 TEST_F(DirectiveFilterTest, FilterDirectives) {
@@ -443,6 +495,23 @@ TEST_F(DirectiveFilterTest, MultipleLineDirectiveAndIdentifier) {
 
   std::string expected = "#define HOGE";
 
+  EXPECT_EQ(expected, std::string(filtered->buf(),
+                                  filtered->buf_end() - filtered->buf()));
+}
+
+TEST_F(DirectiveFilterTest, SkipRawStringLiteral) {
+  // b/180559934
+  std::string src =
+      "checkHighlightings(R\"cpp(\n"
+      "  class $Class[[A]] {\n"
+      "   #include \"imp.h\n"
+      "  };\n"
+      ")cpp\",";
+  std::unique_ptr<Content> content(Content::CreateFromString(src));
+  std::unique_ptr<Content> filtered(
+      DirectiveFilter::MakeFilteredContent(*content));
+
+  std::string expected = "";
   EXPECT_EQ(expected, std::string(filtered->buf(),
                                   filtered->buf_end() - filtered->buf()));
 }

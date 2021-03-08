@@ -36,7 +36,12 @@ std::unique_ptr<ExecReq> CreateExecReqForTest() {
   req->add_arg("foo.cc");
   req->add_arg("-o");
   req->add_arg("foo");
+  req->add_arg("-fdebug-compilation-dir");
+  req->add_arg(".");
+
   req->set_cwd("/home/user/code/chromium/src");
+
+  req->add_env("PWD=/home/user/code/chromium/src");
 
   auto input = req->add_input();
   input->set_filename("foo.cc");
@@ -440,6 +445,306 @@ TEST_F(CompileTaskTest, SetCompilerResourcesSendCompilerBinary) {
       "../../third_party/llvm-build/Release+Asserts/bin/../lib/libstdc++.so.6",
       req.toolchain_specs(2).path());
   EXPECT_TRUE(req.toolchain_specs(2).is_executable());
+}
+
+TEST_F(CompileTaskTest, ModifyRequestCWDAndPWD) {
+  compile_service()->SetEnableCWDNormalization(true);
+  compile_task()->ModifyRequestCWDAndPWD();
+
+  const ExecReq& req = *compile_task()->req_;
+
+  const char fixed_cwd[] =
+#ifdef _WIN32
+      "C:\\this\\path\\is\\set\\by\\goma";
+#else
+      "/this/path/is/set/by/goma";
+#endif
+
+  EXPECT_EQ(fixed_cwd, req.cwd());
+
+  ASSERT_EQ(1, req.env().size());
+  EXPECT_EQ(absl::StrCat("PWD=", fixed_cwd), req.env(0));
+}
+
+TEST_F(CompileTaskTest, IsRelocatableCompilerFlags) {
+  // Inspired by L8 orthogonal array, to test cases.
+  // Let me use following factors to test:
+  // a: -fdebug-compilation-dir
+  // b: -fcoverage-compilation-dir
+  // c: -ffile-compilation-dir
+  // d: -fcoverage-mapping
+  // e: -g
+
+  std::unique_ptr<CompilerFlags> flags;
+
+  // clang
+  // 1) all
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-fdebug-compilation-dir=.",
+          "-fcoverage-compilation-dir=.",
+          "-ffile-compilation-dir=.",
+          "-fcoverage-mapping",
+          "-g",
+      },
+      "/usr/local/src");
+  EXPECT_TRUE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 2) a, b, c
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-fdebug-compilation-dir=.",
+          "-fcoverage-compilation-dir=.",
+          "-ffile-compilation-dir=.",
+      },
+      "/usr/local/src");
+  EXPECT_TRUE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 3) a, d, e
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-fdebug-compilation-dir=.",
+          "-fcoverage-mapping",
+          "-g",
+      },
+      "/usr/local/src");
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 4) a
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-fdebug-compilation-dir=.",
+      },
+      "/usr/local/src");
+  EXPECT_TRUE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 5) b, d
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-fcoverage-compilation-dir=.",
+          "-fcoverage-mapping",
+      },
+      "/usr/local/src");
+  // TODO: fix this test when -g is recognized.
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 6) b, e
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-fcoverage-compilation-dir=.",
+          "-g",
+      },
+      "/usr/local/src");
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 7) c, d
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-ffile-compilation-dir=.",
+          "-fcoverage-mapping",
+      },
+      "/usr/local/src");
+  EXPECT_TRUE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 8) c, e
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-ffile-compilation-dir=.",
+          "-g",
+      },
+      "/usr/local/src");
+  EXPECT_TRUE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // clang-cl
+  // 1) all
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang-cl.exe",
+          "/c",
+          "foo.cc",
+          "-fdebug-compilation-dir=.",
+          "-fcoverage-compilation-dir=.",
+          "-ffile-compilation-dir=.",
+          "-fcoverage-mapping",
+          "/ZI",
+      },
+      "/usr/local/src");
+  EXPECT_TRUE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 2) a, b, c
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang-cl.exe",
+          "/c",
+          "foo.cc",
+          "-fdebug-compilation-dir=.",
+          "-fcoverage-compilation-dir=.",
+          "-ffile-compilation-dir=.",
+      },
+      "/usr/local/src");
+  EXPECT_TRUE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 3) a, d, e
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang-cl.exe",
+          "/c",
+          "foo.cc",
+          "-fdebug-compilation-dir=.",
+          "-fcoverage-mapping",
+          "/ZI",
+      },
+      "/usr/local/src");
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 4) a
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang-cl.exe",
+          "/c",
+          "foo.cc",
+          "-fdebug-compilation-dir=.",
+      },
+      "/usr/local/src");
+  EXPECT_TRUE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 5) b, d
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang-cl.exe",
+          "/c",
+          "foo.cc",
+          "-fcoverage-compilation-dir=.",
+          "-fcoverage-mapping",
+      },
+      "/usr/local/src");
+  // TODO: fix this test when /ZI is recognized.
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 6) b, e
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang-cl.exe",
+          "/c",
+          "foo.cc",
+          "-fcoverage-compilation-dir=.",
+          "/ZI",
+      },
+      "/usr/local/src");
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 7) c, d
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang-cl.exe",
+          "/c",
+          "foo.cc",
+          "-ffile-compilation-dir=.",
+          "-fcoverage-mapping",
+      },
+      "/usr/local/src");
+  EXPECT_TRUE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // 8) c, e
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang-cl.exe",
+          "/c",
+          "foo.cc",
+          "-ffile-compilation-dir=.",
+          "/ZI",
+      },
+      "/usr/local/src");
+  EXPECT_TRUE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // Ensure non "." would be ignored.
+  // -fdebug-compilation-dir
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-fdebug-compilation-dir=/non/cwd",
+          "-g",
+      },
+      "/usr/local/src");
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // -fcoverage-compilation-dir
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-fcoverage-compilation-dir=/non/cwd",
+          "-fcoverage-mapping",
+      },
+      "/usr/local/src");
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // -ffile-compilation-dir
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-ffile-compilation-dir=/non/cwd",
+          "-fcoverage-mapping",
+          "-g",
+      },
+      "/usr/local/src");
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // make sure mismatching cases are rejected.
+  // -fdebug-compilation-dir
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-fdebug-compilation-dir=.",
+          "-ffile-compilation-dir=/non/cwd",
+          "-g",
+      },
+      "/usr/local/src");
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
+
+  // -fcoverage-compilation-dir
+  flags = CompilerFlagsParser::MustNew(
+      std::vector<std::string>{
+          "clang",
+          "-c",
+          "foo.cc",
+          "-fcoverage-compilation-dir=.",
+          "-ffile-compilation-dir=/non/cwd",
+          "-fcoverage-mapping",
+      },
+      "/usr/local/src");
+  EXPECT_FALSE(CompileTask::IsRelocatableCompilerFlags(*flags));
 }
 
 }  // namespace devtools_goma

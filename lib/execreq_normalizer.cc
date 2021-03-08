@@ -244,6 +244,13 @@ void ConfigurableExecReqNormalizer::NormalizeExecReqCwd(
 
   static const char kPwd[] = "PWD=";
 
+  if (!(keep_cwd & (kNormalizeWithCwd | kNormalizeWithDebugPrefixMap)) &&
+      req->has_original_cwd()) {
+    LOG(WARNING) << req->requester_info().compiler_proxy_id()
+                 << ": do not normalize with cwd or debug prefix map, but "
+                    "original_cwd is set";
+  }
+
   if (keep_cwd & kNormalizeWithDebugPrefixMap) {
     // If there is PWD= in env, replace cwd with content of PWD=.
     for (const auto& env_var : req->env()) {
@@ -257,6 +264,7 @@ void ConfigurableExecReqNormalizer::NormalizeExecReqCwd(
       // fdebug-compilation-dir is applied before fdebug-prefix-map when we use
       // fdebug-prefix-map.
       req->set_cwd(*new_cwd);
+      req->clear_original_cwd();
       is_replaced = true;
     }
 
@@ -264,9 +272,11 @@ void ConfigurableExecReqNormalizer::NormalizeExecReqCwd(
     is_rewritten = true;
   } else if (new_cwd) {
     req->set_cwd(*new_cwd);
+    req->clear_original_cwd();
     is_replaced = true;
   } else {
     req->clear_cwd();
+    req->clear_original_cwd();
     is_removed = true;
   }
 

@@ -1516,6 +1516,35 @@ TEST_F(VCFlagsTest, ClangClWithFsanitizeBlacklist) {
             flags->optional_input_filenames());
 }
 
+TEST_F(VCFlagsTest, ClangClWithFprofileList) {
+  std::vector<std::string> args;
+  args.push_back("clang-cl.exe");
+  args.push_back("-fprofile-list=profilelist.txt");
+  args.push_back("-fprofile-list=profilelist2.txt");
+  args.push_back("/c");
+  args.push_back("hello.cc");
+  std::unique_ptr<CompilerFlags> flags(
+      CompilerFlagsParser::MustNew(args, "d:\\tmp"));
+  EXPECT_EQ(args, flags->args());
+  EXPECT_EQ(1U, flags->output_files().size());
+  EXPECT_EQ("hello.obj", flags->output_files()[0]);
+  EXPECT_EQ(1U, flags->input_filenames().size());
+  EXPECT_EQ("hello.cc", flags->input_filenames()[0]);
+  EXPECT_TRUE(flags->is_successful());
+  EXPECT_EQ("", flags->fail_message());
+  EXPECT_EQ("clang-cl", flags->compiler_name());
+  EXPECT_EQ(CompilerFlagType::Clexe, flags->type());
+  EXPECT_EQ("d:\\tmp", flags->cwd());
+
+  std::vector<std::string> expected_compiler_info_flags;
+  EXPECT_EQ(expected_compiler_info_flags, flags->compiler_info_flags());
+  std::vector<std::string> expected_optional_input_filenames;
+  expected_optional_input_filenames.push_back("profilelist.txt");
+  expected_optional_input_filenames.push_back("profilelist2.txt");
+  EXPECT_EQ(expected_optional_input_filenames,
+            flags->optional_input_filenames());
+}
+
 TEST_F(VCFlagsTest, ClangClWithFsanitizeAndBlacklist) {
   std::vector<std::string> args;
   args.push_back("clang-cl.exe");
@@ -1961,6 +1990,82 @@ TEST_F(VCFlagsTest, ClangClWithVCToolsandWinSDK) {
                 "winsysroot/win_sdk",
             }),
             flags->compiler_info_flags());
+}
+
+TEST_F(VCFlagsTest, ClangClCoveargeMapping) {
+  std::vector<std::string> args{
+      "clang-cl.exe",
+      "-fprofile-instr-generate",
+      "-fcoverage-mapping",
+      "-mllvm",
+      "-limited-coverage-experimental=true",
+      "/c",
+      "hello.cc",
+      "-fdebug-compilation-dir",
+      ".",
+      "-no-canonical-prefixes",
+  };
+  VCFlags flags(args, "d:\\tmp");
+  EXPECT_TRUE(flags.is_successful());
+  EXPECT_EQ(std::vector<std::string>{"hello.cc"}, flags.input_filenames());
+  EXPECT_TRUE(flags.has_fcoverage_mapping());
+  EXPECT_THAT(flags.compiler_info_flags(),
+              testing::Not(testing::Contains("-fcoverage-mapping")));
+}
+
+TEST_F(VCFlagsTest, ClangClNoCoveargeMapping) {
+  std::vector<std::string> args{
+      "clang-cl.exe",
+      "/c",
+      "hello.cc",
+      "-fdebug-compilation-dir",
+      ".",
+      "-no-canonical-prefixes",
+  };
+  VCFlags flags(args, "d:\\tmp");
+  EXPECT_TRUE(flags.is_successful());
+  EXPECT_EQ(std::vector<std::string>{"hello.cc"}, flags.input_filenames());
+  EXPECT_FALSE(flags.has_fcoverage_mapping());
+}
+
+TEST_F(VCFlagsTest, ClangClXclangFcoverageCompilationDir) {
+  std::vector<std::string> args = {
+      "clang-cl.exe",
+      "-Xclang",
+      "-fcoverage-compilation-dir=.",
+  };
+  VCFlags flags(args, "d:\\tmp");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_EQ(flags.fcoverage_compilation_dir(), ".");
+}
+
+TEST_F(VCFlagsTest, ClangClFcoverageCompilationDir) {
+  std::vector<std::string> args = {
+      "clang-cl.exe",
+      "-fcoverage-compilation-dir=.",
+  };
+  VCFlags flags(args, "d:\\tmp");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_EQ(flags.fcoverage_compilation_dir(), ".");
+}
+
+TEST_F(VCFlagsTest, ClangClFfileCompilationDir) {
+  std::vector<std::string> args = {
+      "clang-cl.exe",
+      "-ffile-compilation-dir=.",
+  };
+  VCFlags flags(args, "d:\\tmp");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_EQ(flags.ffile_compilation_dir(), ".");
 }
 
 }  // namespace devtools_goma

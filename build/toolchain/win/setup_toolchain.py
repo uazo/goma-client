@@ -41,6 +41,8 @@ def _ExtractImportantEnvironment(output_of_set):
   env = {}
   # This occasionally happens and leads to misleading SYSTEMROOT error messages
   # if not caught here.
+  if isinstance(output_of_set, bytes):
+    output_of_set = output_of_set.decode('utf-8')
   if output_of_set.count('=') == 0:
     raise Exception('Invalid output_of_set. Value is:\n%s' % output_of_set)
   for line in output_of_set.splitlines():
@@ -142,9 +144,11 @@ def _FormatAsEnvironmentBlock(envvar_dict):
   CreateProcess documentation for more details."""
   block = ''
   nul = '\0'
-  for key, value in envvar_dict.iteritems():
+  for key, value in envvar_dict.items():
     block += key + '=' + value + nul
   block += nul
+  if sys.version_info.major == 3:
+    block = block.encode('utf-8')
   return block
 
 
@@ -196,9 +200,10 @@ def main():
       f.write(env_block)
 
   assert vc_bin_dir
-  print 'vc_bin_dir = ' + gn_helpers.ToGNString(vc_bin_dir)
+  print('vc_bin_dir = ' + gn_helpers.ToGNString(vc_bin_dir))
   assert include
-  print 'include_flags = ' + gn_helpers.ToGNString(include)
+  print('include_flags = ' + gn_helpers.ToGNString(include))
+
 
 if __name__ == '__main__':
   main()

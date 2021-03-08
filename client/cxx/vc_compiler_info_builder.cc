@@ -5,6 +5,7 @@
 #include "vc_compiler_info_builder.h"
 
 #include "clang_compiler_info_builder_helper.h"
+#include "client/env_flags.h"
 #include "cmdline_parser.h"
 #include "counterz.h"
 #include "glog/logging.h"
@@ -13,6 +14,16 @@
 #include "path.h"
 #include "util.h"
 #include "vc_flags.h"
+
+#ifdef __linux__
+#include "binutils/elf_dep_parser.h"
+#include "binutils/elf_parser.h"
+#include "binutils/elf_util.h"
+#endif
+
+// TODO: remove this when SEND_COMPILER_BINARY_AS_INPUT become
+//                    default behavior.
+GOMA_DECLARE_bool(SEND_COMPILER_BINARY_AS_INPUT);
 
 namespace devtools_goma {
 
@@ -173,16 +184,41 @@ void VCCompilerInfoBuilder::SetClangClSpecificCompilerInfo(
     // special, so currently I don't collect dlls. Some dlls might be necessary
     // to use some feature.
 
+#ifdef __linux__
+    // for clang-cl on linux
+
+    if (ElfParser::IsElf(abs_local_compiler_path)) {
+      constexpr absl::string_view kLdSoConfPath = "/etc/ld.so.conf";
+      std::vector<std::string> searchpath = LoadLdSoConf(kLdSoConfPath);
+      ElfDepParser edp(vc_flags.cwd(), searchpath, false);
+      absl::flat_hash_set<std::string> exec_deps;
+      if (!edp.GetDeps(data->local_compiler_path(), &exec_deps)) {
+        LOG(ERROR) << "failed to get library dependencies for executable."
+                   << " cwd=" << vc_flags.cwd()
+                   << " local_compiler_path=" << data->local_compiler_path();
+        // HACK: we should not affect people not using ATS.
+        if (FLAGS_SEND_COMPILER_BINARY_AS_INPUT) {
+          AddErrorMessage("failed to add compiler resources", data);
+        }
+        return;
+      }
+      for (const auto& path : exec_deps) {
+        if (IsInSystemLibraryPath(path, searchpath)) {
+          continue;
+        }
+        resource_paths_to_collect.push_back(path);
+      }
+    }
+#endif
+
+    absl::flat_hash_set<std::string> visited_paths;
     for (const auto& resource_path : resource_paths_to_collect) {
-      CompilerInfoData::ResourceInfo r;
-      if (!CompilerInfoBuilder::ResourceInfoFromPath(
-              vc_flags.cwd(), resource_path,
-              CompilerInfoData::EXECUTABLE_BINARY, &r)) {
+      if (!AddResourceAsExecutableBinary(resource_path, vc_flags.cwd(),
+                                         &visited_paths, data)) {
         AddErrorMessage("failed to get VC resource info for " + resource_path,
                         data);
         return;
       }
-      *data->add_resource() = std::move(r);
     }
   }
 }

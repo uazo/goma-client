@@ -22,8 +22,13 @@ class ClangFlagsHelper {
     return fdebug_compilation_dir_;
   }
 
+  const absl::optional<std::string>& fcoverage_compilation_dir() const {
+    return fcoverage_compilation_dir_;
+  }
+
  private:
   absl::optional<std::string> fdebug_compilation_dir_;
+  absl::optional<std::string> fcoverage_compilation_dir_;
 };
 
 }  // namespace devtools_goma

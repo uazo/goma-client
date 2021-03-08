@@ -2,7 +2,7 @@
 
 vars = {
      "chromium_git": "https://chromium.googlesource.com",
-     "clang_revision": "f18ba70b3aa575fa35dae4eb8101fd5b640d6cf6",
+     "clang_revision": "630ab8a35c3ee7c8ba1ca53daf13e105f0f10857",
 }
 
 deps = {
@@ -43,7 +43,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@4251d0d3f66a182e1b1ff22e9d0085613a1253ec",
+     "https://boringssl.googlesource.com/boringssl@04b3213d43492b6c9e0434d8e2a4530a9938f958",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -58,7 +58,7 @@ deps = {
      # nasm
      "client/third_party/nasm":
      Var("chromium_git") + "/chromium/deps/nasm.git@" +
-         "ae8e4ca1c64c861de419c93385a0fc66a39141e2",
+         "19f3fad68da99277b2882939d3b2fa4c4b8d51d9",
 
      # chromium's buildtools containing libc++, libc++abi, clang_format and gn.
      "client/buildtools":
@@ -142,7 +142,7 @@ deps = {
          'packages': [
              {
                  'package': 'infra/3pp/tools/go/${{platform}}',
-                 'version': 'version:1.15.7',
+                 'version': 'version:1.16',
              },
          ],
          'dep_type': 'cipd',

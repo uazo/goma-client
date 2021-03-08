@@ -10,6 +10,7 @@ The script is intended to be used with the production Goma RBE server.
 import argparse
 import os
 import platform
+import string
 import subprocess
 import sys
 import tempfile
@@ -70,6 +71,50 @@ class RunCompilerProxyTest(unittest.TestCase):
       self._goma._env.KillStakeholders()
 
     os.chdir(self._cwd)
+
+  def AssertSameContents(self, a, b, msg=''):
+    """Asserts given two filecontents are the same.
+
+    Args:
+      a, b:  two file contents to check.
+      msg: additional message to be shown.
+    """
+    if a == b:
+      return  # Success.
+
+    self.assertEqual(
+        len(a),
+        len(b),
+        msg=('%ssize mismatch: a=%d b=%d' % (msg, len(a), len(b))))
+    idx = -1
+    ndiff = 0
+    for ach, bch in zip(a, b):
+      idx += 1
+      # http://support.microsoft.com/kb/121460/en
+      # Header structure (0 - 20 bytes):
+      #  0 -  2: Machine
+      #  2 -  4: Number of sections.
+      #  4 -  8: Time/Date Stamp.
+      #  8 - 12: Pointer to Symbol Table.
+      # 12 - 16: Number of Symbols.
+      # 16 - 18: Optional Header Size.
+      # 18 - 20: Characteristics.
+      if idx in range(4, 8):  # Time/Date Stamp can be different.
+        continue
+      # Since compiler_proxy normalize path names to lower case, we should
+      # normalize printable charactors before comparison.
+      ach = '%c' % ach
+      if ach in string.printable:
+        ach = ach.lower()
+      bch = '%c' % bch
+      if bch in string.printable:
+        bch = bch.lower()
+
+      if ach != bch:
+        ndiff += 1
+    print('%d bytes differ' % ndiff)
+    self.assertEqual(
+        ndiff, 0, msg=('%sobj file should be the same after normalize.' % msg))
 
   def testFlagz(self):
     # This ensures that compiler_proxy is healthy by reading from /flagz.
@@ -133,6 +178,59 @@ class RunCompilerProxyTest(unittest.TestCase):
     remote_output_contents = _ReadFileContents(output_path)
 
     self.assertEqual(local_output_contents, remote_output_contents)
+
+    # Verify that this was not a false positive due to fallback after setup
+    # failure.
+    statz = _ReadFromCompilerProxyPath('statz')
+    self.assertNotIn('fallback by setup failure', statz, statz)
+    self.assertIn('success=1 failure=0', statz, statz)
+
+  @unittest.skipIf(platform.system() != 'Linux',
+                   'clang-cl (not clang-cl.exe) for Linux only')
+  def testClangCl(self):
+    test_dir = os.path.abspath(os.path.dirname(__file__))
+    test_dir = os.path.relpath(test_dir, self._dir)
+    temp_dir = os.path.relpath(tempfile.mkdtemp(dir=self._dir), self._dir)
+
+    os.chdir(self._dir)
+
+    # Run locally: clang-cl -c foo.cc -o foo.o
+    clang_path = os.path.join(test_dir, '..', 'third_party', 'llvm-build',
+                              'Release+Asserts', 'bin', 'clang-cl')
+    input_path = os.path.join(test_dir, 'src', 'foo.cc')
+    output_path = os.path.join(temp_dir, 'foo.o')
+    clang_cmd = [
+        clang_path,
+        '-c',
+        input_path,
+        '-o',
+        output_path,
+    ]
+
+    result = subprocess.run(clang_cmd, capture_output=True)
+    self.assertEqual(len(result.stdout), 0, msg=result.stdout)
+    self.assertEqual(len(result.stderr), 0, msg=result.stderr)
+    self.assertTrue(os.path.exists(output_path))
+
+    # Save output file contents and delete it.
+    local_output_contents = _ReadFileContents(output_path)
+    os.remove(output_path)
+    self.assertFalse(os.path.exists(output_path))
+
+    # Run remotely: clang -c hello.c -o hello.o
+    gomacc_path = os.path.join(self._dir, 'gomacc')
+    gomacc_cmd = [gomacc_path]
+    gomacc_cmd.extend(clang_cmd)
+
+    result = subprocess.run(gomacc_cmd, capture_output=True)
+    self.assertEqual(len(result.stdout), 0, msg=result.stdout)
+    self.assertEqual(len(result.stderr), 0, msg=result.stderr)
+
+    # Remote output file contents must match local output file contents.
+    self.assertTrue(os.path.exists(output_path))
+    remote_output_contents = _ReadFileContents(output_path)
+
+    self.AssertSameContents(local_output_contents, remote_output_contents)
 
     # Verify that this was not a false positive due to fallback after setup
     # failure.
@@ -238,6 +336,7 @@ def SetEnvVars():
   os.environ['GOMA_ARBITRARY_TOOLCHAIN_SUPPORT'] = str(_PlatformSupportsATS())
   os.environ['GOMA_STORE_ONLY'] = 'true'
   os.environ['GOMA_USE_LOCAL'] = 'false'
+  os.environ['GOMACTL_USE_PROXY'] = 'false'
 
 
 def ExecuteTests(goma_dir):

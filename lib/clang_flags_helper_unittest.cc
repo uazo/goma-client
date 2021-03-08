@@ -19,4 +19,12 @@ TEST(ClangFlagsHelperTest, FDebugCompilationDir) {
   EXPECT_EQ(*flag.fdebug_compilation_dir(), ".");
 }
 
+TEST(ClangFlagsHelperTest, FCoverageCompilationDir) {
+  std::vector<std::string> args = {"clang", "-Xclang",
+                                   "-fcoverage-compilation-dir=."};
+  ClangFlagsHelper flag(args);
+  ASSERT_TRUE(flag.fcoverage_compilation_dir().has_value());
+  EXPECT_EQ(*flag.fcoverage_compilation_dir(), ".");
+}
+
 }  // namespace devtools_goma

@@ -8,7 +8,6 @@
 # (e.g. //tools/clang/scripts/update.py). This file imports all the
 # symbols from //third_party/chromium_build/vs_toolchain.py, so
 # we don't have to roll this file up anymore.
-import imp
 import os
 import sys
 
@@ -23,7 +22,13 @@ _THIS_DIR = os.path.dirname(__file__)
 _MODULE_PATH = os.path.abspath(
     os.path.join(_THIS_DIR, '..', 'third_party', 'chromium_build',
                  'vs_toolchain.py'))
-_vs_toolchain = imp.load_source('_vs_toolchain', _MODULE_PATH)
+if sys.version_info.major < 3:
+  import imp
+  _vs_toolchain = imp.load_source('_vs_toolchain', _MODULE_PATH)
+else:
+  import importlib.machinery
+  _vs_toolchain = importlib.machinery.SourceFileLoader(
+      '_vs_toolchain', _MODULE_PATH).load_module()
 from _vs_toolchain import *
 
 

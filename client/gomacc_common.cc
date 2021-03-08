@@ -252,7 +252,12 @@ bool StartCompilerProxy() {
   if (!FLAGS_START_COMPILER_PROXY) {
 #if defined(_WIN32)
     static const char kMsg[] =
-        "compiler_proxy isn't running. Run 'goma_ctl.bat ensure_start'.";
+        "Failed to connect to compiler_proxy. "
+        "If you use large -j, gomacc may experience startvation. "
+        "Please try large GOMA_NAMEDPIPE_WAIT_TIMEOUT_MS for longer timeout, "
+        "or reduce -j. "
+        "Otherwise, compiler_proxy isn't running. "
+        "Run 'goma_ctl.bat ensure_start'.";
 #else
     static const char kMsg[] =
         "compiler_proxy isn't running. Run 'goma_ctl.py ensure_start'.";

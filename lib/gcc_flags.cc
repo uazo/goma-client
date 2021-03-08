@@ -99,6 +99,8 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
   parser.AddBoolFlag("fno-integrated-as")->SetSeenOutput(&fno_integrated_as);
   parser.AddBoolFlag("pipe")->SetSeenOutput(&has_pipe_);
   parser.AddBoolFlag("-pipe")->SetSeenOutput(&has_pipe_);
+  parser.AddBoolFlag("fcoverage-mapping")
+      ->SetSeenOutput(&has_fcoverage_mapping_);
   parser.AddBoolFlag("ffreestanding")->SetSeenOutput(&ffreestanding);
   parser.AddBoolFlag("fno-hosted")->SetSeenOutput(&fno_hosted);
   parser.AddBoolFlag("fsyntax-only")->SetSeenOutput(&fsyntax_only);
@@ -118,6 +120,11 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
       parser.AddPrefixFlag("fthinlto-index=");
   FlagParser::Flag* flag_fdebug_compilation_dir =
       parser.AddFlag("fdebug-compilation-dir");
+  FlagParser::Flag* flag_fcoverage_compilation_dir =
+      parser.AddPrefixFlag("fcoverage-compilation-dir=");
+  FlagParser::Flag* flag_ffile_compilation_dir =
+      parser.AddPrefixFlag("ffile-compilation-dir=");
+  FlagParser::Flag* flag_fprofile_list = parser.AddPrefixFlag("fprofile-list=");
 
   parser.AddFlag("wrapper")->SetSeenOutput(&has_wrapper_);
   parser.AddPrefixFlag("fplugin=")->SetSeenOutput(&has_fplugin_);
@@ -241,6 +248,23 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
     fdebug_compilation_dir_ = flag_fdebug_compilation_dir->GetLastValue();
   } else if (clang_flags_helper.fdebug_compilation_dir()) {
     fdebug_compilation_dir_ = *clang_flags_helper.fdebug_compilation_dir();
+  }
+  if (flag_fcoverage_compilation_dir->seen()) {
+    fcoverage_compilation_dir_ = flag_fcoverage_compilation_dir->GetLastValue();
+  } else if (clang_flags_helper.fcoverage_compilation_dir()) {
+    fcoverage_compilation_dir_ =
+        *clang_flags_helper.fcoverage_compilation_dir();
+  }
+  if (flag_ffile_compilation_dir->seen()) {
+    ffile_compilation_dir_ = flag_ffile_compilation_dir->GetLastValue();
+  }
+  if (flag_fprofile_list->seen()) {
+    const std::vector<std::string>& values = flag_fprofile_list->values();
+    for (const auto& value : values) {
+      // -fprofile-list doesn't affect system include dirs or
+      // predefined macros, so don't include it in compiler_info_flags_.
+      optional_input_filenames_.push_back(value);
+    }
   }
 
   // We need to handle -Xclang specially.
@@ -454,6 +478,8 @@ GCCFlags::GCCFlags(const std::vector<std::string>& args, const std::string& cwd)
       has_fimplicit_module_maps_ = true;
     }
   }
+  // Note: since -fcoverage-mapping does not change predefined macro or
+  // system include paths, we do not add it to compiler_info_flags_.
 
   if (!isysroot_.empty()) {
     compiler_info_flags_.push_back("-isysroot");

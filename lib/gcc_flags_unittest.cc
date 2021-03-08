@@ -15,6 +15,7 @@
 #include "base/path.h"
 #include "glog/logging.h"
 #include "glog/stl_logging.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "lib/compiler_flags_parser.h"
 #include "lib/file_helper.h"
@@ -1372,6 +1373,26 @@ TEST_F(GCCFlagsTest, ClangSanitize) {
   EXPECT_TRUE(flags.is_successful());
   EXPECT_EQ(expected_sanitize, flags.fsanitize());
   EXPECT_TRUE(flags.has_fno_sanitize_blacklist());
+  EXPECT_EQ(expected_optional_input_files, flags.optional_input_filenames());
+}
+
+TEST_F(GCCFlagsTest, ClangProfileList) {
+  const std::vector<std::string> args{
+      "clang++",
+      "-c",
+      "foo.cc",
+      "-o",
+      "foo.o",
+      "-fprofile-list=dummy1.txt",
+      "-fprofile-list=dummy2.txt",
+  };
+
+  const std::vector<std::string> expected_optional_input_files{
+      "dummy1.txt",
+      "dummy2.txt",
+  };
+  GCCFlags flags(args, ".");
+  EXPECT_TRUE(flags.is_successful());
   EXPECT_EQ(expected_optional_input_files, flags.optional_input_filenames());
 }
 
@@ -2888,6 +2909,79 @@ TEST_F(GCCFlagsTest, ClangFTimeTrace) {
         static_cast<devtools_goma::GCCFlags*>(flags.get());
     EXPECT_TRUE(gcc_flags->has_ftime_trace());
   }
+}
+
+TEST_F(GCCFlagsTest, ClangCoveargeMapping) {
+  std::vector<std::string> args{
+      "clang++",
+      "-fprofile-instr-generate",
+      "-fcoverage-mapping",
+      "-mllvm",
+      "-limited-coverage-experimental=true",
+      "-c",
+      "hello.cc",
+      "-fdebug-compilation-dir",
+      ".",
+      "-no-canonical-prefixes",
+  };
+  GCCFlags flags(args, "/tmp");
+  EXPECT_TRUE(flags.is_successful());
+  EXPECT_EQ(std::vector<std::string>{"hello.cc"}, flags.input_filenames());
+  EXPECT_TRUE(flags.has_fcoverage_mapping());
+  EXPECT_THAT(flags.compiler_info_flags(),
+              testing::Not(testing::Contains("-fcoverage-mapping")));
+}
+
+TEST_F(GCCFlagsTest, ClangNoCoveargeMapping) {
+  std::vector<std::string> args{
+      "clang++",  "-c",
+      "hello.cc", "-fdebug-compilation-dir",
+      ".",        "-no-canonical-prefixes",
+  };
+  GCCFlags flags(args, "/tmp");
+  EXPECT_TRUE(flags.is_successful());
+  EXPECT_EQ(std::vector<std::string>{"hello.cc"}, flags.input_filenames());
+  EXPECT_FALSE(flags.has_fcoverage_mapping());
+}
+
+TEST_F(GCCFlagsTest, ClangXclangFcoverageCompilationDir) {
+  std::vector<std::string> args = {
+      "clang++",
+      "-Xclang",
+      "-fcoverage-compilation-dir=.",
+  };
+  GCCFlags flags(args, "/usr/src/chrome/src");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_EQ(flags.fcoverage_compilation_dir(), ".");
+}
+
+TEST_F(GCCFlagsTest, ClangFcoverageCompilationDir) {
+  std::vector<std::string> args = {
+      "clang++",
+      "-fcoverage-compilation-dir=.",
+  };
+  GCCFlags flags(args, "/usr/src/chrome/src");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_EQ(flags.fcoverage_compilation_dir(), ".");
+}
+
+TEST_F(GCCFlagsTest, ClangFfileCompilationDir) {
+  std::vector<std::string> args = {
+      "clang++",
+      "-ffile-compilation-dir=.",
+  };
+  GCCFlags flags(args, "/usr/src/chrome/src");
+
+  EXPECT_EQ(args, flags.args());
+  EXPECT_TRUE(flags.is_successful());
+
+  EXPECT_EQ(flags.ffile_compilation_dir(), ".");
 }
 
 }  // namespace devtools_goma

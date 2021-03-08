@@ -178,11 +178,14 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
       parser.AddPrefixFlag("fms-compatibility-version=");
   FlagParser::Flag* flag_resource_dir = nullptr;
   FlagParser::Flag* flag_fdebug_compilation_dir = nullptr;
+  FlagParser::Flag* flag_fcoverage_compilation_dir = nullptr;
+  FlagParser::Flag* flag_ffile_compilation_dir = nullptr;
   FlagParser::Flag* flag_fsanitize = parser.AddFlag("fsanitize");
   FlagParser::Flag* flag_fthinlto_index =
       parser.AddPrefixFlag("fthinlto-index=");
   FlagParser::Flag* flag_fno_sanitize_blacklist = nullptr;
   FlagParser::Flag* flag_fsanitize_blacklist = nullptr;
+  FlagParser::Flag* flag_fprofile_list = nullptr;
   FlagParser::Flag* flag_mllvm = parser.AddFlag("mllvm");
   FlagParser::Flag* flag_isystem = parser.AddFlag("isystem");
   // TODO: check -iquote?
@@ -207,8 +210,12 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
     flag_fms_compatibility_version->SetOutput(&compiler_info_flags_);
     flag_resource_dir = parser.AddFlag("resource-dir");
     flag_resource_dir->SetOutput(&compiler_info_flags_);
+
     flag_fdebug_compilation_dir = parser.AddFlag("fdebug-compilation-dir");
-    flag_fdebug_compilation_dir->SetOutput(&compiler_info_flags_);
+    flag_fcoverage_compilation_dir =
+        parser.AddPrefixFlag("fcoverage-compilation-dir=");
+    flag_ffile_compilation_dir = parser.AddPrefixFlag("ffile-compilation-dir=");
+    flag_fprofile_list = parser.AddPrefixFlag("fprofile-list=");
     flag_fsanitize->SetOutput(&compiler_info_flags_);
     // TODO: do we need to support more sanitize options?
     flag_fno_sanitize_blacklist = parser.AddBoolFlag("fno-sanitize-blacklist");
@@ -228,6 +235,8 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
 
     parser.AddBoolFlag("w")->SetOutput(&compiler_info_flags_);
 
+    parser.AddBoolFlag("fcoverage-mapping")
+        ->SetSeenOutput(&has_fcoverage_mapping_);
     parser.AddBoolFlag("ftime-trace")->SetSeenOutput(&has_ftime_trace_);
 
     // Make these understood.
@@ -260,9 +269,22 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
   ClangFlagsHelper clang_flags_helper(expanded_args_);
 
   if (flag_fdebug_compilation_dir && flag_fdebug_compilation_dir->seen()) {
-    fdebug_compilation_dir_ = flag_fdebug_compilation_dir->GetLastValue();
+    // -fdebug-compilation-dir accepts both joined and separate form,
+    // we need to omit "=" if the flag is given with joined form.
+    fdebug_compilation_dir_ = std::string(
+        absl::StripPrefix(flag_fdebug_compilation_dir->GetLastValue(), "="));
   } else if (clang_flags_helper.fdebug_compilation_dir()) {
     fdebug_compilation_dir_ = *clang_flags_helper.fdebug_compilation_dir();
+  }
+  if (flag_fcoverage_compilation_dir &&
+      flag_fcoverage_compilation_dir->seen()) {
+    fcoverage_compilation_dir_ = flag_fcoverage_compilation_dir->GetLastValue();
+  } else if (clang_flags_helper.fcoverage_compilation_dir()) {
+    fcoverage_compilation_dir_ =
+        *clang_flags_helper.fcoverage_compilation_dir();
+  }
+  if (flag_ffile_compilation_dir && flag_ffile_compilation_dir->seen()) {
+    ffile_compilation_dir_ = flag_ffile_compilation_dir->GetLastValue();
   }
 
   is_successful_ = true;
@@ -336,6 +358,12 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
               back_inserter(optional_input_filenames_));
   }
 
+  if (flag_fprofile_list && flag_fprofile_list->seen()) {
+    const std::vector<std::string>& values = flag_fprofile_list->values();
+    std::copy(values.begin(), values.end(),
+              back_inserter(optional_input_filenames_));
+  }
+
   if (flag_fthinlto_index->seen()) {
     optional_input_filenames_.push_back(flag_fthinlto_index->GetLastValue());
     thinlto_index_ = flag_fthinlto_index->GetLastValue();
@@ -371,6 +399,8 @@ VCFlags::VCFlags(const std::vector<std::string>& args, const std::string& cwd)
   if (has_ftime_trace_) {
     compiler_info_flags_.push_back("-ftime-trace");
   }
+  // Note: since -fcoverage-mapping does not change predefined macro or
+  // system include paths, we do not add it to compiler_info_flags_.
 
   std::string new_extension = ".obj";
   std::string force_output;

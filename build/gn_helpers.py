@@ -21,6 +21,9 @@ To use in a random python file in the build:
 Where the sequence of parameters to join is the relative path from your source
 file to the build directory."""
 
+import sys
+
+
 class GNException(Exception):
   pass
 
@@ -31,7 +34,11 @@ def ToGNString(value, allow_dicts = True):
   allow_dicts indicates if this function will allow converting dictionaries
   to GN scopes. This is only possible at the top level, you can't nest a
   GN scope in a list, so this should be set to False for recursive calls."""
-  if isinstance(value, basestring):
+  if sys.version_info.major < 3:
+    basestring_compat = basestring
+  else:
+    basestring_compat = str
+  if isinstance(value, basestring_compat):
     if value.find('\n') >= 0:
       raise GNException("Trying to print a string with a newline in it.")
     return '"' + \

@@ -27,66 +27,68 @@ bool Lexer::Run(const Content& content, std::vector<Token>* tokens) {
 }
 
 Token Lexer::Next() {
-  SkipWhitespaces();
+  for (;;) {
+    SkipWhitespaces();
 
-  if (pos_ == content_->buf_end()) {
-    return Token::End();
-  }
-
-  if (*pos_ == '\"') {
-    // string started.
-    // TODO: correctly handle backslash escape.
-    // e.g. "foo\"bar" should generate string `foo"bar` but now foo\"bar
-    ++pos_;
-    const char* const begin = pos_;
-    while (pos_ != content_->buf_end() && *pos_ != '\"') {
-      if (*pos_ == '\\') {
-        ++pos_;
-        if (pos_ == content_->buf_end()) {
-          return Token::Invalid();
-        }
-      }
-      ++pos_;
-    }
     if (pos_ == content_->buf_end()) {
-      return Token::Invalid();
+      return Token::End();
     }
-    return Token::String(std::string(begin, pos_++));
-  }
 
-  if (absl::ascii_isdigit(*pos_)) {
-    const char* const begin = pos_;
-    const char* const end =
-        std::find_if_not(begin, content_->buf_end(), absl::ascii_isdigit);
-    pos_ = end;
-    return Token::Integer(std::string(begin, end));
-  }
-
-  if (absl::ascii_isalpha(*pos_) || *pos_ == '_') {
-    const char* const begin = pos_;
-    while (pos_ != content_->buf_end() &&
-           (absl::ascii_isalnum(*pos_) || *pos_ == '_')) {
+    if (*pos_ == '\"') {
+      // string started.
+      // TODO: correctly handle backslash escape.
+      // e.g. "foo\"bar" should generate string `foo"bar` but now foo\"bar
       ++pos_;
+      const char* const begin = pos_;
+      while (pos_ != content_->buf_end() && *pos_ != '\"') {
+        if (*pos_ == '\\') {
+          ++pos_;
+          if (pos_ == content_->buf_end()) {
+            return Token::Invalid();
+          }
+        }
+        ++pos_;
+      }
+      if (pos_ == content_->buf_end()) {
+        return Token::Invalid();
+      }
+      return Token::String(std::string(begin, pos_++));
     }
-    return Token::Ident(std::string(begin, pos_));
-  }
 
-  if (absl::StartsWith(rest_view(), "//")) {
-    pos_ += 2;  // skip "//"
-    SkipUntilNextLine();
-    return Next();
-  }
-
-  if (absl::StartsWith(rest_view(), "/*")) {
-    pos_ += 2;  // skip "/*"
-    if (!SkipBlockComment()) {
-      return Token::Invalid();
+    if (absl::ascii_isdigit(*pos_)) {
+      const char* const begin = pos_;
+      const char* const end =
+          std::find_if_not(begin, content_->buf_end(), absl::ascii_isdigit);
+      pos_ = end;
+      return Token::Integer(std::string(begin, end));
     }
-    return Next();
-  }
 
-  // the others are punc (for now).
-  return Token::Punc(*pos_++);
+    if (absl::ascii_isalpha(*pos_) || *pos_ == '_') {
+      const char* const begin = pos_;
+      while (pos_ != content_->buf_end() &&
+             (absl::ascii_isalnum(*pos_) || *pos_ == '_')) {
+        ++pos_;
+      }
+      return Token::Ident(std::string(begin, pos_));
+    }
+
+    if (absl::StartsWith(rest_view(), "//")) {
+      pos_ += 2;  // skip "//"
+      SkipUntilNextLine();
+      continue;
+    }
+
+    if (absl::StartsWith(rest_view(), "/*")) {
+      pos_ += 2;  // skip "/*"
+      if (!SkipBlockComment()) {
+        return Token::Invalid();
+      }
+      continue;
+    }
+
+    // the others are punc (for now).
+    return Token::Punc(*pos_++);
+  }
 }
 
 void Lexer::SkipWhitespaces() {

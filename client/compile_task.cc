@@ -1047,7 +1047,7 @@ void CompileTask::ProcessCallExec() {
 
   exec_resp_ = absl::make_unique<ExecResp>();
 
-  ModifyRequestCWD();
+  ModifyRequestCWDAndPWD();
 
   service_->exec_service_client()->ExecAsync(
       req_.get(), exec_resp_.get(), http_rpc_status_.get(),
@@ -3082,7 +3082,65 @@ void CompileTask::ModifyRequestArgs() {
                               << absl::StrJoin(req_->arg(), " ");
 }
 
-void CompileTask::ModifyRequestCWD() {
+/* static */
+bool CompileTask::IsRelocatableCompilerFlags(const CompilerFlags& flags) {
+  bool has_fcoverage_mapping = false;
+  absl::string_view fdebug_compilation_dir;
+  absl::string_view fcoverage_compilation_dir;
+  absl::string_view ffile_compilation_dir;
+
+  switch (flags.type()) {
+    case CompilerFlagType::Clexe: {
+      const VCFlags& vc_flags = static_cast<const VCFlags&>(flags);
+      has_fcoverage_mapping = vc_flags.has_fcoverage_mapping();
+      fdebug_compilation_dir = vc_flags.fdebug_compilation_dir();
+      fcoverage_compilation_dir = vc_flags.fcoverage_compilation_dir();
+      ffile_compilation_dir = vc_flags.ffile_compilation_dir();
+    } break;
+    case CompilerFlagType::Gcc: {
+      const GCCFlags& gcc_flags = static_cast<const GCCFlags&>(flags);
+      has_fcoverage_mapping = gcc_flags.has_fcoverage_mapping();
+      fdebug_compilation_dir = gcc_flags.fdebug_compilation_dir();
+      fcoverage_compilation_dir = gcc_flags.fcoverage_compilation_dir();
+      ffile_compilation_dir = gcc_flags.ffile_compilation_dir();
+    } break;
+    default:
+      return false;
+  }
+
+  // Do not allow mismatching between -ffile-compilation-dir and other flags.
+  // Although the flag used in the last win, since our flag parser do not
+  // record the order of the flags, let me mark the case non-relocatable.
+  // TODO: understand the -f*-compilation-dir order.
+  if (!ffile_compilation_dir.empty()) {
+    if (!fdebug_compilation_dir.empty() &&
+        fdebug_compilation_dir != ffile_compilation_dir) {
+      return false;
+    }
+    if (!fcoverage_compilation_dir.empty() &&
+        fcoverage_compilation_dir != ffile_compilation_dir) {
+      return false;
+    }
+  }
+
+  // Handle -g
+  // TODO: excute this only if -g* flag is set.
+  // Currently gcc_flags does not have the way to tell -g exist or not,
+  // let us assume it is always on until the feature is implemented.
+  if (fdebug_compilation_dir != "." && ffile_compilation_dir != ".") {
+    return false;
+  }
+
+  // -fcoverage-mapping
+  if (has_fcoverage_mapping && fcoverage_compilation_dir != "." &&
+      ffile_compilation_dir != ".") {
+    return false;
+  }
+
+  return true;
+}
+
+void CompileTask::ModifyRequestCWDAndPWD() {
   if (!service_->enable_cwd_normalization()) {
     return;
   }
@@ -3098,30 +3156,24 @@ void CompileTask::ModifyRequestCWD() {
     return;
   }
 
-  switch (flags_->type()) {
-    case CompilerFlagType::Clexe:
-      if (static_cast<const VCFlags&>(*flags_).fdebug_compilation_dir() !=
-          ".") {
-        return;
-      }
-      break;
-    case CompilerFlagType::Gcc:
-      if (static_cast<const GCCFlags&>(*flags_).fdebug_compilation_dir() !=
-          ".") {
-        return;
-      }
-      break;
-    default:
-      return;
+  if (!IsRelocatableCompilerFlags(*flags_)) {
+    return;
   }
-
   for (const auto& input : req_->input()) {
     if (file::IsAbsolutePath(input.filename())) {
       return;
     }
   }
 
-  LOG(INFO) << trace_id_ << "cwd is changed from " << req_->cwd() << " to "
+  for (auto& env : *req_->mutable_env()) {
+    if (absl::StartsWith(env, "PWD=") && env != "PWD=/proc/self/cwd") {
+      LOG(INFO) << trace_id_ << " pwd is changed from " << env << " to "
+                << fixed_cwd;
+      env = absl::StrCat("PWD=", fixed_cwd);
+    }
+  }
+
+  LOG(INFO) << trace_id_ << " cwd is changed from " << req_->cwd() << " to "
             << fixed_cwd;
   req_->set_original_cwd(req_->cwd());
   req_->set_cwd(fixed_cwd);

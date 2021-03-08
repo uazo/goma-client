@@ -363,6 +363,7 @@ executable("directive_filter_unittest") {
     "//build/config:exe_and_shlib_deps",
     "//client:compiler_proxy_lib",
     "//client:goma_test_lib",
+    "//third_party/abseil",
   ]
 }
 

@@ -23,13 +23,16 @@ import sys
 def writeToEscaping(dst, src):
   count = 0
   for c in src.read():
-    v = ord(c)
+    if sys.version_info.major < 3:
+      v = ord(c)
+    else:
+      v = c
     if v > 127:
       v = -(256 - v)
-    dst.write('%3d, ' % v)
+    dst.append('%3d, ' % v)
     count += 1
     if count >= 16:
-      dst.write('\n')
+      dst.append('\n')
       count = 0
 
 def main():
@@ -69,17 +72,23 @@ extern const char %(symbol)s_start[];
 
   c_file = name + '.c'
   try:
-    dst = open(c_file, 'wb')
-    dst.write("""
+    output = [("""
 // This is auto-generated file from %(filename)s. DO NOT EDIT.
 //
 const char %(symbol)s_start[] = {
-""" % {'filename': filename,
-       'symbol': symbol})
+""" % {
+        'filename': filename,
+        'symbol': symbol
+    })]
     src = open(filename, 'rb')
-    writeToEscaping(dst, src)
-    dst.write('};\n')
+    writeToEscaping(output, src)
+    output.append('};\n')
     src.close()
+    dst = open(c_file, 'wb')
+    s = ''.join(output)
+    if sys.version_info.major == 3:
+      s = s.encode('utf-8')
+    dst.write(s)
     dst.close()
   except Exception as ex:
     os.remove(c_file)

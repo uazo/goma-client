@@ -49,6 +49,8 @@ ConfigurableExecReqNormalizer::Config GCCExecReqNormalizer::Configure(
       flag_parser.AddBoolFlag("fcoverage-mapping");
   FlagParser::Flag* flag_fdebug_compilation_dir =
       flag_parser.AddBoolFlag("fdebug-compilation-dir");
+  // TODO: support -ffile-compilation-dir and
+  //                    -fcoverage-compilation-dir.
   flag_parser.Parse(args);
 
   // -g does not capture -gsplit-dwarf. So we need to check it explicitly.

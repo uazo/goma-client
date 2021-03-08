@@ -50,6 +50,7 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseResourceOutputPosix) {
       "-internal-externc-isystem /usr/include/x86_64-linux-gnu "
       "-internal-externc-isystem /include -internal-externc-isystem "
       "/usr/include -ferror-limit 19 -fmessage-length 80 -fsanitize=address "
+      "-fprofile-list=my_profilelist.txt "
       "-fsanitize-blacklist=my_blacklist.txt "
       "-fsanitize-system-blacklist=/third_party/llvm-build/Release+Asserts/lib/"
       "clang/7.0.0/share/asan_blacklist.txt -fsanitize-address-use-after-scope "
@@ -70,6 +71,7 @@ TEST(ClangCompilerInfoBuilderHelperTest, ParseResourceOutputPosix) {
       {"/third_party/llvm-build/Release+Asserts/lib/clang"
        "/7.0.0/share/asan_blacklist.txt",
        CompilerInfoData::CLANG_RESOURCE},
+      {"my_profilelist.txt", CompilerInfoData::CLANG_RESOURCE},
   };
   EXPECT_EQ(expected, resource);
 }

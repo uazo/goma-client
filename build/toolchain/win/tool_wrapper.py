@@ -30,6 +30,14 @@ def main(args):
     sys.exit(exit_code)
 
 
+def ConvertToStr(inputstr):
+  """Convert byptes input to str on python3.  Leave this as-is on python2."""
+  if sys.version_info.major < 3:
+    return inputstr
+  else:
+    return inputstr.decode('utf-8')
+
+
 class WinTool(object):
   """This class performs all the Windows tooling steps. The methods can either
   be executed directly, or dispatched from an argument list."""
@@ -131,10 +139,11 @@ class WinTool(object):
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out, _ = link.communicate()
     for line in out.splitlines():
+      line = ConvertToStr(line)
       if (not line.startswith('   Creating library ') and
           not line.startswith('Generating code') and
           not line.startswith('Finished generating code')):
-        print line
+        print(line)
     return link.returncode
 
   def ExecLinkWithManifests(self, arch, embed_manifest, out, ldcmd, resname,
@@ -223,7 +232,7 @@ class WinTool(object):
     out, _ = popen.communicate()
     for line in out.splitlines():
       if line and 'manifest authoring warning 81010002' not in line:
-        print line
+        print(line)
     return popen.returncode
 
   def ExecManifestToRc(self, dummy_arch, *args):
@@ -263,7 +272,7 @@ class WinTool(object):
                      for x in lines if x.startswith(prefixes))
     for line in lines:
       if not line.startswith(prefixes) and line not in processing:
-        print line
+        print(line)
     return popen.returncode
 
   def ExecAsmWrapper(self, arch, *args):
@@ -273,13 +282,14 @@ class WinTool(object):
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out, _ = popen.communicate()
     for line in out.splitlines():
+      line = ConvertToStr(line)
       # Split to avoid triggering license checks:
       if (not line.startswith('Copy' + 'right (C' +
                               ') Microsoft Corporation') and
           not line.startswith('Microsoft (R) Macro Assembler') and
           not line.startswith(' Assembling: ') and
           line):
-        print line
+        print(line)
     return popen.returncode
 
   def ExecRcWrapper(self, arch, *args):
@@ -290,11 +300,12 @@ class WinTool(object):
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out, _ = popen.communicate()
     for line in out.splitlines():
+      line = ConvertToStr(line)
       if (not line.startswith('Microsoft (R) Windows (R) Resource Compiler') and
           not line.startswith('Copy' + 'right (C' +
                               ') Microsoft Corporation') and
           line):
-        print line
+        print(line)
     return popen.returncode
 
   def ExecActionWrapper(self, arch, rspfile, *dirname):

@@ -442,6 +442,7 @@ executable("gcc_flags_unittest") {
     "//base:goma_unittest",
     "//build/config:exe_and_shlib_deps",
     "//third_party:glog",
+    "//third_party:gmock",
     "//third_party:gtest",
   ]
 }

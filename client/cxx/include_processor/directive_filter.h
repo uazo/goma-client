@@ -33,6 +33,10 @@ class DirectiveFilter {
   // A escaped newline (\\\n) is considered.
   static const char* NextLineHead(const char* pos, const char* end);
 
+  // Capture raw string literal beginning with |pos|.
+  // Returns how many bytes are captured.
+  static int CaptureRawStringLiteral(const char* pos, const char* end);
+
   // Copies string literal beginning with |pos| to |dst|.
   // Returns how many bytes are copied.
   static int CopyStringLiteral(const char* pos, const char* end, char* dst);
@@ -61,6 +65,7 @@ class DirectiveFilter {
   static size_t FilterOnlyDirectives(const char* src, const char* end,
                                      char* dst);
 
+  FRIEND_TEST(DirectiveFilterTest, CaptureRawStringLiteral);
   FRIEND_TEST(DirectiveFilterTest, SkipSpaces);
   FRIEND_TEST(DirectiveFilterTest, NextLineHead);
   DISALLOW_COPY_AND_ASSIGN(DirectiveFilter);

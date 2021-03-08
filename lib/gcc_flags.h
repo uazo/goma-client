@@ -53,11 +53,18 @@ class GCCFlags : public CxxFlags {
   const std::string& fdebug_compilation_dir() const {
     return fdebug_compilation_dir_;
   }
+  const std::string& fcoverage_compilation_dir() const {
+    return fcoverage_compilation_dir_;
+  }
+  const std::string& ffile_compilation_dir() const {
+    return ffile_compilation_dir_;
+  }
 
   bool is_cplusplus() const override { return is_cplusplus_; }
   bool has_nostdinc() const { return has_nostdinc_; }
   bool has_no_integrated_as() const { return has_no_integrated_as_; }
   bool has_pipe() const { return has_pipe_; }
+  bool has_fcoverage_mapping() const { return has_fcoverage_mapping_; }
   bool has_ffreestanding() const { return has_ffreestanding_; }
   bool has_fno_hosted() const { return has_fno_hosted_; }
   bool has_fno_sanitize_blacklist() const {
@@ -128,6 +135,8 @@ class GCCFlags : public CxxFlags {
   std::string resource_dir_;
   std::string thinlto_index_;
   std::string fdebug_compilation_dir_;
+  std::string fcoverage_compilation_dir_;
+  std::string ffile_compilation_dir_;
   // -fsanitize can be specified multiple times, and can be comma separated
   // values.
   std::set<std::string> fsanitize_;
@@ -136,6 +145,7 @@ class GCCFlags : public CxxFlags {
   bool has_nostdinc_;
   bool has_no_integrated_as_;
   bool has_pipe_;
+  bool has_fcoverage_mapping_ = false;
   bool has_ffreestanding_;
   bool has_fno_hosted_;
   bool has_fno_sanitize_blacklist_;

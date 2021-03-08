@@ -1396,10 +1396,10 @@ class GomaEnv(object):
         continue
       k, v = line.split('=', 1)
       if not k.startswith('GOMA_') and not k.startswith('GOMACTL_'):
-        print('bad goma_auth config?: %s=%s', k, v)
+        print('bad goma_auth config?: %s=%s' % (k, v))
         continue
       if k in os.environ:
-        print('user set %s=%s (ignore %s)', k, os.environ[k], v)
+        print('user set %s=%s (ignore %s)' % (k, os.environ[k], v))
         continue
       _OverrideEnvVar(k, v)
 

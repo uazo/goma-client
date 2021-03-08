@@ -29,11 +29,18 @@ class VCFlags : public CxxFlags {
   const std::string& fdebug_compilation_dir() const {
     return fdebug_compilation_dir_;
   }
+  const std::string& fcoverage_compilation_dir() const {
+    return fcoverage_compilation_dir_;
+  }
+  const std::string& ffile_compilation_dir() const {
+    return ffile_compilation_dir_;
+  }
 
   bool is_cplusplus() const override { return is_cplusplus_; }
   bool ignore_stdinc() const { return ignore_stdinc_; }
   bool require_mspdbserv() const { return require_mspdbserv_; }
   bool has_Brepro() const { return has_Brepro_; }
+  bool has_fcoverage_mapping() const { return has_fcoverage_mapping_; }
 
   std::string compiler_name() const override;
 
@@ -83,9 +90,12 @@ class VCFlags : public CxxFlags {
   bool require_mspdbserv_;
   std::string resource_dir_;
   std::string implicit_macros_;
+  bool has_fcoverage_mapping_ = false;
   bool has_ftime_trace_;
   std::string thinlto_index_;
   std::string fdebug_compilation_dir_;
+  std::string fcoverage_compilation_dir_;
+  std::string ffile_compilation_dir_;
 };
 
 }  // namespace devtools_goma

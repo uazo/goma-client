@@ -516,6 +516,10 @@ bool LocalOutputCache::SaveOutput(const std::string& key,
   for (const auto& output : result.output()) {
     std::string src_path =
         file::JoinPathRespectAbsolute(req->cwd(), output.filename());
+    if (req->has_original_cwd()) {
+      src_path =
+          file::JoinPathRespectAbsolute(req->original_cwd(), output.filename());
+    }
 
     std::string output_file_content;
     if (!ReadFileToString(src_path, &output_file_content)) {
