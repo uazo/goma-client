@@ -274,19 +274,18 @@ def main():
   print()
   print('%s created.' % target_file)
 
-  cp = open(compiler_proxy_path, 'rb')
   # Finds user-agent string (starts with 'compiler-proxy' and ends with 'Z',
   # which is the last letter of timestamp) for compiler_proxy_user_agent.csv
   # e.g. "compiler-proxy built by goma at " +
   # "9d6775c48911ad1b80624720121a5e0d0c320adf@1330938783 " +
   # "on 2012-03-05T09:20:30.931701Z"
-  m = re.search(r'(compiler-proxy[- a-zA-Z0-9:.@]*Z)', cp.read())
-  if m:
-    print('"%s",,%s' % (m.group(1), options.platform))
-  else:
-    print('ERROR: user-agent string not found in %s' % compiler_proxy_path)
-    return 1
-  cp.close()
+  with open(compiler_proxy_path, 'rb') as cp:
+    m = re.search(br'(compiler-proxy[- a-zA-Z0-9:.@]*Z)', cp.read())
+    if m:
+      print('"%s",,%s' % (m.group(1).decode(), options.platform))
+    else:
+      print('ERROR: user-agent string not found in %s' % compiler_proxy_path)
+      return 1
   return 0
 
 
