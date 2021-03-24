@@ -220,9 +220,7 @@ template("gcc_toolchain") {
       command = "$cc -MD -MF $depfile {{defines}} {{include_dirs}} {{asmflags}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "ASM {{output}}"
-      outputs = [
-        "$object_subdir/{{source_name_part}}.o",
-      ]
+      outputs = [ "$object_subdir/{{source_name_part}}.o" ]
     }
 
     tool("alink") {
@@ -237,9 +235,7 @@ template("gcc_toolchain") {
       command = "$python_path \"$ar_wrapper\"$whitelist_flag --output={{output}} --ar=\"$ar\" {{arflags}} rcsD @\"$rspfile\""
       description = "AR {{output}}"
       rspfile_content = "{{inputs}}"
-      outputs = [
-        "{{output_dir}}/{{target_output_name}}{{output_extension}}",
-      ]
+      outputs = [ "{{output_dir}}/{{target_output_name}}{{output_extension}}" ]
 
       # Shared libraries go in the target out directory by default so we can
       # generate different targets with the same name and not have them collide.
@@ -346,9 +342,7 @@ template("gcc_toolchain") {
 
       output_prefix = "lib"
 
-      outputs = [
-        sofile,
-      ]
+      outputs = [ sofile ]
       if (sofile != unstripped_sofile) {
         outputs += [ unstripped_sofile ]
       }
@@ -379,9 +373,7 @@ template("gcc_toolchain") {
       }
       description = "LINK $outfile"
       rspfile_content = "{{inputs}}"
-      outputs = [
-        outfile,
-      ]
+      outputs = [ outfile ]
       if (outfile != unstripped_outfile) {
         outputs += [ unstripped_outfile ]
       }

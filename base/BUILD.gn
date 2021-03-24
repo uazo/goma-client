@@ -29,9 +29,7 @@ static_library("base") {
     "path.h",
     "status.h",
   ]
-  deps = [
-    "//third_party:glog",
-  ]
+  deps = [ "//third_party:glog" ]
   public_deps = [
     "//third_party/abseil",
     "//third_party/chromium_base:platform_thread",
@@ -54,9 +52,7 @@ static_library("base") {
 
 static_library("goma_unittest") {
   testonly = true
-  sources = [
-    "goma_unittest.cc",
-  ]
+  sources = [ "goma_unittest.cc" ]
   deps = [
     ":base",
     "//third_party:gtest",
@@ -65,9 +61,7 @@ static_library("goma_unittest") {
 
 executable("lockhelper_unittest") {
   testonly = true
-  sources = [
-    "lockhelper_unittest.cc",
-  ]
+  sources = [ "lockhelper_unittest.cc" ]
   deps = [
     ":base",
     ":goma_unittest",
@@ -79,9 +73,7 @@ executable("lockhelper_unittest") {
 
 executable("filesystem_unittest") {
   testonly = true
-  sources = [
-    "filesystem_unittest.cc",
-  ]
+  sources = [ "filesystem_unittest.cc" ]
   deps = [
     ":base",
     ":goma_unittest",
@@ -94,9 +86,7 @@ executable("filesystem_unittest") {
 if (os == "win") {
   executable("socket_helper_win_unittest") {
     testonly = true
-    sources = [
-      "socket_helper_win_unittest.cc",
-    ]
+    sources = [ "socket_helper_win_unittest.cc" ]
     deps = [
       ":base",
       ":goma_unittest",

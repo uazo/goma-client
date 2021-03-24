@@ -62,6 +62,7 @@ is_posix = current_os == "mac" || current_os == "linux"
 is_mac = current_os == "mac"
 is_linux = current_os == "linux"
 is_win = current_os == "win" || current_os == "winuwp"
+is_apple = current_os == "mac" || current_os == "ios"
 
 # for chromium compatibility
 # to minimize diff in build/toolchain/toolchain.gni etc.
@@ -159,11 +160,11 @@ if (os == "linux") {
   }
 }
 if (os == "mac" && is_clang) {
-  set_default_toolchain("//build/toolchain/mac:clang_x64")
-  host_toolchain = "//build/toolchain/mac:clang_x64"
+  set_default_toolchain("//build/toolchain/mac:clang_$target_cpu")
+  host_toolchain = "//build/toolchain/mac:clang_$host_cpu"
   default_compiler_configs += [ "//build/config/mac:sdk" ]
   default_compiler_configs += [ "//build/config/compiler:mac" ]
-  cpu_arch = "x64"
+  cpu_arch = target_cpu
 }
 
 if (os == "win") {

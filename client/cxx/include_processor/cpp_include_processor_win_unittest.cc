@@ -55,12 +55,12 @@ class CppIncludeProcessorWinTest : public testing::Test {
 
     top_dir_ = file::JoinPath(my_dir, "..", "..");
 
-    // Read environment.x86 and parse it to env_.
-    // environment.x86 contains \0 separated strings.
-    const std::string envfile_path = file::JoinPath(my_dir, "environment.x86");
+    // Read environment.x64 and parse it to env_.
+    // environment.x64 contains \0 separated strings.
+    const std::string envfile_path = file::JoinPath(my_dir, "environment.x64");
     std::string content;
     CHECK(ReadFileToString(envfile_path, &content))
-        << "failed to read environment.x86: " << envfile_path;
+        << "failed to read environment.x64: " << envfile_path;
     env_ = ToVector(absl::StrSplit(content, '\0', absl::SkipEmpty()));
   }
 

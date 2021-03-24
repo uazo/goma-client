@@ -8,9 +8,7 @@ static_library("dart_analyzer_compiler_info_lib") {
     "dart_analyzer_compiler_info.h",
   ]
 
-  public_deps = [
-    "//client:compiler_info_lib",
-  ]
+  public_deps = [ "//client:compiler_info_lib" ]
 }
 
 static_library("dart_include_processor_lib") {
@@ -18,9 +16,7 @@ static_library("dart_include_processor_lib") {
     "dart_include_processor.cc",
     "dart_include_processor.h",
   ]
-  public_deps = [
-    ":dart_analyzer_compiler_info_lib",
-  ]
+  public_deps = [ ":dart_analyzer_compiler_info_lib" ]
   deps = [
     "//client:common",
     "//client:content_lib",
@@ -69,9 +65,7 @@ static_library("dart_analyzer_compiler_info_builder_lib") {
 
 executable("dart_analyzer_compiler_info_builder_unittest") {
   testonly = true
-  sources = [
-    "dart_analyzer_compiler_info_builder_unittest.cc",
-  ]
+  sources = [ "dart_analyzer_compiler_info_builder_unittest.cc" ]
 
   deps = [
     ":dart_analyzer_compiler_info_builder_lib",
@@ -87,9 +81,7 @@ executable("dart_analyzer_compiler_info_builder_unittest") {
 
 executable("dart_include_processor_unittest") {
   testonly = true
-  sources = [
-    "dart_include_processor_unittest.cc",
-  ]
+  sources = [ "dart_include_processor_unittest.cc" ]
 
   deps = [
     ":dart_include_processor_lib",

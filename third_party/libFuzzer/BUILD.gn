@@ -47,7 +47,5 @@ source_set("afl_driver") {
   configs -= [ "//build/config/compiler:goma_code" ]
   configs += [ "//build/config/compiler:no_goma_code" ]
 
-  sources = [
-    "src/afl/afl_driver.cpp",
-  ]
+  sources = [ "src/afl/afl_driver.cpp" ]
 }

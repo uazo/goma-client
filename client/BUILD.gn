@@ -95,7 +95,7 @@ static_library("common") {
       "mypath_helper_mac.mm",
       "simple_timer_mac.cc",
     ]
-    libs = [ "Foundation.framework" ]
+    frameworks = [ "Foundation.framework" ]
   }
 }
 
@@ -109,9 +109,7 @@ static_library("oauth2_lib") {
     ":ioutil_lib",
     "//lib",
   ]
-  public_deps = [
-    "//third_party/abseil",
-  ]
+  public_deps = [ "//third_party/abseil" ]
 }
 
 static_library("subprocess_lib") {
@@ -157,49 +155,35 @@ static_library("time_util_lib") {
 }
 
 proto_library("compiler_info_data_proto") {
-  sources = [
-    "compiler_info_data.proto",
-  ]
+  sources = [ "compiler_info_data.proto" ]
 
   import_dirs = [ "//third_party/protobuf/protobuf/src" ]
 }
 
 proto_library("counterz_proto") {
-  sources = [
-    "counterz.proto",
-  ]
+  sources = [ "counterz.proto" ]
 }
 
 proto_library("deps_cache_proto") {
-  sources = [
-    "deps_cache_data.proto",
-  ]
+  sources = [ "deps_cache_data.proto" ]
 
   import_dirs = [ "//third_party/protobuf/protobuf/src" ]
 }
 
 proto_library("error_notice") {
-  sources = [
-    "error_notice.proto",
-  ]
+  sources = [ "error_notice.proto" ]
 }
 
 proto_library("local_output_cache_proto") {
-  sources = [
-    "local_output_cache_data.proto",
-  ]
+  sources = [ "local_output_cache_data.proto" ]
 }
 
 proto_library("subprocess_proto") {
-  sources = [
-    "subprocess.proto",
-  ]
+  sources = [ "subprocess.proto" ]
 }
 
 proto_library("settings_proto") {
-  sources = [
-    "settings.proto",
-  ]
+  sources = [ "settings.proto" ]
 }
 
 config("include_target_gen_dir") {
@@ -212,9 +196,7 @@ config("client_config") {
 
 action("gen_compiler_proxy_info") {
   script = generate_compiler_proxy_info
-  outputs = [
-    "$target_gen_dir/compiler_proxy_info.h",
-  ]
+  outputs = [ "$target_gen_dir/compiler_proxy_info.h" ]
   args = [
     "--out-dir",
     rebase_path("$target_gen_dir"),
@@ -266,9 +248,7 @@ static_library("content_lib") {
     "//base",
     "//third_party/abseil",
   ]
-  deps = [
-    "//lib",
-  ]
+  deps = [ "//lib" ]
 }
 
 # compiler_proxy_base contains sources for compiler_proxy.
@@ -322,14 +302,14 @@ static_library("compiler_proxy_base_lib") {
 
   # Do not depend on compiler-type specific libraries.
   assert_no_deps = [
-    "//lib:compiler_flag_type_specific",
-    "//lib:gcc_specific",
-    "//lib:vc_specific",
     "//lib:clang_tidy_specific",
-    "//lib:java_specific",
-    "//lib:fake_specific",
-    "//lib:rust_specific",
+    "//lib:compiler_flag_type_specific",
     "//lib:dart_analyzer_specific",
+    "//lib:fake_specific",
+    "//lib:gcc_specific",
+    "//lib:java_specific",
+    "//lib:rust_specific",
+    "//lib:vc_specific",
   ]
 }
 
@@ -564,9 +544,7 @@ static_library("base64_lib") {
     "base64.cc",
     "base64.h",
   ]
-  deps = [
-    "//base",
-  ]
+  deps = [ "//base" ]
 }
 
 static_library("file_path_util_lib") {
@@ -617,9 +595,7 @@ static_library("sha256_hash_cache_lib") {
     "sha256_hash_cache.cc",
     "sha256_hash_cache.h",
   ]
-  deps = [
-    "//lib:goma_hash",
-  ]
+  deps = [ "//lib:goma_hash" ]
   public_deps = [
     ":common",
     "//base",
@@ -722,9 +698,7 @@ static_library("rand_util_lib") {
     "rand_util.cc",
     "rand_util.h",
   ]
-  public_deps = [
-    "//third_party/abseil",
-  ]
+  public_deps = [ "//third_party/abseil" ]
   deps = [
     "//third_party:glog",
     "//third_party/boringssl",
@@ -736,12 +710,8 @@ static_library("cache_file_lib") {
     "cache_file.cc",
     "cache_file.h",
   ]
-  public_deps = [
-    "//base",
-  ]
-  deps = [
-    "//lib:goma_hash",
-  ]
+  public_deps = [ "//base" ]
+  deps = [ "//lib:goma_hash" ]
 }
 
 static_library("file_hash_cache_lib") {
@@ -749,12 +719,8 @@ static_library("file_hash_cache_lib") {
     "file_hash_cache.cc",
     "file_hash_cache.h",
   ]
-  public_deps = [
-    ":common",
-  ]
-  deps = [
-    "//third_party:glog",
-  ]
+  public_deps = [ ":common" ]
+  deps = [ "//third_party:glog" ]
 }
 
 static_library("deps_cache_lib") {
@@ -804,9 +770,7 @@ static_library("scoped_tmp_file_lib") {
     "scoped_tmp_file.cc",
     "scoped_tmp_file.h",
   ]
-  public_deps = [
-    "//lib",
-  ]
+  public_deps = [ "//lib" ]
   deps = [
     ":common",
     ":rand_util_lib",
@@ -815,9 +779,7 @@ static_library("scoped_tmp_file_lib") {
 }
 
 static_library("breakpad_lib") {
-  sources = [
-    "breakpad.h",
-  ]
+  sources = [ "breakpad.h" ]
   if (os == "linux") {
     sources += [ "breakpad_linux.cc" ]
     deps = [
@@ -833,7 +795,7 @@ static_library("breakpad_lib") {
       "//third_party:glog",
       "//third_party/breakpad:breakpad",
     ]
-    libs = [ "Foundation.framework" ]
+    frameworks = [ "Foundation.framework" ]
   }
   if (os == "win") {
     sources += [ "breakpad_win.cc" ]
@@ -864,9 +826,7 @@ static_library("notification_lib") {
 }
 
 executable("gomacc") {
-  sources = [
-    "gomacc.cc",
-  ]
+  sources = [ "gomacc.cc" ]
   include_dirs = [ "." ]
   deps = [
     ":breakpad_lib",
@@ -888,9 +848,7 @@ executable("gomacc") {
 }
 
 executable("compiler_proxy") {
-  sources = [
-    "compiler_proxy.cc",
-  ]
+  sources = [ "compiler_proxy.cc" ]
   include_dirs = [ "." ]
   deps = [
     ":breakpad_lib",
@@ -925,9 +883,7 @@ executable("compiler_proxy") {
 }
 
 executable("goma_fetch") {
-  sources = [
-    "goma_fetch.cc",
-  ]
+  sources = [ "goma_fetch.cc" ]
   include_dirs = [ "." ]
   deps = [
     ":compiler_proxy_lib",
@@ -945,12 +901,8 @@ executable("goma_fetch") {
 
 action("generate_license") {
   script = "//tools/licenses.py"
-  inputs = [
-    lastchange_file,
-  ]
-  outputs = [
-    "$root_out_dir/LICENSE",
-  ]
+  inputs = [ lastchange_file ]
+  outputs = [ "$root_out_dir/LICENSE" ]
   args = [
     rebase_path("../LICENSE", root_build_dir),
     rebase_path("../third_party", root_build_dir),
@@ -959,39 +911,23 @@ action("generate_license") {
 }
 
 copy("copy_goma_auth_py") {
-  sources = [
-    "goma_auth.py",
-  ]
-  outputs = [
-    "$root_out_dir/{{source_file_part}}",
-  ]
+  sources = [ "goma_auth.py" ]
+  outputs = [ "$root_out_dir/{{source_file_part}}" ]
 }
 
 copy("copy_goma_ctl_py") {
-  sources = [
-    "goma_ctl.py",
-  ]
-  outputs = [
-    "$root_out_dir/{{source_file_part}}",
-  ]
+  sources = [ "goma_ctl.py" ]
+  outputs = [ "$root_out_dir/{{source_file_part}}" ]
 }
 
 copy("copy_vpython") {
-  sources = [
-    "//.vpython",
-  ]
-  outputs = [
-    "$root_out_dir/{{source_file_part}}",
-  ]
+  sources = [ "//.vpython" ]
+  outputs = [ "$root_out_dir/{{source_file_part}}" ]
 }
 
 copy("copy_diagnose_goma_log_py") {
-  sources = [
-    "diagnose_goma_log.py",
-  ]
-  outputs = [
-    "$root_out_dir/{{source_file_part}}",
-  ]
+  sources = [ "diagnose_goma_log.py" ]
+  outputs = [ "$root_out_dir/{{source_file_part}}" ]
 }
 
 if (os != "win") {
@@ -1008,16 +944,12 @@ if (os != "win") {
         "goma-wrapper",
       ]
     }
-    outputs = [
-      "$root_out_dir/{{source_file_part}}",
-    ]
+    outputs = [ "$root_out_dir/{{source_file_part}}" ]
   }
 
   action("symlink_gomacc") {
     script = "symlink.py"
-    deps = [
-      ":gomacc",
-    ]
+    deps = [ ":gomacc" ]
     outputs = [
       "$root_out_dir/g++",
       "$root_out_dir/gcc",
@@ -1041,9 +973,7 @@ if (os != "win") {
         ":compiler_proxy",
         "//third_party/breakpad:dump_syms",
       ]
-      outputs = [
-        "$root_out_dir/compiler_proxy.sym",
-      ]
+      outputs = [ "$root_out_dir/compiler_proxy.sym" ]
       args = [
         "--dump_syms",
         rebase_path("$root_out_dir/dump_syms"),
@@ -1060,9 +990,7 @@ if (os != "win") {
         ":gomacc",
         "//third_party/breakpad:dump_syms",
       ]
-      outputs = [
-        "$root_out_dir/gomacc.sym",
-      ]
+      outputs = [ "$root_out_dir/gomacc.sym" ]
       args = [
         "--dump_syms",
         rebase_path("$root_out_dir/dump_syms"),
@@ -1088,9 +1016,7 @@ if (os != "win") {
         ":goma_tool",
         ":gomacc",
       ]
-      outputs = [
-        "$root_out_dir/sha256.json",
-      ]
+      outputs = [ "$root_out_dir/sha256.json" ]
       args = [
         "--output",
         rebase_path("$root_out_dir/sha256.json"),
@@ -1110,21 +1036,15 @@ if (os != "win") {
   }
 } else {  # win
   executable("vcflags") {
-    sources = [
-      "vcflags.c",
-    ]
-    deps = [
-      "//build/config:exe_and_shlib_deps",
-    ]
+    sources = [ "vcflags.c" ]
+    deps = [ "//build/config:exe_and_shlib_deps" ]
   }
   copy("goma_tool") {
     sources = [
       "goma_auth.bat",
       "goma_ctl.bat",
     ]
-    outputs = [
-      "$root_out_dir/{{source_file_part}}",
-    ]
+    outputs = [ "$root_out_dir/{{source_file_part}}" ]
   }
 
   if (is_official_build) {
@@ -1134,9 +1054,7 @@ if (os != "win") {
         ":gomacc",
         "//third_party/breakpad:dump_syms",
       ]
-      outputs = [
-        "$root_out_dir/gomacc.sym",
-      ]
+      outputs = [ "$root_out_dir/gomacc.sym" ]
       args = [
         "--dump_syms",
         rebase_path("$root_out_dir/dump_syms.exe"),
@@ -1153,9 +1071,7 @@ if (os != "win") {
         ":compiler_proxy",
         "//third_party/breakpad:dump_syms",
       ]
-      outputs = [
-        "$root_out_dir/compiler_proxy.sym",
-      ]
+      outputs = [ "$root_out_dir/compiler_proxy.sym" ]
       args = [
         "--dump_syms",
         rebase_path("$root_out_dir/dump_syms.exe"),
@@ -1182,9 +1098,7 @@ if (os != "win") {
         ":gomacc",
         ":vcflags",
       ]
-      outputs = [
-        "$root_out_dir/sha256.json",
-      ]
+      outputs = [ "$root_out_dir/sha256.json" ]
       args = [
         "--output",
         rebase_path("$root_out_dir/sha256.json"),
@@ -1266,9 +1180,7 @@ static_library("test_worker_thread_lib") {
 
 executable("atomic_stats_counter_unittest") {
   testonly = true
-  sources = [
-    "atomic_stats_counter_unittest.cc",
-  ]
+  sources = [ "atomic_stats_counter_unittest.cc" ]
   deps = [
     ":common",
     ":goma_test_lib",
@@ -1278,9 +1190,7 @@ executable("atomic_stats_counter_unittest") {
 
 executable("base64_unittest") {
   testonly = true
-  sources = [
-    "base64_unittest.cc",
-  ]
+  sources = [ "base64_unittest.cc" ]
   deps = [
     ":base64_lib",
     ":goma_test_lib",
@@ -1291,9 +1201,7 @@ executable("base64_unittest") {
 
 executable("callback_unittest") {
   testonly = true
-  sources = [
-    "callback_unittest.cc",
-  ]
+  sources = [ "callback_unittest.cc" ]
   deps = [
     ":common",
     ":goma_test_lib",
@@ -1303,9 +1211,7 @@ executable("callback_unittest") {
 
 executable("compilation_database_reader_unittest") {
   testonly = true
-  sources = [
-    "compilation_database_reader_unittest.cc",
-  ]
+  sources = [ "compilation_database_reader_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1315,9 +1221,7 @@ executable("compilation_database_reader_unittest") {
 
 executable("compile_task_unittest") {
   testonly = true
-  sources = [
-    "compile_task_unittest.cc",
-  ]
+  sources = [ "compile_task_unittest.cc" ]
   deps = [
     ":breakpad_lib",
     ":compiler_proxy_lib",
@@ -1333,9 +1237,7 @@ executable("compile_task_unittest") {
 
 executable("compiler_type_specific_unittest") {
   testonly = true
-  sources = [
-    "compiler_type_specific_unittest.cc",
-  ]
+  sources = [ "compiler_type_specific_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":compiler_type_specific_lib",
@@ -1348,9 +1250,7 @@ executable("compiler_type_specific_unittest") {
 
 executable("compiler_info_builder_unittest") {
   testonly = true
-  sources = [
-    "compiler_info_builder_unittest.cc",
-  ]
+  sources = [ "compiler_info_builder_unittest.cc" ]
   deps = [
     ":compiler_info_lib",
     ":compiler_proxy_lib",
@@ -1365,9 +1265,7 @@ executable("compiler_info_builder_unittest") {
 
 executable("compiler_info_cache_unittest") {
   testonly = true
-  sources = [
-    "compiler_info_cache_unittest.cc",
-  ]
+  sources = [ "compiler_info_cache_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1381,9 +1279,7 @@ executable("compiler_info_cache_unittest") {
 
 executable("compiler_info_state_unittest") {
   testonly = true
-  sources = [
-    "compiler_info_state_unittest.cc",
-  ]
+  sources = [ "compiler_info_state_unittest.cc" ]
   deps = [
     ":compiler_info_lib",
     ":compiler_proxy_lib",
@@ -1395,9 +1291,7 @@ executable("compiler_info_state_unittest") {
 
 executable("compile_stats_unittest") {
   testonly = true
-  sources = [
-    "compile_stats_unittest.cc",
-  ]
+  sources = [ "compile_stats_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1408,9 +1302,7 @@ executable("compile_stats_unittest") {
 
 executable("content_cursor_unittest") {
   testonly = true
-  sources = [
-    "content_cursor_unittest.cc",
-  ]
+  sources = [ "content_cursor_unittest.cc" ]
   deps = [
     ":content_lib",
     ":goma_test_lib",
@@ -1420,9 +1312,7 @@ executable("content_cursor_unittest") {
 
 executable("counterz_unittest") {
   testonly = true
-  sources = [
-    "counterz_unittest.cc",
-  ]
+  sources = [ "counterz_unittest.cc" ]
   deps = [
     ":common",
     ":goma_test_lib",
@@ -1433,9 +1323,7 @@ executable("counterz_unittest") {
 
 executable("deps_cache_unittest") {
   testonly = true
-  sources = [
-    "deps_cache_unittest.cc",
-  ]
+  sources = [ "deps_cache_unittest.cc" ]
   deps = [
     ":compiler_info_lib",
     ":deps_cache_lib",
@@ -1454,9 +1342,7 @@ executable("deps_cache_unittest") {
 
 executable("env_flags_unittest") {
   testonly = true
-  sources = [
-    "env_flags_unittest.cc",
-  ]
+  sources = [ "env_flags_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1466,9 +1352,7 @@ executable("env_flags_unittest") {
 
 executable("file_path_util_unittest") {
   testonly = true
-  sources = [
-    "file_path_util_unittest.cc",
-  ]
+  sources = [ "file_path_util_unittest.cc" ]
   deps = [
     ":common",
     ":file_path_util_lib",
@@ -1482,9 +1366,7 @@ executable("file_path_util_unittest") {
 
 executable("file_stat_unittest") {
   testonly = true
-  sources = [
-    "file_stat_unittest.cc",
-  ]
+  sources = [ "file_stat_unittest.cc" ]
   deps = [
     ":common",
     ":goma_test_lib",
@@ -1495,9 +1377,7 @@ executable("file_stat_unittest") {
 
 executable("filename_id_table_unittest") {
   testonly = true
-  sources = [
-    "filename_id_table_unittest.cc",
-  ]
+  sources = [ "filename_id_table_unittest.cc" ]
   deps = [
     ":deps_cache_lib",
     ":deps_cache_proto",
@@ -1508,9 +1388,7 @@ executable("filename_id_table_unittest") {
 
 executable("goma_blob_unittest") {
   testonly = true
-  sources = [
-    "goma_blob_unittest.cc",
-  ]
+  sources = [ "goma_blob_unittest.cc" ]
   deps = [
     ":common",
     ":compiler_proxy_lib",
@@ -1538,9 +1416,7 @@ executable("goma_ipc_unittest") {
 
 executable("gomacc_argv_unittest") {
   testonly = true
-  sources = [
-    "gomacc_argv_unittest.cc",
-  ]
+  sources = [ "gomacc_argv_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1552,9 +1428,7 @@ executable("gomacc_argv_unittest") {
 
 executable("hash_rewrite_parser_unittest") {
   testonly = true
-  sources = [
-    "hash_rewrite_parser_unittest.cc",
-  ]
+  sources = [ "hash_rewrite_parser_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1564,9 +1438,7 @@ executable("hash_rewrite_parser_unittest") {
 
 executable("histogram_unittest") {
   testonly = true
-  sources = [
-    "histogram_unittest.cc",
-  ]
+  sources = [ "histogram_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1610,9 +1482,7 @@ executable("http_rpc_unittest") {
 
 executable("http_util_unittest") {
   testonly = true
-  sources = [
-    "http_util_unittest.cc",
-  ]
+  sources = [ "http_util_unittest.cc" ]
   deps = [
     ":goma_test_lib",
     ":ioutil_lib",
@@ -1623,9 +1493,7 @@ executable("http_util_unittest") {
 
 executable("ioutil_unittest") {
   testonly = true
-  sources = [
-    "ioutil_unittest.cc",
-  ]
+  sources = [ "ioutil_unittest.cc" ]
   deps = [
     ":goma_test_lib",
     ":ioutil_lib",
@@ -1637,9 +1505,7 @@ executable("ioutil_unittest") {
 
 executable("jwt_unittest") {
   testonly = true
-  sources = [
-    "jwt_unittest.cc",
-  ]
+  sources = [ "jwt_unittest.cc" ]
   deps = [
     ":base64_lib",
     ":common",
@@ -1654,9 +1520,7 @@ executable("jwt_unittest") {
 
 executable("linked_unordered_map_unittest") {
   testonly = true
-  sources = [
-    "linked_unordered_map_unittest.cc",
-  ]
+  sources = [ "linked_unordered_map_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1666,9 +1530,7 @@ executable("linked_unordered_map_unittest") {
 
 executable("list_dir_cache_unittest") {
   testonly = true
-  sources = [
-    "list_dir_cache_unittest.cc",
-  ]
+  sources = [ "list_dir_cache_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1678,9 +1540,7 @@ executable("list_dir_cache_unittest") {
 
 executable("local_output_cache_unittest") {
   testonly = true
-  sources = [
-    "local_output_cache_unittest.cc",
-  ]
+  sources = [ "local_output_cache_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":content_lib",
@@ -1692,9 +1552,7 @@ executable("local_output_cache_unittest") {
 
 executable("log_cleaner_unittest") {
   testonly = true
-  sources = [
-    "log_cleaner_unittest.cc",
-  ]
+  sources = [ "log_cleaner_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1704,9 +1562,7 @@ executable("log_cleaner_unittest") {
 
 executable("luci_context_unittest") {
   testonly = true
-  sources = [
-    "luci_context_unittest.cc",
-  ]
+  sources = [ "luci_context_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1716,9 +1572,7 @@ executable("luci_context_unittest") {
 
 executable("machine_info_unittest") {
   testonly = true
-  sources = [
-    "machine_info_unittest.cc",
-  ]
+  sources = [ "machine_info_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1728,9 +1582,7 @@ executable("machine_info_unittest") {
 
 executable("mypath_unittest") {
   testonly = true
-  sources = [
-    "mypath_unittest.cc",
-  ]
+  sources = [ "mypath_unittest.cc" ]
   deps = [
     ":common",
     ":goma_test_lib",
@@ -1744,9 +1596,7 @@ executable("mypath_unittest") {
 
 executable("oauth2_unittest") {
   testonly = true
-  sources = [
-    "oauth2_unittest.cc",
-  ]
+  sources = [ "oauth2_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1757,9 +1607,7 @@ executable("oauth2_unittest") {
 
 executable("openssl_engine_unittest") {
   testonly = true
-  sources = [
-    "openssl_engine_unittest.cc",
-  ]
+  sources = [ "openssl_engine_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1773,9 +1621,7 @@ executable("openssl_engine_unittest") {
 
 executable("proto_util_unittest") {
   testonly = true
-  sources = [
-    "proto_util_unittest.cc",
-  ]
+  sources = [ "proto_util_unittest.cc" ]
   deps = [
     ":goma_test_lib",
     ":proto_util",
@@ -1785,9 +1631,7 @@ executable("proto_util_unittest") {
 
 executable("rand_util_unittest") {
   testonly = true
-  sources = [
-    "rand_util_unittest.cc",
-  ]
+  sources = [ "rand_util_unittest.cc" ]
   deps = [
     ":goma_test_lib",
     ":rand_util_lib",
@@ -1798,9 +1642,7 @@ executable("rand_util_unittest") {
 
 executable("sha256_hash_cache_unittest") {
   testonly = true
-  sources = [
-    "sha256_hash_cache_unittest.cc",
-  ]
+  sources = [ "sha256_hash_cache_unittest.cc" ]
   deps = [
     ":goma_test_lib",
     ":sha256_hash_cache_lib",
@@ -1811,9 +1653,7 @@ executable("sha256_hash_cache_unittest") {
 
 executable("simple_timer_unittest") {
   testonly = true
-  sources = [
-    "simple_timer_unittest.cc",
-  ]
+  sources = [ "simple_timer_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1823,9 +1663,7 @@ executable("simple_timer_unittest") {
 
 executable("subprocess_task_unittest") {
   testonly = true
-  sources = [
-    "subprocess_task_unittest.cc",
-  ]
+  sources = [ "subprocess_task_unittest.cc" ]
   deps = [
     ":breakpad_lib",
     ":compiler_proxy_lib",
@@ -1837,9 +1675,7 @@ executable("subprocess_task_unittest") {
 
 executable("threadpool_http_server_unittest") {
   testonly = true
-  sources = [
-    "threadpool_http_server_unittest.cc",
-  ]
+  sources = [ "threadpool_http_server_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1849,9 +1685,7 @@ executable("threadpool_http_server_unittest") {
 
 executable("time_util_unittest") {
   testonly = true
-  sources = [
-    "time_util_unittest.cc",
-  ]
+  sources = [ "time_util_unittest.cc" ]
   deps = [
     ":goma_test_lib",
     ":time_util_lib",
@@ -1861,9 +1695,7 @@ executable("time_util_unittest") {
 
 executable("trustedipsmanager_unittest") {
   testonly = true
-  sources = [
-    "trustedipsmanager_unittest.cc",
-  ]
+  sources = [ "trustedipsmanager_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1873,9 +1705,7 @@ executable("trustedipsmanager_unittest") {
 
 executable("util_unittest") {
   testonly = true
-  sources = [
-    "util_unittest.cc",
-  ]
+  sources = [ "util_unittest.cc" ]
   deps = [
     ":common",
     ":goma_test_lib",
@@ -1886,9 +1716,7 @@ executable("util_unittest") {
 
 executable("worker_thread_unittest") {
   testonly = true
-  sources = [
-    "worker_thread_unittest.cc",
-  ]
+  sources = [ "worker_thread_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",
@@ -1912,9 +1740,7 @@ executable("worker_thread_manager_unittest") {
 
 executable("zero_copy_stream_impl_unittest") {
   testonly = true
-  sources = [
-    "zero_copy_stream_impl_unittest.cc",
-  ]
+  sources = [ "zero_copy_stream_impl_unittest.cc" ]
   deps = [
     # TODO: factor out zero_copy_stream_lib from compiler_proxy_lib
     ":compiler_proxy_lib",
@@ -1928,9 +1754,7 @@ executable("zero_copy_stream_impl_unittest") {
 if (os == "linux") {
   executable("cros_util_unittest") {
     testonly = true
-    sources = [
-      "cros_util_unittest.cc",
-    ]
+    sources = [ "cros_util_unittest.cc" ]
     deps = [
       ":gomacc_lib",
       ":gomacc_test_lib",
@@ -1944,18 +1768,12 @@ if (os == "linux") {
 if (os == "win") {
   executable("dump_env") {
     testonly = true
-    sources = [
-      "dump_env.c",
-    ]
-    deps = [
-      "//build/config:exe_and_shlib_deps",
-    ]
+    sources = [ "dump_env.c" ]
+    deps = [ "//build/config:exe_and_shlib_deps" ]
   }
   executable("filetime_win_unittest") {
     testonly = true
-    sources = [
-      "filetime_win_unittest.cc",
-    ]
+    sources = [ "filetime_win_unittest.cc" ]
     deps = [
       ":common",
       ":goma_test_lib",
@@ -1966,9 +1784,7 @@ if (os == "win") {
   }
   executable("named_pipe_client_win_unittest") {
     testonly = true
-    sources = [
-      "named_pipe_client_win_unittest.cc",
-    ]
+    sources = [ "named_pipe_client_win_unittest.cc" ]
     deps = [
       ":compiler_proxy_lib",
       ":goma_test_lib",
@@ -1978,9 +1794,7 @@ if (os == "win") {
   }
   executable("named_pipe_server_win_unittest") {
     testonly = true
-    sources = [
-      "named_pipe_server_win_unittest.cc",
-    ]
+    sources = [ "named_pipe_server_win_unittest.cc" ]
     deps = [
       ":compiler_proxy_lib",
       ":goma_test_lib",
@@ -1989,9 +1803,7 @@ if (os == "win") {
   }
   executable("posix_helper_win_unittest") {
     testonly = true
-    sources = [
-      "posix_helper_win_unittest.cc",
-    ]
+    sources = [ "posix_helper_win_unittest.cc" ]
     deps = [
       ":compiler_proxy_lib",
       ":goma_test_lib",
@@ -2001,9 +1813,7 @@ if (os == "win") {
   }
   executable("spawner_win_unittest") {
     testonly = true
-    sources = [
-      "spawner_win_unittest.cc",
-    ]
+    sources = [ "spawner_win_unittest.cc" ]
     deps = [
       ":compiler_proxy_lib",
       ":goma_test_lib",
@@ -2015,9 +1825,7 @@ if (os == "win") {
   }
   executable("vstestrun") {
     testonly = true
-    sources = [
-      "vstestrun.cc",
-    ]
+    sources = [ "vstestrun.cc" ]
     deps = [
       ":compiler_proxy_lib",
       ":goma_test_lib",
@@ -2027,9 +1835,7 @@ if (os == "win") {
 } else {
   executable("compiler_flags_util_unittest") {
     testonly = true
-    sources = [
-      "compiler_flags_util_unittest.cc",
-    ]
+    sources = [ "compiler_flags_util_unittest.cc" ]
     deps = [
       ":compiler_info_lib",
       ":compiler_proxy_lib",
@@ -2041,9 +1847,7 @@ if (os == "win") {
   }
   executable("spawner_posix_unittest") {
     testonly = true
-    sources = [
-      "spawner_posix_unittest.cc",
-    ]
+    sources = [ "spawner_posix_unittest.cc" ]
     deps = [
       ":gomacc_test_lib",
       ":subprocess_lib",
@@ -2054,9 +1858,7 @@ if (os == "win") {
 }
 
 fuzzer_test("base64_fuzzer") {
-  sources = [
-    "base64_fuzzer.cc",
-  ]
+  sources = [ "base64_fuzzer.cc" ]
   deps = [
     ":base64_lib",
     "//base",
@@ -2064,9 +1866,7 @@ fuzzer_test("base64_fuzzer") {
 }
 
 fuzzer_test("http_util_parse_http_response_fuzzer") {
-  sources = [
-    "http_util_parse_http_response_fuzzer.cc",
-  ]
+  sources = [ "http_util_parse_http_response_fuzzer.cc" ]
   deps = [
     ":ioutil_lib",
     "//base",
@@ -2075,9 +1875,7 @@ fuzzer_test("http_util_parse_http_response_fuzzer") {
 }
 
 fuzzer_test("ioutil_escape_string_fuzzer") {
-  sources = [
-    "ioutil_escape_string_fuzzer.cc",
-  ]
+  sources = [ "ioutil_escape_string_fuzzer.cc" ]
   deps = [
     ":ioutil_lib",
     "//base",
@@ -2085,9 +1883,7 @@ fuzzer_test("ioutil_escape_string_fuzzer") {
 }
 
 fuzzer_test("http_util_extract_header_field_fuzzer") {
-  sources = [
-    "http_util_extract_header_field_fuzzer.cc",
-  ]
+  sources = [ "http_util_extract_header_field_fuzzer.cc" ]
   deps = [
     ":ioutil_lib",
     "//base",
@@ -2097,9 +1893,7 @@ fuzzer_test("http_util_extract_header_field_fuzzer") {
 }
 
 fuzzer_test("http_util_find_content_length_and_body_offset_fuzzer") {
-  sources = [
-    "http_util_find_content_length_and_body_offset_fuzzer.cc",
-  ]
+  sources = [ "http_util_find_content_length_and_body_offset_fuzzer.cc" ]
   deps = [
     ":ioutil_lib",
     "//base",
@@ -2108,9 +1902,7 @@ fuzzer_test("http_util_find_content_length_and_body_offset_fuzzer") {
 }
 
 fuzzer_test("http_util_http_chunk_parser_parse_fuzzer") {
-  sources = [
-    "http_util_http_chunk_parser_parse_fuzzer.cc",
-  ]
+  sources = [ "http_util_http_chunk_parser_parse_fuzzer.cc" ]
   deps = [
     ":ioutil_lib",
     "//base",
@@ -2119,9 +1911,7 @@ fuzzer_test("http_util_http_chunk_parser_parse_fuzzer") {
 }
 
 fuzzer_test("http_util_parse_url_fuzzer") {
-  sources = [
-    "http_util_parse_url_fuzzer.cc",
-  ]
+  sources = [ "http_util_parse_url_fuzzer.cc" ]
   deps = [
     ":ioutil_lib",
     "//base",
@@ -2130,60 +1920,38 @@ fuzzer_test("http_util_parse_url_fuzzer") {
 }
 
 fuzzer_test("luci_context_parse_luci_context_fuzzer") {
-  sources = [
-    "luci_context_parse_luci_context_fuzzer.cc",
-  ]
-  deps = [
-    ":compiler_proxy_lib",
-  ]
+  sources = [ "luci_context_parse_luci_context_fuzzer.cc" ]
+  deps = [ ":compiler_proxy_lib" ]
   dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
 }
 
 fuzzer_test("luci_context_parse_luci_auth_token_response_fuzzer") {
-  sources = [
-    "luci_context_parse_luci_auth_token_response_fuzzer.cc",
-  ]
-  deps = [
-    ":compiler_proxy_lib",
-  ]
+  sources = [ "luci_context_parse_luci_auth_token_response_fuzzer.cc" ]
+  deps = [ ":compiler_proxy_lib" ]
   dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
 }
 
 fuzzer_test("oauth2_parse_oauth2_access_token_fuzzer") {
-  sources = [
-    "oauth2_parse_oauth2_access_token_fuzzer.cc",
-  ]
-  deps = [
-    ":oauth2_lib",
-  ]
+  sources = [ "oauth2_parse_oauth2_access_token_fuzzer.cc" ]
+  deps = [ ":oauth2_lib" ]
   dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
   seed_corpus = "//client/fuzzer/corpora/oauth2"
 }
 
 fuzzer_test("oauth2_parse_oauth2_config_fuzzer") {
-  sources = [
-    "oauth2_parse_oauth2_config_fuzzer.cc",
-  ]
-  deps = [
-    ":oauth2_lib",
-  ]
+  sources = [ "oauth2_parse_oauth2_config_fuzzer.cc" ]
+  deps = [ ":oauth2_lib" ]
   dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
 }
 
 fuzzer_test("oauth2_parse_service_account_json_fuzzer") {
-  sources = [
-    "oauth2_parse_service_account_json_fuzzer.cc",
-  ]
-  deps = [
-    ":oauth2_lib",
-  ]
+  sources = [ "oauth2_parse_service_account_json_fuzzer.cc" ]
+  deps = [ ":oauth2_lib" ]
   dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
 }
 
 executable("execreq_normalizer_diff") {
-  sources = [
-    "execreq_normalizer_diff.cc",
-  ]
+  sources = [ "execreq_normalizer_diff.cc" ]
 
   deps = [
     "//build/config:exe_and_shlib_deps",
@@ -2199,9 +1967,7 @@ executable("execreq_normalizer_diff") {
 # It just copied input *.fake to *.out.
 executable("fake_compiler") {
   output_name = "fake"
-  sources = [
-    "fake_compiler.cc",
-  ]
+  sources = [ "fake_compiler.cc" ]
 
   deps = [
     "//base",
@@ -2212,9 +1978,7 @@ executable("fake_compiler") {
 
 executable("thread_safe_variable_unittest") {
   testonly = true
-  sources = [
-    "thread_safe_variable_unittest.cc",
-  ]
+  sources = [ "thread_safe_variable_unittest.cc" ]
   deps = [
     ":common",
     ":goma_test_lib",
@@ -2225,9 +1989,7 @@ executable("thread_safe_variable_unittest") {
 
 executable("notification_unittest") {
   testonly = true
-  sources = [
-    "notification_unittest.cc",
-  ]
+  sources = [ "notification_unittest.cc" ]
   deps = [
     ":common",
     ":goma_test_lib",
@@ -2240,9 +2002,7 @@ executable("notification_unittest") {
 
 executable("json_util_unittest") {
   testonly = true
-  sources = [
-    "json_util_unittest.cc",
-  ]
+  sources = [ "json_util_unittest.cc" ]
   deps = [
     ":common",
     ":goma_test_lib",
@@ -2252,9 +2012,7 @@ executable("json_util_unittest") {
 
 executable("rbe_stats_manager_unittest") {
   testonly = true
-  sources = [
-    "rbe/stats_manager_unittest.cc",
-  ]
+  sources = [ "rbe/stats_manager_unittest.cc" ]
   deps = [
     ":compiler_proxy_lib",
     ":goma_test_lib",

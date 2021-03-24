@@ -2073,6 +2073,8 @@ class GomaEnv(object):
     if self._server_host is None:
       self._server_host = self._GetServerHost()
     ret = self._server_host
+    if os.environ.get('GOMA_RPC_EXTRA_PARAMS'):
+      ret += ' extra_params:%s' % os.environ['GOMA_RPC_EXTRA_PARAMS']
     if self.use_http_proxy:
       ret += ' (via http_proxy)'
     return ret

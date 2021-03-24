@@ -9,6 +9,8 @@
 
 #include <string>
 
+#include "../chromium_build/build_config.h"
+
 namespace devtools_goma {
 
 // Query information about the processor.

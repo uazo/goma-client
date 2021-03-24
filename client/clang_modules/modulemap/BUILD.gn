@@ -45,9 +45,7 @@ static_library("modulemap_parser_lib") {
     "type.h",
   ]
 
-  public_deps = [
-    ":modulemap_lexer_lib",
-  ]
+  public_deps = [ ":modulemap_lexer_lib" ]
 }
 
 static_library("modulemap_lexer_lib") {
@@ -66,18 +64,12 @@ static_library("modulemap_lexer_lib") {
 }
 
 fuzzer_test("lexer_fuzzer") {
-  sources = [
-    "lexer_fuzzer.cc",
-  ]
-  deps = [
-    ":modulemap_lexer_lib",
-  ]
+  sources = [ "lexer_fuzzer.cc" ]
+  deps = [ ":modulemap_lexer_lib" ]
 }
 
 executable("modulemap_lexer") {
-  sources = [
-    "lexer_main.cc",
-  ]
+  sources = [ "lexer_main.cc" ]
 
   deps = [
     ":modulemap_lexer_lib",
@@ -86,9 +78,7 @@ executable("modulemap_lexer") {
 }
 
 executable("modulemap_parser") {
-  sources = [
-    "parser_main.cc",
-  ]
+  sources = [ "parser_main.cc" ]
 
   deps = [
     ":modulemap_lexer_lib",
@@ -99,9 +89,7 @@ executable("modulemap_parser") {
 
 executable("modulemap_token_unittest") {
   testonly = true
-  sources = [
-    "token_unittest.cc",
-  ]
+  sources = [ "token_unittest.cc" ]
 
   deps = [
     ":modulemap_lexer_lib",
@@ -112,9 +100,7 @@ executable("modulemap_token_unittest") {
 
 executable("modulemap_lexer_unittest") {
   testonly = true
-  sources = [
-    "lexer_unittest.cc",
-  ]
+  sources = [ "lexer_unittest.cc" ]
 
   deps = [
     ":modulemap_lexer_lib",
@@ -125,9 +111,7 @@ executable("modulemap_lexer_unittest") {
 
 executable("modulemap_parser_unittest") {
   testonly = true
-  sources = [
-    "parser_unittest.cc",
-  ]
+  sources = [ "parser_unittest.cc" ]
 
   deps = [
     ":modulemap_parser_lib",
@@ -138,9 +122,7 @@ executable("modulemap_parser_unittest") {
 
 executable("modulemap_cache_unittest") {
   testonly = true
-  sources = [
-    "cache_unittest.cc",
-  ]
+  sources = [ "cache_unittest.cc" ]
 
   deps = [
     ":modulemap_cache_lib",

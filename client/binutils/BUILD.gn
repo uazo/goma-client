@@ -19,9 +19,7 @@ if (os == "linux") {
 
   executable("elf_parser_unittest") {
     testonly = true
-    sources = [
-      "elf_parser_unittest.cc",
-    ]
+    sources = [ "elf_parser_unittest.cc" ]
     deps = [
       ":elf_parser_lib",
       "//build/config:exe_and_shlib_deps",
@@ -32,9 +30,7 @@ if (os == "linux") {
   }
 
   executable("elf_parser") {
-    sources = [
-      "elf_parser_main.cc",
-    ]
+    sources = [ "elf_parser_main.cc" ]
     deps = [
       ":elf_parser_lib",
       "//build/config:exe_and_shlib_deps",
@@ -77,9 +73,7 @@ if (os == "linux") {
 
   executable("elf_util_unittest") {
     testonly = true
-    sources = [
-      "elf_util_unittest.cc",
-    ]
+    sources = [ "elf_util_unittest.cc" ]
 
     deps = [
       ":elf_util_lib",
@@ -90,9 +84,7 @@ if (os == "linux") {
 
   executable("elf_dep_parser_unittest") {
     testonly = true
-    sources = [
-      "elf_dep_parser_unittest.cc",
-    ]
+    sources = [ "elf_dep_parser_unittest.cc" ]
 
     deps = [
       ":elf_dep_parser_lib",

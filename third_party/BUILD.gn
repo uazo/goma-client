@@ -10,6 +10,12 @@ if (os != "win") {
 }
 
 glog_sources = [
+  "$config_h_dir/config.h",
+  "$config_h_dir/glog/log_severity.h",
+  "$config_h_dir/glog/logging.h",
+  "$config_h_dir/glog/raw_logging.h",
+  "$config_h_dir/glog/stl_logging.h",
+  "$config_h_dir/glog/vlog_is_on.h",
   "glog/src/base/commandlineflags.h",
   "glog/src/base/googleinit.h",
   "glog/src/base/mutex.h",
@@ -18,8 +24,8 @@ glog_sources = [
   "glog/src/logging.cc",
   "glog/src/raw_logging.cc",
   "glog/src/signalhandler.cc",
-  "glog/src/stacktrace_generic-inl.h",
   "glog/src/stacktrace.h",
+  "glog/src/stacktrace_generic-inl.h",
   "glog/src/stacktrace_libunwind-inl.h",
   "glog/src/stacktrace_x86_64-inl.h",
   "glog/src/symbolize.cc",
@@ -27,12 +33,6 @@ glog_sources = [
   "glog/src/utilities.cc",
   "glog/src/utilities.h",
   "glog/src/vlog_is_on.cc",
-  "$config_h_dir/config.h",
-  "$config_h_dir/glog/logging.h",
-  "$config_h_dir/glog/log_severity.h",
-  "$config_h_dir/glog/raw_logging.h",
-  "$config_h_dir/glog/stl_logging.h",
-  "$config_h_dir/glog/vlog_is_on.h",
 ]
 
 glog_include_dirs = [
@@ -63,8 +63,8 @@ if (os != "win") {
     "/wd4722",
   ]
   glog_sources -= [
-    "glog/src/stacktrace_generic-inl.h",
     "glog/src/stacktrace.h",
+    "glog/src/stacktrace_generic-inl.h",
     "glog/src/stacktrace_libunwind-inl.h",
     "glog/src/stacktrace_x86_64-inl.h",
   ]
@@ -174,9 +174,7 @@ static_library("gtest") {
 
   public_configs += [ ":unittest_config" ]
 
-  public_deps = [
-    "//third_party/abseil",
-  ]
+  public_deps = [ "//third_party/abseil" ]
 
   configs -= [ "//build/config/compiler:goma_code" ]
   configs += [ "//build/config/compiler:no_goma_code" ]
@@ -187,21 +185,15 @@ config("gtest_prod_config") {
   include_dirs = [ "gtest/googletest/include" ]
 }
 source_set("gtest_prod") {
-  sources = [
-    "gtest/googletest/include/gtest/gtest_prod.h",
-  ]
+  sources = [ "gtest/googletest/include/gtest/gtest_prod.h" ]
 
   public_configs = [ ":gtest_prod_config" ]
 }
 
 static_library("gtest_main") {
   testonly = true
-  deps = [
-    ":gtest",
-  ]
-  sources = [
-    "gtest/googletest/src/gtest_main.cc",
-  ]
+  deps = [ ":gtest" ]
+  sources = [ "gtest/googletest/src/gtest_main.cc" ]
 
   configs -= [ "//build/config/compiler:goma_code" ]
   configs += [ "//build/config/compiler:no_goma_code" ]
@@ -246,9 +238,7 @@ static_library("gmock") {
     "//third_party/abseil",
   ]
 
-  deps = [
-    ":gmock_internal",
-  ]
+  deps = [ ":gmock_internal" ]
 
   configs -= [ "//build/config/compiler:goma_code" ]
   configs += [ "//build/config/compiler:no_goma_code" ]
@@ -448,7 +438,7 @@ static_library("zlib_x86_simd") {
     sources = [
       "zlib/crc_folding.c",
 
-      # Added followings to mitigate gn check failure.
+      # Added for `gn check`:
       "zlib/deflate.h",
       "zlib/fill_window_sse.c",
       "zlib/zlib.h",
@@ -463,6 +453,12 @@ static_library("zlib_x86_simd") {
   } else {
     sources = [
       "zlib/simd_stub.c",
+
+      # Added for `gn check`:
+      "zlib/deflate.h",
+      "zlib/x86.h",
+      "zlib/zlib.h",
+      "zlib/zutil.h",
     ]
   }
 
@@ -526,9 +522,7 @@ static_library("zlib") {
   ]
 
   public_configs = [ ":zlib_config" ]
-  deps = [
-    ":zlib_x86_simd",
-  ]
+  deps = [ ":zlib_x86_simd" ]
 }
 
 config("minizip_warnings") {
@@ -563,9 +557,7 @@ static_library("minizip") {
     defines = [ "USE_FILE32API" ]
   }
 
-  deps = [
-    ":zlib",
-  ]
+  deps = [ ":zlib" ]
 
   configs -= [ "//build/config/compiler:goma_code" ]
   configs += [

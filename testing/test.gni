@@ -31,9 +31,7 @@ template("test") {
   if (defined(invoker.output_name) && target_name != invoker.output_name) {
     group("${invoker.output_name}_run") {
       testonly = true
-      deps = [
-        ":${invoker.target_name}",
-      ]
+      deps = [ ":${invoker.target_name}" ]
     }
   }
 }

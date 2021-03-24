@@ -19,6 +19,7 @@
 
 namespace {
 
+#ifndef NO_SSE2
 #ifdef _WIN32
 static inline int CountZero(int v) {
   unsigned long r;
@@ -50,7 +51,6 @@ static inline int PopCount(int v) {
 }
 #endif
 
-#ifndef NO_SSE2
 typedef ALIGNAS(16) char aligned_char16[16];
 const aligned_char16 kNewlinePattern = {
   0xA, 0xA, 0xA, 0xA, 0xA, 0xA, 0xA, 0xA,

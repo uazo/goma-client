@@ -9,9 +9,7 @@ if (os != "win") {
 
   action("gen_roots_certs") {
     script = genc
-    sources = [
-      "$roots.pem",
-    ]
+    sources = [ "$roots.pem" ]
     outputs = [
       "$target_gen_dir/$roots.c",
       "$target_gen_dir/$roots.h",
@@ -26,9 +24,7 @@ if (os != "win") {
 
   action("gen_dst_certs") {
     script = genc
-    sources = [
-      "DST_Root_CA_X3.pem",
-    ]
+    sources = [ "DST_Root_CA_X3.pem" ]
     outputs = [
       "$target_gen_dir/DST_Root_CA_X3.c",
       "$target_gen_dir/DST_Root_CA_X3.h",

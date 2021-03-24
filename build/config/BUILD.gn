@@ -56,9 +56,7 @@ config("default_libs") {
 group("common_deps") {
   # //build/config:commond_deps is in libc++'s visibility target.
   if (use_custom_libcxx) {
-    public_deps = [
-      "//buildtools/third_party/libc++",
-    ]
+    public_deps = [ "//buildtools/third_party/libc++" ]
   }
 }
 
@@ -78,9 +76,7 @@ group("exe_and_shlib_deps") {
 
 # Dependencies that libFuzzer needs when using custom libc++
 group("fuzzer_test_deps") {
-  public_deps = [
-    ":common_deps",
-  ]
+  public_deps = [ ":common_deps" ]
 }
 
 config("feature_flags") {

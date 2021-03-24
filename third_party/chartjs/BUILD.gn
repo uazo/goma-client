@@ -6,9 +6,7 @@ genc = "//client/genc.py"
 
 action("gen_chartjs") {
   script = genc
-  sources = [
-    "chart.bundle.min.js",
-  ]
+  sources = [ "chart.bundle.min.js" ]
   outputs = [
     "$target_gen_dir/chart.bundle.min.c",
     "$target_gen_dir/chart.bundle.min.h",
@@ -28,8 +26,6 @@ static_library("chartjs") {
     "$target_gen_dir/chart.bundle.min.c",
     "$target_gen_dir/chart.bundle.min.h",
   ]
-  deps = [
-    ":gen_chartjs",
-  ]
+  deps = [ ":gen_chartjs" ]
   public_configs = [ ":chartjs_config" ]
 }

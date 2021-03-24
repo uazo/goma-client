@@ -87,9 +87,7 @@ if (os == "win" && !is_msan) {
 
 static_library("boringssl") {
   sources = all_sources
-  deps = [
-    ":boringssl_asm",
-  ]
+  deps = [ ":boringssl_asm" ]
 
   public_configs = [ ":external_config" ]
   configs += [ ":internal_config" ]

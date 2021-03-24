@@ -6,9 +6,7 @@ genc = "//client/genc.py"
 
 action("gen_jquery") {
   script = genc
-  sources = [
-    "jquery.min.js",
-  ]
+  sources = [ "jquery.min.js" ]
   outputs = [
     "$target_gen_dir/jquery.min.c",
     "$target_gen_dir/jquery.min.h",
@@ -28,8 +26,6 @@ static_library("jquery") {
     "$target_gen_dir/jquery.min.c",
     "$target_gen_dir/jquery.min.h",
   ]
-  deps = [
-    ":gen_jquery",
-  ]
+  deps = [ ":gen_jquery" ]
   public_configs = [ ":jquery_config" ]
 }

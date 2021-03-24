@@ -13,9 +13,7 @@ static_library("cpu") {
 
 executable("cpu_unittest") {
   testonly = true
-  sources = [
-    "cpu_unittest.cc",
-  ]
+  sources = [ "cpu_unittest.cc" ]
   deps = [
     ":cpu",
     "//build/config:exe_and_shlib_deps",
@@ -56,9 +54,7 @@ if (os == "mac") {
 
   executable("mac_version_unittest") {
     testonly = true
-    sources = [
-      "mac_version_unittest.cc",
-    ]
+    sources = [ "mac_version_unittest.cc" ]
     deps = [
       ":mac_version",
       "//third_party:glog",

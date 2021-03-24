@@ -11,6 +11,18 @@ config("sdk") {
     "-mmacosx-version-min=10.7",
   ]
 
+  if (current_cpu == "x64") {
+    common_flags += [
+      "-arch",
+      "x86_64",
+    ]
+  } else if (current_cpu == "arm64") {
+    common_flags += [
+      "-arch",
+      "arm64",
+    ]
+  }
+
   cflags = common_flags
   ldflags = common_flags
   asmflags = common_flags

@@ -20,9 +20,7 @@ if (using_sanitizer) {
 # shared_libraries. Unconditionally depend upon this target as it is empty if
 # |is_asan|, |is_lsan|, |is_tsan|, |is_msan| and |use_custom_libcxx| are false.
 group("deps") {
-  public_deps = [
-    ":deps_no_options",
-  ]
+  public_deps = [ ":deps_no_options" ]
   if (using_sanitizer) {
     public_configs = [
       ":sanitizer_options_link_helper",
@@ -32,9 +30,7 @@ group("deps") {
       # to add the ldflags here as well as in default_sanitizer_flags.
       ":default_sanitizer_ldflags",
     ]
-    deps = [
-      ":options_sources",
-    ]
+    deps = [ ":options_sources" ]
   }
 
   #if (use_afl) {
@@ -53,9 +49,7 @@ group("deps_no_options") {
     deps = []
     public_deps = []
 
-    data = [
-      "//tools/valgrind/asan/",
-    ]
+    data = [ "//tools/valgrind/asan/" ]
     if (os == "win") {
       exe = ".exe"
     } else {
@@ -79,9 +73,7 @@ group("deps_no_options") {
     # used (Chromium version of clang versus Xcode version of clang). Only copy
     # the ASAN runtime on iOS if building with Chromium clang.
     if (os == "win" || os == "mac") {
-      data_deps = [
-        ":copy_asan_runtime",
-      ]
+      data_deps = [ ":copy_asan_runtime" ]
     }
     if (os == "mac") {
       public_deps += [ ":asan_runtime_bundle_data" ]
@@ -102,23 +94,15 @@ if ((os == "mac" || os == "win") && using_sanitizer) {
       "$clang_base_path/lib/clang/$clang_version/lib/$_clang_rt_dso_path"
 
   copy("copy_asan_runtime") {
-    sources = [
-      _clang_rt_dso_full_path,
-    ]
-    outputs = [
-      "$root_out_dir/{{source_file_part}}",
-    ]
+    sources = [ _clang_rt_dso_full_path ]
+    outputs = [ "$root_out_dir/{{source_file_part}}" ]
   }
 
   if (os == "mac") {
     bundle_data("asan_runtime_bundle_data") {
       sources = get_target_outputs(":copy_asan_runtime")
-      outputs = [
-        "{{bundle_executable_dir}}/{{source_file_part}}",
-      ]
-      public_deps = [
-        ":copy_asan_runtime",
-      ]
+      outputs = [ "{{bundle_executable_dir}}/{{source_file_part}}" ]
+      public_deps = [ ":copy_asan_runtime" ]
     }
   }
 }
@@ -138,9 +122,7 @@ static_library("options_sources") {
     ":deps",
     "//:gn_visibility",
   ]
-  sources = [
-    "//build/sanitizers/sanitizer_options.cc",
-  ]
+  sources = [ "//build/sanitizers/sanitizer_options.cc" ]
 
   # Don't compile this target with any sanitizer code. It can be called from
   # the sanitizer runtimes, so instrumenting these functions could cause
@@ -265,6 +247,12 @@ config("common_sanitizer_flags") {
   if (use_custom_libcxx) {
     prefix = "//buildtools/third_party"
     include = "trunk/include"
+    defines = [
+      "_LIBCPP_ENABLE_NODISCARD",
+
+      # TODO: libc++ requires this macro.
+      "_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS",
+    ]
     cflags_cc += [
       "-nostdinc++",
       "-isystem" + rebase_path("$prefix/libc++/$include", root_build_dir),
@@ -433,16 +421,16 @@ config("tsan_flags") {
 #  }
 #}
 
-#config("ubsan_vptr_flags") {
-#  if (is_ubsan_vptr) {
-#    ubsan_vptr_blacklist_path =
-#        rebase_path("//tools/ubsan/vptr_blacklist.txt", root_build_dir)
-#    cflags = [
-#      "-fsanitize=vptr",
-#      "-fsanitize-blacklist=$ubsan_vptr_blacklist_path",
-#    ]
-#  }
-#}
+config("ubsan_vptr_flags") {
+  #if (is_ubsan_vptr) {
+  #  ubsan_vptr_blacklist_path =
+  #      rebase_path("//tools/ubsan/vptr_blacklist.txt", root_build_dir)
+  #  cflags = [
+  #    "-fsanitize=vptr",
+  #    "-fsanitize-blacklist=$ubsan_vptr_blacklist_path",
+  #  ]
+  #}
+}
 
 all_sanitizer_configs = [
   ":common_sanitizer_flags",
@@ -459,7 +447,7 @@ all_sanitizer_configs = [
   #":ubsan_no_recover",
   #":ubsan_null_flags",
   #":ubsan_security_flags",
-  #":ubsan_vptr_flags",
+  ":ubsan_vptr_flags",
 ]
 
 # This config is applied by default to all targets. It sets the compiler flags
@@ -472,6 +460,14 @@ all_sanitizer_configs = [
 # Keep this list in sync with default_sanitizer_flags_but_ubsan_vptr.
 config("default_sanitizer_flags") {
   configs = all_sanitizer_configs
+}
+
+# This config is equivalent to default_sanitizer_flags, but excludes ubsan_vptr.
+# This allows to selectively disable ubsan_vptr, when needed. In particular,
+# if some third_party code is required to be compiled without rtti, which
+# is a requirement for ubsan_vptr.
+config("default_sanitizer_flags_but_ubsan_vptr") {
+  configs = all_sanitizer_configs - [ ":ubsan_vptr_flags" ]
 }
 
 # This config is equivalent to default_sanitizer_flags, but excludes ubsan_vptr.

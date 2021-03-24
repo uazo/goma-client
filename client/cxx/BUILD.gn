@@ -8,13 +8,9 @@ static_library("cxx_compiler_info_lib") {
     "cxx_compiler_info.h",
   ]
 
-  deps = [
-    "//client/cxx/include_processor:cpp_directive_lib",
-  ]
+  deps = [ "//client/cxx/include_processor:cpp_directive_lib" ]
 
-  public_deps = [
-    "//client:compiler_info_lib",
-  ]
+  public_deps = [ "//client:compiler_info_lib" ]
 }
 
 static_library("cxx_compiler_type_specific_lib") {
@@ -23,13 +19,9 @@ static_library("cxx_compiler_type_specific_lib") {
     "cxx_compiler_type_specific.h",
   ]
 
-  public_deps = [
-    "//client:compiler_type_specific_lib",
-  ]
+  public_deps = [ "//client:compiler_type_specific_lib" ]
 
-  deps = [
-    "//client/cxx/include_processor:cpp_include_processor_lib",
-  ]
+  deps = [ "//client/cxx/include_processor:cpp_include_processor_lib" ]
 }
 
 static_library("clang_compiler_info_builder_helper_lib") {
@@ -213,9 +205,7 @@ static_library("vc_compiler_type_specific") {
 
 executable("cxx_compiler_info_builder_unittest") {
   testonly = true
-  sources = [
-    "cxx_compiler_info_builder_unittest.cc",
-  ]
+  sources = [ "cxx_compiler_info_builder_unittest.cc" ]
   deps = [
     ":cxx_compiler_info_builder_lib",
     "//build/config:exe_and_shlib_deps",
@@ -227,9 +217,7 @@ executable("cxx_compiler_info_builder_unittest") {
 
 executable("gcc_compiler_info_builder_unittest") {
   testonly = true
-  sources = [
-    "gcc_compiler_info_builder_unittest.cc",
-  ]
+  sources = [ "gcc_compiler_info_builder_unittest.cc" ]
 
   deps = [
     ":gcc_compiler_info_builder_lib",
@@ -247,9 +235,7 @@ executable("gcc_compiler_info_builder_unittest") {
 
 executable("vc_compiler_info_builder_unittest") {
   testonly = true
-  sources = [
-    "vc_compiler_info_builder_unittest.cc",
-  ]
+  sources = [ "vc_compiler_info_builder_unittest.cc" ]
 
   # TODO: vc_compiler_info_builder_unittest should not depend on
   # compiler_proxy_lib and cpp_parser_lib. However, since CompilerInfo is
@@ -266,9 +252,7 @@ executable("vc_compiler_info_builder_unittest") {
 
 executable("clang_compiler_info_builder_helper_unittest") {
   testonly = true
-  sources = [
-    "clang_compiler_info_builder_helper_unittest.cc",
-  ]
+  sources = [ "clang_compiler_info_builder_helper_unittest.cc" ]
 
   deps = [
     ":clang_compiler_info_builder_helper_lib",
@@ -282,9 +266,7 @@ executable("clang_compiler_info_builder_helper_unittest") {
 if (is_linux) {
   executable("chromeos_compiler_info_builder_helper_unittest") {
     testonly = true
-    sources = [
-      "chromeos_compiler_info_builder_helper_unittest.cc",
-    ]
+    sources = [ "chromeos_compiler_info_builder_helper_unittest.cc" ]
 
     deps = [
       ":chromeos_compiler_info_builder_helper_lib",

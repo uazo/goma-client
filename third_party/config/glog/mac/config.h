@@ -153,10 +153,12 @@
 #define PACKAGE_VERSION "0.3.5"
 
 /* How to access the PC from a struct ucontext */
+#if !defined(__aarch64__)
 #if defined(__LP64__)
 #define PC_FROM_UCONTEXT uc_mcontext->__ss.__rip
 #else
 #define PC_FROM_UCONTEXT uc_mcontext->__ss.__eip
+#endif
 #endif
 
 /* Define to necessary symbol if this constant uses a non-standard name on

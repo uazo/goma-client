@@ -64,12 +64,8 @@ static_library("lib") {
 }
 
 source_set("cxx_specific") {
-  sources = [
-    "cxx_flags.h",
-  ]
-  deps = [
-    ":lib",
-  ]
+  sources = [ "cxx_flags.h" ]
+  deps = [ ":lib" ]
 }
 
 static_library("gcc_specific") {
@@ -79,9 +75,7 @@ static_library("gcc_specific") {
     "gcc_flags.cc",
     "gcc_flags.h",
   ]
-  public_deps = [
-    ":cxx_specific",
-  ]
+  public_deps = [ ":cxx_specific" ]
   deps = [
     ":clang_flags_helper",
     ":lib",
@@ -93,12 +87,8 @@ static_library("clang_flags_helper") {
     "clang_flags_helper.cc",
     "clang_flags_helper.h",
   ]
-  public_deps = [
-    "//third_party/abseil",
-  ]
-  deps = [
-    ":lib",
-  ]
+  public_deps = [ "//third_party/abseil" ]
+  deps = [ ":lib" ]
 }
 
 static_library("vc_specific") {
@@ -108,9 +98,7 @@ static_library("vc_specific") {
     "vc_flags.cc",
     "vc_flags.h",
   ]
-  public_deps = [
-    ":cxx_specific",
-  ]
+  public_deps = [ ":cxx_specific" ]
   deps = [
     ":clang_flags_helper",
     ":lib",
@@ -124,9 +112,7 @@ static_library("clang_tidy_specific") {
     "clang_tidy_flags.cc",
     "clang_tidy_flags.h",
   ]
-  public_deps = [
-    ":cxx_specific",
-  ]
+  public_deps = [ ":cxx_specific" ]
   deps = [
     ":gcc_specific",
     ":lib",
@@ -140,9 +126,7 @@ static_library("java_specific") {
     "java_flags.cc",
     "java_flags.h",
   ]
-  deps = [
-    ":lib",
-  ]
+  deps = [ ":lib" ]
 }
 
 static_library("dart_analyzer_specific") {
@@ -152,9 +136,7 @@ static_library("dart_analyzer_specific") {
     "dart_analyzer_flags.cc",
     "dart_analyzer_flags.h",
   ]
-  deps = [
-    ":lib",
-  ]
+  deps = [ ":lib" ]
 }
 
 static_library("rust_specific") {
@@ -164,9 +146,7 @@ static_library("rust_specific") {
     "rustc_flags.cc",
     "rustc_flags.h",
   ]
-  deps = [
-    ":lib",
-  ]
+  deps = [ ":lib" ]
 }
 
 static_library("fake_specific") {
@@ -176,9 +156,7 @@ static_library("fake_specific") {
     "fake_flags.cc",
     "fake_flags.h",
   ]
-  deps = [
-    ":lib",
-  ]
+  deps = [ ":lib" ]
 }
 
 static_library("compiler_flag_type_specific") {
@@ -205,9 +183,7 @@ static_library("goma_hash") {
     "goma_hash.cc",
     "goma_hash.h",
   ]
-  public_deps = [
-    ":lib",
-  ]
+  public_deps = [ ":lib" ]
   deps = [
     "//base",
     "//third_party/boringssl:boringssl",
@@ -224,9 +200,7 @@ static_library("goma_file") {
     ":lib",
     "//base",
   ]
-  deps = [
-    "//third_party:glog",
-  ]
+  deps = [ "//third_party:glog" ]
 }
 
 static_library("goma_data_util") {
@@ -243,9 +217,7 @@ static_library("goma_data_util") {
 
 executable("clang_flags_helper_unittest") {
   testonly = true
-  sources = [
-    "clang_flags_helper_unittest.cc",
-  ]
+  sources = [ "clang_flags_helper_unittest.cc" ]
 
   deps = [
     ":clang_flags_helper",
@@ -257,9 +229,7 @@ executable("clang_flags_helper_unittest") {
 
 executable("clang_tidy_execreq_normalizer_unittest") {
   testonly = true
-  sources = [
-    "clang_tidy_execreq_normalizer_unittest.cc",
-  ]
+  sources = [ "clang_tidy_execreq_normalizer_unittest.cc" ]
   deps = [
     ":compiler_flag_type_specific",
     ":lib",
@@ -271,9 +241,7 @@ executable("clang_tidy_execreq_normalizer_unittest") {
 
 executable("clang_tidy_flags_unittest") {
   testonly = true
-  sources = [
-    "clang_tidy_flags_unittest.cc",
-  ]
+  sources = [ "clang_tidy_flags_unittest.cc" ]
   deps = [
     ":clang_tidy_specific",
     ":compiler_flag_type_specific",
@@ -286,9 +254,7 @@ executable("clang_tidy_flags_unittest") {
 
 executable("cmdline_parser_unittest") {
   testonly = true
-  sources = [
-    "cmdline_parser_unittest.cc",
-  ]
+  sources = [ "cmdline_parser_unittest.cc" ]
   deps = [
     ":lib",
     "//base:goma_unittest",
@@ -300,9 +266,7 @@ executable("cmdline_parser_unittest") {
 
 executable("compiler_flags_test") {
   testonly = true
-  sources = [
-    "compiler_flags_unittest.cc",
-  ]
+  sources = [ "compiler_flags_unittest.cc" ]
   deps = [
     ":clang_tidy_specific",
     ":compiler_flag_type_specific",
@@ -316,9 +280,7 @@ executable("compiler_flags_test") {
 
 executable("compiler_flag_type_specific_unittest") {
   testonly = true
-  sources = [
-    "compiler_flag_type_specific_unittest.cc",
-  ]
+  sources = [ "compiler_flag_type_specific_unittest.cc" ]
   deps = [
     ":compiler_flag_type_specific",
     ":lib",
@@ -331,9 +293,7 @@ executable("compiler_flag_type_specific_unittest") {
 
 executable("compress_util_unittest") {
   testonly = true
-  sources = [
-    "compress_util_unittest.cc",
-  ]
+  sources = [ "compress_util_unittest.cc" ]
   deps = [
     ":lib",
     "//base:goma_unittest",
@@ -345,9 +305,7 @@ executable("compress_util_unittest") {
 
 executable("execreq_normalizer_unittest") {
   testonly = true
-  sources = [
-    "execreq_normalizer_unittest.cc",
-  ]
+  sources = [ "execreq_normalizer_unittest.cc" ]
   deps = [
     ":lib",
     "//base:goma_unittest",
@@ -359,9 +317,7 @@ executable("execreq_normalizer_unittest") {
 
 executable("execreq_verifier_unittest") {
   testonly = true
-  sources = [
-    "execreq_verifier_unittest.cc",
-  ]
+  sources = [ "execreq_verifier_unittest.cc" ]
   deps = [
     ":lib",
     "//base:goma_unittest",
@@ -373,9 +329,7 @@ executable("execreq_verifier_unittest") {
 
 executable("fake_flags_unittest") {
   testonly = true
-  sources = [
-    "fake_flags_unittest.cc",
-  ]
+  sources = [ "fake_flags_unittest.cc" ]
   deps = [
     ":compiler_flag_type_specific",
     ":fake_specific",
@@ -389,9 +343,7 @@ executable("fake_flags_unittest") {
 
 executable("file_reader_unittest") {
   testonly = true
-  sources = [
-    "file_reader_unittest.cc",
-  ]
+  sources = [ "file_reader_unittest.cc" ]
   deps = [
     ":lib",
     "//base:goma_unittest",
@@ -403,9 +355,7 @@ executable("file_reader_unittest") {
 
 executable("flag_parser_unittest") {
   testonly = true
-  sources = [
-    "flag_parser_unittest.cc",
-  ]
+  sources = [ "flag_parser_unittest.cc" ]
   deps = [
     ":lib",
     "//base:goma_unittest",
@@ -416,9 +366,7 @@ executable("flag_parser_unittest") {
 
 executable("gcc_execreq_normalizer_unittest") {
   testonly = true
-  sources = [
-    "gcc_execreq_normalizer_unittest.cc",
-  ]
+  sources = [ "gcc_execreq_normalizer_unittest.cc" ]
   deps = [
     ":compiler_flag_type_specific",
     ":gcc_specific",
@@ -432,9 +380,7 @@ executable("gcc_execreq_normalizer_unittest") {
 
 executable("gcc_flags_unittest") {
   testonly = true
-  sources = [
-    "gcc_flags_unittest.cc",
-  ]
+  sources = [ "gcc_flags_unittest.cc" ]
   deps = [
     ":compiler_flag_type_specific",
     ":gcc_specific",
@@ -449,9 +395,7 @@ executable("gcc_flags_unittest") {
 
 executable("goma_data_util_unittest") {
   testonly = true
-  sources = [
-    "goma_data_util_unittest.cc",
-  ]
+  sources = [ "goma_data_util_unittest.cc" ]
   deps = [
     ":goma_data_util",
     ":goma_proto",
@@ -463,9 +407,7 @@ executable("goma_data_util_unittest") {
 
 executable("goma_hash_unittest") {
   testonly = true
-  sources = [
-    "goma_hash_unittest.cc",
-  ]
+  sources = [ "goma_hash_unittest.cc" ]
   deps = [
     ":goma_hash",
     "//base:goma_unittest",
@@ -476,9 +418,7 @@ executable("goma_hash_unittest") {
 
 executable("file_data_output_unittest") {
   testonly = true
-  sources = [
-    "file_data_output_unittest.cc",
-  ]
+  sources = [ "file_data_output_unittest.cc" ]
   deps = [
     ":lib",
     "//base:goma_unittest",
@@ -489,9 +429,7 @@ executable("file_data_output_unittest") {
 
 executable("java_execreq_normalizer_unittest") {
   testonly = true
-  sources = [
-    "java_execreq_normalizer_unittest.cc",
-  ]
+  sources = [ "java_execreq_normalizer_unittest.cc" ]
 
   deps = [
     ":compiler_flag_type_specific",
@@ -504,9 +442,7 @@ executable("java_execreq_normalizer_unittest") {
 
 executable("java_flags_unittest") {
   testonly = true
-  sources = [
-    "java_flags_unittest.cc",
-  ]
+  sources = [ "java_flags_unittest.cc" ]
 
   deps = [
     ":compiler_flag_type_specific",
@@ -520,9 +456,7 @@ executable("java_flags_unittest") {
 
 executable("path_resolver_unittest") {
   testonly = true
-  sources = [
-    "path_resolver_unittest.cc",
-  ]
+  sources = [ "path_resolver_unittest.cc" ]
   deps = [
     ":lib",
     "//base:goma_unittest",
@@ -533,9 +467,7 @@ executable("path_resolver_unittest") {
 
 executable("path_unittest") {
   testonly = true
-  sources = [
-    "path_unittest.cc",
-  ]
+  sources = [ "path_unittest.cc" ]
   deps = [
     ":lib",
     "//base:goma_unittest",
@@ -546,9 +478,7 @@ executable("path_unittest") {
 
 executable("path_util_unittest") {
   testonly = true
-  sources = [
-    "path_util_unittest.cc",
-  ]
+  sources = [ "path_util_unittest.cc" ]
   deps = [
     ":lib",
     "//base:goma_unittest",
@@ -559,9 +489,7 @@ executable("path_util_unittest") {
 
 executable("dart_analyzer_flags_unittest") {
   testonly = true
-  sources = [
-    "dart_analyzer_flags_unittest.cc",
-  ]
+  sources = [ "dart_analyzer_flags_unittest.cc" ]
   deps = [
     ":compiler_flag_type_specific",
     ":dart_analyzer_specific",
@@ -575,9 +503,7 @@ executable("dart_analyzer_flags_unittest") {
 
 executable("rustc_flags_unittest") {
   testonly = true
-  sources = [
-    "rustc_flags_unittest.cc",
-  ]
+  sources = [ "rustc_flags_unittest.cc" ]
   deps = [
     ":compiler_flag_type_specific",
     ":lib",
@@ -591,9 +517,7 @@ executable("rustc_flags_unittest") {
 
 executable("vc_execreq_normalizer_unittest") {
   testonly = true
-  sources = [
-    "vc_execreq_normalizer_unittest.cc",
-  ]
+  sources = [ "vc_execreq_normalizer_unittest.cc" ]
   deps = [
     ":compiler_flag_type_specific",
     ":lib",
@@ -606,9 +530,7 @@ executable("vc_execreq_normalizer_unittest") {
 
 executable("vc_flags_unittest") {
   testonly = true
-  sources = [
-    "vc_flags_unittest.cc",
-  ]
+  sources = [ "vc_flags_unittest.cc" ]
   deps = [
     ":compiler_flag_type_specific",
     ":lib",
@@ -621,15 +543,11 @@ executable("vc_flags_unittest") {
 }
 
 proto_library("flag_parser_fuzzer_proto") {
-  sources = [
-    "flag_parser_fuzzer.proto",
-  ]
+  sources = [ "flag_parser_fuzzer.proto" ]
 }
 
 fuzzer_test("flag_parser_fuzzer") {
-  sources = [
-    "flag_parser_fuzzer.cc",
-  ]
+  sources = [ "flag_parser_fuzzer.cc" ]
   deps = [
     ":flag_parser_fuzzer_proto",
     ":lib",
@@ -638,26 +556,16 @@ fuzzer_test("flag_parser_fuzzer") {
 }
 
 fuzzer_test("path_resolver_fuzzer") {
-  sources = [
-    "path_resolver_fuzzer.cc",
-  ]
-  deps = [
-    ":lib",
-  ]
+  sources = [ "path_resolver_fuzzer.cc" ]
+  deps = [ ":lib" ]
 }
 
 proto_library("goma_stats_proto") {
-  sources = [
-    "goma_stats.proto",
-  ]
+  sources = [ "goma_stats.proto" ]
 }
 
 proto_library("goma_statz_stats_proto") {
-  sources = [
-    "goma_statz_stats.proto",
-  ]
+  sources = [ "goma_statz_stats.proto" ]
 
-  deps = [
-    ":goma_stats_proto",
-  ]
+  deps = [ ":goma_stats_proto" ]
 }

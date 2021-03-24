@@ -10,6 +10,7 @@ The script is intended to be used with the production Goma RBE server.
 import argparse
 import os
 import platform
+import socket
 import string
 import subprocess
 import sys
@@ -62,6 +63,14 @@ class RunCompilerProxyTest(unittest.TestCase):
     self._goma = self._module.GetGomaDriver()
 
   def setUp(self):
+    if not 'AUTONINJA_BUILD_ID' in os.environ:
+      if 'LOGDOG_STREAM_PREFIX' in os.environ:
+        os.environ['AUTONINJA_BUILD_ID'] = 'simpletry_rbe/' + os.environ.get(
+            'LOGDOG_STREAM_PREFIX')
+      else:
+        os.environ['AUTONINJA_BUILD_ID'] = 'simpletry_rbe/%s/%d/%d' % (
+            socket.gethostname(), os.getpid(), time.time())
+    print('\nAUTONINJA_BUILD_ID=%s\n' % os.environ.get('AUTONINJA_BUILD_ID'))
     self._cwd = os.getcwd()
     self._goma._StartCompilerProxy()
 
@@ -69,6 +78,13 @@ class RunCompilerProxyTest(unittest.TestCase):
     self._goma._ShutdownCompilerProxy()
     if not self._goma._WaitCooldown():
       self._goma._env.KillStakeholders()
+    # TODO:  print log only if test failed?
+    infolog_path = self._goma._env.FindLatestLogFile('compiler_proxy', 'INFO')
+    if not infolog_path:
+      print('compiler_proxy log was not found')
+    else:
+      with open(infolog_path) as f:
+        sys.stdout.write(f.read())
 
     os.chdir(self._cwd)
 
@@ -234,76 +250,6 @@ class RunCompilerProxyTest(unittest.TestCase):
 
     # Verify that this was not a false positive due to fallback after setup
     # failure.
-    statz = _ReadFromCompilerProxyPath('statz')
-    self.assertNotIn('fallback by setup failure', statz, statz)
-    self.assertIn('success=1 failure=0', statz, statz)
-
-  @unittest.skipIf(platform.system() != 'Linux', 'javac is used on Linux only')
-  def testJavac(self):
-    test_dir = os.path.relpath(
-        os.path.abspath(os.path.dirname(__file__)), self._dir)
-
-    os.chdir(self._dir)
-
-    # Create input file list and expected output files.
-    src_dir = os.path.join(test_dir, 'src')
-    input_files = [os.path.join(src_dir, f) for f in ['Foo.java', 'Bar.java']]
-
-    with tempfile.TemporaryDirectory(dir=self._dir) as temp_path:
-      temp_path = os.path.relpath(temp_path, self._dir)
-      files_list = os.path.join(temp_path, 'files_list.txt')
-      with open(files_list, 'w') as fp:
-        fp.write(' '.join(os.path.relpath(f, self._dir) for f in input_files))
-
-      # Create output dirs.
-      output_dir = os.path.join(temp_path, 'output')
-      os.mkdir(output_dir)
-
-      # Run locally: javac -d output @files_list.txt
-      jdk_dir = os.path.join(test_dir, '..', 'third_party', 'jdk')
-      javac_path = os.path.join(jdk_dir, 'current', 'bin', 'javac')
-      javac_cmd = [javac_path, '-d', output_dir, '@%s' % files_list]
-
-      result = subprocess.run(javac_cmd, capture_output=True)
-      self.assertEqual(len(result.stdout), 0, msg=result.stdout)
-      self.assertEqual(len(result.stderr), 0, msg=result.stderr)
-
-      # One output .class file for each input .java file.
-      output_files = ['Foo.class', 'Bar.class']
-
-      output_contents = {}
-      for output_file in output_files:
-        output_file = os.path.join(output_dir, output_file)
-        self.assertTrue(os.path.exists(output_file), msg=output_file)
-        output_contents[output_file] = _ReadFileContents(output_file)
-        os.remove(output_file)
-        self.assertFalse(os.path.exists(output_file), msg=output_file)
-
-      # Run remotely: javac -d output @files_list.txt
-      gomacc_path = os.path.join(self._dir, 'gomacc')
-      gomacc_cmd = [gomacc_path]
-      gomacc_cmd.extend(javac_cmd)
-
-      result = subprocess.run(gomacc_cmd, capture_output=True)
-      self.assertEqual(len(result.stdout), 0, msg=result.stdout)
-      self.assertEqual(len(result.stderr), 0, msg=result.stderr)
-
-      # Remote output file contents must match local output file contents.
-      for output_file in output_files:
-        output_file = os.path.join(output_dir, output_file)
-        self.assertTrue(os.path.exists(output_file), msg=output_file)
-        remote_output_contents = _ReadFileContents(output_file)
-        self.assertEqual(
-            output_contents.get(output_file),
-            remote_output_contents,
-            msg=output_file)
-
-    # Check that the remote execution was actually successful, and not a local
-    # fallback due to setup failure, which would result in a false positive by
-    # generating the outputs locally.
-    #
-    # We do not have to check for false positives from remote exec failures
-    # because of GOMA_USE_LOCAL=false.
     statz = _ReadFromCompilerProxyPath('statz')
     self.assertNotIn('fallback by setup failure', statz, statz)
     self.assertIn('success=1 failure=0', statz, statz)

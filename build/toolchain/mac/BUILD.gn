@@ -117,9 +117,7 @@ template("mac_toolchain") {
       command = "$cc -MD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_c}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "CC {{output}}"
-      outputs = [
-        "$object_subdir/{{source_name_part}}.o",
-      ]
+      outputs = [ "$object_subdir/{{source_name_part}}.o" ]
     }
 
     tool("cxx") {
@@ -128,9 +126,7 @@ template("mac_toolchain") {
       command = "$cxx -MD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_cc}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "CXX {{output}}"
-      outputs = [
-        "$object_subdir/{{source_name_part}}.o",
-      ]
+      outputs = [ "$object_subdir/{{source_name_part}}.o" ]
     }
 
     tool("asm") {
@@ -139,9 +135,7 @@ template("mac_toolchain") {
       command = "$cc -MD -MF $depfile {{defines}} {{include_dirs}} {{asmflags}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "ASM {{output}}"
-      outputs = [
-        "$object_subdir/{{source_name_part}}.o",
-      ]
+      outputs = [ "$object_subdir/{{source_name_part}}.o" ]
     }
 
     tool("objc") {
@@ -150,9 +144,7 @@ template("mac_toolchain") {
       command = "$cc -MD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_objc}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "OBJC {{output}}"
-      outputs = [
-        "$object_subdir/{{source_name_part}}.o",
-      ]
+      outputs = [ "$object_subdir/{{source_name_part}}.o" ]
     }
 
     tool("objcxx") {
@@ -161,9 +153,7 @@ template("mac_toolchain") {
       command = "$cxx -MD -MF $depfile {{defines}} {{include_dirs}} {{cflags}} {{cflags_objcc}} -c {{source}} -o {{output}}"
       depsformat = "gcc"
       description = "OBJCXX {{output}}"
-      outputs = [
-        "$object_subdir/{{source_name_part}}.o",
-      ]
+      outputs = [ "$object_subdir/{{source_name_part}}.o" ]
     }
 
     tool("alink") {
@@ -171,16 +161,15 @@ template("mac_toolchain") {
           rebase_path("//build/toolchain/mac/filter_libtool.py", root_build_dir)
       command = "rm -f {{output}} && TOOL_VERSION=${tool_versions.filter_libtool} python $script libtool -static {{arflags}} -o {{output}} {{inputs}}"
       description = "LIBTOOL-STATIC {{output}}"
-      outputs = [
-        "{{output_dir}}/{{target_output_name}}{{output_extension}}",
-      ]
+      outputs = [ "{{output_dir}}/{{target_output_name}}{{output_extension}}" ]
       default_output_dir = "{{target_out_dir}}"
       default_output_extension = ".a"
       output_prefix = "lib"
     }
 
     tool("solink") {
-      dylib = "{{output_dir}}/{{target_output_name}}{{output_extension}}"  # eg "./libfoo.dylib"
+      # E.g. "./libfoo.dylib":
+      dylib = "{{output_dir}}/{{target_output_name}}{{output_extension}}"
       rspfile = dylib + ".rsp"
 
       # These variables are not built into GN but are helpers that implement
@@ -198,7 +187,7 @@ template("mac_toolchain") {
 
       link_command = "$linker_driver $ld -shared "
       link_command += dsym_switch
-      link_command += "{{ldflags}} -o \"$dylib\" -Wl,-filelist,\"$rspfile\" {{libs}} {{solibs}}"
+      link_command += "{{ldflags}} -o \"$dylib\" -Wl,-filelist,\"$rspfile\" {{libs}} {{solibs}} {{frameworks}}"
 
       replace_command = "if ! cmp -s \"$temporary_tocname\" \"$tocname\"; then mv \"$temporary_tocname\" \"$tocname\""
       extract_toc_command = "{ otool -l \"$dylib\" | grep LC_ID_DYLIB -A 5; nm -gP \"$dylib\" | cut -f1-2 -d' ' | grep -v U\$\$; true; }"
@@ -240,12 +229,13 @@ template("mac_toolchain") {
     }
 
     tool("solink_module") {
-      sofile = "{{output_dir}}/{{target_output_name}}{{output_extension}}"  # eg "./libfoo.so"
+      # E.g. "./libfoo.so":
+      sofile = "{{output_dir}}/{{target_output_name}}{{output_extension}}"
       rspfile = sofile + ".rsp"
 
       link_command = "$linker_driver $ld -bundle {{ldflags}} -o \"$sofile\" -Wl,-filelist,\"$rspfile\""
       link_command += dsym_switch
-      link_command += " {{solibs}} {{libs}}"
+      link_command += " {{solibs}} {{libs}} {{frameworks}}"
       command = link_command
 
       rspfile_content = "{{inputs_newline}}"
@@ -258,9 +248,7 @@ template("mac_toolchain") {
       default_output_dir = "{{root_out_dir}}"
       default_output_extension = ".so"
 
-      outputs = [
-        sofile,
-      ]
+      outputs = [ sofile ]
 
       if (_enable_dsyms) {
         outputs += dsym_output
@@ -282,12 +270,10 @@ template("mac_toolchain") {
       # do for command-line arguments. Thus any source names with spaces, or
       # label names with spaces (which GN bases the output paths on) will be
       # corrupted by this process. Don't use spaces for source files or labels.
-      command = "$linker_driver $ld $dsym_switch {{ldflags}} -o \"$outfile\" -Wl,-filelist,\"$rspfile\" {{solibs}} {{libs}}"
+      command = "$linker_driver $ld $dsym_switch {{ldflags}} -o \"$outfile\" -Wl,-filelist,\"$rspfile\" {{solibs}} {{libs}} {{frameworks}}"
       description = "LINK $outfile"
       rspfile_content = "{{inputs_newline}}"
-      outputs = [
-        outfile,
-      ]
+      outputs = [ outfile ]
 
       if (_enable_dsyms) {
         outputs += dsym_output
@@ -355,6 +341,13 @@ template("mac_toolchain") {
 mac_toolchain("clang_x64") {
   toolchain_args = {
     current_cpu = "x64"
+    current_os = "mac"
+  }
+}
+
+mac_toolchain("clang_arm64") {
+  toolchain_args = {
+    current_cpu = "arm64"
     current_os = "mac"
   }
 }

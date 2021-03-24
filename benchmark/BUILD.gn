@@ -4,9 +4,7 @@ group("benchmark") {
 
 executable("cpp_parser_benchmark") {
   testonly = true
-  sources = [
-    "cpp_parser_benchmark.cc",
-  ]
+  sources = [ "cpp_parser_benchmark.cc" ]
   deps = [
     "//build/config:exe_and_shlib_deps",
     "//client/cxx/include_processor:cpp_parser_lib",
@@ -17,9 +15,7 @@ executable("cpp_parser_benchmark") {
 
 executable("cpp_macro_expander_benchmark") {
   testonly = true
-  sources = [
-    "cpp_macro_expander_benchmark.cc",
-  ]
+  sources = [ "cpp_macro_expander_benchmark.cc" ]
   deps = [
     "//build/config:exe_and_shlib_deps",
     "//client/cxx/include_processor:cpp_parser_lib",
@@ -30,9 +26,7 @@ executable("cpp_macro_expander_benchmark") {
 
 executable("unordered_map_benchmark") {
   testonly = true
-  sources = [
-    "unordered_map_benchmark.cc",
-  ]
+  sources = [ "unordered_map_benchmark.cc" ]
   deps = [
     "//build/config:exe_and_shlib_deps",
     "//third_party/abseil",
@@ -42,9 +36,7 @@ executable("unordered_map_benchmark") {
 
 executable("lockhelper_benchmark") {
   testonly = true
-  sources = [
-    "lockhelper_benchmark.cc",
-  ]
+  sources = [ "lockhelper_benchmark.cc" ]
   deps = [
     "//base",
     "//build/config:exe_and_shlib_deps",
@@ -55,9 +47,7 @@ executable("lockhelper_benchmark") {
 
 executable("path_benchmark") {
   testonly = true
-  sources = [
-    "path_benchmark.cc",
-  ]
+  sources = [ "path_benchmark.cc" ]
   deps = [
     "//base",
     "//build/config:exe_and_shlib_deps",
@@ -68,9 +58,7 @@ executable("path_benchmark") {
 
 executable("path_resolver_benchmark") {
   testonly = true
-  sources = [
-    "path_resolver_benchmark.cc",
-  ]
+  sources = [ "path_resolver_benchmark.cc" ]
   deps = [
     "//build/config:exe_and_shlib_deps",
     "//lib",
@@ -81,9 +69,7 @@ executable("path_resolver_benchmark") {
 
 executable("simple_timer_benchmark") {
   testonly = true
-  sources = [
-    "simple_timer_benchmark.cc",
-  ]
+  sources = [ "simple_timer_benchmark.cc" ]
   deps = [
     "//build/config:exe_and_shlib_deps",
     "//client:common",
@@ -94,9 +80,7 @@ executable("simple_timer_benchmark") {
 
 executable("file_stat_benchmark") {
   testonly = true
-  sources = [
-    "file_stat_benchmark.cc",
-  ]
+  sources = [ "file_stat_benchmark.cc" ]
   deps = [
     "//build/config:exe_and_shlib_deps",
     "//client:compiler_proxy_lib",

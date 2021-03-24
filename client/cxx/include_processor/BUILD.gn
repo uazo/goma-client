@@ -21,12 +21,8 @@ static_library("directive_filter_lib") {
 }
 
 fuzzer_test("directive_filter_make_filtered_content_fuzzer") {
-  sources = [
-    "directive_filter_make_filtered_content_fuzzer.cc",
-  ]
-  deps = [
-    ":directive_filter_lib",
-  ]
+  sources = [ "directive_filter_make_filtered_content_fuzzer.cc" ]
+  deps = [ ":directive_filter_lib" ]
 }
 
 # cpp_directive_lib contains cpp directive. This should not depend on
@@ -55,6 +51,10 @@ static_library("cpp_directive_lib") {
     "space_handling.h",
   ]
 
+  if (target_cpu == "arm64") {
+    defines = [ "NO_SSE2" ]
+  }
+
   deps = [
     ":directive_filter_lib",
     "//client:common",
@@ -70,19 +70,17 @@ static_library("cpp_directive_lib") {
 
   # Do not depend on compiler-type specific libraries, and compiler_info.
   assert_no_deps = [
+    "//client:compiler_info_lib",
+    "//lib:clang_tidy_specific",
     "//lib:compiler_flag_type_specific",
     "//lib:gcc_specific",
-    "//lib:vc_specific",
-    "//lib:clang_tidy_specific",
     "//lib:java_specific",
-    "//client:compiler_info_lib",
+    "//lib:vc_specific",
   ]
 }
 
 fuzzer_test("cpp_directive_parser_fuzzer") {
-  sources = [
-    "cpp_directive_parser_fuzzer.cc",
-  ]
+  sources = [ "cpp_directive_parser_fuzzer.cc" ]
   deps = [
     ":cpp_directive_lib",
     "//client:common",
@@ -164,9 +162,7 @@ static_library("include_cache_lib") {
     "//lib:goma_stats_proto",
   ]
 
-  public_deps = [
-    "//third_party/abseil",
-  ]
+  public_deps = [ "//third_party/abseil" ]
 }
 
 static_library("cpp_include_processor_unittest_helper_lib") {
@@ -185,9 +181,7 @@ static_library("cpp_include_processor_unittest_helper_lib") {
 }
 
 executable("cpp_parser") {
-  sources = [
-    "cpp_parser_main.cc",
-  ]
+  sources = [ "cpp_parser_main.cc" ]
   include_dirs = [ "." ]
   deps = [
     ":cpp_parser_lib",
@@ -198,9 +192,7 @@ executable("cpp_parser") {
 }
 
 executable("directive_filter") {
-  sources = [
-    "directive_filter_main.cc",
-  ]
+  sources = [ "directive_filter_main.cc" ]
   include_dirs = [ "." ]
   deps = [
     ":directive_filter_lib",
@@ -210,9 +202,7 @@ executable("directive_filter") {
 }
 
 executable("cpp_include_processor") {
-  sources = [
-    "cpp_include_processor_main.cc",
-  ]
+  sources = [ "cpp_include_processor_main.cc" ]
   include_dirs = [ "." ]
   deps = [
     ":cpp_include_processor_lib",
@@ -228,9 +218,7 @@ executable("cpp_include_processor") {
 }
 
 executable("cpp_directive_parser") {
-  sources = [
-    "cpp_directive_parser_main.cc",
-  ]
+  sources = [ "cpp_directive_parser_main.cc" ]
   include_dirs = [ "." ]
   deps = [
     ":cpp_parser_lib",
@@ -241,9 +229,7 @@ executable("cpp_directive_parser") {
 
 executable("cpp_macro_expander_unittest") {
   testonly = true
-  sources = [
-    "cpp_macro_expander_unittest.cc",
-  ]
+  sources = [ "cpp_macro_expander_unittest.cc" ]
   deps = [
     ":cpp_parser_lib",
     "//build/config:exe_and_shlib_deps",
@@ -254,9 +240,7 @@ executable("cpp_macro_expander_unittest") {
 
 executable("cpp_macro_expander_cbv_unittest") {
   testonly = true
-  sources = [
-    "cpp_macro_expander_cbv_unittest.cc",
-  ]
+  sources = [ "cpp_macro_expander_cbv_unittest.cc" ]
   deps = [
     ":cpp_parser_lib",
     "//build/config:exe_and_shlib_deps",
@@ -266,9 +250,7 @@ executable("cpp_macro_expander_cbv_unittest") {
 
 executable("cpp_macro_expander_naive_unittest") {
   testonly = true
-  sources = [
-    "cpp_macro_expander_naive_unittest.cc",
-  ]
+  sources = [ "cpp_macro_expander_naive_unittest.cc" ]
   deps = [
     ":cpp_parser_lib",
     "//build/config:exe_and_shlib_deps",
@@ -278,9 +260,7 @@ executable("cpp_macro_expander_naive_unittest") {
 
 executable("cpp_macro_set_unittest") {
   testonly = true
-  sources = [
-    "cpp_macro_set_unittest.cc",
-  ]
+  sources = [ "cpp_macro_set_unittest.cc" ]
   deps = [
     ":cpp_parser_lib",
     "//build/config:exe_and_shlib_deps",
@@ -290,9 +270,7 @@ executable("cpp_macro_set_unittest") {
 
 executable("cpp_macro_unittest") {
   testonly = true
-  sources = [
-    "cpp_macro_unittest.cc",
-  ]
+  sources = [ "cpp_macro_unittest.cc" ]
   deps = [
     ":cpp_parser_lib",
     "//build/config:exe_and_shlib_deps",
@@ -302,9 +280,7 @@ executable("cpp_macro_unittest") {
 
 executable("cpp_parser_unittest") {
   testonly = true
-  sources = [
-    "cpp_parser_unittest.cc",
-  ]
+  sources = [ "cpp_parser_unittest.cc" ]
   deps = [
     ":cpp_parser_lib",
     "//build/config:exe_and_shlib_deps",
@@ -316,9 +292,7 @@ executable("cpp_parser_unittest") {
 
 executable("cpp_tokenizer_unittest") {
   testonly = true
-  sources = [
-    "cpp_tokenizer_unittest.cc",
-  ]
+  sources = [ "cpp_tokenizer_unittest.cc" ]
   deps = [
     ":cpp_parser_lib",
     "//build/config:exe_and_shlib_deps",
@@ -329,9 +303,7 @@ executable("cpp_tokenizer_unittest") {
 
 executable("cpp_directive_optimizer_unittest") {
   testonly = true
-  sources = [
-    "cpp_directive_optimizer_unittest.cc",
-  ]
+  sources = [ "cpp_directive_optimizer_unittest.cc" ]
   deps = [
     ":cpp_parser_lib",
     "//build/config:exe_and_shlib_deps",
@@ -342,9 +314,7 @@ executable("cpp_directive_optimizer_unittest") {
 
 executable("cpp_directive_parser_unittest") {
   testonly = true
-  sources = [
-    "cpp_directive_parser_unittest.cc",
-  ]
+  sources = [ "cpp_directive_parser_unittest.cc" ]
   deps = [
     ":cpp_parser_lib",
     "//build/config:exe_and_shlib_deps",
@@ -355,9 +325,7 @@ executable("cpp_directive_parser_unittest") {
 
 executable("directive_filter_unittest") {
   testonly = true
-  sources = [
-    "directive_filter_unittest.cc",
-  ]
+  sources = [ "directive_filter_unittest.cc" ]
   deps = [
     ":directive_filter_lib",
     "//build/config:exe_and_shlib_deps",
@@ -369,9 +337,7 @@ executable("directive_filter_unittest") {
 
 executable("include_file_utils_unittest") {
   testonly = true
-  sources = [
-    "include_file_utils_unittest.cc",
-  ]
+  sources = [ "include_file_utils_unittest.cc" ]
   deps = [
     ":cpp_include_processor_unittest_helper_lib",
     ":cpp_parser_lib",
@@ -384,9 +350,7 @@ executable("include_file_utils_unittest") {
 
 executable("include_guard_detector_unittest") {
   testonly = true
-  sources = [
-    "include_guard_detector_unittest.cc",
-  ]
+  sources = [ "include_guard_detector_unittest.cc" ]
   deps = [
     ":cpp_parser_lib",
     "//build/config:exe_and_shlib_deps",
@@ -397,9 +361,7 @@ executable("include_guard_detector_unittest") {
 
 executable("cpp_include_processor_unittest") {
   testonly = true
-  sources = [
-    "cpp_include_processor_unittest.cc",
-  ]
+  sources = [ "cpp_include_processor_unittest.cc" ]
   deps = [
     ":cpp_include_processor_lib",
     ":include_cache_lib",
@@ -418,9 +380,7 @@ executable("cpp_include_processor_unittest") {
 if (os == "win") {
   executable("cpp_include_processor_win_unittest") {
     testonly = true
-    sources = [
-      "cpp_include_processor_win_unittest.cc",
-    ]
+    sources = [ "cpp_include_processor_win_unittest.cc" ]
     deps = [
       ":cpp_include_processor_lib",
       ":cpp_include_processor_unittest_helper_lib",
@@ -439,9 +399,7 @@ if (os == "win") {
 } else {
   executable("cpp_include_processor_posix_unittest") {
     testonly = true
-    sources = [
-      "cpp_include_processor_posix_unittest.cc",
-    ]
+    sources = [ "cpp_include_processor_posix_unittest.cc" ]
     deps = [
       ":cpp_include_processor_lib",
       ":cpp_include_processor_unittest_helper_lib",
@@ -462,9 +420,7 @@ if (os == "win") {
 
 executable("include_cache_unittest") {
   testonly = true
-  sources = [
-    "include_cache_unittest.cc",
-  ]
+  sources = [ "include_cache_unittest.cc" ]
   deps = [
     ":include_cache_lib",
     "//build/config:exe_and_shlib_deps",
@@ -478,9 +434,7 @@ executable("include_cache_unittest") {
 
 executable("include_file_finder_unittest") {
   testonly = true
-  sources = [
-    "include_file_finder_unittest.cc",
-  ]
+  sources = [ "include_file_finder_unittest.cc" ]
   deps = [
     ":cpp_include_processor_unittest_helper_lib",
     ":cpp_parser_lib",

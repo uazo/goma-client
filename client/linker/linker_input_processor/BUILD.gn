@@ -20,13 +20,9 @@ static_library("arfile_reader_lib") {
     "arfile_reader.h",
   ]
   if (os == "mac") {
-    deps = [
-      "//client/binutils:mach_o_parser",
-    ]
+    deps = [ "//client/binutils:mach_o_parser" ]
   }
-  public_deps = [
-    ":arfile_lib",
-  ]
+  public_deps = [ ":arfile_lib" ]
 }
 
 static_library("linker_input_processor_lib") {
@@ -82,9 +78,7 @@ static_library("thinlto_import_processor_lib") {
 
 if (os != "win") {
   executable("linker_input_processor") {
-    sources = [
-      "linker_input_processor_main.cc",
-    ]
+    sources = [ "linker_input_processor_main.cc" ]
     include_dirs = [ "." ]
     deps = [
       ":linker_input_processor_lib",
@@ -102,9 +96,7 @@ if (os != "win") {
 if (os != "win") {
   executable("arfile_unittest") {
     testonly = true
-    sources = [
-      "arfile_unittest.cc",
-    ]
+    sources = [ "arfile_unittest.cc" ]
     deps = [
       ":arfile_lib",
       "//build/config:exe_and_shlib_deps",
@@ -117,9 +109,7 @@ if (os != "win") {
 
 executable("arfile_reader_unittest") {
   testonly = true
-  sources = [
-    "arfile_reader_unittest.cc",
-  ]
+  sources = [ "arfile_reader_unittest.cc" ]
   deps = [
     ":arfile_reader_lib",
     "//build/config:exe_and_shlib_deps",
@@ -133,9 +123,7 @@ executable("arfile_reader_unittest") {
 
 executable("library_path_resolver_unittest") {
   testonly = true
-  sources = [
-    "library_path_resolver_unittest.cc",
-  ]
+  sources = [ "library_path_resolver_unittest.cc" ]
   deps = [
     ":linker_input_processor_lib",
     "//build/config:exe_and_shlib_deps",
@@ -148,9 +136,7 @@ executable("library_path_resolver_unittest") {
 if (os != "win") {
   executable("linker_input_processor_unittest") {
     testonly = true
-    sources = [
-      "linker_input_processor_unittest.cc",
-    ]
+    sources = [ "linker_input_processor_unittest.cc" ]
     deps = [
       ":linker_input_processor_lib",
       "//build/config:exe_and_shlib_deps",
@@ -165,9 +151,7 @@ if (os != "win") {
 
 executable("linker_script_parser_unittest") {
   testonly = true
-  sources = [
-    "linker_script_parser_unittest.cc",
-  ]
+  sources = [ "linker_script_parser_unittest.cc" ]
   deps = [
     ":linker_input_processor_lib",
     "//build/config:exe_and_shlib_deps",

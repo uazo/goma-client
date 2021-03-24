@@ -372,9 +372,7 @@ static_library("protobuf_full") {
     "//build/config/compiler:no_size_t_to_int_warning",
   ]
 
-  deps = [
-    "//third_party:zlib",
-  ]
+  deps = [ "//third_party:zlib" ]
 
   cflags = protobuf_lite_cflags
 }
@@ -554,16 +552,12 @@ static_library("protoc_lib") {
 
   cflags = protobuf_lite_cflags
 
-  public_deps = [
-    ":protobuf_full",
-  ]
+  public_deps = [ ":protobuf_full" ]
 }
 
 # Only compile the compiler for the host architecture.
 executable("protoc") {
-  sources = [
-    "protobuf/src/google/protobuf/compiler/main.cc",
-  ]
+  sources = [ "protobuf/src/google/protobuf/compiler/main.cc" ]
 
   configs -= [ "//build/config/compiler:goma_code" ]
   configs += [ "//build/config/compiler:no_goma_code" ]

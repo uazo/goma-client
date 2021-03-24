@@ -50,7 +50,7 @@ def CreatePlatformGomacc(distname, platform):
     distname: distribution directory
     platform: platform name
   """
-  if platform in ('linux', 'mac', 'goobuntu', 'chromeos'):
+  if platform in ('linux', 'mac', 'mac-arm64', 'goobuntu', 'chromeos'):
     gomacc = list(GOMACC_CMDS)
   else:
     raise NotImplementedError(platform)
@@ -82,7 +82,7 @@ def InstallPlatformFiles(distname, platform):
   Returns:
     a list of files.
   """
-  if platform in ('linux', 'mac', 'goobuntu'):
+  if platform in ('linux', 'mac', 'mac-arm64', 'goobuntu'):
     return
   if platform != 'chromeos':
     raise NotImplementedError(platform)
@@ -100,7 +100,7 @@ def CreateAndroidDir(distname, platform):
   Returns:
     a list of files to be released.
   """
-  if platform in ('linux', 'mac', 'goobuntu'):
+  if platform in ('linux', 'mac', 'mac-arm64', 'goobuntu'):
     distname = os.path.join(distname, 'android')
     shutil.rmtree(distname, ignore_errors=True)
     os.mkdir(distname)
@@ -188,7 +188,7 @@ def main():
                                     'darwin': 'mac',
                                     'win32': 'win',
                                     'cygwin': 'win'}.get(sys.platform, None),
-                           choices=('linux', 'mac', 'win',
+                           choices=('linux', 'mac', 'mac-arm64', 'win',
                                     'goobuntu', 'chromeos', 'win64'),
                            help='platform name')
   option_parser.add_option('--build_dir', default='out',

@@ -31,9 +31,7 @@ source_set("libprotobuf-mutator") {
 
   # Allow users of LPM to use protobuf reflection and other features from
   # protobuf_full.
-  public_deps = [
-    "//third_party/protobuf:protobuf_full",
-  ]
+  public_deps = [ "//third_party/protobuf:protobuf_full" ]
 
   # Let ClusterFuzz builders know to not build targets that depend on
   # libprotobuf-mutator for AFL or Chrome OS.
@@ -54,9 +52,7 @@ if (current_toolchain == host_toolchain) {
   # features (such as reflection).  The plugin simply compiles a proto library
   # as normal but ensures that is compiled with the full protobuf runtime.
   executable("override_lite_runtime_plugin") {
-    sources = [
-      "protoc_plugin/protoc_plugin.cc",
-    ]
+    sources = [ "protoc_plugin/protoc_plugin.cc" ]
     deps = [
       "//build/config:exe_and_shlib_deps",
       "//third_party/protobuf:protoc_lib",
@@ -76,9 +72,7 @@ if (use_libfuzzer) {
   # contains files that are optimized for LITE_RUNTIME and which import other
   # files that are also optimized for LITE_RUNTIME.
   fuzzer_test("override_lite_runtime_plugin_test_fuzzer") {
-    sources = [
-      "protoc_plugin/test_fuzzer.cc",
-    ]
+    sources = [ "protoc_plugin/test_fuzzer.cc" ]
     deps = [
       ":libprotobuf-mutator",
       ":override_lite_runtime_plugin_test_fuzzer_proto",
@@ -104,11 +98,7 @@ fuzzable_proto_library("override_lite_runtime_plugin_test_fuzzer_proto") {
 if (use_libfuzzer) {
   # Component that can provide protobuf_full to non-testonly targets
   static_library("protobuf_full") {
-    public_deps = [
-      "//third_party/protobuf:protobuf_full",
-    ]
-    sources = [
-      "dummy.cc",
-    ]
+    public_deps = [ "//third_party/protobuf:protobuf_full" ]
+    sources = [ "dummy.cc" ]
   }
 }

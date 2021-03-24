@@ -10,9 +10,7 @@ config("include_target_gen_dir") {
 
 action("gen_compiler_proxy_status_html5") {
   script = genc
-  sources = [
-    "compiler_proxy_status_html5.html",
-  ]
+  sources = [ "compiler_proxy_status_html5.html" ]
   outputs = [
     "$target_gen_dir/compiler_proxy_status_html5.c",
     "$target_gen_dir/compiler_proxy_status_html5.h",
@@ -27,9 +25,7 @@ action("gen_compiler_proxy_status_html5") {
 
 action("gen_legend_help") {
   script = genc
-  sources = [
-    "legend_help.html",
-  ]
+  sources = [ "legend_help.html" ]
   outputs = [
     "$target_gen_dir/legend_help.c",
     "$target_gen_dir/legend_help.h",
@@ -44,9 +40,7 @@ action("gen_legend_help") {
 
 action("gen_compiler_proxy_status_script") {
   script = genc
-  sources = [
-    "compiler_proxy_status_script.js",
-  ]
+  sources = [ "compiler_proxy_status_script.js" ]
   outputs = [
     "$target_gen_dir/compiler_proxy_status_script.c",
     "$target_gen_dir/compiler_proxy_status_script.h",
@@ -61,9 +55,7 @@ action("gen_compiler_proxy_status_script") {
 
 action("gen_compiler_proxy_contentionz_script") {
   script = genc
-  sources = [
-    "compiler_proxy_contentionz_script.js",
-  ]
+  sources = [ "compiler_proxy_contentionz_script.js" ]
   outputs = [
     "$target_gen_dir/compiler_proxy_contentionz_script.c",
     "$target_gen_dir/compiler_proxy_contentionz_script.h",
@@ -78,9 +70,7 @@ action("gen_compiler_proxy_contentionz_script") {
 
 action("gen_compiler_proxy_status_style") {
   script = genc
-  sources = [
-    "compiler_proxy_status_style.css",
-  ]
+  sources = [ "compiler_proxy_status_style.css" ]
   outputs = [
     "$target_gen_dir/compiler_proxy_status_style.c",
     "$target_gen_dir/compiler_proxy_status_style.h",
@@ -95,9 +85,7 @@ action("gen_compiler_proxy_status_style") {
 
 action("gen_compilerz_html") {
   script = genc
-  sources = [
-    "compilerz_html.html",
-  ]
+  sources = [ "compilerz_html.html" ]
   outputs = [
     "$target_gen_dir/compilerz_html.c",
     "$target_gen_dir/compilerz_html.h",
@@ -112,9 +100,7 @@ action("gen_compilerz_html") {
 
 action("gen_compilerz_script") {
   script = genc
-  sources = [
-    "compilerz_script.js",
-  ]
+  sources = [ "compilerz_script.js" ]
   outputs = [
     "$target_gen_dir/compilerz_script.c",
     "$target_gen_dir/compilerz_script.h",
@@ -129,9 +115,7 @@ action("gen_compilerz_script") {
 
 action("gen_compilerz_style") {
   script = genc
-  sources = [
-    "compilerz_style.css",
-  ]
+  sources = [ "compilerz_style.css" ]
   outputs = [
     "$target_gen_dir/compilerz_style.c",
     "$target_gen_dir/compilerz_style.h",
@@ -146,9 +130,7 @@ action("gen_compilerz_style") {
 
 action("gen_compiler_proxy_status_logo") {
   script = genc
-  sources = [
-    "compiler_proxy_status_logo.png",
-  ]
+  sources = [ "compiler_proxy_status_logo.png" ]
   outputs = [
     "$target_gen_dir/compiler_proxy_status_logo.c",
     "$target_gen_dir/compiler_proxy_status_logo.h",

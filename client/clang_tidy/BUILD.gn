@@ -40,9 +40,7 @@ static_library("clang_tidy_compiler_type_specific") {
 
 executable("clang_tidy_compiler_info_builder_unittest") {
   testonly = true
-  sources = [
-    "clang_tidy_compiler_info_builder_unittest.cc",
-  ]
+  sources = [ "clang_tidy_compiler_info_builder_unittest.cc" ]
   deps = [
     ":clang_tidy_compiler_info_builder_lib",
     "//build/config:exe_and_shlib_deps",

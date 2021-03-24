@@ -17,7 +17,7 @@ config("abseil_config_internal") {
   if (is_mac) {
     # Building absl/time/internal/cctz needs Foundation lib
     # https://chromium.googlesource.com/chromium/src/+/5a043322a1bc2d3566eb5ad8c8696f8b0594c156/third_party/abseil-cpp/absl/time/internal/cctz/BUILD.gn#72
-    libs = [ "Foundation.framework" ]
+    frameworks = [ "Foundation.framework" ]
   }
 }
 

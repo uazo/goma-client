@@ -22,6 +22,7 @@ TEST(CPU, RunExtendedInstructions) {
   // Retrieve the CPU information.
   devtools_goma::CPU cpu;
 
+#if defined(ARCH_CPU_X86_FAMILY)
   ASSERT_TRUE(cpu.has_mmx());
   ASSERT_TRUE(cpu.has_sse());
   ASSERT_TRUE(cpu.has_sse2());
@@ -122,4 +123,5 @@ TEST(CPU, RunExtendedInstructions) {
   }
 #endif  // _MSC_VER >= 1700
 #endif  // !_WIN32
+#endif  // defined(ARCH_CPU_X86_FAMILY)
 }

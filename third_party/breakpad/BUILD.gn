@@ -14,6 +14,8 @@
 #  - add goma_breakpad_config (for include path and warnings)
 #  - don't use "USE_PROTECTED_ALLOCATIONS=1" for mac
 
+import("//third_party/chromium_build/symlink.gni")
+
 if (os == "win") {
   import("//build/config/win/visual_studio_version.gni")
 }
@@ -79,8 +81,6 @@ if (os != "win") {
   if (current_toolchain == host_toolchain) {
     # Contains the code shared by both {micro,mini}dump_stackwalk.
     static_library("stackwalk_common") {
-      # Always want these files included regardless of platform.
-      set_sources_assignment_filter([])
       sources = [
         "breakpad/src/common/path_helper.cc",
         "breakpad/src/common/path_helper.h",
@@ -205,8 +205,6 @@ if (os != "win") {
       configs += [ "//build/config/compiler:no_goma_code" ]
       configs += [ ":tools_config" ]
 
-      # Always want these files included regardless of platform.
-      set_sources_assignment_filter([])
       sources += [
         "breakpad/src/processor/exploitability_linux.cc",
         "breakpad/src/processor/exploitability_linux.h",
@@ -218,7 +216,6 @@ if (os != "win") {
     }
 
     executable("minidump_dump") {
-      set_sources_assignment_filter([])
       sources = [
         "breakpad/src/common/scoped_ptr.h",
         "breakpad/src/processor/basic_code_module.h",
@@ -243,9 +240,7 @@ if (os != "win") {
       configs -= [ "//build/config/compiler:goma_code" ]
       configs += [ "//build/config/compiler:no_goma_code" ]
 
-      deps = [
-        "//build/config:exe_and_shlib_deps",
-      ]
+      deps = [ "//build/config:exe_and_shlib_deps" ]
     }
   } else {
     # Aliases for convenience.
@@ -312,7 +307,7 @@ if (os == "mac") {
       configs -= [ "//build/config/compiler:no_rtti" ]
       configs += [ "//build/config/compiler:rtti" ]
 
-      libs = [ "Foundation.framework" ]
+      frameworks = [ "Foundation.framework" ]
 
       if (!is_debug) {
         # dump_syms crashes when built at -O1, -O2, and -O3.  It does
@@ -323,9 +318,7 @@ if (os == "mac") {
         cflags += [ "-O0" ]
       }
 
-      deps = [
-        "//build/config:exe_and_shlib_deps",
-      ]
+      deps = [ "//build/config:exe_and_shlib_deps" ]
     }
 
     executable("symupload") {
@@ -336,14 +329,12 @@ if (os == "mac") {
 
       include_dirs = [ "breakpad/src/common/mac" ]
 
-      libs = [ "Foundation.framework" ]
+      frameworks = [ "Foundation.framework" ]
 
       configs -= [ "//build/config/compiler:goma_code" ]
       configs += [ "//build/config/compiler:no_goma_code" ]
 
-      deps = [
-        "//build/config:exe_and_shlib_deps",
-      ]
+      deps = [ "//build/config:exe_and_shlib_deps" ]
     }
   } else {
     binary_symlink("dump_syms") {
@@ -400,7 +391,7 @@ if (os == "mac") {
       "breakpad/src/common/mac",
       "breakpad/src",
     ]
-    libs = [
+    frameworks = [
       "CoreServices.framework",
       "Foundation.framework",
     ]
@@ -470,9 +461,7 @@ if (os == "linux") {
 
       libs = [ "dl" ]
 
-      deps = [
-        "//build/config:exe_and_shlib_deps",
-      ]
+      deps = [ "//build/config:exe_and_shlib_deps" ]
     }
 
     # dump_syms is a host tool, so only compile it for the host system.
@@ -540,9 +529,7 @@ if (os == "linux") {
 
       include_dirs = [ "breakpad/src" ]
 
-      deps = [
-        "//build/config:exe_and_shlib_deps",
-      ]
+      deps = [ "//build/config:exe_and_shlib_deps" ]
     }
   } else {
     # Aliases for convenience.
@@ -555,8 +542,6 @@ if (os == "linux") {
   }
 
   static_library("client") {
-    # Want all these sources for both Linux and Android.
-    set_sources_assignment_filter([])
     sources = [
       "breakpad/src/client/linux/crash_generation/crash_generation_client.cc",
       "breakpad/src/client/linux/crash_generation/crash_generation_client.h",
@@ -644,7 +629,6 @@ if (os == "linux") {
   }
 
   static_library("processor_support") {
-    set_sources_assignment_filter([])
     sources = [
       "breakpad/src/common/scoped_ptr.h",
       "breakpad/src/processor/basic_code_module.h",
@@ -675,11 +659,8 @@ if (os == "linux") {
   }
 
   executable("linux_dumper_unittest_helper") {
-    set_sources_assignment_filter([])
     testonly = true
-    sources = [
-      "breakpad/src/client/linux/minidump_writer/linux_dumper_unittest_helper.cc",
-    ]
+    sources = [ "breakpad/src/client/linux/minidump_writer/linux_dumper_unittest_helper.cc" ]
     deps = [
       ":processor_support",
       "//build/config:exe_and_shlib_deps",
@@ -692,7 +673,6 @@ if (os == "linux") {
   }
 
   executable("minidump-2-core") {
-    set_sources_assignment_filter([])
     sources = [
       "breakpad/src/common/path_helper.cc",
       "breakpad/src/common/path_helper.h",
@@ -711,10 +691,7 @@ if (os == "linux") {
   }
 
   executable("core-2-minidump") {
-    set_sources_assignment_filter([])
-    sources = [
-      "breakpad/src/tools/linux/core2md/core2md.cc",
-    ]
+    sources = [ "breakpad/src/tools/linux/core2md/core2md.cc" ]
 
     configs += [ ":goma_breakpad_config" ]
 

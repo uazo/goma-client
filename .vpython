@@ -4,7 +4,7 @@
 # client depends on.
 #
 # Read more about `vpython` and how to modify this file here:
-#   https://chromium.googlesource.com/infra/infra/+/master/doc/users/vpython.md
+#   https://chromium.googlesource.com/infra/infra/+/main/doc/users/vpython.md
 
 python_version: "2.7"
 

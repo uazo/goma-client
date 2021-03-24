@@ -2,7 +2,8 @@
 
 vars = {
      "chromium_git": "https://chromium.googlesource.com",
-     "clang_revision": "630ab8a35c3ee7c8ba1ca53daf13e105f0f10857",
+     "clang_revision": "84682eb39805d6342b589817a87068fb3d1535cc",
+     "gn_version": "git_revision:dfcbc6fed0a8352696f92d67ccad54048ad182b3",
 }
 
 deps = {
@@ -43,7 +44,7 @@ deps = {
 
      # chrome's deps/third_party/boringssl
      "client/third_party/boringssl/src":
-     "https://boringssl.googlesource.com/boringssl@04b3213d43492b6c9e0434d8e2a4530a9938f958",
+     "https://boringssl.googlesource.com/boringssl@9be3252947c6ace1f179dbb4af544e86917a2430",
 
      # google-breakpad
      "client/third_party/breakpad/breakpad":
@@ -63,7 +64,7 @@ deps = {
      # chromium's buildtools containing libc++, libc++abi, clang_format and gn.
      "client/buildtools":
      Var("chromium_git") + "/chromium/src/buildtools@" +
-         "74cfb57006f83cfe050817526db359d5c8a11628",
+         "69cc9b8a3ae010e0721c4bea12de7a352d9a93f9",
 
      # libFuzzer
      "client/third_party/libFuzzer/src":
@@ -112,7 +113,7 @@ deps = {
 
      # chromium's build.
      "client/third_party/chromium_build":
-     "https://chromium.googlesource.com/chromium/src/build/@b666d10c4bacb47333a86e0eb9e322ccd4c1acf4",
+     "https://chromium.googlesource.com/chromium/src/build/@909847cd6faf918168fcd73880daf81b5a15ec0a",
 
      'client/tools/clang/dsymutil': {
        'packages': [
@@ -125,28 +126,64 @@ deps = {
        'dep_type': 'cipd',
      },
 
-     # Java toolchain.
-     'client/third_party/jdk': {
-         'packages': [
-             {
-                 'package': 'chromium/third_party/jdk',
-                 'version': 'PfRSnxe8Od6WU4zBXomq-zsgcJgWmm3z4gMQNB-r2QcC',
-             },
-         ],
-         # Used on Linux only.
-         'condition': 'checkout_linux',
-         'dep_type': 'cipd',
-     },
      # Go toolchain.
      'client/third_party/go': {
          'packages': [
              {
                  'package': 'infra/3pp/tools/go/${{platform}}',
-                 'version': 'version:1.16',
+                 'version': 'version:1.16.2',
              },
          ],
          'dep_type': 'cipd',
      },
+
+     # libc++
+     'client/buildtools/third_party/libc++/trunk':
+     Var('chromium_git') + '/external/github.com/llvm/llvm-project/libcxx.git' +
+         '@' + '8fa87946779682841e21e2da977eccfb6cb3bded',
+
+     # libc++abi
+     'client/buildtools/third_party/libc++abi/trunk':
+     Var('chromium_git') + '/external/github.com/llvm/llvm-project/libcxxabi.git' +
+         '@' + '6918862bfc2bff22b45058fac22b1596c49982fb',
+
+     # clang-format helper scripts, used by `git cl format`.
+     'client/buildtools/clang_format/script':
+     Var('chromium_git') +
+     '/external/github.com/llvm/llvm-project/clang/tools/clang-format.git' +
+         '@' + '99803d74e35962f63a775f29477882afd4d57d94',
+
+     # GN
+    'client/buildtools/linux64': {
+      'packages': [
+        {
+          'package': 'gn/gn/linux-amd64',
+          'version': Var('gn_version'),
+        }
+      ],
+      'dep_type': 'cipd',
+      'condition': 'host_os == "linux"',
+    },
+    'client/buildtools/mac': {
+      'packages': [
+        {
+          'package': 'gn/gn/mac-${{arch}}',
+          'version': Var('gn_version'),
+        }
+      ],
+      'dep_type': 'cipd',
+      'condition': 'host_os == "mac"',
+    },
+    'client/buildtools/win': {
+      'packages': [
+        {
+          'package': 'gn/gn/windows-amd64',
+          'version': Var('gn_version'),
+        }
+      ],
+      'dep_type': 'cipd',
+      'condition': 'host_os == "win"',
+    },
 }
 
 hooks = [
@@ -246,9 +283,4 @@ hooks = [
          '--disable',
        ],
      },
-]
-
-recursedeps = [
-  # buildtools provides clang_format, libc++, and libc++abi
-  'client/buildtools',
 ]

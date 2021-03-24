@@ -41,6 +41,7 @@ CPU::CPU()
 
 namespace {
 
+#if defined(ARCH_CPU_X86_FAMILY)
 #ifndef _WIN32
 
 // emulate MSVC's functions.
@@ -63,10 +64,12 @@ uint64_t _xgetbv(uint32_t xcr) {
 }
 
 #endif  // !_WIN32
+#endif  // defined(ARCH_CPU_X86_FAMILY)
 
 }  // anonymous namespace
 
 void CPU::Initialize() {
+#if defined(ARCH_CPU_X86_FAMILY)
   int cpu_info[4] = {-1};
   char cpu_string[48];
 
@@ -147,6 +150,7 @@ void CPU::Initialize() {
     __cpuid(cpu_info, parameter_containing_non_stop_time_stamp_counter);
     has_non_stop_time_stamp_counter_ = (cpu_info[3] & (1 << 8)) != 0;
   }
+#endif  // defined(ARCH_CPU_X86_FAMILY)
 }
 
 CPU::IntelMicroArchitecture CPU::GetIntelMicroArchitecture() const {

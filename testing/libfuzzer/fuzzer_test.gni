@@ -50,12 +50,8 @@ template("fuzzer_test") {
           rebase_path("$root_build_dir/$target_name"),
         ]
 
-        outputs = [
-          out,
-        ]
-        deps = [
-          "//testing/libfuzzer:seed_corpus",
-        ]
+        outputs = [ out ]
+        deps = [ "//testing/libfuzzer:seed_corpus" ]
       }
 
       test_deps += [ ":" + target_name + "_seed_corpus" ]
@@ -65,12 +61,8 @@ template("fuzzer_test") {
       if (defined(invoker.dict)) {
         # Copy dictionary to output.
         copy(target_name + "_dict_copy") {
-          sources = [
-            invoker.dict,
-          ]
-          outputs = [
-            "$root_build_dir/" + target_name + ".dict",
-          ]
+          sources = [ invoker.dict ]
+          outputs = [ "$root_build_dir/" + target_name + ".dict" ]
         }
         test_deps += [ ":" + target_name + "_dict_copy" ]
       }
@@ -96,9 +88,7 @@ template("fuzzer_test") {
           args += invoker.libfuzzer_options
         }
 
-        outputs = [
-          "$root_build_dir/$config_name",
-        ]
+        outputs = [ "$root_build_dir/$config_name" ]
       }
       test_deps += [ ":" + config_name ]
     }

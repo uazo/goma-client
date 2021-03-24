@@ -8,9 +8,7 @@ static_library("java_compiler_info_lib") {
     "java_compiler_info.h",
   ]
 
-  public_deps = [
-    "//client:compiler_info_lib",
-  ]
+  public_deps = [ "//client:compiler_info_lib" ]
 }
 
 static_library("java_compiler_type_specific") {
@@ -19,9 +17,7 @@ static_library("java_compiler_type_specific") {
     "java_compiler_type_specific.h",
   ]
 
-  deps = [
-    "//client:common",
-  ]
+  deps = [ "//client:common" ]
   public_deps = [
     ":jar_parser_lib",
     ":java_compiler_info_builder_lib",
@@ -79,9 +75,7 @@ static_library("java_compiler_info_builder_lib") {
 }
 
 executable("jarfile_normalizer") {
-  sources = [
-    "jarfile_normalizer.cc",
-  ]
+  sources = [ "jarfile_normalizer.cc" ]
   configs += [ "//client:client_config" ]
   deps = [
     ":jarfile_reader_lib",
@@ -94,9 +88,7 @@ executable("jarfile_normalizer") {
 
 executable("jar_parser_unittest") {
   testonly = true
-  sources = [
-    "jar_parser_unittest.cc",
-  ]
+  sources = [ "jar_parser_unittest.cc" ]
   deps = [
     ":jar_parser_lib",
     "//base",
@@ -110,9 +102,7 @@ executable("jar_parser_unittest") {
 
 executable("jarfile_reader_unittest") {
   testonly = true
-  sources = [
-    "jarfile_reader_unittest.cc",
-  ]
+  sources = [ "jarfile_reader_unittest.cc" ]
   deps = [
     "//build/config:exe_and_shlib_deps",
     "//client:compiler_proxy_lib",
@@ -122,9 +112,7 @@ executable("jarfile_reader_unittest") {
 
 executable("java_compiler_info_builder_unittest") {
   testonly = true
-  sources = [
-    "java_compiler_info_builder_unittest.cc",
-  ]
+  sources = [ "java_compiler_info_builder_unittest.cc" ]
   deps = [
     ":java_compiler_info_builder_lib",
     "//build/config:exe_and_shlib_deps",

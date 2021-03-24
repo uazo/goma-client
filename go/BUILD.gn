@@ -2,9 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 group("go") {
-  deps = [
-    ":build_http_proxy",
-  ]
+  deps = [ ":build_http_proxy" ]
 }
 
 action("build_http_proxy") {
@@ -18,9 +16,7 @@ action("build_http_proxy") {
     "//third_party/go/bin/go" + ext,
     "proxy/proxy.go",
   ]
-  outputs = [
-    "$root_out_dir/http_proxy" + ext,
-  ]
+  outputs = [ "$root_out_dir/http_proxy" + ext ]
   args = [
            "--cache-dir",
            rebase_path("$root_out_dir/gocache"),
